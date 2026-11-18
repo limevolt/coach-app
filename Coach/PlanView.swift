@@ -75,7 +75,7 @@ struct PlanView: View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 4) {
                 Eyebrow(text: "Ton plan · v\(plan.version)")
-                Text(plan.title).font(.display(32)).foregroundStyle(Theme.text)
+                Text(plan.title).font(.display(.largeTitle)).foregroundStyle(Theme.text)
             }
             .padding(.top, 4)
 
@@ -98,13 +98,13 @@ struct PlanView: View {
                         ForEach(goals) { goal in
                             HStack {
                                 Text(goal.title)
-                                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                    .font(.rounded(.subheadline, .semibold))
                                     .foregroundStyle(Theme.text)
                                     .lineLimit(1)
                                 Spacer()
                                 if let days = goal.daysLeft {
                                     Text(days >= 0 ? "J-\(days)" : "Échu")
-                                        .font(.system(size: 14, weight: .heavy, design: .rounded))
+                                        .font(.rounded(.subheadline, .heavy))
                                         .foregroundStyle(Theme.muted)
                                 }
                             }
@@ -125,7 +125,7 @@ struct PlanView: View {
             if let notes = plan.notes, !notes.isEmpty {
                 CollapsibleCard(title: "Consignes du coach", color: Theme.teal) {
                     Text(notes.firstSentence)
-                        .font(.system(size: 14, design: .rounded))
+                        .font(.rounded(.subheadline))
                         .foregroundStyle(Theme.muted)
                         .lineLimit(1)
                 } content: {
@@ -151,7 +151,7 @@ struct PlanView: View {
                     }
                 } label: {
                     Text("SEMAINES PASSÉES")
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .font(.rounded(.footnote, .semibold))
                         .tracking(1.4)
                         .foregroundStyle(Theme.muted)
                 }
@@ -164,7 +164,7 @@ struct PlanView: View {
 
     @ViewBuilder private func weekSection(_ week: Week) -> some View {
         Text(week.title.uppercased())
-            .font(.system(size: 13, weight: .semibold, design: .rounded))
+            .font(.rounded(.footnote, .semibold))
             .tracking(1.4)
             .foregroundStyle(Theme.muted)
             .padding(.top, 8)
@@ -192,27 +192,27 @@ struct PlanView: View {
             Image(systemName: "figure.run.circle.fill")
                 .font(.system(size: 64))
                 .foregroundStyle(Theme.accent)
-            Text("Aucun plan").font(.display(28)).foregroundStyle(Theme.text)
+            Text("Aucun plan").font(.display(.title)).foregroundStyle(Theme.text)
             Text("Prépare ta demande (avec ton dernier mois de sport), envoie-la à Claude, puis colle ici le plan JSON reçu.")
-                .font(.system(size: 15, design: .rounded))
+                .font(.rounded(.subheadline))
                 .foregroundStyle(Theme.muted)
                 .multilineTextAlignment(.center)
             Button { showNewPlan = true } label: {
                 Label("Créer un plan", systemImage: "sparkles")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .font(.rounded(.body, .bold))
                     .foregroundStyle(Theme.accentDark)
                     .frame(maxWidth: .infinity, minHeight: 52)
                     .background(Theme.accent, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
             Button { importClipboard() } label: {
                 Label("Coller le plan", systemImage: "doc.on.clipboard")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .font(.rounded(.body, .bold))
                     .foregroundStyle(Theme.accent)
                     .frame(maxWidth: .infinity, minHeight: 52)
                     .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.accent, lineWidth: 1.5))
             }
             Button("Importer un fichier") { showImporter = true }
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .font(.rounded(.subheadline, .semibold))
         }
         .padding(24)
         .padding(.top, 80)
@@ -328,13 +328,13 @@ struct SessionRow: View {
                 .background(Theme.color(for: session.type).opacity(0.14), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
             VStack(alignment: .leading, spacing: 3) {
                 Text(session.title)
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .font(.rounded(.callout, .semibold))
                     .foregroundStyle(Theme.text)
-                    .lineLimit(1)
+                    .lineLimit(2)
                 Text(subtitle)
-                    .font(.system(size: 12, design: .rounded))
+                    .font(.rounded(.caption))
                     .foregroundStyle(Theme.muted)
-                    .lineLimit(1)
+                    .lineLimit(2)
             }
             Spacer(minLength: 4)
             Image(systemName: done ? "checkmark.circle.fill" : (missed ? "exclamationmark.circle.fill" : "chevron.right"))
@@ -348,6 +348,7 @@ struct SessionRow: View {
 
 struct NextSessionCard: View {
     let session: PlannedSession
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     private var preview: ExerciseAnimation? {
         let exercises = session.strength?.exercises ?? session.circuit?.exercises ?? []
@@ -359,23 +360,26 @@ struct NextSessionCard: View {
             VStack(alignment: .leading, spacing: 6) {
                 Eyebrow(text: "Prochaine séance")
                 Text(session.title)
-                    .font(.display(22, .bold))
+                    .font(.display(.title2, .bold))
                     .foregroundStyle(Theme.text)
                     .multilineTextAlignment(.leading)
                 Text(session.dateLabel)
-                    .font(.system(size: 13, design: .rounded))
+                    .font(.rounded(.footnote))
                     .foregroundStyle(Theme.muted)
                 HStack(spacing: 6) {
                     Image(systemName: Theme.icon(for: session.type))
                     Text(session.typeLabel)
                 }
-                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .font(.rounded(.caption, .bold))
                 .foregroundStyle(Color(hex: 0x11160A))
                 .padding(.horizontal, 10).padding(.vertical, 5)
                 .background(Theme.color(for: session.type), in: Capsule())
             }
             Spacer(minLength: 0)
-            if let preview {
+            // Illustration décorative : masquée en très grand texte pour laisser la largeur au titre.
+            if typeSize.isAccessibilitySize {
+                EmptyView()
+            } else if let preview {
                 AnimatedExerciseFigure(animation: preview, fps: 24)
                     .frame(width: 110, height: 120)
             } else {
@@ -400,11 +404,11 @@ struct GoalCard: View {
                 Eyebrow(text: "Objectif", color: Theme.warm)
             }
             HStack(alignment: .firstTextBaseline) {
-                Text(goal.title).font(.display(embedded ? 18 : 20, .bold)).foregroundStyle(Theme.text)
+                Text(goal.title).font(.display(embedded ? .headline : .title3, .bold)).foregroundStyle(Theme.text)
                 Spacer(minLength: 8)
                 if let days = goal.daysLeft {
                     Text(days >= 0 ? "J-\(days)" : "Échu")
-                        .font(.system(size: 15, weight: .heavy, design: .rounded))
+                        .font(.rounded(.subheadline, .heavy))
                         .foregroundStyle(Theme.text)
                 }
             }
@@ -440,8 +444,8 @@ struct GoalCard: View {
 
     private func stat(_ label: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(label.uppercased()).font(.system(size: 10, weight: .semibold, design: .rounded)).foregroundStyle(Theme.muted)
-            Text(value).font(.system(size: 13, weight: .semibold, design: .rounded)).foregroundStyle(Theme.text).lineLimit(2)
+            Text(label.uppercased()).font(.rounded(.caption2, .semibold)).foregroundStyle(Theme.muted)
+            Text(value).font(.rounded(.footnote, .semibold)).foregroundStyle(Theme.text).lineLimit(2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(embedded ? 0 : 8)

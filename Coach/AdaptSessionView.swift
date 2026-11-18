@@ -124,7 +124,7 @@ struct AdaptSessionView: View {
                 }
             } label: {
                 Label(buttonTitle(isSame: isSame), systemImage: "checkmark")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .font(.rounded(.body, .bold))
                     .foregroundStyle(Theme.accentDark)
                     .frame(maxWidth: .infinity, minHeight: 48)
                     .background(unchanged ? Theme.line : Theme.accent,
@@ -198,12 +198,13 @@ struct AdaptSessionView: View {
                             } label: {
                                 VStack(spacing: 2) {
                                     Text(day.formatted(.dateTime.weekday(.abbreviated)))
-                                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                                        .font(.rounded(.caption, .semibold))
                                     Text(day.formatted(.dateTime.day()))
-                                        .font(.system(size: 20, weight: .heavy, design: .rounded))
+                                        .font(.rounded(.title3, .heavy))
                                 }
                                 .foregroundStyle(preferred ? Theme.accentDark : Theme.muted)
-                                .frame(width: 54, height: 60)
+                                .padding(.horizontal, 6)
+                                .frame(minWidth: 54, minHeight: 60)
                                 .background(preferred ? Theme.accent : Theme.line.opacity(0.6),
                                             in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                             }

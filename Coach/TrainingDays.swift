@@ -63,7 +63,7 @@ struct TrainingDaysPicker: View {
                     raw = TrainingDays.encode(next)
                 } label: {
                     Text(TrainingDays.initials[day - 1])
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .font(.rounded(.subheadline, .bold))
                         .foregroundStyle(on ? Theme.accentDark : Theme.muted)
                         .frame(maxWidth: .infinity, minHeight: 40)
                         .background(on ? Theme.accent : Theme.line.opacity(0.6), in: Circle())
@@ -93,10 +93,10 @@ struct OffDaysBanner: View {
                       ? "1 séance tombe en dehors de tes jours d'entraînement."
                       : "\(off.count) séances tombent en dehors de tes jours d'entraînement.",
                       systemImage: "calendar.badge.exclamationmark")
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .font(.rounded(.subheadline, .semibold))
                     .foregroundStyle(Theme.text)
                 Text(off.prefix(4).map { "\($0.title) (\($0.dateLabel))" }.joined(separator: " · "))
-                    .font(.system(size: 13, design: .rounded))
+                    .font(.rounded(.footnote))
                     .foregroundStyle(Theme.muted)
                 Button {
                     working = true
@@ -111,7 +111,7 @@ struct OffDaysBanner: View {
                         Text("Ranger sur mes jours (\(TrainingDays.label(days)))")
                             .lineLimit(2)
                     }
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .font(.rounded(.subheadline, .bold))
                     .foregroundStyle(Theme.accentDark)
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .background(Theme.accent, in: RoundedRectangle(cornerRadius: 12, style: .continuous))

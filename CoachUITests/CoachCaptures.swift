@@ -61,6 +61,7 @@ final class CoachCaptures: XCTestCase {
         _ = app.tabBars.firstMatch.waitForExistence(timeout: 30)
         shot("11-accueil-grand-texte")
         app.swipeUp()
+        app.swipeUp()
         shot("12-accueil-grand-texte-bas")
 
         // 6. Aucun plan

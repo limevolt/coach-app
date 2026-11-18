@@ -15,7 +15,7 @@ struct TimersView: View {
                             editing = template
                         } label: {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(template.name).font(.system(size: 16, weight: .bold, design: .rounded)).foregroundStyle(Theme.text)
+                                Text(template.name).font(.rounded(.callout, .bold)).foregroundStyle(Theme.text)
                                 Text("\(IntervalTemplate.activityLabel(template.activity)) · \(template.summary)")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)

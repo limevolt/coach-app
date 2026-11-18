@@ -46,7 +46,7 @@ struct CollapsibleCard<Summary: View, Content: View>: View {
 /// Un long paragraphe sans retour à la ligne est découpé en phrases.
 struct FormattedNotes: View {
     let text: String
-    var size: CGFloat = 15
+    var style: Font.TextStyle = .subheadline
 
     private enum Line: Hashable {
         case heading(String)
@@ -87,7 +87,7 @@ struct FormattedNotes: View {
                 switch line {
                 case .heading(let t):
                     Text(markdown(t))
-                        .font(.system(size: size, weight: .bold, design: .rounded))
+                        .font(.rounded(style, .bold))
                         .foregroundStyle(Theme.text)
                         .padding(.top, 2)
                 case .bullet(let t):
@@ -95,11 +95,11 @@ struct FormattedNotes: View {
                         Text("•").bold().foregroundStyle(Theme.accent)
                         Text(markdown(t))
                     }
-                    .font(.system(size: size, design: .rounded))
+                    .font(.rounded(style))
                     .foregroundStyle(Theme.text)
                 case .paragraph(let t):
                     Text(markdown(t))
-                        .font(.system(size: size, design: .rounded))
+                        .font(.rounded(style))
                         .foregroundStyle(Theme.text)
                 }
             }

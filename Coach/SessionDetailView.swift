@@ -52,9 +52,9 @@ struct SessionDetailView: View {
     private var hero: some View {
         VStack(alignment: .leading, spacing: 8) {
             Eyebrow(text: session.typeLabel, color: Theme.color(for: session.type))
-            Text(session.title).font(.display(30)).foregroundStyle(Theme.text)
+            Text(session.title).font(.display(.title)).foregroundStyle(Theme.text)
             Label(session.dateLabel, systemImage: "calendar")
-                .font(.system(size: 14, design: .rounded))
+                .font(.rounded(.subheadline))
                 .foregroundStyle(Theme.muted)
             if stored.withoutEquipment {
                 badge("Version sans matériel", icon: "house.fill", color: Theme.teal)
@@ -68,7 +68,7 @@ struct SessionDetailView: View {
             if let notes = session.notes, !notes.isEmpty {
                 CollapsibleCard(title: "L'essentiel", color: Theme.accent) {
                     Text(notes.firstSentence)
-                        .font(.system(size: 14, design: .rounded))
+                        .font(.rounded(.subheadline))
                         .foregroundStyle(Theme.muted)
                         .lineLimit(2)
                 } content: {
@@ -83,10 +83,10 @@ struct SessionDetailView: View {
     private var missedCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Label("Pas encore faite", systemImage: "exclamationmark.circle.fill")
-                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .font(.rounded(.callout, .bold))
                 .foregroundStyle(Theme.warm)
             Text("Elle était prévue \(stored.dateLabel). Reprogramme-la ou indique que tu l'as faite.")
-                .font(.system(size: 14, design: .rounded))
+                .font(.rounded(.subheadline))
                 .foregroundStyle(Theme.muted)
             HStack(spacing: 8) {
                 missedButton("Aujourd'hui", icon: "calendar") {
@@ -135,7 +135,7 @@ struct SessionDetailView: View {
                     Image(systemName: "arrow.uturn.backward.circle.fill")
                 }
             }
-            .font(.system(size: 12, weight: .bold, design: .rounded))
+            .font(.rounded(.caption, .bold))
             .foregroundStyle(color)
             .padding(.horizontal, 10).padding(.vertical, 5)
             .background(color.opacity(0.14), in: Capsule())
@@ -165,7 +165,7 @@ struct SessionDetailView: View {
     private var adaptButton: some View {
         Button { showAdapt = true } label: {
             Label("Adapter : autre activité, sans matériel, autre jour", systemImage: "slider.horizontal.3")
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .font(.rounded(.subheadline, .semibold))
                 .foregroundStyle(Theme.accent)
                 .frame(maxWidth: .infinity, minHeight: 46)
                 .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Theme.accent.opacity(0.6), lineWidth: 1))
@@ -184,7 +184,7 @@ struct SessionDetailView: View {
             ForEach(Array(run.blocks.enumerated()), id: \.offset) { _, block in
                 VStack(alignment: .leading, spacing: 6) {
                     Text(block.iterations > 1 ? "\(block.iterations) ×" : "Bloc")
-                        .font(.system(size: 22, weight: .heavy, design: .rounded))
+                        .font(.rounded(.title2, .heavy))
                         .foregroundStyle(Theme.warm)
                     ForEach(Array(block.steps.enumerated()), id: \.offset) { _, step in
                         HStack(spacing: 8) {
@@ -192,7 +192,7 @@ struct SessionDetailView: View {
                                 .fill(step.purpose == "recovery" ? Theme.teal : Theme.warm)
                                 .frame(width: 8, height: 8)
                             Text("\(step.purpose == "recovery" ? "Récup" : "Effort") · \(step.label)")
-                                .font(.system(size: 15, design: .rounded))
+                                .font(.rounded(.subheadline))
                                 .foregroundStyle(Theme.text)
                         }
                     }
@@ -209,9 +209,9 @@ struct SessionDetailView: View {
 
     private func stepCard(title: String, detail: String, color: Color) -> some View {
         HStack {
-            Text(title).font(.system(size: 15, weight: .semibold, design: .rounded)).foregroundStyle(Theme.text)
+            Text(title).font(.rounded(.subheadline, .semibold)).foregroundStyle(Theme.text)
             Spacer()
-            Text(detail).font(.system(size: 14, design: .rounded)).foregroundStyle(color)
+            Text(detail).font(.rounded(.subheadline)).foregroundStyle(color)
         }
         .card(padding: 12, radius: 16)
     }
@@ -236,9 +236,9 @@ struct SessionDetailView: View {
 
     private func statTile(_ label: String, _ value: String) -> some View {
         VStack(spacing: 2) {
-            Text(value).font(.system(size: 18, weight: .heavy, design: .rounded)).foregroundStyle(Theme.text)
+            Text(value).font(.rounded(.title3, .heavy)).foregroundStyle(Theme.text)
                 .lineLimit(1).minimumScaleFactor(0.7)
-            Text(label.uppercased()).font(.system(size: 10, weight: .semibold, design: .rounded)).foregroundStyle(Theme.muted)
+            Text(label.uppercased()).font(.rounded(.caption2, .semibold)).foregroundStyle(Theme.muted)
         }
         .frame(maxWidth: .infinity)
         .card(padding: 10, radius: 14)
@@ -276,14 +276,14 @@ struct SessionDetailView: View {
                         Text(note).foregroundStyle(Theme.text)
                     }
                 }
-                .font(.system(size: 15, design: .rounded))
+                .font(.rounded(.subheadline))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .card()
             }
             Button { showFeedback = true } label: {
                 Label(log == nil ? "J'ai fait cette séance" : "Modifier mon ressenti",
                       systemImage: log == nil ? "checkmark" : "pencil")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .font(.rounded(.body, .bold))
                     .foregroundStyle(Theme.accentDark)
                     .frame(maxWidth: .infinity, minHeight: 52)
                     .background(Theme.accent, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -296,7 +296,7 @@ struct SessionDetailView: View {
 
     private func sectionTitle(_ text: String) -> some View {
         Text(text.uppercased())
-            .font(.system(size: 13, weight: .semibold, design: .rounded))
+            .font(.rounded(.footnote, .semibold))
             .tracking(1.4)
             .foregroundStyle(Theme.muted)
             .padding(.top, 8)
@@ -304,7 +304,7 @@ struct SessionDetailView: View {
 
     private func hint(_ text: String) -> some View {
         Label(text, systemImage: "applewatch")
-            .font(.system(size: 13, design: .rounded))
+            .font(.rounded(.footnote))
             .foregroundStyle(Theme.muted)
             .padding(.top, 2)
     }
@@ -335,14 +335,14 @@ struct ExerciseCard: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(exercise.name)
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .font(.rounded(.callout, .bold))
                         .foregroundStyle(Theme.text)
                     Text(detail)
-                        .font(.system(size: 13, design: .rounded))
+                        .font(.rounded(.footnote))
                         .foregroundStyle(Theme.muted)
                     if let muscles = animation?.muscles, !muscles.isEmpty {
                         Text(muscles.prefix(2).map(\.label).joined(separator: " · "))
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .font(.rounded(.caption, .semibold))
                             .foregroundStyle(Theme.warm)
                     }
                     if let notes = exercise.notes {
@@ -415,7 +415,7 @@ extension View {
 
 private extension View {
     func missedStyle(filled: Bool) -> some View {
-        self.font(.system(size: 15, weight: .bold, design: .rounded))
+        self.font(.rounded(.subheadline, .bold))
             .foregroundStyle(filled ? Theme.accentDark : Theme.accent)
             .frame(maxWidth: .infinity, minHeight: 44)
             .background(filled ? Theme.accent : Color.clear,

@@ -49,9 +49,15 @@ extension Color {
 }
 
 extension Font {
-    /// Titres : arrondis et très gras, esprit sportif.
-    static func display(_ size: CGFloat, _ weight: Font.Weight = .heavy) -> Font {
-        .system(size: size, weight: weight, design: .rounded)
+    /// Titres : arrondis et très gras, esprit sportif. Suit la taille de texte choisie (Dynamic Type).
+    static func display(_ style: Font.TextStyle = .largeTitle, _ weight: Font.Weight = .heavy) -> Font {
+        .system(style, design: .rounded, weight: weight)
+    }
+
+    /// Texte courant arrondi, qui suit la taille de texte choisie (Dynamic Type).
+    /// À utiliser à la place de `.system(size:)` pour tout texte.
+    static func rounded(_ style: Font.TextStyle, _ weight: Font.Weight = .regular) -> Font {
+        .system(style, design: .rounded, weight: weight)
     }
 }
 
@@ -82,7 +88,7 @@ struct Eyebrow: View {
 
     var body: some View {
         Text(text.uppercased())
-            .font(.system(size: 12, weight: .semibold, design: .rounded))
+            .font(.rounded(.caption, .semibold))
             .tracking(1.6)
             .foregroundStyle(color)
     }
@@ -95,7 +101,7 @@ struct Chip: View {
 
     var body: some View {
         Text(text)
-            .font(.system(size: 12, weight: hot ? .semibold : .medium, design: .rounded))
+            .font(.rounded(.caption, hot ? .semibold : .medium))
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
             .foregroundStyle(hot ? Color(hex: 0x1A1205) : Theme.muted)
