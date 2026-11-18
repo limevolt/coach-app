@@ -49,6 +49,12 @@ final class WatchCaptures: XCTestCase {
             shot("09-libre")
         }
 
+        // 4 bis. Accueil avec une séance faite : elle n'est plus dans « Autres séances » (#27)
+        app = launchDemo(plan: DemoPlan.json(), done: [DemoPlan.sessionIds[1]])
+        _ = button("Commencer", in: app).waitForExistence(timeout: 30)
+        app.swipeUp()
+        shot("11-accueil-une-faite")
+
         // 5. Aucune séance
         app = launchDemo(plan: nil)
         Thread.sleep(forTimeInterval: 2)

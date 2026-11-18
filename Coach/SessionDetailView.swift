@@ -287,7 +287,7 @@ struct SessionDetailView: View {
                             .foregroundStyle(Theme.accent)
                         Spacer(minLength: 8)
                         Menu {
-                            Button("Modifier mon ressenti", systemImage: "pencil") { showFeedback = true }
+                            MenuItemButton("Modifier mon ressenti", systemImage: "pencil") { showFeedback = true }
                             DestructiveButton("Marquer comme non faite", systemImage: "arrow.uturn.backward") {
                                 confirmNotDone = true
                             }

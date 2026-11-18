@@ -110,7 +110,7 @@ struct PlanView: View {
                                 Text(goal.title)
                                     .font(.coach(size: 15, weight: .semibold))
                                     .foregroundStyle(Theme.text)
-                                    .lineLimit(1)
+                                    .lineLimit(2)
                                 Spacer()
                                 if let days = goal.daysLeft {
                                     Text(days >= 0 ? "J-\(days)" : "Échu")
@@ -137,7 +137,7 @@ struct PlanView: View {
                     Text(notes.firstSentence)
                         .font(.coach(size: 14))
                         .foregroundStyle(Theme.muted)
-                        .lineLimit(1)
+                        .lineLimit(2)
                 } content: {
                     FormattedNotes(text: notes)
                 }
@@ -344,11 +344,11 @@ struct SessionRow: View {
                 Text(session.title)
                     .font(.coach(size: 16, weight: .semibold))
                     .foregroundStyle(Theme.text)
-                    .lineLimit(1)
+                    .lineLimit(3)
                 Text(subtitle)
                     .font(.coach(size: 12))
                     .foregroundStyle(Theme.muted)
-                    .lineLimit(1)
+                    .lineLimit(2)
             }
             Spacer(minLength: 4)
             Image(systemName: done ? "checkmark.circle.fill" : (missed ? "exclamationmark.circle.fill" : "chevron.right"))
@@ -362,6 +362,7 @@ struct SessionRow: View {
 
 struct NextSessionCard: View {
     let session: PlannedSession
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     private var preview: ExerciseAnimation? {
         let exercises = session.strength?.exercises ?? session.circuit?.exercises ?? []
@@ -369,7 +370,11 @@ struct NextSessionCard: View {
     }
 
     var body: some View {
-        HStack(spacing: 14) {
+        // Très grand texte : l'illustration passe sous le titre, qui garde toute la largeur.
+        let layout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 10))
+            : AnyLayout(HStackLayout(spacing: 14))
+        layout {
             VStack(alignment: .leading, spacing: 6) {
                 Eyebrow(text: "Prochaine séance")
                 Text(session.title)

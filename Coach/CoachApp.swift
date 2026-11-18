@@ -32,23 +32,15 @@ struct ContentView: View {
     @Environment(PlanStore.self) private var store
 
     init() {
-        // Barre d'onglets et barres de navigation sombres
-        let tab = UITabBarAppearance()
-        tab.configureWithOpaqueBackground()
-        tab.backgroundColor = UIColor(Theme.bg)
-        UITabBar.appearance().standardAppearance = tab
-        UITabBar.appearance().scrollEdgeAppearance = tab
-
-        let nav = UINavigationBarAppearance()
-        nav.configureWithOpaqueBackground()
-        nav.backgroundColor = UIColor(Theme.bg)
-        nav.shadowColor = .clear
-        let rounded = UIFont.systemFont(ofSize: 34, weight: .heavy).fontDescriptor.withDesign(.rounded)
-        if let rounded {
-            nav.largeTitleTextAttributes = [.font: UIFont(descriptor: rounded, size: 34)]
+        // Barres natives (Liquid Glass sous iOS 26, DESIGN.md) : seuls les titres passent en Outfit,
+        // à une taille qui suit Dynamic Type.
+        let bar = UINavigationBar.appearance()
+        if let large = UIFont(name: Outfit.name(for: .heavy), size: 34) {
+            bar.largeTitleTextAttributes = [.font: UIFontMetrics(forTextStyle: .largeTitle).scaledFont(for: large)]
         }
-        UINavigationBar.appearance().standardAppearance = nav
-        UINavigationBar.appearance().scrollEdgeAppearance = nav
+        if let title = UIFont(name: Outfit.name(for: .bold), size: 17) {
+            bar.titleTextAttributes = [.font: UIFontMetrics(forTextStyle: .headline).scaledFont(for: title)]
+        }
     }
 
     var body: some View {

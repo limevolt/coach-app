@@ -72,6 +72,13 @@ final class CoachCaptures: XCTestCase {
             }
         }
 
+        // Séance passée non faite : « Pas encore faite » avec « Adapter » (#21)
+        app = launchDemo(plan: DemoPlan.json(firstOffset: -3))
+        _ = app.tabBars.firstMatch.waitForExistence(timeout: 30)
+        if tap("Footing", in: app) {
+            shot("16-seance-manquee")
+        }
+
         // 5. Accueil en très grande taille de texte
         app = launchDemo(plan: DemoPlan.json(),
                          arguments: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityL"])

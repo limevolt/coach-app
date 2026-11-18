@@ -48,7 +48,10 @@ struct CoachDashedButtonStyle: ButtonStyle {
         configuration.label
             .labelStyle(.titleAndIcon)
             .font(.coach(size: 14, weight: .semibold))
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
             .foregroundStyle(Theme.muted)
+            .padding(.horizontal, 8)
             .frame(maxWidth: .infinity, minHeight: 44)
             .background(Theme.card.opacity(0.5), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(

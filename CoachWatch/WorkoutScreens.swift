@@ -29,6 +29,7 @@ struct WorkoutReadyView<Action: View>: View {
                 .multilineTextAlignment(.center)
                 .lineLimit(3)
                 .minimumScaleFactor(0.8)
+                .fixedSize(horizontal: false, vertical: true)
             if let summary {
                 Text(summary)
                     .font(.coach(.footnote))
@@ -185,21 +186,6 @@ struct WorkoutControlsPage: View {
 
     var body: some View {
         VStack(spacing: 6) {
-            // En haut, discret : fréquence cardiaque et durée de la séance.
-            HStack(spacing: 12) {
-                if heartRate > 0 {
-                    Label("\(Int(heartRate))", systemImage: "heart.fill")
-                        .foregroundStyle(Theme.danger)
-                        .accessibilityLabel("Fréquence cardiaque \(Int(heartRate))")
-                }
-                if let startedAt {
-                    Text(startedAt, style: .timer)
-                        .monospacedDigit()
-                        .foregroundStyle(Theme.muted)
-                        .accessibilityLabel("Durée de la séance")
-                }
-            }
-            .font(.coach(.footnote, weight: .bold))
             Spacer(minLength: 0)
             // Grands boutons teintés, centrés, comme dans l'app Exercice d'Apple.
             Grid(horizontalSpacing: 8, verticalSpacing: 6) {
@@ -214,9 +200,28 @@ struct WorkoutControlsPage: View {
                 }
             }
             Spacer(minLength: 0)
+            // En bas, discret : fréquence cardiaque et durée (en haut, ça touchait l'heure sur 40 mm).
+            metricsRow
         }
         .padding(.horizontal, Theme.watchMargin)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var metricsRow: some View {
+        HStack(spacing: 12) {
+            if heartRate > 0 {
+                Label("\(Int(heartRate))", systemImage: "heart.fill")
+                    .foregroundStyle(Theme.danger)
+                    .accessibilityLabel("Fréquence cardiaque \(Int(heartRate))")
+            }
+            if let startedAt {
+                Text(startedAt, style: .timer)
+                    .monospacedDigit()
+                    .foregroundStyle(Theme.muted)
+                    .accessibilityLabel("Durée de la séance")
+            }
+        }
+        .font(.coach(.footnote, weight: .bold))
     }
 
     private func control(_ title: String, icon: String, tint: Color, enabled: Bool,

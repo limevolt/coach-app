@@ -126,19 +126,14 @@ struct SessionListView: View {
         store.markOpened(request)
     }
 
+    /// Rien à faire : une phrase courte, sans titre (#27).
     private var emptyState: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("PROCHAIN ENTRAÎNEMENT")
-                .font(.coach(size: 11, weight: .semibold))
-                .tracking(1.2)
-                .foregroundStyle(Theme.accent)
-            Text(store.sessions.isEmpty
-                 ? "Aucune séance. Ouvre Coach sur l'iPhone pour synchroniser."
-                 : "Rien de prévu pour l'instant. Repos ! 😌")
-                .font(.coach(.footnote))
-                .foregroundStyle(.secondary)
-        }
+        Text(store.sessions.isEmpty ? "Aucune séance. Synchronise depuis l'iPhone." : "Rien de prévu. Repos !")
+            .font(.coach(.footnote, weight: .semibold))
+            .foregroundStyle(Theme.muted)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
+
 }
 
 // MARK: - Prochain entraînement
@@ -214,6 +209,7 @@ private struct FreeWorkoutListView: View {
                     .buttonStyle(.plain)
                 }
             }
+            .padding(.horizontal, Theme.watchMargin)
         }
         .navigationTitle("Libre")
         .navigationBarTitleDisplayMode(.inline)
