@@ -389,6 +389,8 @@ final class PlanStore {
     /// Lance la séance sur la montre : Coach s'y ouvre et la séance démarre aussitôt
     /// (sauf la course, qui s'ouvre prête dans l'app Exercice).
     func startOnWatch(_ session: PlannedSession) async -> WatchStartResult {
+        // Captures automatiques : pas de montre, on montre l'état « en cours ».
+        if DemoMode.isOn { return .sent }
         pushToWatch()
         let request = StartRequest(id: session.id, isTimer: false, sentAt: .now, autoStart: true)
         return await PhoneConnectivity.shared.startOnWatch(request, configuration: session.workoutConfiguration)

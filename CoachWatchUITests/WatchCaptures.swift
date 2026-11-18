@@ -39,7 +39,7 @@ final class WatchCaptures: XCTestCase {
         if tap("Circuit", in: app) {
             shot("07-circuit-pret")
             if tap("Commencer", in: app) {
-                shot("08-circuit-en-cours", settle: 7.0)
+                shot("08-circuit-en-cours", settle: 13.0)
             }
         }
 

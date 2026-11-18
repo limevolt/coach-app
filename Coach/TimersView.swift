@@ -20,6 +20,7 @@ struct TimersView: View {
                                     Text("\(IntervalTemplate.activityLabel(template.activity)) · \(template.summary)")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
+                                        .multilineTextAlignment(.leading)
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             }
@@ -31,7 +32,7 @@ struct TimersView: View {
                     .onDelete { store.deleteTemplates(at: $0) }
                     .onMove { store.moveTemplates(from: $0, to: $1) }
                 } footer: {
-                    Text("Tes favoris sont envoyés sur la montre : app Coach > Libre. Tu peux aussi créer un motif rapide directement sur la montre.")
+                    Text("▶︎ lance le minuteur sur ta montre. Tes favoris sont aussi dans Coach › Libre sur la montre.")
                 }
             }
             .themedForm()

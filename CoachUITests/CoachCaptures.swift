@@ -35,6 +35,11 @@ final class CoachCaptures: XCTestCase {
             audit("Séance renfo", app)
             app.swipeUp()
             shot("06-seance-renfo-bas")
+            app.swipeDown()
+            // « Démarrer l'entraînement » → « En cours sur ta montre » (#5)
+            if tap("Démarrer l'entraînement", in: app) {
+                shot("06b-seance-en-cours-montre")
+            }
             back(app)
         }
 

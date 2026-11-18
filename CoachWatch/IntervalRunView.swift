@@ -205,7 +205,7 @@ struct IntervalRunView: View {
                                 .tracking(1)
                                 .foregroundStyle(Theme.text.opacity(0.8))
                             Text(upcoming)
-                                .font(.footnote.weight(.heavy))
+                                .font(Theme.watchExercise)
                                 .multilineTextAlignment(.center)
                                 .lineLimit(2)
                                 .minimumScaleFactor(0.7)

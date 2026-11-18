@@ -222,7 +222,6 @@ struct SessionDetailView: View {
             if let cooldown = run.cooldown {
                 stepCard(title: "Retour au calme", detail: cooldown.label, color: Theme.teal)
             }
-            hint("Sur la montre : Coach › Commencer (la course s'ouvre dans Exercice).")
         }
     }
 
@@ -249,7 +248,6 @@ struct SessionDetailView: View {
             ForEach(Array(circuit.exercises.enumerated()), id: \.offset) { i, ex in
                 ExerciseCard(exercise: ex, detail: "\(i + 1). \(ex.durationSec ?? circuit.workSec) s d'effort") { guide = ex }
             }
-            hint("Sur la montre : Coach › Commencer. Tout s'enchaîne seul.")
         }
     }
 
@@ -271,7 +269,6 @@ struct SessionDetailView: View {
             ForEach(Array(strength.exercises.enumerated()), id: \.offset) { _, ex in
                 ExerciseCard(exercise: ex, detail: ex.targetLabel) { guide = ex }
             }
-            hint("Sur la montre : Coach › Commencer.")
         }
     }
 
@@ -329,12 +326,6 @@ struct SessionDetailView: View {
             .padding(.top, 8)
     }
 
-    private func hint(_ text: String) -> some View {
-        Label(text, systemImage: "applewatch")
-            .font(.system(size: 13, design: .rounded))
-            .foregroundStyle(Theme.muted)
-            .padding(.top, 2)
-    }
 }
 
 /// Carte d'exercice avec vignette animée. Toucher = écran « Comment faire ».

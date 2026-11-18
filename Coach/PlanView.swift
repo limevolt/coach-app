@@ -207,6 +207,7 @@ struct PlanView: View {
             Image(systemName: "figure.run.circle.fill")
                 .font(.system(size: 64))
                 .foregroundStyle(Theme.accent)
+                .accessibilityHidden(true)
             Text("Aucun plan").font(.display(28)).foregroundStyle(Theme.text)
             Text("Prépare ta demande (avec ton dernier mois de sport), envoie-la à Claude, puis colle ici le plan JSON reçu.")
                 .font(.system(size: 15, design: .rounded))
@@ -220,8 +221,12 @@ struct PlanView: View {
                 Label("Coller le plan", systemImage: "doc.on.clipboard")
                     .secondaryActionStyle(compact: false)
             }
-            Button("Importer un fichier") { showImporter = true }
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
+            Button { showImporter = true } label: {
+                Text("Importer un fichier")
+                    .font(.system(.body, design: .rounded, weight: .semibold))
+                    .frame(maxWidth: .infinity, minHeight: Theme.minTap)
+                    .contentShape(Rectangle())
+            }
         }
         .padding(24)
         .padding(.top, 80)

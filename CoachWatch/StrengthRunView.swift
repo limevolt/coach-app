@@ -50,6 +50,8 @@ struct StrengthRunView: View {
     @State private var running: PlannedSession?
     /// La séance Santé a été lancée (fin du « Prêt ? ») : une seule fois.
     @State private var launched = false
+    /// Pause pendant une série en répétitions.
+    @State private var workPaused = false
     @FocusState private var crownFocused: Bool
 
     /// Pas de la couronne pour le poids.
@@ -157,12 +159,15 @@ struct StrengthRunView: View {
                                   sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
             .onChange(of: crown) { _, value in applyCrown(value) }
         } bottom: {
-            Button {
-                completeSet()
-            } label: {
-                Label("Série faite", systemImage: "checkmark")
+            VStack(spacing: 2) {
+                pausedLabel(workPaused)
+                Button {
+                    completeSet()
+                } label: {
+                    Label("Série faite", systemImage: "checkmark")
+                }
+                .buttonStyle(.coachPrimary)
             }
-            .buttonStyle(.coachPrimary)
         }
     }
 
@@ -228,7 +233,7 @@ struct StrengthRunView: View {
                             .tracking(1)
                             .foregroundStyle(Theme.text.opacity(0.8))
                         Text("\(ex.name) · \(setNumber)/\(ex.setCount)")
-                            .font(.footnote.weight(.heavy))
+                            .font(Theme.watchExercise)
                             .multilineTextAlignment(.center)
                             .lineLimit(2)
                             .minimumScaleFactor(0.7)
@@ -253,14 +258,14 @@ struct StrengthRunView: View {
         default: timer = nil; paused = false
         }
         return WorkoutControlsPage(
-            isPaused: paused,
-            canPause: timer != nil,
-            canSkip: timer != nil,
+            isPaused: paused || (phase == .working && workPaused),
+            canPause: timer != nil || phase == .working,
+            canSkip: timer != nil || phase == .working,
             canAddRest: timer == .rest,
             heartRate: workout.heartRate,
             startedAt: workout.startedAt,
             onPause: togglePause,
-            onSkip: { if let timer { skip(timer) } },
+            onSkip: { if let timer { skip(timer) } else if phase == .working { completeSet(record: false) } },
             onAddRest: addRest,
             onStop: { if isBeforeStart { cancelBeforeStart() } else { confirmStop = true } }
         )
@@ -356,18 +361,23 @@ struct StrengthRunView: View {
         }
     }
 
-    private func completeSet() {
+    /// Série terminée (« Série faite », fin du chrono) ou passée (`record: false`, rien n'est noté).
+    private func completeSet(record: Bool = true) {
+        if workPaused {
+            workPaused = false
+            workout.resume()
+        }
         guard let ex = current else {
             phase = .feedback
             return
         }
-        done.append(SetLog(
+        if record { done.append(SetLog(
             exercise: ex.name,
             setNumber: setNumber,
             reps: ex.durationSec == nil ? reps : nil,
             durationSec: ex.durationSec,
             weightKg: weight > 0 ? weight : nil
-        ))
+        )) }
         WKInterfaceDevice.current().play(.click)
 
         if setNumber < ex.setCount {
@@ -396,7 +406,7 @@ struct StrengthRunView: View {
         if case .paused = phase { workout.resume() }
         switch timer {
         case .prepare: Task { await start() }
-        case .timed: completeSet()
+        case .timed: completeSet(record: false)   // passé : pas noté (comme les circuits)
         case .rest: goToNextSet()
         }
     }
@@ -417,6 +427,10 @@ struct StrengthRunView: View {
         case .paused(let timer, let remaining):
             phase = .countdown(timer, end: Date.now.addingTimeInterval(remaining))
             workout.resume()
+        case .working:
+            // Série en répétitions : on met en pause la séance Santé, la série reste affichée.
+            workPaused.toggle()
+            if workPaused { workout.pause() } else { workout.resume() }
         default:
             break
         }

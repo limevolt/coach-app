@@ -131,7 +131,8 @@ struct StartCountdownStage: View {
     let upcoming: String?
 
     var body: some View {
-        WorkoutStage(label: "Prêt ?", background: Theme.restBackground) {
+        // Chiffre seul (maquette 9) : pas de libellé en haut, qui chevauchait le bouton retour sur 40 mm.
+        WorkoutStage(background: Theme.restBackground) {
             // Secondes seules (« 3 », pas « 0:03 ») : lisible d'un coup d'œil.
             TimelineView(.periodic(from: .now, by: 0.25)) { context in
                 let left = end.map { $0.timeIntervalSince(context.date) } ?? remaining ?? 0
@@ -150,7 +151,7 @@ struct StartCountdownStage: View {
                         .tracking(1)
                         .foregroundStyle(Theme.text.opacity(0.8))
                     Text(upcoming)
-                        .font(.footnote.weight(.heavy))
+                        .font(Theme.watchExercise)
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
                         .minimumScaleFactor(0.7)
@@ -212,6 +213,7 @@ struct WorkoutControlsPage: View {
             }
             Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func control(_ title: String, icon: String, tint: Color, enabled: Bool,
@@ -222,17 +224,19 @@ struct WorkoutControlsPage: View {
                     .font(.title2.weight(.bold))
                     .foregroundStyle(tint)
                     .frame(maxWidth: .infinity, minHeight: Theme.watchControlHeight)
-                    .background(tint.opacity(0.2),
+                    .background(tint.opacity(0.3),
                                 in: RoundedRectangle(cornerRadius: Theme.watchControlRadius, style: .continuous))
                 Text(title)
                     .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Theme.text)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             }
         }
         .buttonStyle(.plain)
         .disabled(!enabled)
-        .opacity(enabled ? 1 : 0.35)
+        // Indisponible (ex. +30 s hors repos) : atténué mais encore lisible.
+        .opacity(enabled ? 1 : 0.55)
         .accessibilityLabel(title == "Repos" ? "Ajouter 30 secondes de repos" : title)
     }
 }

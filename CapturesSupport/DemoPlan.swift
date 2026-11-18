@@ -93,9 +93,14 @@ extension XCTestCase {
             note("Bouton introuvable : « \(text) »")
             return false
         }
+        // Petits glissements (un swipeUp entier fait sauter la ligne au-dessus de l'écran sur
+        // petite montre), dans le bon sens selon où se trouve l'élément.
         var tries = 0
-        while !element.isHittable, tries < 5 {
-            app.swipeUp()
+        while !element.isHittable, tries < 10 {
+            let up = element.frame.midY > app.frame.midY
+            let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: up ? 0.65 : 0.35))
+            let to = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: up ? 0.35 : 0.65))
+            from.press(forDuration: 0.05, thenDragTo: to)
             tries += 1
         }
         guard element.isHittable else {

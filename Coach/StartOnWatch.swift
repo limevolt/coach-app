@@ -73,8 +73,8 @@ struct StartOnWatchIconButton: View {
                 sending = false
             }
         } label: {
-            Image(systemName: "applewatch.radiowaves.left.and.right")
-                .font(.title3)
+            Image(systemName: "play.circle.fill")
+                .font(.title)
                 .foregroundStyle(Theme.accent)
                 .frame(minWidth: Theme.minTap, minHeight: Theme.minTap)
         }
