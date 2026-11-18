@@ -15,6 +15,12 @@ struct SessionRoute: Hashable {
     var autoStart: Bool
 }
 
+/// Minuteur libre lancé depuis l'iPhone (démarre aussitôt si `autoStart`).
+struct TimerRoute: Hashable {
+    var template: IntervalTemplate
+    var autoStart: Bool
+}
+
 struct SessionListView: View {
     @Environment(WatchStore.self) private var store
     @Environment(WorkoutManager.self) private var workout
@@ -68,6 +74,9 @@ struct SessionListView: View {
             .navigationDestination(for: IntervalTemplate.self) { template in
                 IntervalRunView(config: .template(template), tint: Theme.teal)
             }
+            .navigationDestination(for: TimerRoute.self) { route in
+                IntervalRunView(config: .template(route.template), autoStart: route.autoStart, tint: Theme.teal)
+            }
         }
         .task { await workout.requestAuthorization() }
         // Filet de sécurité : si une séance tourne encore en revenant à l'accueil, on l'arrête.
@@ -93,7 +102,8 @@ struct SessionListView: View {
                 }
     }
 
-    /// « Démarrer sur la montre » : la séance demandée s'ouvre, prête, par-dessus l'accueil.
+    /// « Démarrer l'entraînement » sur l'iPhone : la séance s'ouvre par-dessus l'accueil et démarre
+    /// aussitôt si l'iPhone le demande (une course s'ouvre prête : l'app Exercice demande son propre départ).
     /// Jamais pendant une séance (même à l'écran de ressenti) : la demande attend qu'elle soit finie.
     /// Séance pas encore reçue : la demande attend le prochain envoi de l'iPhone.
     private func openRequestedSession() {
@@ -106,11 +116,11 @@ struct SessionListView: View {
         if request.isTimer {
             guard let template = store.template(id: request.id) else { return }
             path = NavigationPath()
-            path.append(template)
+            path.append(TimerRoute(template: template, autoStart: request.autoStart ?? false))
         } else {
             guard store.session(id: request.id) != nil else { return }
             path = NavigationPath()
-            path.append(SessionRoute(sessionId: request.id, autoStart: false))
+            path.append(SessionRoute(sessionId: request.id, autoStart: request.autoStart ?? false))
         }
         store.markOpened(request)
     }

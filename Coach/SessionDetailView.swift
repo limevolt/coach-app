@@ -29,7 +29,7 @@ struct SessionDetailView: View {
             VStack(alignment: .leading, spacing: 14) {
                 hero
                 if log == nil && inPlan {
-                    StartOnWatchCard { await store.startOnWatch(session) }
+                    StartOnWatchButton { await store.startOnWatch(session) }
                 }
                 if store.isMissed(stored) {
                     missedCard

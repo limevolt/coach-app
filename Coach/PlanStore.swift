@@ -386,17 +386,18 @@ final class PlanStore {
 
     // MARK: Démarrer sur la montre (#5)
 
-    /// Ouvre Coach sur la montre, directement sur la séance, prête : rien ne démarre avant « Commencer ».
+    /// Lance la séance sur la montre : Coach s'y ouvre et la séance démarre aussitôt
+    /// (sauf la course, qui s'ouvre prête dans l'app Exercice).
     func startOnWatch(_ session: PlannedSession) async -> WatchStartResult {
         pushToWatch()
-        let request = StartRequest(id: session.id, isTimer: false, sentAt: .now)
+        let request = StartRequest(id: session.id, isTimer: false, sentAt: .now, autoStart: true)
         return await PhoneConnectivity.shared.startOnWatch(request, configuration: session.workoutConfiguration)
     }
 
     /// Même chose pour un minuteur libre.
     func startOnWatch(_ template: IntervalTemplate) async -> WatchStartResult {
         pushToWatch()
-        let request = StartRequest(id: template.id.uuidString, isTimer: true, sentAt: .now)
+        let request = StartRequest(id: template.id.uuidString, isTimer: true, sentAt: .now, autoStart: true)
         return await PhoneConnectivity.shared.startOnWatch(request, configuration: template.workoutConfiguration)
     }
 

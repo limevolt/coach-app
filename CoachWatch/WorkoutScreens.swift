@@ -123,6 +123,48 @@ struct CountdownText: View {
     }
 }
 
+/// Compte à rebours de départ (5 s) : « Prêt ? », chiffre géant, exercice qui arrive.
+/// Le chrono de la séance ne part qu'à la fin (#16).
+struct StartCountdownStage: View {
+    let end: Date?
+    let remaining: TimeInterval?
+    let upcoming: String?
+
+    var body: some View {
+        WorkoutStage(label: "Prêt ?", background: Theme.restBackground) {
+            // Secondes seules (« 3 », pas « 0:03 ») : lisible d'un coup d'œil.
+            TimelineView(.periodic(from: .now, by: 0.25)) { context in
+                let left = end.map { $0.timeIntervalSince(context.date) } ?? remaining ?? 0
+                Text("\(max(0, Int(left.rounded(.up))))")
+                    .font(Theme.watchStartCountdown)
+                    .monospacedDigit()
+                    .contentTransition(.numericText(countsDown: true))
+                    .foregroundStyle(end == nil ? Theme.muted : Theme.text)
+                    .accessibilityLabel("Départ dans \(max(0, Int(left.rounded(.up)))) secondes")
+            }
+        } bottom: {
+            if let upcoming {
+                VStack(spacing: 0) {
+                    Text("ENSUITE")
+                        .font(Theme.watchLabel)
+                        .tracking(1)
+                        .foregroundStyle(Theme.text.opacity(0.8))
+                    Text(upcoming)
+                        .font(.footnote.weight(.heavy))
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.7)
+                }
+            }
+        }
+    }
+}
+
+/// Durée du compte à rebours avant chaque départ.
+enum StartCountdown {
+    static let seconds = 5
+}
+
 // MARK: - Commandes (page de gauche)
 
 /// Page de commandes, comme dans l'app Exercice : on y arrive en glissant vers la droite.
@@ -139,19 +181,8 @@ struct WorkoutControlsPage: View {
     let onStop: () -> Void
 
     var body: some View {
-        VStack(spacing: 8) {
-            Grid(horizontalSpacing: 8, verticalSpacing: 8) {
-                GridRow {
-                    control(isPaused ? "Reprendre" : "Pause", icon: isPaused ? "play.fill" : "pause.fill",
-                            tint: Theme.warm, enabled: canPause, action: onPause)
-                    control("Passer", icon: "forward.fill", tint: Theme.text, enabled: canSkip, action: onSkip)
-                }
-                GridRow {
-                    control("+30 s", icon: "plus", tint: Theme.teal, enabled: canAddRest, action: onAddRest)
-                    control("Terminer", icon: "xmark", tint: Theme.danger, enabled: true, action: onStop)
-                }
-            }
-            Spacer(minLength: 0)
+        VStack(spacing: 6) {
+            // En haut, discret : fréquence cardiaque et durée de la séance.
             HStack(spacing: 12) {
                 if heartRate > 0 {
                     Label("\(Int(heartRate))", systemImage: "heart.fill")
@@ -166,6 +197,20 @@ struct WorkoutControlsPage: View {
                 }
             }
             .font(.footnote.weight(.bold))
+            Spacer(minLength: 0)
+            // Grands boutons teintés, centrés, comme dans l'app Exercice d'Apple.
+            Grid(horizontalSpacing: 8, verticalSpacing: 6) {
+                GridRow {
+                    control(isPaused ? "Reprendre" : "Pause", icon: isPaused ? "play.fill" : "pause.fill",
+                            tint: Theme.warm, enabled: canPause, action: onPause)
+                    control("Passer", icon: "forward.fill", tint: Theme.text, enabled: canSkip, action: onSkip)
+                }
+                GridRow {
+                    control("Repos", icon: "goforward.30", tint: Theme.teal, enabled: canAddRest, action: onAddRest)
+                    control("Terminer", icon: "xmark", tint: Theme.danger, enabled: true, action: onStop)
+                }
+            }
+            Spacer(minLength: 0)
         }
     }
 
@@ -174,12 +219,13 @@ struct WorkoutControlsPage: View {
         Button(action: action) {
             VStack(spacing: 3) {
                 Image(systemName: icon)
-                    .font(.body.weight(.bold))
+                    .font(.title2.weight(.bold))
                     .foregroundStyle(tint)
-                    .frame(maxWidth: .infinity, minHeight: 44)
-                    .background(Theme.card2, in: Capsule())
+                    .frame(maxWidth: .infinity, minHeight: Theme.watchControlHeight)
+                    .background(tint.opacity(0.2),
+                                in: RoundedRectangle(cornerRadius: Theme.watchControlRadius, style: .continuous))
                 Text(title)
-                    .font(.caption2.weight(.semibold))
+                    .font(.footnote.weight(.semibold))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             }
@@ -187,6 +233,7 @@ struct WorkoutControlsPage: View {
         .buttonStyle(.plain)
         .disabled(!enabled)
         .opacity(enabled ? 1 : 0.35)
+        .accessibilityLabel(title == "Repos" ? "Ajouter 30 secondes de repos" : title)
     }
 }
 

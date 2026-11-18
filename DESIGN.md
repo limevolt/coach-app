@@ -87,9 +87,10 @@ Direction : **sportif, énergique, lisible en plein effort**. Le thème actuel d
 - Pendant l'effort : nom de l'exercice, série x/y, chrono ou répétitions. Rien d'autre.
 - Pendant le repos : compte à rebours géant + nom de l'exercice suivant. Pas d'animation, pas
   de texte d'explication.
-- **Un seul « Commencer » par séance.** Il lance en même temps le chrono et le premier exercice,
-  puis tout s'enchaîne. Avant le départ, c'est le seul bouton visible ; le chrono ne tourne pas
-  avant cet appui.
+- **Un seul « Commencer » par séance.** Avant le départ, c'est le seul bouton visible. Il lance un
+  compte à rebours « Prêt ? » de 5 s (chiffre géant, exercice qui arrive, 3 vibrations à la fin),
+  puis le chrono et le premier exercice partent ensemble et tout s'enchaîne. Le chrono ne tourne
+  pas avant la fin du compte à rebours. Même chose quand la séance est lancée depuis l'iPhone.
 - **Couleur plein écran** (teinte du type de séance) pour signaler l'état d'un coup d'œil :
   effort, repos, terminé.
 - Retour haptique aux transitions (début, fin de série, fin de repos).
@@ -98,8 +99,9 @@ Direction : **sportif, énergique, lisible en plein effort**. Le thème actuel d
 - **Commandes sur une page à part** (pause, passer, +30 s, terminer, FC, durée) : on y arrive en
   glissant vers la droite, comme dans l'app Exercice. Les écrans d'effort et de repos n'ont pas
   d'autre bouton que l'action de l'étape (« Série faite »).
-- **Lancer depuis l'iPhone** : « Démarrer sur la montre » ouvre Coach sur la montre, sur la séance,
-  prête. Rien ne démarre avant le « Commencer » de la montre.
+- **Lancer depuis l'iPhone** : « Démarrer l'entraînement » (un seul gros bouton, sans texte autour)
+  ouvre Coach sur la montre et la séance y démarre aussitôt, sans second « Commencer » (choix du
+  propriétaire, 18/11/2026). Exception : une course s'ouvre prête, l'app Exercice demande son départ.
 - Doit rester utilisable en courant, en sueur, avec des doigts mouillés.
 
 ## iPhone

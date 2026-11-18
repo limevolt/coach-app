@@ -59,12 +59,15 @@ enum DoneState {
     }
 }
 
-/// Demande de l'iPhone : « ouvre cette séance sur la montre, prête à commencer » (#5).
+/// Demande de l'iPhone : « lance cette séance sur la montre » (#5).
 struct StartRequest: Codable, Hashable {
     /// Identifiant d'une séance du plan, ou d'un minuteur libre (`IntervalTemplate.id`).
     var id: String
     var isTimer: Bool
     var sentAt: Date
+    /// Vrai : la séance démarre aussitôt sur la montre, sans « Commencer » (choix du propriétaire).
+    /// Absent : elle s'ouvre prête.
+    var autoStart: Bool? = nil
 
     /// Une demande trop ancienne est ignorée (ex. montre restée éteinte).
     static let lifetime: TimeInterval = 10 * 60

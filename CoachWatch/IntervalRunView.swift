@@ -9,6 +9,7 @@ import WatchKit
 // MARK: - Étapes
 
 struct TimedSegment: Hashable {
+    /// prepare = « Prêt ? » avant le départ : la séance Santé ne commence qu'à sa fin.
     enum Kind: Hashable { case prepare, work, rest }
     var kind: Kind
     var seconds: Int
@@ -31,11 +32,10 @@ struct IntervalRunConfig: Hashable {
         guard let c = session.circuit, !c.exercises.isEmpty else { return nil }
         var s: [TimedSegment] = []
         let rounds = max(1, c.rounds)
-        let prep = c.prepareSec ?? 10
-        if prep > 0 {
-            s.append(TimedSegment(kind: .prepare, seconds: prep, title: "Prépare-toi",
-                                  subtitle: c.exercises.first?.name, exercise: c.exercises.first, round: 0))
-        }
+        // Toujours un « Prêt ? » d'au moins 5 s (plus si le plan le demande).
+        let prep = max(c.prepareSec ?? StartCountdown.seconds, StartCountdown.seconds)
+        s.append(TimedSegment(kind: .prepare, seconds: prep, title: "Prêt ?",
+                              subtitle: c.exercises.first?.name, exercise: c.exercises.first, round: 0))
         for r in 1...rounds {
             for (i, ex) in c.exercises.enumerated() {
                 s.append(TimedSegment(kind: .work, seconds: ex.durationSec ?? c.workSec, title: ex.name,
@@ -62,7 +62,9 @@ struct IntervalRunConfig: Hashable {
 
     static func template(_ t: IntervalTemplate) -> IntervalRunConfig {
         var s: [TimedSegment] = [
-            TimedSegment(kind: .prepare, seconds: 5, title: "Prépare-toi", subtitle: t.name, exercise: nil, round: 0)
+            TimedSegment(kind: .prepare, seconds: StartCountdown.seconds, title: "Prêt ?",
+                         subtitle: t.segments.first(where: { $0.seconds > 0 }).map { ($0.label?.isEmpty == false) ? $0.label! : ($0.kind == "work" ? "Travail" : "Repos") },
+                         exercise: nil, round: 0)
         ]
         let repeats = max(1, t.repeats)
         for r in 1...repeats {
@@ -112,6 +114,8 @@ struct IntervalRunView: View {
     @State private var starting = false
     /// Déroulé figé au « Commencer » : une mise à jour venue de l'iPhone ne le change pas en cours de route.
     @State private var frozen: IntervalRunConfig?
+    /// La séance Santé a été lancée (fin du « Prêt ? »).
+    @State private var launched = false
 
     private var run: IntervalRunConfig { frozen ?? config }
     private var current: TimedSegment? {
@@ -137,13 +141,14 @@ struct IntervalRunView: View {
                 feedbackView
             }
         }
-        .navigationBarBackButtonHidden(phase != .ready)
+        // Pendant le « Prêt ? », on peut encore revenir en arrière (rien n'a commencé).
+        .navigationBarBackButtonHidden(phase != .ready && !isBeforeStart)
         .task(id: TickKey(index: index, end: segmentEnd)) { await tick() }
         // Retour sans avoir commencé : la séance Santé préparée par l'iPhone est abandonnée.
         .onDisappear {
-            if phase == .ready && !starting { workout.discardPrepared() }
+            if (phase == .ready && !starting) || isBeforeStart { workout.discardPrepared() }
             // Sortie de l'écran (séance enregistrée ou abandonnée) : plus de séance affichée.
-            if phase == .ready || phase == .feedback { workout.sessionInProgress = false }
+            if phase == .ready || phase == .feedback || isBeforeStart { workout.sessionInProgress = false }
         }
         .task {
             if autoStart, phase == .ready { beginStart() }
@@ -186,8 +191,10 @@ struct IntervalRunView: View {
                 } bottom: {
                     pausedLabel
                 }
-            case .rest, .prepare:
-                WorkoutStage(label: seg.kind == .prepare ? "Prêt ?" : seg.title, background: Theme.restBackground) {
+            case .prepare:
+                StartCountdownStage(end: segmentEnd, remaining: pausedRemaining, upcoming: seg.subtitle ?? next?.title)
+            case .rest:
+                WorkoutStage(label: seg.title, background: Theme.restBackground) {
                     CountdownText(end: segmentEnd, remaining: pausedRemaining, font: Theme.watchRestCountdown)
                 } bottom: {
                     VStack(spacing: 0) {
@@ -211,7 +218,6 @@ struct IntervalRunView: View {
 
     /// Pendant le repos ou la mise en place : l'effort qui arrive.
     private func upcomingTitle(after seg: TimedSegment) -> String? {
-        if seg.kind == .prepare { return seg.subtitle ?? next?.title }
         return next?.kind == .work ? next?.title : nil
     }
 
@@ -232,7 +238,7 @@ struct IntervalRunView: View {
             onPause: togglePause,
             onSkip: { advance(recordWork: false) },
             onAddRest: addRest,
-            onStop: { confirmStop = true }
+            onStop: { if isBeforeStart { cancelBeforeStart() } else { confirmStop = true } }
         )
     }
 
@@ -247,22 +253,36 @@ struct IntervalRunView: View {
 
     // MARK: Logique
 
-    /// Appui sur « Commencer » (ou départ direct depuis l'accueil) : une seule fois.
+    /// Appui sur « Commencer » (ou départ lancé depuis l'accueil ou l'iPhone) : une seule fois.
+    /// Le « Prêt ? » défile d'abord ; la séance Santé ne commence qu'à sa fin (`launch`).
     private func beginStart() {
         guard phase == .ready, !starting, !config.segments.isEmpty else { return }
         starting = true
         frozen = config
         workout.sessionInProgress = true
-        Task { await start() }
-    }
-
-    /// Le seul « Commencer » : séance Santé + première étape en même temps.
-    private func start() async {
-        await workout.start(activity: run.activity, location: run.location)
         index = 0
         workDone = []
         phase = .running
         beginSegment()
+        if current?.kind != .prepare { launch() }
+    }
+
+    /// Fin du « Prêt ? » : le chrono de la séance part avec le premier effort.
+    private func launch() {
+        guard !launched else { return }
+        launched = true
+        Task { await workout.start(activity: run.activity, location: run.location) }
+    }
+
+    /// Pendant le « Prêt ? » : rien n'a commencé.
+    private var isBeforeStart: Bool { phase == .running && !launched }
+
+    /// Terminer pendant le « Prêt ? » : on revient simplement en arrière.
+    private func cancelBeforeStart() {
+        segmentEnd = nil
+        workout.sessionInProgress = false
+        workout.discardPrepared()
+        dismiss()
     }
 
     private func beginSegment() {
@@ -298,7 +318,9 @@ struct IntervalRunView: View {
             workDone.append(SetLog(exercise: seg.title, setNumber: seg.round, reps: nil,
                                    durationSec: seg.seconds, weightKg: nil))
         }
+        let wasPrepare = current?.kind == .prepare
         index += 1
+        if wasPrepare { launch() }
         beginSegment()
     }
 

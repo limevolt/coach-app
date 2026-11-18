@@ -36,6 +36,8 @@ enum Theme {
     static let watchCountdown = Font.system(size: 60, weight: .heavy, design: .rounded)
     /// Montre : compte à rebours de repos, le plus grand possible.
     static let watchRestCountdown = Font.system(size: 72, weight: .heavy, design: .rounded)
+    /// Montre : compte à rebours de départ (« 3 »), encore plus grand.
+    static let watchStartCountdown = Font.system(size: 88, weight: .heavy, design: .rounded)
 
     /// Montre : fond plein écran pendant l'effort (teinte du type de séance).
     static func effortBackground(for type: SessionType) -> Color { effortBackground(color(for: type)) }
@@ -45,6 +47,9 @@ enum Theme {
 
     /// Montre : contour de la valeur réglée par la Digital Crown.
     static let watchValueRadius: CGFloat = 12
+    /// Montre : grands boutons de la page de commandes (pause, passer, repos, terminer).
+    static let watchControlHeight: CGFloat = 56
+    static let watchControlRadius: CGFloat = 20
 
     // Boutons et cartes de l'iPhone
     static let buttonRadius: CGFloat = 16
@@ -52,6 +57,8 @@ enum Theme {
     static let heroCardRadius: CGFloat = 22
     /// Hauteur du bouton principal d'un écran ; `minTap` = cible tactile minimale (44 pt).
     static let primaryButtonHeight: CGFloat = 56
+    /// Bouton principal d'une séance (« Démarrer l'entraînement »).
+    static let largeButtonHeight: CGFloat = 64
     static let minTap: CGFloat = 44
 
     static func icon(for type: SessionType) -> String {
@@ -82,10 +89,11 @@ extension Font {
 
 extension View {
     /// Bouton principal plein (citron vert), pleine largeur.
-    func primaryActionStyle(compact: Bool = false) -> some View {
-        self.font(.system(compact ? .body : .title3, design: .rounded, weight: .heavy))
+    func primaryActionStyle(compact: Bool = false, large: Bool = false) -> some View {
+        self.font(.system(compact ? .body : (large ? .title2 : .title3), design: .rounded, weight: .heavy))
             .foregroundStyle(Theme.accentDark)
-            .frame(maxWidth: .infinity, minHeight: compact ? Theme.minTap : Theme.primaryButtonHeight)
+            .frame(maxWidth: .infinity,
+                   minHeight: compact ? Theme.minTap : (large ? Theme.largeButtonHeight : Theme.primaryButtonHeight))
             .background(Theme.accent, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
             .contentShape(Rectangle())
     }

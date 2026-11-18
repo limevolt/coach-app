@@ -17,7 +17,7 @@ struct StrengthRunView: View {
 
     /// Minuteurs de la séance.
     private enum Countdown: Equatable {
-        case prepare   // « Prêt ? » avant un premier exercice chronométré (automatique, sans appui)
+        case prepare   // « Prêt ? » : 5 s avant le départ, la séance Santé n'a pas encore commencé
         case timed     // exercice chronométré (gainage…)
         case rest      // repos entre les séries
     }
@@ -48,9 +48,10 @@ struct StrengthRunView: View {
     @State private var starting = false
     /// Séance figée au « Commencer » : une mise à jour venue de l'iPhone ne la change pas en cours de route.
     @State private var running: PlannedSession?
+    /// La séance Santé a été lancée (fin du « Prêt ? ») : une seule fois.
+    @State private var launched = false
     @FocusState private var crownFocused: Bool
 
-    private static let prepareSec: TimeInterval = 5
     /// Pas de la couronne pour le poids.
     private static let weightStep = 2.5
 
@@ -62,13 +63,16 @@ struct StrengthRunView: View {
 
     var body: some View {
         content
-            .navigationBarBackButtonHidden(phase != .ready)
+            // Pendant le « Prêt ? », on peut encore revenir en arrière (rien n'a commencé).
+            .navigationBarBackButtonHidden(phase != .ready && !isBeforeStart)
             .task(id: phase) { await runTimer() }
             // Retour sans avoir commencé : la séance Santé préparée par l'iPhone est abandonnée.
             .onDisappear {
-                if phase == .ready && !starting { workout.discardPrepared() }
+                if (phase == .ready && !starting) || (isBeforeStart && !launched) { workout.discardPrepared() }
                 // Sortie de l'écran (séance enregistrée ou abandonnée) : plus de séance affichée.
-                if phase == .ready || phase == .feedback { workout.sessionInProgress = false }
+                if phase == .ready || phase == .feedback || (isBeforeStart && !launched) {
+                    workout.sessionInProgress = false
+                }
             }
             .task {
                 if autoStart, phase == .ready { beginStart() }
@@ -208,8 +212,11 @@ struct StrengthRunView: View {
             } bottom: {
                 pausedLabel(end == nil)
             }
-        case .rest, .prepare:
-            WorkoutStage(label: timer == .rest ? "Repos" : "Prêt ?",
+        case .prepare:
+            StartCountdownStage(end: end, remaining: remaining,
+                                upcoming: ex.map { "\($0.name) · \(setNumber)/\($0.setCount)" })
+        case .rest:
+            WorkoutStage(label: "Repos",
                                 background: Theme.restBackground) {
                 CountdownText(end: end, remaining: remaining, font: Theme.watchRestCountdown)
             } bottom: {
@@ -255,7 +262,7 @@ struct StrengthRunView: View {
             onPause: togglePause,
             onSkip: { if let timer { skip(timer) } },
             onAddRest: addRest,
-            onStop: { confirmStop = true }
+            onStop: { if isBeforeStart { cancelBeforeStart() } else { confirmStop = true } }
         )
     }
 
@@ -270,28 +277,39 @@ struct StrengthRunView: View {
 
     // MARK: Logique
 
-    /// Appui sur « Commencer » (ou départ direct depuis l'accueil) : une seule fois.
+    /// Appui sur « Commencer » (ou départ lancé depuis l'accueil ou l'iPhone) : une seule fois.
+    /// 5 s « Prêt ? » d'abord ; le chrono et le premier exercice partent ensemble à la fin.
     private func beginStart() {
         guard phase == .ready, !starting, !exercises.isEmpty else { return }
         starting = true
         running = session
         workout.sessionInProgress = true
-        Task { await start() }
-    }
-
-    /// Le seul « Commencer » : séance Santé + premier exercice en même temps.
-    private func start() async {
-        await workout.start(activity: plan.workoutActivity, location: plan.workoutLocation)
         exerciseIndex = 0
         setNumber = 1
         done = []
         loadTargets()
-        WKInterfaceDevice.current().play(.start)
-        // Premier exercice chronométré : 5 s pour se mettre en place, puis il part tout seul.
-        if current?.durationSec != nil {
-            phase = .countdown(.prepare, end: Date.now.addingTimeInterval(Self.prepareSec))
-        } else {
-            phase = .working
+        phase = .countdown(.prepare, end: Date.now.addingTimeInterval(TimeInterval(StartCountdown.seconds)))
+    }
+
+    /// Fin du « Prêt ? » : séance Santé + premier exercice en même temps.
+    private func start() async {
+        guard !launched else { return }
+        launched = true
+        await workout.start(activity: plan.workoutActivity, location: plan.workoutLocation)
+        goToNextSet()
+    }
+
+    /// Terminer pendant le « Prêt ? » : rien n'a commencé, on revient simplement en arrière.
+    private func cancelBeforeStart() {
+        workout.sessionInProgress = false
+        workout.discardPrepared()
+        dismiss()
+    }
+
+    private var isBeforeStart: Bool {
+        switch phase {
+        case .countdown(.prepare, _), .paused(.prepare, _): return true
+        default: return false
         }
     }
 
@@ -377,7 +395,7 @@ struct StrengthRunView: View {
     private func skip(_ timer: Countdown) {
         if case .paused = phase { workout.resume() }
         switch timer {
-        case .prepare: startTimed()
+        case .prepare: Task { await start() }
         case .timed: completeSet()
         case .rest: goToNextSet()
         }
@@ -420,7 +438,7 @@ struct StrengthRunView: View {
         }
         guard !Task.isCancelled else { return }
         switch timer {
-        case .prepare: startTimed()
+        case .prepare: Task { await start() }
         case .timed: completeSet()
         case .rest: goToNextSet()
         }
