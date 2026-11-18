@@ -25,7 +25,7 @@ struct SessionDoneView: View {
                         .font(.system(size: 34, weight: .bold))
                         .foregroundStyle(Theme.accent)
                     Text("Séance terminée")
-                        .font(.system(size: 20, weight: .heavy, design: .rounded))
+                        .font(.coach(size: 20, weight: .heavy))
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
                         .minimumScaleFactor(0.8)
@@ -38,12 +38,12 @@ struct SessionDoneView: View {
                         ForEach(stats, id: \.self) { stat in
                             VStack(spacing: 0) {
                                 Text(stat.value)
-                                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                                    .font(.coach(size: 16, weight: .bold))
                                     .monospacedDigit()
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.6)
                                 Text(stat.label)
-                                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                                    .font(.coach(size: 10, weight: .medium))
                                     .foregroundStyle(Theme.muted)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.7)
@@ -58,7 +58,7 @@ struct SessionDoneView: View {
                 // 3. Effort ressenti
                 VStack(spacing: 4) {
                     Text("EFFORT RESSENTI")
-                        .font(.system(size: 10, weight: .semibold, design: .rounded))
+                        .font(.coach(size: 10, weight: .semibold))
                         .tracking(1)
                         .foregroundStyle(Theme.muted)
                     HStack(spacing: 6) {
@@ -66,15 +66,15 @@ struct SessionDoneView: View {
                         VStack(spacing: -2) {
                             HStack(alignment: .firstTextBaseline, spacing: 1) {
                                 Text("\(rpe)")
-                                    .font(.system(size: 30, weight: .heavy, design: .rounded))
+                                    .font(.coach(size: 30, weight: .heavy))
                                     .monospacedDigit()
                                     .contentTransition(.numericText())
                                 Text("/10")
-                                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                                    .font(.coach(size: 12, weight: .semibold))
                                     .foregroundStyle(Theme.muted)
                             }
                             Text(Self.word(rpe))
-                                .font(.system(size: 11, weight: .bold, design: .rounded))
+                                .font(.coach(size: 11, weight: .bold))
                                 .foregroundStyle(Self.color(rpe))
                         }
                         .frame(maxWidth: .infinity)

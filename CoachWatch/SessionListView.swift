@@ -39,7 +39,7 @@ struct SessionListView: View {
                     let others = store.otherSessions
                     if !others.isEmpty {
                         Text("AUTRES SÉANCES")
-                            .font(.system(size: 11, weight: .semibold, design: .rounded))
+                            .font(.coach(size: 11, weight: .semibold))
                             .tracking(1.2)
                             .foregroundStyle(Theme.muted)
                             .padding(.top, 6)
@@ -68,7 +68,7 @@ struct SessionListView: View {
                     destination(session, autoStart: route.autoStart)
                 } else {
                     Text("Séance introuvable. Ouvre Coach sur l'iPhone pour synchroniser.")
-                        .font(.footnote)
+                        .font(.coach(.footnote))
                         .foregroundStyle(Theme.muted)
                 }
             }
@@ -129,13 +129,13 @@ struct SessionListView: View {
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("PROCHAIN ENTRAÎNEMENT")
-                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .font(.coach(size: 11, weight: .semibold))
                 .tracking(1.2)
                 .foregroundStyle(Theme.accent)
             Text(store.sessions.isEmpty
                  ? "Aucune séance. Ouvre Coach sur l'iPhone pour synchroniser."
                  : "Rien de prévu pour l'instant. Repos ! 😌")
-                .font(.footnote)
+                .font(.coach(.footnote))
                 .foregroundStyle(.secondary)
         }
     }
@@ -185,22 +185,22 @@ private struct FreeWorkoutListView: View {
             VStack(spacing: 8) {
                 if store.templates.isEmpty {
                     Text("Aucun entraînement libre. Crée-les dans Coach sur l'iPhone.")
-                        .font(.footnote)
+                        .font(.coach(.footnote))
                         .foregroundStyle(.secondary)
                 }
                 ForEach(store.templates) { template in
                     NavigationLink(value: template) {
                         HStack(spacing: 8) {
                             Image(systemName: "timer")
-                                .font(.footnote)
+                                .font(.coach(.footnote))
                                 .foregroundStyle(Theme.teal)
                                 .frame(width: 22)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(template.name)
-                                    .font(.footnote.weight(.semibold))
+                                    .font(.coach(.footnote, weight: .semibold))
                                     .lineLimit(1)
                                 Text(template.summary)
-                                    .font(.caption2)
+                                    .font(.coach(.caption2))
                                     .foregroundStyle(.secondary)
                                     .lineLimit(1)
                             }
@@ -229,15 +229,15 @@ private struct SessionRow: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: Theme.icon(for: session.type))
-                .font(.footnote)
+                .font(.coach(.footnote))
                 .foregroundStyle(Theme.color(for: session.type))
                 .frame(width: 22)
             VStack(alignment: .leading, spacing: 1) {
                 Text(session.shortDayLabel)
-                    .font(.caption2)
+                    .font(.coach(.caption2))
                     .foregroundStyle(.secondary)
                 Text(session.sportLabel)
-                    .font(.footnote.weight(.semibold))
+                    .font(.coach(.footnote, weight: .semibold))
                     .lineLimit(1)
             }
             Spacer(minLength: 4)

@@ -16,7 +16,7 @@ struct StartOnWatchButton: View {
             switch result {
             case .sent:
                 Label("En cours sur ta montre", systemImage: "applewatch")
-                    .font(.system(.title3, design: .rounded, weight: .heavy))
+                    .font(.coach(.title3, weight: .heavy))
                     .foregroundStyle(Theme.accent)
                     .frame(maxWidth: .infinity, minHeight: Theme.largeButtonHeight)
                     .background(Theme.accent.opacity(0.15),
@@ -25,10 +25,10 @@ struct StartOnWatchButton: View {
             case .failed(let reason):
                 VStack(alignment: .leading, spacing: 10) {
                     Label("Montre injoignable", systemImage: "exclamationmark.circle")
-                        .font(.system(.title3, design: .rounded, weight: .heavy))
+                        .font(.coach(.title3, weight: .heavy))
                         .foregroundStyle(Theme.text)
                     Text(reason)
-                        .font(.subheadline)
+                        .font(.coach(.subheadline))
                         .foregroundStyle(Theme.muted)
                         .fixedSize(horizontal: false, vertical: true)
                     sendButton(title: "Réessayer", large: false)
@@ -91,7 +91,7 @@ struct StartOnWatchIconButton: View {
         } label: {
             ZStack {
                 Image(systemName: "play.circle.fill")
-                    .font(.title)
+                    .font(.coach(.title))
                     .foregroundStyle(Theme.accent)
                     .opacity(sending ? 0 : 1)
                 if sending { ProgressView() }

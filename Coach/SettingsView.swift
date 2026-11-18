@@ -76,10 +76,10 @@ struct SettingsView: View {
                         Task { await store.sync() }
                     }
                     if let healthMessage {
-                        Text(healthMessage).font(.footnote).foregroundStyle(.secondary)
+                        Text(healthMessage).font(.coach(.footnote)).foregroundStyle(.secondary)
                     }
                     if let status = store.status {
-                        Text(status).font(.footnote).foregroundStyle(.secondary)
+                        Text(status).font(.coach(.footnote)).foregroundStyle(.secondary)
                     }
                 }
 
@@ -96,7 +96,7 @@ struct SettingsView: View {
 
                 Section {
                     Text("Toutes les données (plan, journaux, santé) restent sur ton iPhone et ta montre.")
-                        .font(.footnote)
+                        .font(.coach(.footnote))
                         .foregroundStyle(.secondary)
                 }
             }

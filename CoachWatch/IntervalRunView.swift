@@ -223,7 +223,7 @@ struct IntervalRunView: View {
 
     @ViewBuilder private var pausedLabel: some View {
         if segmentEnd == nil {
-            Text("En pause").font(.footnote.weight(.bold)).foregroundStyle(Theme.warm)
+            Text("En pause").font(.coach(.footnote, weight: .bold)).foregroundStyle(Theme.warm)
         }
     }
 

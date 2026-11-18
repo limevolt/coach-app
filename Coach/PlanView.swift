@@ -108,13 +108,13 @@ struct PlanView: View {
                         ForEach(goals) { goal in
                             HStack {
                                 Text(goal.title)
-                                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                    .font(.coach(size: 15, weight: .semibold))
                                     .foregroundStyle(Theme.text)
                                     .lineLimit(1)
                                 Spacer()
                                 if let days = goal.daysLeft {
                                     Text(days >= 0 ? "J-\(days)" : "Échu")
-                                        .font(.system(size: 14, weight: .heavy, design: .rounded))
+                                        .font(.coach(size: 14, weight: .heavy))
                                         .foregroundStyle(Theme.muted)
                                 }
                             }
@@ -135,7 +135,7 @@ struct PlanView: View {
             if let notes = plan.notes, !notes.isEmpty {
                 CollapsibleCard(title: "Consignes du coach", color: Theme.teal) {
                     Text(notes.firstSentence)
-                        .font(.system(size: 14, design: .rounded))
+                        .font(.coach(size: 14))
                         .foregroundStyle(Theme.muted)
                         .lineLimit(1)
                 } content: {
@@ -145,7 +145,7 @@ struct PlanView: View {
 
             if let status = store.status {
                 Text(status)
-                    .font(.footnote)
+                    .font(.coach(.footnote))
                     .foregroundStyle(Theme.muted)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .card(padding: 12, radius: 16)
@@ -161,7 +161,7 @@ struct PlanView: View {
                     }
                 } label: {
                     Text("SEMAINES PASSÉES")
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .font(.coach(size: 13, weight: .semibold))
                         .tracking(1.4)
                         .foregroundStyle(Theme.muted)
                 }
@@ -174,7 +174,7 @@ struct PlanView: View {
 
     @ViewBuilder private func weekSection(_ week: Week) -> some View {
         Text(week.title.uppercased())
-            .font(.system(size: 13, weight: .semibold, design: .rounded))
+            .font(.coach(size: 13, weight: .semibold))
             .tracking(1.4)
             .foregroundStyle(Theme.muted)
             .padding(.top, 8)
@@ -210,7 +210,7 @@ struct PlanView: View {
                 .accessibilityHidden(true)
             Text("Aucun plan").font(.display(28)).foregroundStyle(Theme.text)
             Text("Prépare ta demande (avec ton dernier mois de sport), envoie-la à Claude, puis colle ici le plan JSON reçu.")
-                .font(.system(size: 15, design: .rounded))
+                .font(.coach(size: 15))
                 .foregroundStyle(Theme.muted)
                 .multilineTextAlignment(.center)
             Button { showNewPlan = true } label: {
@@ -223,7 +223,7 @@ struct PlanView: View {
             }
             Button { showImporter = true } label: {
                 Text("Importer un fichier")
-                    .font(.system(.body, design: .rounded, weight: .semibold))
+                    .font(.coach(.body, weight: .semibold))
                     .frame(maxWidth: .infinity, minHeight: Theme.minTap)
                     .contentShape(Rectangle())
             }
@@ -342,11 +342,11 @@ struct SessionRow: View {
                 .background(Theme.color(for: session.type).opacity(0.14), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
             VStack(alignment: .leading, spacing: 3) {
                 Text(session.title)
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .font(.coach(size: 16, weight: .semibold))
                     .foregroundStyle(Theme.text)
                     .lineLimit(1)
                 Text(subtitle)
-                    .font(.system(size: 12, design: .rounded))
+                    .font(.coach(size: 12))
                     .foregroundStyle(Theme.muted)
                     .lineLimit(1)
             }
@@ -377,13 +377,13 @@ struct NextSessionCard: View {
                     .foregroundStyle(Theme.text)
                     .multilineTextAlignment(.leading)
                 Text(session.dateLabel)
-                    .font(.system(size: 13, design: .rounded))
+                    .font(.coach(size: 13))
                     .foregroundStyle(Theme.muted)
                 HStack(spacing: 6) {
                     Image(systemName: Theme.icon(for: session.type))
                     Text(session.typeLabel)
                 }
-                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .font(.coach(size: 12, weight: .bold))
                 .foregroundStyle(Color(hex: 0x11160A))
                 .padding(.horizontal, 10).padding(.vertical, 5)
                 .background(Theme.color(for: session.type), in: Capsule())
@@ -418,7 +418,7 @@ struct GoalCard: View {
                 Spacer(minLength: 8)
                 if let days = goal.daysLeft {
                     Text(days >= 0 ? "J-\(days)" : "Échu")
-                        .font(.system(size: 15, weight: .heavy, design: .rounded))
+                        .font(.coach(size: 15, weight: .heavy))
                         .foregroundStyle(Theme.text)
                 }
             }
@@ -433,7 +433,7 @@ struct GoalCard: View {
                 }
                 .frame(height: 8)
                 Text("Progression \(Int((progress * 100).rounded())) %")
-                    .font(.caption).foregroundStyle(Theme.muted)
+                    .font(.coach(.caption)).foregroundStyle(Theme.muted)
             }
             HStack(spacing: 8) {
                 if let baseline = goal.baseline { stat("Départ", baseline) }
@@ -442,7 +442,7 @@ struct GoalCard: View {
             }
             if let deadline = goal.deadline {
                 Text("Échéance : \(deadline.formatted(date: .long, time: .omitted))")
-                    .font(.caption).foregroundStyle(Theme.muted)
+                    .font(.coach(.caption)).foregroundStyle(Theme.muted)
             }
         }
         if embedded {
@@ -454,8 +454,8 @@ struct GoalCard: View {
 
     private func stat(_ label: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(label.uppercased()).font(.system(size: 10, weight: .semibold, design: .rounded)).foregroundStyle(Theme.muted)
-            Text(value).font(.system(size: 13, weight: .semibold, design: .rounded)).foregroundStyle(Theme.text).lineLimit(2)
+            Text(label.uppercased()).font(.coach(size: 10, weight: .semibold)).foregroundStyle(Theme.muted)
+            Text(value).font(.coach(size: 13, weight: .semibold)).foregroundStyle(Theme.text).lineLimit(2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(embedded ? 0 : 8)

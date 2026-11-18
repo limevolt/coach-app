@@ -52,22 +52,23 @@ Direction : **sportif, énergique, lisible en plein effort**. Le thème actuel d
   - citron vert `Theme.accent` #C6F432 : circuits, action principale, progression ;
   - turquoise `Theme.teal` #2DD4BF : renforcement ;
   - orange `Theme.warm` #FF7A45 : course, muscles sollicités, intensité.
-- Typo arrondie (`design: .rounded`), titres très gras avec `Font.display`, petits titres
-  avec `Eyebrow`. Cartes arrondies avec `.card()`.
+- Typo **Outfit** (géométrique, choisie le 18/11/2026) partout, via `Font.coach(...)`
+  (`Shared/Typography.swift`) : titres très gras avec `Font.display`, petits titres avec
+  `Eyebrow`. Cartes arrondies avec `.card()`.
 
 ### Règles du thème
 - Jamais de couleur en dur dans une vue : l'ajouter à `Theme` si elle manque.
 - Sur un même écran : un accent dominant, deux au maximum.
 - La couleur s'accompagne toujours d'une icône (`Theme.icon(for:)`) ou d'un mot.
-- Tailles de texte via les styles (`.title`, `.body`…) avec `design: .rounded`, pour garder
-  le style sportif **et** Dynamic Type. Pas de tailles fixes pour le texte courant.
+- Tailles de texte via `Font.coach(.title)`, `Font.coach(.body)`… : la police Outfit **et**
+  Dynamic Type. Jamais de `.system(...)` pour du texte (les icônes SF Symbols, si). Seuls les
+  très grands chiffres de la montre (40 pt et plus) ont une taille fixe.
 - Vérifier le contraste de chaque couleur de texte sur son fond (4,5:1 minimum).
 - Icônes : SF Symbols, même graisse sur un écran.
 
 ### À décider
 - Sombre uniquement (actuel) ou aussi un mode clair ?
 - Garder les trois accents ou les resserrer ?
-- Faut-il une typo plus marquée pour les titres et les chiffres ?
 
 ## Principes généraux
 

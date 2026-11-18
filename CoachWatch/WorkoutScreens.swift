@@ -31,7 +31,7 @@ struct WorkoutReadyView<Action: View>: View {
                 .minimumScaleFactor(0.8)
             if let summary {
                 Text(summary)
-                    .font(.footnote)
+                    .font(.coach(.footnote))
                     .foregroundStyle(Theme.muted)
                     .multilineTextAlignment(.center)
             }
@@ -85,7 +85,7 @@ struct WorkoutStage<Center: View, Bottom: View>: View {
             }
             if let subtitle {
                 Text(subtitle)
-                    .font(.footnote.weight(.semibold))
+                    .font(.coach(.footnote, weight: .semibold))
                     .foregroundStyle(Theme.text.opacity(0.8))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
@@ -199,7 +199,7 @@ struct WorkoutControlsPage: View {
                         .accessibilityLabel("Durée de la séance")
                 }
             }
-            .font(.footnote.weight(.bold))
+            .font(.coach(.footnote, weight: .bold))
             Spacer(minLength: 0)
             // Grands boutons teintés, centrés, comme dans l'app Exercice d'Apple.
             Grid(horizontalSpacing: 8, verticalSpacing: 6) {
@@ -224,13 +224,13 @@ struct WorkoutControlsPage: View {
         Button(action: action) {
             VStack(spacing: 3) {
                 Image(systemName: icon)
-                    .font(.title2.weight(.bold))
+                    .font(.coach(.title2, weight: .bold))
                     .foregroundStyle(tint)
                     .frame(maxWidth: .infinity, minHeight: Theme.watchControlHeight)
                     .background(tint.opacity(0.3),
                                 in: RoundedRectangle(cornerRadius: Theme.watchControlRadius, style: .continuous))
                 Text(title)
-                    .font(.footnote.weight(.semibold))
+                    .font(.coach(.footnote, weight: .semibold))
                     .foregroundStyle(Theme.text)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)

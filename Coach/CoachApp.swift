@@ -13,6 +13,7 @@ struct CoachApp: App {
                 .environment(store)
                 .preferredColorScheme(.dark)
                 .tint(Theme.accent)
+                .font(.coach(.body))
                 // « Ouvrir avec Coach » depuis Mail, Fichiers ou le partage
                 .onOpenURL { url in
                     Task { await store.importFile(url) }

@@ -43,6 +43,13 @@ targets:
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         UIUserInterfaceStyle: Dark
+        UIAppFonts:
+          - Outfit-Regular.ttf
+          - Outfit-Medium.ttf
+          - Outfit-SemiBold.ttf
+          - Outfit-Bold.ttf
+          - Outfit-ExtraBold.ttf
+          - Outfit-Black.ttf
         NSHealthShareUsageDescription: Coach lit tes entraînements, ta fréquence cardiaque et ta VFC pour préparer ton suivi.
         NSHealthUpdateUsageDescription: Coach enregistre tes séances dans Santé.
         LSSupportsOpeningDocumentsInPlace: false
@@ -89,6 +96,13 @@ targets:
         NSHealthUpdateUsageDescription: Coach enregistre tes séances (durée, calories, fréquence cardiaque) dans Santé.
         WKBackgroundModes:
           - workout-processing
+        UIAppFonts:
+          - Outfit-Regular.ttf
+          - Outfit-Medium.ttf
+          - Outfit-SemiBold.ttf
+          - Outfit-Bold.ttf
+          - Outfit-ExtraBold.ttf
+          - Outfit-Black.ttf
     entitlements:
       path: CoachWatch/CoachWatch.entitlements
       properties:

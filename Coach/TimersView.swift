@@ -16,9 +16,9 @@ struct TimersView: View {
                                 editing = template
                             } label: {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(template.name).font(.system(size: 16, weight: .bold, design: .rounded)).foregroundStyle(Theme.text)
+                                    Text(template.name).font(.coach(size: 16, weight: .bold)).foregroundStyle(Theme.text)
                                     Text("\(IntervalTemplate.activityLabel(template.activity)) · \(template.summary)")
-                                        .font(.caption)
+                                        .font(.coach(.caption))
                                         .foregroundStyle(Theme.muted)
                                         .multilineTextAlignment(.leading)
                                 }
@@ -168,7 +168,7 @@ private struct SegmentEditor: View {
             TextField(segment.kind == "work" ? "Libellé (ex. Squat, Côte…)" : "Libellé (facultatif)",
                       text: Binding(get: { segment.label ?? "" },
                                     set: { segment.label = $0.isEmpty ? nil : $0 }))
-                .font(.callout)
+                .font(.coach(.callout))
             DurationPicker(title: "Durée", seconds: $segment.seconds)
         }
         .padding(.vertical, 4)

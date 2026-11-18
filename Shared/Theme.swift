@@ -27,17 +27,17 @@ enum Theme {
     }
 
     /// Titre compact pour l'écran de la montre.
-    static let watchTitle = Font.system(.footnote, design: .rounded, weight: .semibold)
+    static let watchTitle = Font.coach(.footnote, weight: .semibold)
     /// Montre, pendant la séance : nom de l'exercice (suit la taille du texte).
-    static let watchExercise = Font.system(.headline, design: .rounded, weight: .heavy)
+    static let watchExercise = Font.coach(.headline, weight: .heavy)
     /// Montre : petit libellé en capitales (REPOS, ENSUITE…).
-    static let watchLabel = Font.system(.caption2, design: .rounded, weight: .bold)
+    static let watchLabel = Font.coach(.caption2, weight: .bold)
     /// Montre : chrono d'effort et nombre de répétitions, lisibles en plein effort.
-    static let watchCountdown = Font.system(size: 60, weight: .heavy, design: .rounded)
+    static let watchCountdown = Font.coach(size: 60, weight: .heavy)
     /// Montre : compte à rebours de repos, le plus grand possible.
-    static let watchRestCountdown = Font.system(size: 72, weight: .heavy, design: .rounded)
+    static let watchRestCountdown = Font.coach(size: 72, weight: .heavy)
     /// Montre : compte à rebours de départ (« 3 »), encore plus grand.
-    static let watchStartCountdown = Font.system(size: 88, weight: .heavy, design: .rounded)
+    static let watchStartCountdown = Font.coach(size: 88, weight: .heavy)
 
     /// Montre : fond plein écran pendant l'effort (teinte du type de séance).
     static func effortBackground(for type: SessionType) -> Color { effortBackground(color(for: type)) }
@@ -48,7 +48,7 @@ enum Theme {
     /// Montre : marge autour du contenu, pour qu'aucun texte ne touche le bord arrondi de l'écran (#23).
     static let watchMargin: CGFloat = 8
     /// Montre : activité de la prochaine séance sur l'accueil.
-    static let watchHomeActivity = Font.system(.title2, design: .rounded, weight: .heavy)
+    static let watchHomeActivity = Font.coach(.title2, weight: .heavy)
     /// Montre : contour de la valeur réglée par la Digital Crown.
     static let watchValueRadius: CGFloat = 12
     /// Montre : grands boutons de la page de commandes (pause, passer, repos, terminer).
@@ -87,14 +87,14 @@ extension Color {
 extension Font {
     /// Titres : arrondis et très gras, esprit sportif.
     static func display(_ size: CGFloat, _ weight: Font.Weight = .heavy) -> Font {
-        .system(size: size, weight: weight, design: .rounded)
+        .coach(size: size, weight: weight)
     }
 }
 
 extension View {
     /// Bouton principal plein (citron vert), pleine largeur.
     func primaryActionStyle(compact: Bool = false, large: Bool = false) -> some View {
-        self.font(.system(compact ? .body : (large ? .title2 : .title3), design: .rounded, weight: .heavy))
+        self.font(.coach(compact ? .body : (large ? .title2 : .title3), weight: .heavy))
             .foregroundStyle(Theme.accentDark)
             .frame(maxWidth: .infinity,
                    minHeight: compact ? Theme.minTap : (large ? Theme.largeButtonHeight : Theme.primaryButtonHeight))
@@ -104,7 +104,7 @@ extension View {
 
     /// Bouton secondaire (contour citron vert), pleine largeur.
     func secondaryActionStyle(compact: Bool = true) -> some View {
-        self.font(.system(compact ? .body : .title3, design: .rounded, weight: .bold))
+        self.font(.coach(compact ? .body : .title3, weight: .bold))
             .foregroundStyle(Theme.accent)
             .frame(maxWidth: .infinity, minHeight: compact ? Theme.minTap : Theme.primaryButtonHeight)
             .overlay(RoundedRectangle(cornerRadius: compact ? Theme.smallButtonRadius : Theme.buttonRadius, style: .continuous)
@@ -140,7 +140,7 @@ struct Eyebrow: View {
 
     var body: some View {
         Text(text.uppercased())
-            .font(.system(size: 12, weight: .semibold, design: .rounded))
+            .font(.coach(size: 12, weight: .semibold))
             .tracking(1.6)
             .foregroundStyle(color)
     }
@@ -153,7 +153,7 @@ struct Chip: View {
 
     var body: some View {
         Text(text)
-            .font(.system(size: 12, weight: hot ? .semibold : .medium, design: .rounded))
+            .font(.coach(size: 12, weight: hot ? .semibold : .medium))
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
             .foregroundStyle(hot ? Color(hex: 0x1A1205) : Theme.muted)

@@ -45,7 +45,7 @@ struct ExerciseGuideView: View {
                     if let video = exercise.video {
                         Link(destination: video) {
                             Label("Voir la vidéo de démo", systemImage: "play.rectangle.fill")
-                                .font(.headline)
+                                .font(.coach(.headline))
                                 .frame(maxWidth: .infinity)
                         }
                         .card(fill: Theme.card2)
@@ -57,7 +57,7 @@ struct ExerciseGuideView: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button { dismiss() } label: {
-                        Image(systemName: "xmark.circle.fill").font(.title2).foregroundStyle(Theme.muted)
+                        Image(systemName: "xmark.circle.fill").font(.coach(.title2)).foregroundStyle(Theme.muted)
                     }
                 }
             }
@@ -78,7 +78,7 @@ struct ExerciseGuideView: View {
                     let reps = Int(time(at: context.date) / max(animation.cycle, 0.1))
                     VStack(alignment: .trailing, spacing: 0) {
                         Text("\(reps)").font(.display(28)).monospacedDigit().foregroundStyle(Theme.text)
-                        Text("répétitions").font(.caption).foregroundStyle(Theme.muted)
+                        Text("répétitions").font(.coach(.caption)).foregroundStyle(Theme.muted)
                     }
                 }
             }
@@ -115,7 +115,7 @@ struct ExerciseGuideView: View {
         .overlay(alignment: .topLeading) {
             HStack(spacing: 8) {
                 Circle().fill(Theme.accent).frame(width: 8, height: 8).shadow(color: Theme.accent, radius: 5)
-                Text(sample.phase.label).font(.system(size: 13, weight: .semibold, design: .rounded))
+                Text(sample.phase.label).font(.coach(size: 13, weight: .semibold))
             }
             .padding(.horizontal, 12).padding(.vertical, 7)
             .background(.ultraThinMaterial, in: Capsule())
@@ -139,12 +139,12 @@ struct ExerciseGuideView: View {
     private func cue(_ phase: AnimPhase) -> some View {
         HStack(spacing: 12) {
             Text("\((phase.step ?? 0) + 1)")
-                .font(.system(size: 15, weight: .heavy, design: .rounded))
+                .font(.coach(size: 15, weight: .heavy))
                 .foregroundStyle(Color(hex: 0x11160A))
                 .frame(width: 30, height: 30)
                 .background(Theme.accent, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             Text(phase.cue)
-                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                .font(.coach(size: 18, weight: .semibold))
                 .foregroundStyle(Theme.text)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -181,7 +181,7 @@ struct ExerciseGuideView: View {
                 HStack(spacing: 8) {
                     Circle().fill(showMuscles ? Theme.warm : Theme.line).frame(width: 10, height: 10)
                         .shadow(color: showMuscles ? Theme.warm : .clear, radius: 4)
-                    Text("Muscles sollicités").font(.system(size: 14, weight: .semibold, design: .rounded))
+                    Text("Muscles sollicités").font(.coach(size: 14, weight: .semibold))
                 }
                 .foregroundStyle(showMuscles ? Theme.text : Theme.muted)
                 .frame(maxWidth: .infinity, minHeight: 44)
@@ -199,7 +199,7 @@ struct ExerciseGuideView: View {
             speed = value
         } label: {
             Text(label)
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(.coach(size: 14, weight: .semibold))
                 .foregroundStyle(speed == value ? Theme.text : Theme.muted)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(speed == value ? Theme.card2 : .clear, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -231,12 +231,12 @@ struct ExerciseGuideView: View {
                         let on = active == i
                         HStack(alignment: .top, spacing: 12) {
                             Text("\(i + 1)")
-                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .font(.coach(size: 13, weight: .bold))
                                 .foregroundStyle(on ? Color(hex: 0x11160A) : Theme.text)
                                 .frame(width: 24, height: 24)
                                 .background(on ? Theme.accent : Theme.card2, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                             Text(step)
-                                .font(.system(size: 15, design: .rounded))
+                                .font(.coach(size: 15))
                                 .foregroundStyle(on ? Theme.text : Theme.muted)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
@@ -255,7 +255,7 @@ struct ExerciseGuideView: View {
             sectionTitle("Erreurs à éviter")
             ForEach(Array(mistakes.enumerated()), id: \.offset) { _, m in
                 Text(m)
-                    .font(.system(size: 14, design: .rounded))
+                    .font(.coach(size: 14))
                     .foregroundStyle(Color(hex: 0xF2C9BD))
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .card(padding: 12, radius: 16, fill: Theme.dangerBg, stroke: Color(hex: 0x3A2420))
@@ -267,10 +267,10 @@ struct ExerciseGuideView: View {
         VStack(spacing: 8) {
             Image(systemName: "figure.strengthtraining.functional").font(.system(size: 44)).foregroundStyle(Theme.accent)
             Text("Pas encore d'animation pour cet exercice.")
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .font(.coach(size: 15, weight: .semibold))
                 .foregroundStyle(Theme.text)
             Text("Demande à Claude d'ajouter le champ « animation » ou une vidéo de démo.")
-                .font(.caption).foregroundStyle(Theme.muted).multilineTextAlignment(.center)
+                .font(.coach(.caption)).foregroundStyle(Theme.muted).multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 30)
@@ -279,7 +279,7 @@ struct ExerciseGuideView: View {
 
     private func sectionTitle(_ text: String) -> some View {
         Text(text.uppercased())
-            .font(.system(size: 13, weight: .semibold, design: .rounded))
+            .font(.coach(size: 13, weight: .semibold))
             .tracking(1.4)
             .foregroundStyle(Theme.muted)
             .padding(.top, 6)
@@ -305,11 +305,11 @@ struct ExerciseLibraryView: View {
                                 .frame(maxWidth: .infinity)
                                 .background(Theme.card2, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                             Text(anim.name)
-                                .font(.system(size: 15, weight: .bold, design: .rounded))
+                                .font(.coach(size: 15, weight: .bold))
                                 .foregroundStyle(Theme.text)
                                 .lineLimit(1)
                             Text(anim.muscles.prefix(2).map(\.label).joined(separator: " · "))
-                                .font(.caption)
+                                .font(.coach(.caption))
                                 .foregroundStyle(Theme.muted)
                                 .lineLimit(1)
                         }
