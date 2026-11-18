@@ -94,7 +94,7 @@ Tout s'enchaîne automatiquement : effort → repos → exercice suivant → …
 ```
 
 - `durationSec` sur un exercice remplace `workSec` pour cet exercice.
-- `roundRestSec` : repos entre deux tours (sinon `restSec`). `prepareSec` : compte à rebours de départ (10 s par défaut).
+- `roundRestSec` : repos entre deux tours (sinon `restSec`). `prepareSec` : compte à rebours de départ (5 s par défaut, 5 s minimum ; le chrono de la séance part à sa fin).
 - Tabata classique = 1 exercice, `rounds` 8, `workSec` 20, `restSec` 10.
 
 ### Variante sans matériel (`noEquipment`)

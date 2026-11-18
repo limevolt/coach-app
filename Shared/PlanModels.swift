@@ -122,7 +122,7 @@ struct CircuitWorkout: Codable, Hashable {
     var workSec: Int          // effort par exercice
     var restSec: Int          // repos entre deux exercices
     var roundRestSec: Int?    // repos entre deux tours (défaut = restSec)
-    var prepareSec: Int?      // compte à rebours de départ (défaut 10 s)
+    var prepareSec: Int?      // compte à rebours de départ (5 s minimum, 5 s par défaut)
     var exercises: [Exercise]
 }
 
@@ -227,6 +227,8 @@ struct SessionLog: Codable, Identifiable, Hashable {
     var sets: [SetLog]?
     var title: String?
     var kind: String?         // nil = séance du plan, "libre" = minuteur libre
+    /// Plan réinitialisé : le journal reste dans l'historique mais n'est plus relié à une séance.
+    var archivedAt: Date? = nil
 }
 
 // MARK: - Encodage
@@ -450,6 +452,6 @@ extension CircuitWorkout {
     var totalSeconds: Int {
         let perRound = exercises.reduce(0) { $0 + ($1.durationSec ?? workSec) } + restSec * Swift.max(0, exercises.count - 1)
         let between = (roundRestSec ?? restSec) * Swift.max(0, rounds - 1)
-        return (prepareSec ?? 10) + perRound * rounds + between
+        return Swift.max(prepareSec ?? 5, 5) + perRound * rounds + between
     }
 }

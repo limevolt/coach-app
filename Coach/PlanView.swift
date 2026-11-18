@@ -10,6 +10,8 @@ struct PlanView: View {
     @State private var busy = false
     @State private var showNewPlan = false
     @State private var confirmReset = false
+    /// Appui long › « Marquer comme non faite » : séance à confirmer (#13).
+    @State private var notDone: PlannedSession?
 
     var body: some View {
         NavigationStack {
@@ -53,6 +55,14 @@ struct PlanView: View {
             }
             .sheet(isPresented: $showNewPlan) { NewPlanView() }
             .resetPlanConfirmation(isPresented: $confirmReset, store: store)
+            .confirmationDialog("Marquer comme non faite ?",
+                                isPresented: Binding(get: { notDone != nil }, set: { if !$0 { notDone = nil } }),
+                                titleVisibility: .visible, presenting: notDone) { session in
+                Button("Marquer comme non faite", role: .destructive) { store.markNotDone(session.id) }
+                Button("Annuler", role: .cancel) {}
+            } message: { _ in
+                Text(SessionDetailView.notDoneMessage)
+            }
             .alert("Import impossible",
                    isPresented: Binding(get: { importError != nil }, set: { if !$0 { importError = nil } })) {
                 Button("OK", role: .cancel) {}
@@ -174,6 +184,11 @@ struct PlanView: View {
             }
             .buttonStyle(.plain)
             .contextMenu {
+                if store.log(for: session.id) != nil {
+                    Button("Marquer comme non faite", systemImage: "arrow.uturn.backward", role: .destructive) {
+                        notDone = session
+                    }
+                }
                 if store.isMissed(session) {
                     Button("Reprogrammer aujourd'hui", systemImage: "calendar") {
                         perform { await store.move(session.id, to: Day.key(.now)) }
@@ -192,6 +207,7 @@ struct PlanView: View {
             Image(systemName: "figure.run.circle.fill")
                 .font(.system(size: 64))
                 .foregroundStyle(Theme.accent)
+                .accessibilityHidden(true)
             Text("Aucun plan").font(.display(28)).foregroundStyle(Theme.text)
             Text("Prépare ta demande (avec ton dernier mois de sport), envoie-la à Claude, puis colle ici le plan JSON reçu.")
                 .font(.system(size: 15, design: .rounded))
@@ -199,20 +215,18 @@ struct PlanView: View {
                 .multilineTextAlignment(.center)
             Button { showNewPlan = true } label: {
                 Label("Créer un plan", systemImage: "sparkles")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
-                    .foregroundStyle(Theme.accentDark)
-                    .frame(maxWidth: .infinity, minHeight: 52)
-                    .background(Theme.accent, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .primaryActionStyle()
             }
             Button { importClipboard() } label: {
                 Label("Coller le plan", systemImage: "doc.on.clipboard")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
-                    .foregroundStyle(Theme.accent)
-                    .frame(maxWidth: .infinity, minHeight: 52)
-                    .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.accent, lineWidth: 1.5))
+                    .secondaryActionStyle(compact: false)
             }
-            Button("Importer un fichier") { showImporter = true }
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
+            Button { showImporter = true } label: {
+                Text("Importer un fichier")
+                    .font(.system(.body, design: .rounded, weight: .semibold))
+                    .frame(maxWidth: .infinity, minHeight: Theme.minTap)
+                    .contentShape(Rectangle())
+            }
         }
         .padding(24)
         .padding(.top, 80)

@@ -68,7 +68,8 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     scheme:
-      testTargets: []
+      testTargets:
+        - CoachTests
 
   CoachWatch:
     type: application
@@ -101,6 +102,22 @@ targets:
         SKIP_INSTALL: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     scheme: {}
+
+  # Tests unitaires (logique sans écran) : lancés par la compilation GitHub à chaque push.
+  CoachTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: CoachTests
+    dependencies:
+      - target: Coach
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.limevolt.coach.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/Coach.app/Coach
+        BUNDLE_LOADER: $(TEST_HOST)
+        TARGETED_DEVICE_FAMILY: "1"
 
   # Captures automatiques (tests d'interface) : voir DESIGN.md et .github/workflows/captures.yml.
   # Schémas séparés : « Coach » et « CoachWatch » ne changent pas.

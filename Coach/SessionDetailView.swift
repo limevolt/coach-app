@@ -8,6 +8,7 @@ struct SessionDetailView: View {
     @State private var showFeedback = false
     @State private var showAdapt = false
     @State private var confirmRevert = false
+    @State private var confirmNotDone = false
     @State private var guide: Exercise?
 
     init(session: PlannedSession) {
@@ -27,11 +28,13 @@ struct SessionDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 hero
+                if log == nil && inPlan {
+                    StartOnWatchButton { await store.startOnWatch(session) }
+                }
                 if store.isMissed(stored) {
                     missedCard
-                }
-                if log == nil && store.plan?.sessions.contains(where: { $0.id == initial.id }) == true {
-                    adaptButton
+                } else if log == nil && inPlan {
+                    secondaryActions
                 }
                 if let run = session.run { runSection(run) }
                 if let circuit = session.circuit { circuitSection(circuit) }
@@ -45,6 +48,18 @@ struct SessionDetailView: View {
         .sheet(isPresented: $showFeedback) { FeedbackSheet(session: session) }
         .sheet(isPresented: $showAdapt) { AdaptSessionView(sessionId: initial.id) }
         .sheet(item: $guide) { ExerciseGuideView(exercise: $0) }
+        .confirmationDialog("Marquer comme non faite ?", isPresented: $confirmNotDone, titleVisibility: .visible) {
+            Button("Marquer comme non faite", role: .destructive) { store.markNotDone(initial.id) }
+            Button("Annuler", role: .cancel) {}
+        } message: {
+            Text(Self.notDoneMessage)
+        }
+    }
+
+    static let notDoneMessage = "Ton ressenti et tes séries sont retirés. La séance redevient à faire, sur l'iPhone et sur la montre. L'entraînement reste dans Santé."
+
+    private var inPlan: Bool {
+        store.plan?.sessions.contains(where: { $0.id == initial.id }) == true
     }
 
     // MARK: En-tête
@@ -162,15 +177,19 @@ struct SessionDetailView: View {
             }
     }
 
-    private var adaptButton: some View {
-        Button { showAdapt = true } label: {
-            Label("Adapter : autre activité, sans matériel, autre jour", systemImage: "slider.horizontal.3")
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
-                .foregroundStyle(Theme.accent)
-                .frame(maxWidth: .infinity, minHeight: 46)
-                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Theme.accent.opacity(0.6), lineWidth: 1))
+    /// Sous « Démarrer sur la montre » : adapter la séance, ou dire qu'elle est faite sans la montre.
+    private var secondaryActions: some View {
+        HStack(spacing: 8) {
+            Button { showAdapt = true } label: {
+                Label("Adapter", systemImage: "slider.horizontal.3").secondaryActionStyle()
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Autre activité, sans matériel ou autre jour")
+            Button { showFeedback = true } label: {
+                Label("Je l'ai faite", systemImage: "checkmark").secondaryActionStyle()
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
     }
 
     // MARK: Course
@@ -203,7 +222,6 @@ struct SessionDetailView: View {
             if let cooldown = run.cooldown {
                 stepCard(title: "Retour au calme", detail: cooldown.label, color: Theme.teal)
             }
-            hint("Sur la montre : Coach › Commencer (la course s'ouvre dans Exercice).")
         }
     }
 
@@ -230,7 +248,6 @@ struct SessionDetailView: View {
             ForEach(Array(circuit.exercises.enumerated()), id: \.offset) { i, ex in
                 ExerciseCard(exercise: ex, detail: "\(i + 1). \(ex.durationSec ?? circuit.workSec) s d'effort") { guide = ex }
             }
-            hint("Sur la montre : Coach › Commencer. Tout s'enchaîne seul.")
         }
     }
 
@@ -252,20 +269,36 @@ struct SessionDetailView: View {
             ForEach(Array(strength.exercises.enumerated()), id: \.offset) { _, ex in
                 ExerciseCard(exercise: ex, detail: ex.targetLabel) { guide = ex }
             }
-            hint("Sur la montre : Coach › Commencer.")
         }
     }
 
     // MARK: Ressenti
 
-    private func feedbackSection(_ log: SessionLog?) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            sectionTitle("Ressenti")
-            if let log {
+    /// Séance faite : le ressenti, avec un menu « Modifier mon ressenti » / « Marquer comme non faite » (#13).
+    @ViewBuilder private func feedbackSection(_ log: SessionLog?) -> some View {
+        if let log {
+            VStack(alignment: .leading, spacing: 8) {
+                sectionTitle("Ressenti")
                 VStack(alignment: .leading, spacing: 6) {
-                    Label("Fait le \(log.completedAt.formatted(date: .abbreviated, time: .omitted))",
-                          systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(Theme.accent)
+                    HStack {
+                        Label("Faite le \(log.completedAt.formatted(date: .abbreviated, time: .omitted))",
+                              systemImage: "checkmark.circle.fill")
+                            .foregroundStyle(Theme.accent)
+                        Spacer(minLength: 8)
+                        Menu {
+                            Button("Modifier mon ressenti", systemImage: "pencil") { showFeedback = true }
+                            Button("Marquer comme non faite", systemImage: "arrow.uturn.backward", role: .destructive) {
+                                confirmNotDone = true
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis")
+                                .font(.body.weight(.bold))
+                                .foregroundStyle(Theme.text)
+                                .frame(width: 44, height: 44)
+                                .background(Theme.card2, in: Circle())
+                        }
+                        .accessibilityLabel("Plus d'options")
+                    }
                     if let rpe = log.rpe {
                         Text("Effort perçu : \(rpe)/10").foregroundStyle(Theme.text)
                     }
@@ -276,19 +309,10 @@ struct SessionDetailView: View {
                         Text(note).foregroundStyle(Theme.text)
                     }
                 }
-                .font(.system(size: 15, design: .rounded))
+                .font(.system(.body, design: .rounded))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .card()
             }
-            Button { showFeedback = true } label: {
-                Label(log == nil ? "J'ai fait cette séance" : "Modifier mon ressenti",
-                      systemImage: log == nil ? "checkmark" : "pencil")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
-                    .foregroundStyle(Theme.accentDark)
-                    .frame(maxWidth: .infinity, minHeight: 52)
-                    .background(Theme.accent, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            }
-            .buttonStyle(.plain)
         }
     }
 
@@ -302,12 +326,6 @@ struct SessionDetailView: View {
             .padding(.top, 8)
     }
 
-    private func hint(_ text: String) -> some View {
-        Label(text, systemImage: "applewatch")
-            .font(.system(size: 13, design: .rounded))
-            .foregroundStyle(Theme.muted)
-            .padding(.top, 2)
-    }
 }
 
 /// Carte d'exercice avec vignette animée. Toucher = écran « Comment faire ».

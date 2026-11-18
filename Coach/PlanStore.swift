@@ -1,6 +1,7 @@
 // PlanStore.swift — plan, journaux et minuteurs libres, stockés uniquement sur l'iPhone
 
 import Foundation
+import HealthKit
 import Observation
 
 @Observable
@@ -47,8 +48,9 @@ final class PlanStore {
             templates = IntervalTemplate.defaults
         }
         PhoneConnectivity.shared.onLog = { [weak self] data in
-            guard let log = try? Coding.decoder.decode(SessionLog.self, from: data) else { return }
-            self?.upsert(log)
+            guard let self, let log = try? Coding.decoder.decode(SessionLog.self, from: data) else { return }
+            // Fait avant une réinitialisation mais arrivé après : il reste à l'ancien plan (#14).
+            self.upsert(DoneState.receiving(log, lastReset: self.lastReset))
         }
         PhoneConnectivity.shared.onTemplate = { [weak self] data in
             guard let template = try? Coding.decoder.decode(IntervalTemplate.self, from: data) else { return }
@@ -103,9 +105,15 @@ final class PlanStore {
 
     // MARK: Réinitialiser
 
-    /// Supprime le plan (archivé) et les courses programmées sur la montre. Les journaux sont conservés.
+    /// Supprime le plan (archivé) et les courses programmées sur la montre.
+    /// Les journaux restent dans l'historique (suivi, export) mais sont détachés : un plan
+    /// réimporté avec les mêmes identifiants de séance démarre sans aucune séance faite (#14).
     func resetPlan() async {
         archiveCurrentPlan()
+        let now = Date.now
+        logs = DoneState.archiving(logs, at: now)
+        persistLogs()
+        UserDefaults.standard.set(now.timeIntervalSince1970, forKey: "lastReset")
         try? FileManager.default.removeItem(at: planURL)
         plan = nil
         originals = [:]
@@ -364,12 +372,35 @@ final class PlanStore {
     }
 
     /// Toutes les séances (course comprise, lancée via l'app Exercice) et minuteurs libres → app Coach de la montre.
+    /// Avec la liste des séances faites : la montre remplace la sienne (l'iPhone est la référence).
     func pushToWatch() {
+        if DemoMode.isOn { return }
         // Variante sans matériel déjà appliquée : la montre affiche ce qu'il faut vraiment faire.
         let watchSessions = (plan?.sessions ?? []).map(\.effective)
         guard let sessions = try? Coding.compactEncoder.encode(watchSessions),
               let timers = try? Coding.compactEncoder.encode(templates) else { return }
-        PhoneConnectivity.shared.sendWatchData(sessions: sessions, timers: timers)
+        PhoneConnectivity.shared.sendWatchData(sessions: sessions, timers: timers,
+                                               doneIds: DoneState.doneIds(plan: plan, logs: logs),
+                                               resetAt: lastReset)
+    }
+
+    // MARK: Démarrer sur la montre (#5)
+
+    /// Lance la séance sur la montre : Coach s'y ouvre et la séance démarre aussitôt
+    /// (sauf la course, qui s'ouvre prête dans l'app Exercice).
+    func startOnWatch(_ session: PlannedSession) async -> WatchStartResult {
+        // Captures automatiques : pas de montre, on montre l'état « en cours ».
+        if DemoMode.isOn { return .sent }
+        pushToWatch()
+        let request = StartRequest(id: session.id, isTimer: false, sentAt: .now, autoStart: true)
+        return await PhoneConnectivity.shared.startOnWatch(request, configuration: session.workoutConfiguration)
+    }
+
+    /// Même chose pour un minuteur libre.
+    func startOnWatch(_ template: IntervalTemplate) async -> WatchStartResult {
+        pushToWatch()
+        let request = StartRequest(id: template.id.uuidString, isTimer: true, sentAt: .now, autoStart: true)
+        return await PhoneConnectivity.shared.startOnWatch(request, configuration: template.workoutConfiguration)
     }
 
     // MARK: Minuteurs libres
@@ -402,8 +433,22 @@ final class PlanStore {
 
     // MARK: Journaux
 
+    /// Dernière réinitialisation du plan.
+    private var lastReset: Date? {
+        (UserDefaults.standard.object(forKey: "lastReset") as? Double).map(Date.init(timeIntervalSince1970:))
+    }
+
+    /// Journal qui rend la séance « faite » (les journaux archivés et les minuteurs libres ne comptent pas).
     func log(for sessionId: String) -> SessionLog? {
-        logs.last { $0.sessionId == sessionId }
+        DoneState.activeLog(for: sessionId, in: logs)
+    }
+
+    /// « Marquer comme non faite » (#13) : le ressenti et les séries sont retirés, la séance
+    /// redevient disponible, et la montre reçoit la liste à jour. Une séance Santé éventuelle n'est pas touchée.
+    func markNotDone(_ sessionId: String) {
+        logs = DoneState.removingActive(sessionId, from: logs)
+        persistLogs()
+        pushToWatch()
     }
 
     /// Séance passée et pas faite.
@@ -430,6 +475,13 @@ final class PlanStore {
         } else {
             logs.append(log)
         }
+        persistLogs()
+        // La liste des séances faites a peut-être changé : la montre se met à jour.
+        pushToWatch()
+    }
+
+    private func persistLogs() {
+        if DemoMode.isOn { return }
         if let data = try? Coding.encoder.encode(logs) {
             try? data.write(to: logsURL, options: .atomic)
         }

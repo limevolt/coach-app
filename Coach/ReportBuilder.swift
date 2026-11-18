@@ -63,7 +63,7 @@ struct ReportBuilder {
             .sorted { ($0.startDate ?? .distantPast) < ($1.startDate ?? .distantPast) }
         if planned.isEmpty { out.append("Aucune séance prévue sur la période.") }
         for s in planned {
-            let log = logs.last { $0.sessionId == s.id }
+            let log = DoneState.activeLog(for: s.id, in: logs)
             let matched = workouts.contains { w in
                 guard let d = s.startDate, cal.isDate(w.start, inSameDayAs: d) else { return false }
                 return s.type == .run ? w.activity == .running : w.activity != .running
@@ -106,7 +106,9 @@ struct ReportBuilder {
         if !strengthLogs.isEmpty {
             out.append("## Détail renfo / circuits (réalisé)")
             for log in strengthLogs {
-                let title = plan?.sessions.first { $0.id == log.sessionId }?.title ?? log.title ?? log.sessionId
+                // Journal archivé (ancien plan) : son propre titre, pas celui d'une séance du nouveau plan.
+                let current = log.archivedAt == nil ? plan?.sessions.first(where: { $0.id == log.sessionId })?.title : nil
+                let title = current ?? log.title ?? log.sessionId
                 let rpe = log.rpe.map { " · effort \($0)/10" } ?? ""
                 out.append("### \(title) — \(log.completedAt.formatted(dayFmt))\(rpe)")
                 var order: [String] = []

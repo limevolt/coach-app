@@ -9,8 +9,15 @@ import WatchConnectivity
 final class WatchStore {
     var sessions: [PlannedSession] = []
     var templates: [IntervalTemplate] = []
+    /// Séances faites : la liste de l'iPhone (la référence) + celles finies ici, pas encore reçues par l'iPhone.
     var doneIds: Set<String> = []
+    /// « Démarrer sur la montre » demandé depuis l'iPhone : la séance à ouvrir, prête (#5).
+    var startRequest: StartRequest?
 
+    /// Séances finies sur la montre, en attente de confirmation par l'iPhone (identifiant → date).
+    private var pendingDone: [String: Date] = [:]
+    /// Dernière demande déjà ouverte, pour ne pas la rouvrir à chaque mise à jour du contexte.
+    private var handledStart: Date?
     private let bridge: WatchBridge
 
     init() {
@@ -26,9 +33,17 @@ final class WatchStore {
         if let data = UserDefaults.standard.data(forKey: "watchSessions") { applySessions(data) }
         if let data = UserDefaults.standard.data(forKey: "watchTimers") { applyTimers(data) }
         if templates.isEmpty { templates = IntervalTemplate.defaults }
-        doneIds = Set(UserDefaults.standard.stringArray(forKey: "doneIds") ?? [])
+        let received = Set(UserDefaults.standard.stringArray(forKey: "doneIds") ?? [])
+        let pending = (UserDefaults.standard.dictionary(forKey: "pendingDone") as? [String: Double]) ?? [:]
+        pendingDone = pending.mapValues { Date(timeIntervalSince1970: $0) }
+        applyDone(Array(received))
+        if let t = UserDefaults.standard.object(forKey: "handledStart") as? Double {
+            handledStart = Date(timeIntervalSince1970: t)
+        }
         bridge.onSessions = { [weak self] data in self?.applySessions(data) }
         bridge.onTimers = { [weak self] data in self?.applyTimers(data) }
+        bridge.onDone = { [weak self] ids, resetAt in self?.applyDone(ids, resetAt: resetAt) }
+        bridge.onStart = { [weak self] data in self?.applyStart(data) }
         bridge.activate()
     }
 
@@ -62,9 +77,45 @@ final class WatchStore {
         UserDefaults.standard.set(data, forKey: "watchTimers")
     }
 
+    /// Liste des séances faites envoyée par l'iPhone : elle remplace celle de la montre (#13, #14).
+    func applyDone(_ received: [String], resetAt: Date? = nil) {
+        UserDefaults.standard.set(received, forKey: "doneIds")
+        let merged = DoneState.watchMerge(received: Set(received), pending: pendingDone, now: .now, resetAt: resetAt)
+        doneIds = merged.done
+        pendingDone = merged.pending
+        persistPending()
+    }
+
+    /// Demande « Démarrer sur la montre » : gardée jusqu'à ce que l'écran l'ouvre (`markOpened`),
+    /// et seulement si elle est récente et pas déjà ouverte.
+    func applyStart(_ data: Data) {
+        guard let request = try? Coding.decoder.decode(StartRequest.self, from: data),
+              request.isFresh(now: .now),
+              handledStart.map({ request.sentAt > $0 }) ?? true else { return }
+        startRequest = request
+    }
+
+    /// La séance demandée est ouverte : la même demande ne sera plus rouverte.
+    func markOpened(_ request: StartRequest) {
+        handledStart = request.sentAt
+        UserDefaults.standard.set(request.sentAt.timeIntervalSince1970, forKey: "handledStart")
+        if startRequest == request { startRequest = nil }
+    }
+
+    /// Séance (du plan) demandée par l'iPhone, si elle est connue de la montre.
+    func session(id: String) -> PlannedSession? { sessions.first { $0.id == id } }
+    func template(id: String) -> IntervalTemplate? { templates.first { $0.id.uuidString == id } }
+
+    private func persistPending() {
+        UserDefaults.standard.set(pendingDone.mapValues(\.timeIntervalSince1970), forKey: "pendingDone")
+    }
+
     func record(_ log: SessionLog) {
-        doneIds.insert(log.sessionId)
-        UserDefaults.standard.set(Array(doneIds), forKey: "doneIds")
+        if log.kind == nil {
+            doneIds.insert(log.sessionId)
+            pendingDone[log.sessionId] = .now
+            persistPending()
+        }
         if let data = try? Coding.compactEncoder.encode(log) {
             bridge.send(["log": data])
         }
@@ -90,6 +141,8 @@ final class WatchStore {
 final class WatchBridge: NSObject, WCSessionDelegate {
     var onSessions: ((Data) -> Void)?
     var onTimers: ((Data) -> Void)?
+    var onDone: (([String], Date?) -> Void)?
+    var onStart: ((Data) -> Void)?
 
     func activate() {
         guard WCSession.isSupported() else { return }
@@ -104,20 +157,30 @@ final class WatchBridge: NSObject, WCSessionDelegate {
     }
 
     nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
-        let context = session.receivedApplicationContext
-        let sessions = context["sessions"] as? Data
-        let timers = context["timers"] as? Data
-        Task { @MainActor in self.deliver(sessions: sessions, timers: timers) }
+        receive(session.receivedApplicationContext)
     }
 
     nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
-        let sessions = applicationContext["sessions"] as? Data
-        let timers = applicationContext["timers"] as? Data
-        Task { @MainActor in self.deliver(sessions: sessions, timers: timers) }
+        receive(applicationContext)
     }
 
-    private func deliver(sessions: Data?, timers: Data?) {
-        if let sessions { onSessions?(sessions) }
-        if let timers { onTimers?(timers) }
+    /// Message direct (iPhone et montre joignables) : « Démarrer sur la montre ».
+    nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
+        receive(message)
+    }
+
+    private nonisolated func receive(_ context: [String: Any]) {
+        let sessions = context["sessions"] as? Data
+        let timers = context["timers"] as? Data
+        let done = context["done"] as? [String]
+        let resetAt = (context["resetAt"] as? Double).map(Date.init(timeIntervalSince1970:))
+        let start = context["start"] as? Data
+        Task { @MainActor in
+            // Les séances d'abord : la demande de démarrage doit trouver sa séance.
+            if let sessions { self.onSessions?(sessions) }
+            if let timers { self.onTimers?(timers) }
+            if let done { self.onDone?(done, resetAt) }
+            if let start { self.onStart?(start) }
+        }
     }
 }

@@ -28,6 +28,38 @@ enum Theme {
 
     /// Titre compact pour l'écran de la montre.
     static let watchTitle = Font.system(.footnote, design: .rounded, weight: .semibold)
+    /// Montre, pendant la séance : nom de l'exercice (suit la taille du texte).
+    static let watchExercise = Font.system(.headline, design: .rounded, weight: .heavy)
+    /// Montre : petit libellé en capitales (REPOS, ENSUITE…).
+    static let watchLabel = Font.system(.caption2, design: .rounded, weight: .bold)
+    /// Montre : chrono d'effort et nombre de répétitions, lisibles en plein effort.
+    static let watchCountdown = Font.system(size: 60, weight: .heavy, design: .rounded)
+    /// Montre : compte à rebours de repos, le plus grand possible.
+    static let watchRestCountdown = Font.system(size: 72, weight: .heavy, design: .rounded)
+    /// Montre : compte à rebours de départ (« 3 »), encore plus grand.
+    static let watchStartCountdown = Font.system(size: 88, weight: .heavy, design: .rounded)
+
+    /// Montre : fond plein écran pendant l'effort (teinte du type de séance).
+    static func effortBackground(for type: SessionType) -> Color { effortBackground(color(for: type)) }
+    static func effortBackground(_ tint: Color) -> Color { tint.opacity(0.22) }
+    /// Montre : fond plein écran pendant le repos et la mise en place.
+    static let restBackground = card
+
+    /// Montre : contour de la valeur réglée par la Digital Crown.
+    static let watchValueRadius: CGFloat = 12
+    /// Montre : grands boutons de la page de commandes (pause, passer, repos, terminer).
+    static let watchControlHeight: CGFloat = 56
+    static let watchControlRadius: CGFloat = 20
+
+    // Boutons et cartes de l'iPhone
+    static let buttonRadius: CGFloat = 16
+    static let smallButtonRadius: CGFloat = 14
+    static let heroCardRadius: CGFloat = 22
+    /// Hauteur du bouton principal d'un écran ; `minTap` = cible tactile minimale (44 pt).
+    static let primaryButtonHeight: CGFloat = 56
+    /// Bouton principal d'une séance (« Démarrer l'entraînement »).
+    static let largeButtonHeight: CGFloat = 64
+    static let minTap: CGFloat = 44
 
     static func icon(for type: SessionType) -> String {
         switch type {
@@ -52,6 +84,28 @@ extension Font {
     /// Titres : arrondis et très gras, esprit sportif.
     static func display(_ size: CGFloat, _ weight: Font.Weight = .heavy) -> Font {
         .system(size: size, weight: weight, design: .rounded)
+    }
+}
+
+extension View {
+    /// Bouton principal plein (citron vert), pleine largeur.
+    func primaryActionStyle(compact: Bool = false, large: Bool = false) -> some View {
+        self.font(.system(compact ? .body : (large ? .title2 : .title3), design: .rounded, weight: .heavy))
+            .foregroundStyle(Theme.accentDark)
+            .frame(maxWidth: .infinity,
+                   minHeight: compact ? Theme.minTap : (large ? Theme.largeButtonHeight : Theme.primaryButtonHeight))
+            .background(Theme.accent, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+            .contentShape(Rectangle())
+    }
+
+    /// Bouton secondaire (contour citron vert), pleine largeur.
+    func secondaryActionStyle(compact: Bool = true) -> some View {
+        self.font(.system(compact ? .body : .title3, design: .rounded, weight: .bold))
+            .foregroundStyle(Theme.accent)
+            .frame(maxWidth: .infinity, minHeight: compact ? Theme.minTap : Theme.primaryButtonHeight)
+            .overlay(RoundedRectangle(cornerRadius: compact ? Theme.smallButtonRadius : Theme.buttonRadius, style: .continuous)
+                .stroke(Theme.accent.opacity(0.6), lineWidth: 1))
+            .contentShape(Rectangle())
     }
 }
 

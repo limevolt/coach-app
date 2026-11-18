@@ -60,6 +60,18 @@ jobs:
             -destination 'generic/platform=watchOS Simulator' \
             CODE_SIGNING_ALLOWED=NO 2>&1 | tee build-watch.log | xcbeautify --renderer github-actions
 
+      - name: Tests unitaires
+        id: tests
+        if: always() && steps.ios.outcome == 'success'
+        run: |
+          set -o pipefail
+          SIM=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for k,v in sorted(d.items(), reverse=True) if 'iOS' in k for x in v if 'iPhone' in x['name']))")
+          xcodebuild test \
+            -project Coach.xcodeproj -scheme Coach \
+            -destination "id=$SIM" \
+            -only-testing:CoachTests \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee build-tests.log | xcbeautify --renderer github-actions
+
       - name: Publier le journal (branche ci-logs)
         if: always()
         run: |
@@ -68,12 +80,16 @@ jobs:
             echo "branche: ${GITHUB_REF_NAME}"
             echo "ios: ${{ steps.ios.outcome }}"
             echo "watch: ${{ steps.watch.outcome }}"
+            echo "tests: ${{ steps.tests.outcome }}"
             echo
             echo "===== ERREURS / AVERTISSEMENTS iOS ====="
             grep -E "\.swift:[0-9]+:[0-9]+: (error|warning):" build-ios.log | sort -u | head -200 || true
             echo
             echo "===== ERREURS / AVERTISSEMENTS MONTRE ====="
             grep -E "\.swift:[0-9]+:[0-9]+: (error|warning):" build-watch.log | sort -u | head -200 || true
+            echo
+            echo "===== TESTS UNITAIRES ====="
+            grep -E "error:|Test Case .* (passed|failed)|Executed [0-9]+ test" build-tests.log 2>/dev/null | tail -60 || true
             echo
             echo "===== FIN DU JOURNAL iOS ====="
             grep -E "BUILD (SUCCEEDED|FAILED)|error:" build-ios.log | tail -20 || true

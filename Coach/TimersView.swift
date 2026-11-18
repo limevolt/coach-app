@@ -11,21 +11,28 @@ struct TimersView: View {
             List {
                 Section {
                     ForEach(store.templates) { template in
-                        Button {
-                            editing = template
-                        } label: {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(template.name).font(.system(size: 16, weight: .bold, design: .rounded)).foregroundStyle(Theme.text)
-                                Text("\(IntervalTemplate.activityLabel(template.activity)) · \(template.summary)")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                        HStack(spacing: 8) {
+                            Button {
+                                editing = template
+                            } label: {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(template.name).font(.system(size: 16, weight: .bold, design: .rounded)).foregroundStyle(Theme.text)
+                                    Text("\(IntervalTemplate.activityLabel(template.activity)) · \(template.summary)")
+                                        .font(.caption)
+                                        .foregroundStyle(Theme.muted)
+                                        .multilineTextAlignment(.leading)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
+                            .buttonStyle(.borderless)
+                            // Démarrer sur la montre (#5) : le minuteur s'ouvre prêt sur la montre.
+                            StartOnWatchIconButton(name: template.name) { await store.startOnWatch(template) }
                         }
                     }
                     .onDelete { store.deleteTemplates(at: $0) }
                     .onMove { store.moveTemplates(from: $0, to: $1) }
                 } footer: {
-                    Text("Tes favoris sont envoyés sur la montre : app Coach > Libre. Tu peux aussi créer un motif rapide directement sur la montre.")
+                    Text("▶︎ lance le minuteur sur ta montre. Tes favoris sont aussi dans Coach › Libre sur la montre.")
                 }
             }
             .themedForm()

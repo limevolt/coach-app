@@ -35,6 +35,11 @@ final class CoachCaptures: XCTestCase {
             audit("Séance renfo", app)
             app.swipeUp()
             shot("06-seance-renfo-bas")
+            app.swipeDown()
+            // « Démarrer l'entraînement » → « En cours sur ta montre » (#5)
+            if tap("Démarrer l'entraînement", in: app) {
+                shot("06b-seance-en-cours-montre")
+            }
             back(app)
         }
 
@@ -54,6 +59,18 @@ final class CoachCaptures: XCTestCase {
         app = launchDemo(plan: DemoPlan.json(firstOffset: -2), done: Array(DemoPlan.sessionIds.prefix(2)))
         _ = app.tabBars.firstMatch.waitForExistence(timeout: 30)
         shot("10-accueil-repos")
+        // Séance faite : ressenti + menu « Marquer comme non faite » (#13)
+        if tap("Footing", in: app) {
+            app.swipeUp()
+            shot("14-seance-faite")
+            let more = app.buttons["Plus d'options"]
+            if more.waitForExistence(timeout: 5) {
+                more.tap()
+                shot("15-seance-faite-menu")
+            } else {
+                note("Bouton « Plus d'options » introuvable")
+            }
+        }
 
         // 5. Accueil en très grande taille de texte
         app = launchDemo(plan: DemoPlan.json(),

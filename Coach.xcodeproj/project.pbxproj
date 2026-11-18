@@ -11,8 +11,12 @@
 		0235F4B638E3293941501F80 /* DemoPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A605DA9E42746D6AAD11D4 /* DemoPlan.swift */; };
 		15D36AEE6B62C1339AED0189 /* PlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D9DF1F858DC7BA1C579113 /* PlanView.swift */; };
 		1840EC39007B41B7A9DA84B5 /* RunWorkoutFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7716DB0E34571C6D3F93627D /* RunWorkoutFactory.swift */; };
+		1B0C5695EB182A024832026B /* WorkoutKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1321A0C4A4FA8CAB6096AC8D /* WorkoutKind.swift */; };
 		1E20496EC9E94FA4A73CAD8F /* ExerciseGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3819F510E1AE826C638EB6F3 /* ExerciseGuideView.swift */; };
 		26F64655FC5491630F1F26D0 /* exemple-plan.json in Resources */ = {isa = PBXBuildFile; fileRef = C4C696570245BF16A3413FEB /* exemple-plan.json */; };
+		294F0DEA3F6FF74A5BD4EC75 /* DoneState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1918A0774BE3786CD7BA18EA /* DoneState.swift */; };
+		29F5E25112DCAEDF6319B32F /* DoneState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1918A0774BE3786CD7BA18EA /* DoneState.swift */; };
+		2AC214B24E8F9170F7397EE8 /* WorkoutKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1321A0C4A4FA8CAB6096AC8D /* WorkoutKind.swift */; };
 		2E1144022454E7717EB8AE43 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276E7638F419A5D3A0590E11 /* SettingsView.swift */; };
 		2E2F80F454BE69994307A352 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 469890DB7F1BA9D23EB804D4 /* Theme.swift */; };
 		323273B63571A108DFB0959B /* PlanTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F7CC45AA5631D89F50FAE4 /* PlanTools.swift */; };
@@ -24,6 +28,7 @@
 		4BB5B6D42C271A74F444F734 /* ExerciseLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F5A6F77FC2EA09B7D407281 /* ExerciseLibrary.swift */; };
 		4F3C8CB0DC6FEF8BAD788917 /* ReportBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7C5AC3C28E8EA2634D01ED6 /* ReportBuilder.swift */; };
 		5122F34F87AEE73CA3FE20B0 /* RunWorkoutFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7716DB0E34571C6D3F93627D /* RunWorkoutFactory.swift */; };
+		5A9CD021F0A4D707B5532715 /* StartOnWatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E2BDDF89704716BC45D9B3 /* StartOnWatch.swift */; };
 		5CD4CDD782D9C2E84E5FB1BF /* SessionAdjust.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13CE692C78AF6FE152D49881 /* SessionAdjust.swift */; };
 		62AB6368CBD9755740382A47 /* PlanStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99C07CEB41DF40D00D6B5767 /* PlanStore.swift */; };
 		63851E5726409024D24A042C /* WatchCaptures.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8267B20E1E74B1EB1864AF5 /* WatchCaptures.swift */; };
@@ -40,11 +45,13 @@
 		87993750DF9FB3D9A8CD62CB /* CoachApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 912D6F261042F3CACC531D2D /* CoachApp.swift */; };
 		87D75285178084716F02B459 /* WorkoutManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A98D9EE13E10A332EC287DF /* WorkoutManager.swift */; };
 		8BD894B81610F0D53763C40E /* CoachWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 4D3E65D02A73AC0CA8236C13 /* CoachWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		8DB983CCDB16DB0779DA5E03 /* WorkoutScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56FEFFD9C39F28F9938C9D07 /* WorkoutScreens.swift */; };
 		8E4351C368E6F423D0DB1415 /* DemoPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A605DA9E42746D6AAD11D4 /* DemoPlan.swift */; };
 		903BE79B6C2E36905672C09E /* ReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C04562FDD60BBDCDCA176C6 /* ReportView.swift */; };
 		9D4862496CFA2F89246CD238 /* CoachCaptures.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5087627E360F0D4D6FD9FC7 /* CoachCaptures.swift */; };
 		9DE8E796EC1E88D558090CEF /* HealthReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BC2FE5D6D5989A6C962A7D0 /* HealthReader.swift */; };
 		A61F07ADD1A3211330292A7A /* Collapsible.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEE5665EC92A631AFA09DBCE /* Collapsible.swift */; };
+		C41EB81B2413AEF3EC2FF805 /* DoneStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 734F29FDA42962E3833F9726 /* DoneStateTests.swift */; };
 		C78B50FEB9B9AC274A641ADE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0AB28854C9073EAF6FBA2CB9 /* Assets.xcassets */; };
 		D5A7F2B738731E74D199738F /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 469890DB7F1BA9D23EB804D4 /* Theme.swift */; };
 		DA461C2AC9A24A5958F3D3E6 /* CoachWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05EED4368A1C5978F355FC97 /* CoachWatchApp.swift */; };
@@ -79,6 +86,13 @@
 			remoteGlobalIDString = 4BECFA71649467E4AB541CE0;
 			remoteInfo = Coach;
 		};
+		D19F94E043984DB1E750B926 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 32B69F6BDF408008CF25AE1C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4BECFA71649467E4AB541CE0;
+			remoteInfo = Coach;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -99,7 +113,9 @@
 		05EED4368A1C5978F355FC97 /* CoachWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachWatchApp.swift; sourceTree = "<group>"; };
 		06DC198093FF72A80A0765C0 /* StrengthRunView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthRunView.swift; sourceTree = "<group>"; };
 		0AB28854C9073EAF6FBA2CB9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		1321A0C4A4FA8CAB6096AC8D /* WorkoutKind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutKind.swift; sourceTree = "<group>"; };
 		13CE692C78AF6FE152D49881 /* SessionAdjust.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionAdjust.swift; sourceTree = "<group>"; };
+		1918A0774BE3786CD7BA18EA /* DoneState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoneState.swift; sourceTree = "<group>"; };
 		1A98D9EE13E10A332EC287DF /* WorkoutManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutManager.swift; sourceTree = "<group>"; };
 		1F5A6F77FC2EA09B7D407281 /* ExerciseLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLibrary.swift; sourceTree = "<group>"; };
 		276E7638F419A5D3A0590E11 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -113,12 +129,14 @@
 		4D3E65D02A73AC0CA8236C13 /* CoachWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CoachWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4E6C06F91F59B047799297AF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		55CC634D74040B9A1862DFB4 /* Coach.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Coach.entitlements; sourceTree = "<group>"; };
+		56FEFFD9C39F28F9938C9D07 /* WorkoutScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutScreens.swift; sourceTree = "<group>"; };
 		5BC2FE5D6D5989A6C962A7D0 /* HealthReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthReader.swift; sourceTree = "<group>"; };
 		6097D8724285314AF6D5C949 /* DemoMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoMode.swift; sourceTree = "<group>"; };
 		618410EA6899CC3F7508C627 /* TimersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimersView.swift; sourceTree = "<group>"; };
 		65672ED6E3738AAB9E7493A0 /* AdaptSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptSessionView.swift; sourceTree = "<group>"; };
 		6EB0CCD4F248DF44D9D77BE2 /* CoachWatchUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CoachWatchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		720370AB747C8CF84F1B287C /* IntervalRunView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntervalRunView.swift; sourceTree = "<group>"; };
+		734F29FDA42962E3833F9726 /* DoneStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoneStateTests.swift; sourceTree = "<group>"; };
 		7716DB0E34571C6D3F93627D /* RunWorkoutFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunWorkoutFactory.swift; sourceTree = "<group>"; };
 		7BFF2B6DE85353BC2F5E9726 /* PhoneConnectivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneConnectivity.swift; sourceTree = "<group>"; };
 		878695E8F5702F5BAD5B8D8D /* CoachUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CoachUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -128,8 +146,10 @@
 		99BD1ECD404DB2315F4CB7D8 /* RunScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunScheduler.swift; sourceTree = "<group>"; };
 		99C07CEB41DF40D00D6B5767 /* PlanStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanStore.swift; sourceTree = "<group>"; };
 		9AD7181E658FD44CEBD338B0 /* ExerciseAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseAnimation.swift; sourceTree = "<group>"; };
+		A13603C0A941B0E4D054A767 /* CoachTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CoachTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4F7CC45AA5631D89F50FAE4 /* PlanTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanTools.swift; sourceTree = "<group>"; };
 		A5D9DF1F858DC7BA1C579113 /* PlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanView.swift; sourceTree = "<group>"; };
+		A7E2BDDF89704716BC45D9B3 /* StartOnWatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartOnWatch.swift; sourceTree = "<group>"; };
 		BDB438F4240531354BF3015C /* TrainingDays.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingDays.swift; sourceTree = "<group>"; };
 		C38A57DE47A7143F483FAF37 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		C4C696570245BF16A3413FEB /* exemple-plan.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "exemple-plan.json"; sourceTree = "<group>"; };
@@ -150,11 +170,13 @@
 			isa = PBXGroup;
 			children = (
 				6097D8724285314AF6D5C949 /* DemoMode.swift */,
+				1918A0774BE3786CD7BA18EA /* DoneState.swift */,
 				9AD7181E658FD44CEBD338B0 /* ExerciseAnimation.swift */,
 				1F5A6F77FC2EA09B7D407281 /* ExerciseLibrary.swift */,
 				8E1EC1613EDFBF0429687AC5 /* PlanModels.swift */,
 				7716DB0E34571C6D3F93627D /* RunWorkoutFactory.swift */,
 				469890DB7F1BA9D23EB804D4 /* Theme.swift */,
+				1321A0C4A4FA8CAB6096AC8D /* WorkoutKind.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -164,6 +186,7 @@
 			children = (
 				C3FD6E492B48C386BAFE0342 /* CapturesSupport */,
 				92C5F2E2D63F8F8105897567 /* Coach */,
+				7505100CBDA2A00408EDF26C /* CoachTests */,
 				926F3D8922CAC1A336D77FDA /* CoachUITests */,
 				B5F57E28FD80FF06F21C2D1B /* CoachWatch */,
 				C99A336DE15DCA0193C603EC /* CoachWatchUITests */,
@@ -179,6 +202,14 @@
 				C4C696570245BF16A3413FEB /* exemple-plan.json */,
 			);
 			path = docs;
+			sourceTree = "<group>";
+		};
+		7505100CBDA2A00408EDF26C /* CoachTests */ = {
+			isa = PBXGroup;
+			children = (
+				734F29FDA42962E3833F9726 /* DoneStateTests.swift */,
+			);
+			path = CoachTests;
 			sourceTree = "<group>";
 		};
 		926F3D8922CAC1A336D77FDA /* CoachUITests */ = {
@@ -212,6 +243,7 @@
 				13CE692C78AF6FE152D49881 /* SessionAdjust.swift */,
 				8BCEB04270CDBFAB907B3042 /* SessionDetailView.swift */,
 				276E7638F419A5D3A0590E11 /* SettingsView.swift */,
+				A7E2BDDF89704716BC45D9B3 /* StartOnWatch.swift */,
 				618410EA6899CC3F7508C627 /* TimersView.swift */,
 				BDB438F4240531354BF3015C /* TrainingDays.swift */,
 			);
@@ -232,6 +264,7 @@
 				EFB32011DD22151450EEEB28 /* WatchButtons.swift */,
 				EA085961E84987A69F4FA339 /* WatchStore.swift */,
 				1A98D9EE13E10A332EC287DF /* WorkoutManager.swift */,
+				56FEFFD9C39F28F9938C9D07 /* WorkoutScreens.swift */,
 			);
 			path = CoachWatch;
 			sourceTree = "<group>";
@@ -256,6 +289,7 @@
 			isa = PBXGroup;
 			children = (
 				2BC6AEB5FB524331F059A1AD /* Coach.app */,
+				A13603C0A941B0E4D054A767 /* CoachTests.xctest */,
 				878695E8F5702F5BAD5B8D8D /* CoachUITests.xctest */,
 				4D3E65D02A73AC0CA8236C13 /* CoachWatch.app */,
 				6EB0CCD4F248DF44D9D77BE2 /* CoachWatchUITests.xctest */,
@@ -266,6 +300,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		34B5BC82ED07EEF47D7400E0 /* CoachTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B17A3686FF41AAC0D59990D6 /* Build configuration list for PBXNativeTarget "CoachTests" */;
+			buildPhases = (
+				8D30719A2F8E6430D3948DA1 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				69915DA579805A76789D9FFC /* PBXTargetDependency */,
+			);
+			name = CoachTests;
+			packageProductDependencies = (
+			);
+			productName = CoachTests;
+			productReference = A13603C0A941B0E4D054A767 /* CoachTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		4881B6FB9301586E33E2BDF1 /* CoachUITests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = B97C432067592344D2165790 /* Build configuration list for PBXNativeTarget "CoachUITests" */;
@@ -351,6 +403,10 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					34B5BC82ED07EEF47D7400E0 = {
+						DevelopmentTeam = FD598HBBW4;
+						ProvisioningStyle = Automatic;
+					};
 					4881B6FB9301586E33E2BDF1 = {
 						DevelopmentTeam = FD598HBBW4;
 						ProvisioningStyle = Automatic;
@@ -387,6 +443,7 @@
 			targets = (
 				4BECFA71649467E4AB541CE0 /* Coach */,
 				DA10145BF61449D0CBF68A40 /* CoachWatch */,
+				34B5BC82ED07EEF47D7400E0 /* CoachTests */,
 				4881B6FB9301586E33E2BDF1 /* CoachUITests */,
 				5C0819B6035C44C321E850F4 /* CoachWatchUITests */,
 			);
@@ -446,6 +503,7 @@
 				87993750DF9FB3D9A8CD62CB /* CoachApp.swift in Sources */,
 				A61F07ADD1A3211330292A7A /* Collapsible.swift in Sources */,
 				79EDDA1211FD2C5DDF7CC9B4 /* DemoMode.swift in Sources */,
+				294F0DEA3F6FF74A5BD4EC75 /* DoneState.swift in Sources */,
 				DD164B74B9D4B53CA1728B62 /* ExerciseAnimation.swift in Sources */,
 				1E20496EC9E94FA4A73CAD8F /* ExerciseGuideView.swift in Sources */,
 				4BB5B6D42C271A74F444F734 /* ExerciseLibrary.swift in Sources */,
@@ -464,9 +522,11 @@
 				5CD4CDD782D9C2E84E5FB1BF /* SessionAdjust.swift in Sources */,
 				E03F482288B9F4D4923EF730 /* SessionDetailView.swift in Sources */,
 				2E1144022454E7717EB8AE43 /* SettingsView.swift in Sources */,
+				5A9CD021F0A4D707B5532715 /* StartOnWatch.swift in Sources */,
 				D5A7F2B738731E74D199738F /* Theme.swift in Sources */,
 				018934F7908934CD5C6F0E0F /* TimersView.swift in Sources */,
 				4A115F236F411E3699373BA2 /* TrainingDays.swift in Sources */,
+				2AC214B24E8F9170F7397EE8 /* WorkoutKind.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -485,6 +545,7 @@
 			files = (
 				DA461C2AC9A24A5958F3D3E6 /* CoachWatchApp.swift in Sources */,
 				80F341FDEBEBDE36145F0416 /* DemoMode.swift in Sources */,
+				29F5E25112DCAEDF6319B32F /* DoneState.swift in Sources */,
 				E40098F7E50B53627A343BEE /* ExerciseAnimation.swift in Sources */,
 				71C78F6391EE995302756648 /* ExerciseLibrary.swift in Sources */,
 				67F5FB0946201DBC784B9941 /* IntervalRunView.swift in Sources */,
@@ -496,7 +557,17 @@
 				2E2F80F454BE69994307A352 /* Theme.swift in Sources */,
 				409A0307919FCEEA9C15A517 /* WatchButtons.swift in Sources */,
 				F5A2AE37FD052F65299898C6 /* WatchStore.swift in Sources */,
+				1B0C5695EB182A024832026B /* WorkoutKind.swift in Sources */,
 				87D75285178084716F02B459 /* WorkoutManager.swift in Sources */,
+				8DB983CCDB16DB0779DA5E03 /* WorkoutScreens.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8D30719A2F8E6430D3948DA1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C41EB81B2413AEF3EC2FF805 /* DoneStateTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -507,6 +578,11 @@
 			isa = PBXTargetDependency;
 			target = DA10145BF61449D0CBF68A40 /* CoachWatch */;
 			targetProxy = 9F0AF66AEF4397549F60A245 /* PBXContainerItemProxy */;
+		};
+		69915DA579805A76789D9FFC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4BECFA71649467E4AB541CE0 /* Coach */;
+			targetProxy = D19F94E043984DB1E750B926 /* PBXContainerItemProxy */;
 		};
 		7497C133CDB4B2D960AE5EC0 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -636,6 +712,23 @@
 			};
 			name = Debug;
 		};
+		5EAE7CBB122064919EDE9649 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.limevolt.coach.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Coach.app/Coach";
+			};
+			name = Release;
+		};
 		65CC503E8D5A734C2668DFFF /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -706,6 +799,23 @@
 				TEST_TARGET_NAME = Coach;
 			};
 			name = Release;
+		};
+		CD61E60D2A558734C2669E66 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.limevolt.coach.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Coach.app/Coach";
+			};
+			name = Debug;
 		};
 		EB39741D28D625BCABF12A8A /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -823,6 +933,15 @@
 			buildConfigurations = (
 				54A7972E48ED60A461D12538 /* Debug */,
 				4684B02EF5655FF8D021DCE9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B17A3686FF41AAC0D59990D6 /* Build configuration list for PBXNativeTarget "CoachTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CD61E60D2A558734C2669E66 /* Debug */,
+				5EAE7CBB122064919EDE9649 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

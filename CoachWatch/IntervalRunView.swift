@@ -9,6 +9,7 @@ import WatchKit
 // MARK: - Étapes
 
 struct TimedSegment: Hashable {
+    /// prepare = « Prêt ? » avant le départ : la séance Santé ne commence qu'à sa fin.
     enum Kind: Hashable { case prepare, work, rest }
     var kind: Kind
     var seconds: Int
@@ -31,11 +32,10 @@ struct IntervalRunConfig: Hashable {
         guard let c = session.circuit, !c.exercises.isEmpty else { return nil }
         var s: [TimedSegment] = []
         let rounds = max(1, c.rounds)
-        let prep = c.prepareSec ?? 10
-        if prep > 0 {
-            s.append(TimedSegment(kind: .prepare, seconds: prep, title: "Prépare-toi",
-                                  subtitle: c.exercises.first?.name, exercise: c.exercises.first, round: 0))
-        }
+        // Toujours un « Prêt ? » d'au moins 5 s (plus si le plan le demande).
+        let prep = max(c.prepareSec ?? StartCountdown.seconds, StartCountdown.seconds)
+        s.append(TimedSegment(kind: .prepare, seconds: prep, title: "Prêt ?",
+                              subtitle: c.exercises.first?.name, exercise: c.exercises.first, round: 0))
         for r in 1...rounds {
             for (i, ex) in c.exercises.enumerated() {
                 s.append(TimedSegment(kind: .work, seconds: ex.durationSec ?? c.workSec, title: ex.name,
@@ -57,12 +57,14 @@ struct IntervalRunConfig: Hashable {
             }
         }
         return IntervalRunConfig(title: session.title, sessionId: session.id, kind: nil,
-                                 activity: .highIntensityIntervalTraining, location: .indoor, segments: s)
+                                 activity: session.workoutActivity, location: session.workoutLocation, segments: s)
     }
 
     static func template(_ t: IntervalTemplate) -> IntervalRunConfig {
         var s: [TimedSegment] = [
-            TimedSegment(kind: .prepare, seconds: 5, title: "Prépare-toi", subtitle: t.name, exercise: nil, round: 0)
+            TimedSegment(kind: .prepare, seconds: StartCountdown.seconds, title: "Prêt ?",
+                         subtitle: t.segments.first(where: { $0.seconds > 0 }).map { ($0.label?.isEmpty == false) ? $0.label! : ($0.kind == "work" ? "Travail" : "Repos") },
+                         exercise: nil, round: 0)
         ]
         let repeats = max(1, t.repeats)
         for r in 1...repeats {
@@ -75,16 +77,8 @@ struct IntervalRunConfig: Hashable {
                                       subtitle: subtitle, exercise: nil, round: r))
             }
         }
-        let activity: HKWorkoutActivityType
-        let location: HKWorkoutSessionLocationType
-        switch t.activity {
-        case "run": activity = .running; location = .outdoor
-        case "strength": activity = .traditionalStrengthTraining; location = .indoor
-        case "hiit": activity = .highIntensityIntervalTraining; location = .indoor
-        default: activity = .mixedCardio; location = .indoor
-        }
         return IntervalRunConfig(title: t.name, sessionId: "libre-\(t.id.uuidString)", kind: "libre",
-                                 activity: activity, location: location, segments: s)
+                                 activity: t.workoutActivity, location: t.workoutLocation, segments: s)
     }
 }
 
@@ -92,6 +86,11 @@ struct IntervalRunConfig: Hashable {
 
 struct IntervalRunView: View {
     let config: IntervalRunConfig
+    /// Lancée depuis « Commencer » de l'accueil : la séance démarre tout de suite, sans écran « prête ».
+    var autoStart = false
+    /// Couleur du type de séance (fond pendant l'effort).
+    var tint: Color = Theme.accent
+
     @Environment(WatchStore.self) private var store
     @Environment(WorkoutManager.self) private var workout
     @Environment(\.dismiss) private var dismiss
@@ -110,30 +109,52 @@ struct IntervalRunView: View {
     @State private var workDone: [SetLog] = []
     @State private var rpe = 7
     @State private var saving = false
-    @State private var showHelp: Exercise?
     @State private var confirmStop = false
+    /// « Commencer » déjà appuyé (bloque un second appui pendant le démarrage).
+    @State private var starting = false
+    /// Déroulé figé au « Commencer » : une mise à jour venue de l'iPhone ne le change pas en cours de route.
+    @State private var frozen: IntervalRunConfig?
+    /// La séance Santé a été lancée (fin du « Prêt ? »).
+    @State private var launched = false
 
+    private var run: IntervalRunConfig { frozen ?? config }
     private var current: TimedSegment? {
-        config.segments.indices.contains(index) ? config.segments[index] : nil
+        run.segments.indices.contains(index) ? run.segments[index] : nil
     }
     private var next: TimedSegment? {
-        config.segments.indices.contains(index + 1) ? config.segments[index + 1] : nil
+        run.segments.indices.contains(index + 1) ? run.segments[index + 1] : nil
     }
-    private var totalSeconds: Int { config.segments.reduce(0) { $0 + $1.seconds } }
+    private var totalSeconds: Int { run.segments.reduce(0) { $0 + $1.seconds } }
 
     var body: some View {
         Group {
             switch phase {
-            case .ready: readyView
-            case .running: runningView
-            case .feedback: feedbackView
+            case .ready:
+                if autoStart && !config.segments.isEmpty { ProgressView() } else { readyView }
+            case .running:
+                WorkoutPager(step: index) {
+                    runningView
+                } controls: {
+                    controlsPage
+                }
+            case .feedback:
+                feedbackView
             }
         }
-        .navigationBarBackButtonHidden(phase != .ready)
+        // Pendant le « Prêt ? », on peut encore revenir en arrière (rien n'a commencé).
+        .navigationBarBackButtonHidden(phase != .ready && !isBeforeStart)
         .task(id: TickKey(index: index, end: segmentEnd)) { await tick() }
-        .sheet(item: $showHelp) { ex in ExerciseHelpView(exercise: ex) }
-        .confirmationDialog("Arrêter la séance ?", isPresented: $confirmStop) {
-            Button("Arrêter", role: .destructive) { finishEarly() }
+        // Retour sans avoir commencé : la séance Santé préparée par l'iPhone est abandonnée.
+        .onDisappear {
+            if (phase == .ready && !starting) || isBeforeStart { workout.discardPrepared() }
+            // Sortie de l'écran (séance enregistrée ou abandonnée) : plus de séance affichée.
+            if phase == .ready || phase == .feedback || isBeforeStart { workout.sessionInProgress = false }
+        }
+        .task {
+            if autoStart, phase == .ready { beginStart() }
+        }
+        .confirmationDialog("Terminer la séance ?", isPresented: $confirmStop) {
+            Button("Terminer", role: .destructive) { finishEarly() }
             Button("Continuer", role: .cancel) {}
         } message: {
             Text("Les efforts déjà faits sont gardés.")
@@ -149,105 +170,76 @@ struct IntervalRunView: View {
 
     // MARK: Vues
 
+    /// Avant le départ : titre, résumé, un seul bouton « Commencer » (#16).
     private var readyView: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(config.title).font(Theme.watchTitle)
-                Text("\(config.segments.filter { $0.kind == .work }.count) efforts · \(Durations.label(totalSeconds))")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                let names = uniqueExercises
-                ForEach(names, id: \.name) { ex in
-                    Button { showHelp = ex } label: {
-                        HStack {
-                            Text(ex.name).font(.footnote)
-                            Spacer()
-                            if ex.instructions?.isEmpty == false { Image(systemName: "questionmark.circle") }
+        let efforts = config.segments.filter { $0.kind == .work }.count
+        return WorkoutReadyView(typeLabel: config.kind == "libre" ? "Libre" : "Circuit",
+                                icon: config.kind == "libre" ? "timer" : Theme.icon(for: .circuit),
+                                color: tint, title: config.title,
+                                summary: "\(efforts) efforts · \(Durations.label(totalSeconds))") {
+            StartButton(disabled: config.segments.isEmpty || starting) { beginStart() }
+        }
+    }
+
+    /// Effort : nom, tour, chrono. Repos : compte à rebours géant + étape suivante.
+    @ViewBuilder private var runningView: some View {
+        if let seg = current {
+            switch seg.kind {
+            case .work:
+                WorkoutStage(title: seg.title, subtitle: seg.subtitle, background: Theme.effortBackground(tint)) {
+                    CountdownText(end: segmentEnd, remaining: pausedRemaining, color: tint)
+                } bottom: {
+                    pausedLabel
+                }
+            case .prepare:
+                StartCountdownStage(end: segmentEnd, remaining: pausedRemaining, upcoming: seg.subtitle ?? next?.title)
+            case .rest:
+                WorkoutStage(label: seg.title, background: Theme.restBackground) {
+                    CountdownText(end: segmentEnd, remaining: pausedRemaining, font: Theme.watchRestCountdown)
+                } bottom: {
+                    VStack(spacing: 0) {
+                        pausedLabel
+                        if let upcoming = upcomingTitle(after: seg) {
+                            Text("ENSUITE")
+                                .font(Theme.watchLabel)
+                                .tracking(1)
+                                .foregroundStyle(Theme.text.opacity(0.8))
+                            Text(upcoming)
+                                .font(Theme.watchExercise)
+                                .multilineTextAlignment(.center)
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.7)
                         }
                     }
-                    .buttonStyle(.plain)
                 }
-                Button {
-                    Task { await start() }
-                } label: {
-                    Label("Commencer", systemImage: "play.fill")
-                }
-                .buttonStyle(.coachPrimary)
-                .disabled(config.segments.isEmpty)
-                .padding(.top, 4)
             }
         }
     }
 
-    private var runningView: some View {
-        VStack(spacing: 2) {
-            if let seg = current {
-                Text(seg.title)
-                    .font(Theme.watchTitle)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.7)
-                    .multilineTextAlignment(.center)
-                if let subtitle = seg.subtitle {
-                    Text(subtitle).font(.caption2).foregroundStyle(.secondary)
-                }
-                HStack(spacing: 4) {
-                    // Animation de l'exercice en cours (ou du suivant pendant le repos)
-                    if let ex = (seg.kind == .work ? seg.exercise : next?.exercise),
-                       let anim = ExerciseLibrary.animation(for: ex) {
-                        AnimatedExerciseFigure(animation: anim, playing: segmentEnd != nil, fps: 20)
-                            .frame(width: 58, height: 62)
-                            .opacity(seg.kind == .work ? 1 : 0.6)
-                    }
-                    Group {
-                        if let end = segmentEnd {
-                            Text(timerInterval: Date.now...max(end, Date.now), countsDown: true)
-                        } else {
-                            Text(Durations.clock(Int((pausedRemaining ?? 0).rounded(.up))))
-                        }
-                    }
-                    .font(.system(size: 40, weight: .bold, design: .rounded))
-                    .monospacedDigit()
-                    .minimumScaleFactor(0.6)
-                    .lineLimit(1)
-                    .foregroundStyle(color(seg.kind))
-                }
+    /// Pendant le repos ou la mise en place : l'effort qui arrive.
+    private func upcomingTitle(after seg: TimedSegment) -> String? {
+        return next?.kind == .work ? next?.title : nil
+    }
 
-                if let next {
-                    Text("Ensuite : \(next.title)")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                } else {
-                    Text("Dernière étape 🔥").font(.caption2).foregroundStyle(.secondary)
-                }
-                HStack(spacing: 8) {
-                    if workout.heartRate > 0 {
-                        Label("\(Int(workout.heartRate))", systemImage: "heart.fill").foregroundStyle(.red)
-                    }
-                    if workout.activeCalories > 0 {
-                        Label("\(Int(workout.activeCalories))", systemImage: "flame.fill").foregroundStyle(.orange)
-                    }
-                }
-                .font(.caption2)
-
-                HStack(spacing: 4) {
-                    Button { togglePause() } label: {
-                        Image(systemName: segmentEnd == nil ? "play.fill" : "pause.fill")
-                    }
-                    Button { advance(recordWork: false) } label: {
-                        Image(systemName: "forward.fill")
-                    }
-                    if let ex = seg.exercise ?? next?.exercise, ex.instructions?.isEmpty == false {
-                        Button { showHelp = ex } label: { Image(systemName: "questionmark") }
-                    }
-                    Button { confirmStop = true } label: {
-                        Image(systemName: "xmark")
-                    }
-                    .buttonStyle(.coachDestructive)
-                }
-                .buttonStyle(.coachSecondary)
-            }
+    @ViewBuilder private var pausedLabel: some View {
+        if segmentEnd == nil {
+            Text("En pause").font(.footnote.weight(.bold)).foregroundStyle(Theme.warm)
         }
+    }
+
+    private var controlsPage: some View {
+        WorkoutControlsPage(
+            isPaused: segmentEnd == nil,
+            canPause: current != nil,
+            canSkip: current != nil,
+            canAddRest: current?.kind == .rest,
+            heartRate: workout.heartRate,
+            startedAt: workout.startedAt,
+            onPause: togglePause,
+            onSkip: { advance(recordWork: false) },
+            onAddRest: addRest,
+            onStop: { if isBeforeStart { cancelBeforeStart() } else { confirmStop = true } }
+        )
     }
 
     private var feedbackView: some View {
@@ -259,27 +251,38 @@ struct IntervalRunView: View {
         }
     }
 
-    private var uniqueExercises: [Exercise] {
-        var seen = Set<String>()
-        return config.segments.compactMap(\.exercise).filter { seen.insert($0.name).inserted }
-    }
-
-    private func color(_ kind: TimedSegment.Kind) -> Color {
-        switch kind {
-        case .prepare: return Theme.warm
-        case .work: return Theme.accent
-        case .rest: return Theme.teal
-        }
-    }
-
     // MARK: Logique
 
-    private func start() async {
-        await workout.start(activity: config.activity, location: config.location)
+    /// Appui sur « Commencer » (ou départ lancé depuis l'accueil ou l'iPhone) : une seule fois.
+    /// Le « Prêt ? » défile d'abord ; la séance Santé ne commence qu'à sa fin (`launch`).
+    private func beginStart() {
+        guard phase == .ready, !starting, !config.segments.isEmpty else { return }
+        starting = true
+        frozen = config
+        workout.sessionInProgress = true
         index = 0
         workDone = []
         phase = .running
         beginSegment()
+        if current?.kind != .prepare { launch() }
+    }
+
+    /// Fin du « Prêt ? » : le chrono de la séance part avec le premier effort.
+    private func launch() {
+        guard !launched else { return }
+        launched = true
+        Task { await workout.start(activity: run.activity, location: run.location) }
+    }
+
+    /// Pendant le « Prêt ? » : rien n'a commencé.
+    private var isBeforeStart: Bool { phase == .running && !launched }
+
+    /// Terminer pendant le « Prêt ? » : on revient simplement en arrière.
+    private func cancelBeforeStart() {
+        segmentEnd = nil
+        workout.sessionInProgress = false
+        workout.discardPrepared()
+        dismiss()
     }
 
     private func beginSegment() {
@@ -310,12 +313,23 @@ struct IntervalRunView: View {
     }
 
     private func advance(recordWork: Bool) {
+        if segmentEnd == nil { workout.resume() }
         if recordWork, let seg = current, seg.kind == .work {
             workDone.append(SetLog(exercise: seg.title, setNumber: seg.round, reps: nil,
                                    durationSec: seg.seconds, weightKg: nil))
         }
+        let wasPrepare = current?.kind == .prepare
         index += 1
+        if wasPrepare { launch() }
         beginSegment()
+    }
+
+    private func addRest() {
+        if let end = segmentEnd {
+            segmentEnd = end.addingTimeInterval(30)
+        } else if let remaining = pausedRemaining {
+            pausedRemaining = remaining + 30
+        }
     }
 
     private func togglePause() {
@@ -340,82 +354,16 @@ struct IntervalRunView: View {
         await workout.end()
         store.record(SessionLog(
             id: UUID(),
-            sessionId: config.sessionId,
+            sessionId: run.sessionId,
             completedAt: .now,
             rpe: rpe,
             note: nil,
             sets: workDone,
-            title: config.title,
-            kind: config.kind
+            title: run.title,
+            kind: run.kind
         ))
+        workout.sessionInProgress = false
         dismiss()
-    }
-}
-
-// MARK: - Aide exercice
-
-extension Exercise: Identifiable {
-    var id: String { name }
-}
-
-struct ExerciseHelpView: View {
-    let exercise: Exercise
-
-    private var animation: ExerciseAnimation? { ExerciseLibrary.animation(for: exercise) }
-    private var steps: [String]? { exercise.instructions ?? animation?.steps }
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 6) {
-                if let animation {
-                    TimelineView(.animation(minimumInterval: 1 / 24)) { context in
-                        let t = context.date.timeIntervalSinceReferenceDate
-                        VStack(spacing: 2) {
-                            ExerciseFigure(animation: animation, time: t, muscles: true)
-                                .frame(height: 110)
-                            Text(animation.sample(at: t).phase.cue)
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(Theme.accent)
-                                .multilineTextAlignment(.center)
-                                .lineLimit(2)
-                                .frame(maxWidth: .infinity, minHeight: 30)
-                        }
-                    }
-                }
-                Text(exercise.name).font(Theme.watchTitle)
-                if let animation {
-                    Text(animation.muscles.map(\.label).joined(separator: " · "))
-                        .font(.caption2)
-                        .foregroundStyle(Theme.warm)
-                }
-                if let steps, !steps.isEmpty {
-                    ForEach(Array(steps.enumerated()), id: \.offset) { i, step in
-                        HStack(alignment: .top, spacing: 4) {
-                            Text("\(i + 1).").font(.caption2.weight(.bold))
-                            Text(step).font(.caption2)
-                        }
-                    }
-                } else {
-                    Text("Pas de consigne détaillée. Demande à Claude de te l'expliquer.")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-                if let notes = exercise.notes {
-                    Text(notes).font(.caption2).foregroundStyle(.secondary)
-                }
-                if let mistakes = exercise.mistakes ?? animation?.mistakes, !mistakes.isEmpty {
-                    Text("À éviter").font(.caption2.weight(.bold)).foregroundStyle(Theme.danger).padding(.top, 4)
-                    ForEach(Array(mistakes.enumerated()), id: \.offset) { _, m in
-                        Text("• \(m)").font(.caption2).foregroundStyle(.secondary)
-                    }
-                }
-                if exercise.video != nil {
-                    Text("📱 Vidéo de démo disponible sur l'iPhone.")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
     }
 }
 
