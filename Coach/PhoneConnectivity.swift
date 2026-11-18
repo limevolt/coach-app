@@ -32,8 +32,9 @@ final class PhoneConnectivity: NSObject, WCSessionDelegate {
 
     /// Envoie les séances, les minuteurs libres et la liste des séances faites à la montre.
     /// Le contexte remplace entièrement le précédent : tout part à chaque fois.
-    func sendWatchData(sessions: Data, timers: Data, doneIds: [String]) {
+    func sendWatchData(sessions: Data, timers: Data, doneIds: [String], resetAt: Date?) {
         var context: [String: Any] = ["sessions": sessions, "timers": timers, "done": doneIds]
+        if let resetAt { context["resetAt"] = resetAt.timeIntervalSince1970 }
         if let startRequest, startRequest.isFresh(now: .now),
            let data = try? Coding.compactEncoder.encode(startRequest) {
             context["start"] = data
@@ -57,8 +58,9 @@ final class PhoneConnectivity: NSObject, WCSessionDelegate {
         context["start"] = data
         pending = context
         flush()
+        // Message direct avec tout le contexte : la montre a la séance à jour avant de l'ouvrir.
         if session.isReachable {
-            session.sendMessage(["start": data], replyHandler: nil, errorHandler: nil)
+            session.sendMessage(context, replyHandler: nil, errorHandler: nil)
         }
         // Réveille l'app Coach de la montre (elle reçoit la configuration et prépare la séance Santé).
         let opened: Bool = await withCheckedContinuation { continuation in

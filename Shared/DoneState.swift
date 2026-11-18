@@ -33,17 +33,27 @@ enum DoneState {
         }
     }
 
+    /// Journal reçu de la montre après une réinitialisation, mais fait avant : il appartient à l'ancien plan.
+    static func receiving(_ log: SessionLog, lastReset: Date?) -> SessionLog {
+        guard let lastReset, log.kind == nil, log.archivedAt == nil, log.completedAt < lastReset else { return log }
+        var archived = log
+        archived.archivedAt = lastReset
+        return archived
+    }
+
     /// « Marquer comme non faite » : retire les journaux qui rendent la séance faite.
     static func removingActive(_ sessionId: String, from logs: [SessionLog]) -> [SessionLog] {
         logs.filter { !($0.sessionId == sessionId && $0.kind == nil && $0.archivedAt == nil) }
     }
 
     /// Montre : liste reçue de l'iPhone + séances finies ici que l'iPhone n'a pas encore reçues.
-    /// Une séance en attente disparaît dès que l'iPhone la confirme, ou après `pendingLifetime`.
-    static func watchMerge(received: Set<String>, pending: [String: Date], now: Date)
+    /// Une séance en attente disparaît dès que l'iPhone la confirme, après `pendingLifetime`,
+    /// ou si elle a été finie avant une réinitialisation du plan (`resetAt`).
+    static func watchMerge(received: Set<String>, pending: [String: Date], now: Date, resetAt: Date? = nil)
         -> (done: Set<String>, pending: [String: Date]) {
         let stillPending = pending.filter { id, finishedAt in
             !received.contains(id) && now.timeIntervalSince(finishedAt) < pendingLifetime
+                && finishedAt > (resetAt ?? .distantPast)
         }
         return (received.union(stillPending.keys), stillPending)
     }

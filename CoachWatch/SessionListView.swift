@@ -9,8 +9,9 @@ import WorkoutKit
 
 /// Séance à ouvrir : `autoStart` = elle démarre aussitôt (« Commencer » de l'accueil),
 /// sinon elle s'ouvre prête, avec un seul « Commencer ».
+/// On garde l'identifiant : la séance est relue dans le store à l'affichage (toujours la version à jour).
 struct SessionRoute: Hashable {
-    var session: PlannedSession
+    var sessionId: String
     var autoStart: Bool
 }
 
@@ -37,7 +38,7 @@ struct SessionListView: View {
                             .foregroundStyle(Theme.muted)
                             .padding(.top, 6)
                         ForEach(others) { session in
-                            NavigationLink(value: SessionRoute(session: session, autoStart: false)) {
+                            NavigationLink(value: SessionRoute(sessionId: session.id, autoStart: false)) {
                                 SessionRow(session: session, done: store.doneIds.contains(session.id))
                             }
                             .buttonStyle(.plain)
@@ -56,13 +57,12 @@ struct SessionListView: View {
             .navigationTitle("Coach")
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: SessionRoute.self) { route in
-                let session = route.session
-                if session.type == .run {
-                    RunReadyView(session: session)
-                } else if session.type == .circuit, let config = IntervalRunConfig.circuit(session) {
-                    IntervalRunView(config: config, autoStart: route.autoStart, tint: Theme.color(for: session.type))
+                if let session = store.session(id: route.sessionId) {
+                    destination(session, autoStart: route.autoStart)
                 } else {
-                    StrengthRunView(session: session, autoStart: route.autoStart)
+                    Text("Séance introuvable. Ouvre Coach sur l'iPhone pour synchroniser.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.muted)
                 }
             }
             .navigationDestination(for: IntervalTemplate.self) { template in
@@ -72,27 +72,47 @@ struct SessionListView: View {
         .task { await workout.requestAuthorization() }
         // Filet de sécurité : si une séance tourne encore en revenant à l'accueil, on l'arrête.
         .onAppear {
-            if workout.isActive { Task { await workout.end() } }
+            if workout.isActive && !workout.sessionInProgress { Task { await workout.end() } }
         }
+        // Demande de l'iPhone : ouverte dès que possible (séance reçue, aucune séance en cours).
         .onChange(of: store.startRequest) { _, _ in openRequestedSession() }
+        .onChange(of: store.sessions) { _, _ in openRequestedSession() }
+        .onChange(of: store.templates) { _, _ in openRequestedSession() }
+        .onChange(of: workout.sessionInProgress) { _, _ in openRequestedSession() }
         .onAppear { openRequestedSession() }
     }
 
-    /// « Démarrer sur la montre » : la séance demandée s'ouvre, prête, par-dessus tout le reste
-    /// (sauf si une séance est déjà en cours : on ne l'interrompt pas).
+    @ViewBuilder
+    private func destination(_ session: PlannedSession, autoStart: Bool) -> some View {
+                if session.type == .run {
+                    RunReadyView(session: session)
+                } else if session.type == .circuit, let config = IntervalRunConfig.circuit(session) {
+                    IntervalRunView(config: config, autoStart: autoStart, tint: Theme.color(for: session.type))
+                } else {
+                    StrengthRunView(session: session, autoStart: autoStart)
+                }
+    }
+
+    /// « Démarrer sur la montre » : la séance demandée s'ouvre, prête, par-dessus l'accueil.
+    /// Jamais pendant une séance (même à l'écran de ressenti) : la demande attend qu'elle soit finie.
+    /// Séance pas encore reçue : la demande attend le prochain envoi de l'iPhone.
     private func openRequestedSession() {
         guard let request = store.startRequest else { return }
-        store.startRequest = nil
-        guard !workout.isActive else { return }
+        guard request.isFresh(now: .now) else {
+            store.startRequest = nil
+            return
+        }
+        guard !workout.sessionInProgress else { return }
         if request.isTimer {
             guard let template = store.template(id: request.id) else { return }
             path = NavigationPath()
             path.append(template)
         } else {
-            guard let session = store.session(id: request.id) else { return }
+            guard store.session(id: request.id) != nil else { return }
             path = NavigationPath()
-            path.append(SessionRoute(session: session, autoStart: false))
+            path.append(SessionRoute(sessionId: request.id, autoStart: false))
         }
+        store.markOpened(request)
     }
 
     private var emptyState: some View {
@@ -138,7 +158,7 @@ private struct NextSessionCard: View {
                 .buttonStyle(.coachPrimary)
                 .padding(.top, 2)
             } else {
-                NavigationLink(value: SessionRoute(session: session, autoStart: true)) {
+                NavigationLink(value: SessionRoute(sessionId: session.id, autoStart: true)) {
                     Label("Commencer", systemImage: "play.fill")
                 }
                 .buttonStyle(.coachPrimary)

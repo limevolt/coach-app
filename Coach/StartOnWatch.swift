@@ -50,8 +50,8 @@ struct StartOnWatchCard: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .card(radius: 22, stroke: status == .unreachable ? Theme.warm.opacity(0.5) : Theme.accent.opacity(0.35))
-        .sensoryFeedback(.success, trigger: status == .sent)
+        .card(radius: Theme.heroCardRadius, stroke: status == .unreachable ? Theme.warm.opacity(0.5) : Theme.accent.opacity(0.35))
+        .sensoryFeedback(.success, trigger: status) { _, new in new == .sent }
         .animation(.snappy, value: status)
     }
 
@@ -82,7 +82,7 @@ struct StartOnWatchIconButton: View {
             Image(systemName: "applewatch.radiowaves.left.and.right")
                 .font(.title3)
                 .foregroundStyle(Theme.accent)
-                .frame(minWidth: 44, minHeight: 44)
+                .frame(minWidth: Theme.minTap, minHeight: Theme.minTap)
         }
         .buttonStyle(.borderless)
         .disabled(sending)
@@ -95,25 +95,5 @@ struct StartOnWatchIconButton: View {
                  ? "Appuie sur « Commencer » sur la montre quand tu es en place."
                  : "Vérifie qu'elle est au poignet, déverrouillée et près de l'iPhone.")
         }
-    }
-}
-
-extension View {
-    /// Bouton principal plein (citron vert), pleine largeur.
-    func primaryActionStyle(compact: Bool = false) -> some View {
-        self.font(.system(compact ? .body : .title3, design: .rounded, weight: .heavy))
-            .foregroundStyle(Theme.accentDark)
-            .frame(maxWidth: .infinity, minHeight: compact ? 44 : 56)
-            .background(Theme.accent, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .contentShape(Rectangle())
-    }
-
-    /// Bouton secondaire (contour citron vert), pleine largeur.
-    func secondaryActionStyle() -> some View {
-        self.font(.system(.body, design: .rounded, weight: .bold))
-            .foregroundStyle(Theme.accent)
-            .frame(maxWidth: .infinity, minHeight: 44)
-            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Theme.accent.opacity(0.6), lineWidth: 1))
-            .contentShape(Rectangle())
     }
 }

@@ -14,6 +14,11 @@ final class WorkoutManager {
     var isActive = false
     /// Séance Santé préparée (Coach ouvert depuis l'iPhone) : capteurs prêts, chrono arrêté.
     var isPrepared = false
+    /// Une séance est affichée et commencée (du « Commencer » jusqu'à « Enregistrer » ou la sortie) :
+    /// une demande de l'iPhone ne doit pas l'interrompre.
+    var sessionInProgress = false
+    /// « Commencer » en cours de traitement : bloque un second appel et une préparation concurrente.
+    private var isStarting = false
     /// Début et fin de la séance Santé (pour la durée affichée en fin de séance).
     var startedAt: Date?
     var endedAt: Date?
@@ -54,7 +59,9 @@ final class WorkoutManager {
     /// reste au premier plan et que les capteurs chauffent, SANS lancer le chrono (#15).
     /// Une séance préparée et jamais commencée est abandonnée au bout de 10 minutes.
     func prepare(_ config: HKWorkoutConfiguration) {
-        guard !isActive, !DemoMode.isOn else { return }
+        // La course est enregistrée par l'app Exercice : rien à préparer dans Coach.
+        guard !isActive, !isStarting, !sessionInProgress, !DemoMode.isOn,
+              config.activityType != .running else { return }
         discardPrepared()
         do {
             let newSession = try HKWorkoutSession(healthStore: store, configuration: config)
@@ -74,7 +81,7 @@ final class WorkoutManager {
 
     /// Abandonne une séance préparée qui n'a pas commencé (rien n'est enregistré dans Santé).
     func discardPrepared() {
-        guard isPrepared, !isActive else { return }
+        guard isPrepared, !isActive, !isStarting else { return }
         session?.end()
         session = nil
         builder = nil
@@ -83,7 +90,9 @@ final class WorkoutManager {
 
     /// « Commencer » : le chrono et la séance Santé partent maintenant (jamais avant).
     func start(activity: HKWorkoutActivityType, location: HKWorkoutSessionLocationType) async {
-        guard !isActive else { return }
+        guard !isActive, !isStarting else { return }
+        isStarting = true
+        defer { isStarting = false }
         if DemoMode.isOn {
             // Captures automatiques : séance simulée, avec des valeurs plausibles.
             isActive = true
@@ -97,8 +106,13 @@ final class WorkoutManager {
         config.activityType = activity
         config.locationType = location
         // Séance préparée par l'iPhone pour le même type : on la reprend, sinon on repart de zéro.
-        let prepared = isPrepared && session?.workoutConfiguration.activityType == activity ? session : nil
-        if prepared == nil { discardPrepared() }
+        // Seulement si le système ne l'a pas arrêtée entre-temps (autre app de sport ouverte…).
+        let reusable = isPrepared && session?.state == .prepared && session?.workoutConfiguration.activityType == activity
+        let prepared = reusable ? session : nil
+        if prepared == nil {
+            session?.end()
+            session = nil
+        }
         isPrepared = false
         do {
             let newSession = try prepared ?? HKWorkoutSession(healthStore: store, configuration: config)

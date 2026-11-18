@@ -42,7 +42,7 @@ final class WatchStore {
         }
         bridge.onSessions = { [weak self] data in self?.applySessions(data) }
         bridge.onTimers = { [weak self] data in self?.applyTimers(data) }
-        bridge.onDone = { [weak self] ids in self?.applyDone(ids) }
+        bridge.onDone = { [weak self] ids, resetAt in self?.applyDone(ids, resetAt: resetAt) }
         bridge.onStart = { [weak self] data in self?.applyStart(data) }
         bridge.activate()
     }
@@ -78,22 +78,28 @@ final class WatchStore {
     }
 
     /// Liste des séances faites envoyée par l'iPhone : elle remplace celle de la montre (#13, #14).
-    func applyDone(_ received: [String]) {
+    func applyDone(_ received: [String], resetAt: Date? = nil) {
         UserDefaults.standard.set(received, forKey: "doneIds")
-        let merged = DoneState.watchMerge(received: Set(received), pending: pendingDone, now: .now)
+        let merged = DoneState.watchMerge(received: Set(received), pending: pendingDone, now: .now, resetAt: resetAt)
         doneIds = merged.done
         pendingDone = merged.pending
         persistPending()
     }
 
-    /// Demande « Démarrer sur la montre » : ouverte une seule fois, et seulement si elle est récente.
+    /// Demande « Démarrer sur la montre » : gardée jusqu'à ce que l'écran l'ouvre (`markOpened`),
+    /// et seulement si elle est récente et pas déjà ouverte.
     func applyStart(_ data: Data) {
         guard let request = try? Coding.decoder.decode(StartRequest.self, from: data),
               request.isFresh(now: .now),
               handledStart.map({ request.sentAt > $0 }) ?? true else { return }
+        startRequest = request
+    }
+
+    /// La séance demandée est ouverte : la même demande ne sera plus rouverte.
+    func markOpened(_ request: StartRequest) {
         handledStart = request.sentAt
         UserDefaults.standard.set(request.sentAt.timeIntervalSince1970, forKey: "handledStart")
-        startRequest = request
+        if startRequest == request { startRequest = nil }
     }
 
     /// Séance (du plan) demandée par l'iPhone, si elle est connue de la montre.
@@ -135,7 +141,7 @@ final class WatchStore {
 final class WatchBridge: NSObject, WCSessionDelegate {
     var onSessions: ((Data) -> Void)?
     var onTimers: ((Data) -> Void)?
-    var onDone: (([String]) -> Void)?
+    var onDone: (([String], Date?) -> Void)?
     var onStart: ((Data) -> Void)?
 
     func activate() {
@@ -167,12 +173,13 @@ final class WatchBridge: NSObject, WCSessionDelegate {
         let sessions = context["sessions"] as? Data
         let timers = context["timers"] as? Data
         let done = context["done"] as? [String]
+        let resetAt = (context["resetAt"] as? Double).map(Date.init(timeIntervalSince1970:))
         let start = context["start"] as? Data
         Task { @MainActor in
             // Les séances d'abord : la demande de démarrage doit trouver sa séance.
             if let sessions { self.onSessions?(sessions) }
             if let timers { self.onTimers?(timers) }
-            if let done { self.onDone?(done) }
+            if let done { self.onDone?(done, resetAt) }
             if let start { self.onStart?(start) }
         }
     }

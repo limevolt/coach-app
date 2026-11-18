@@ -91,6 +91,19 @@ final class DoneStateTests: XCTestCase {
         XCTAssertEqual(DoneState.watchMerge(received: [], pending: pending, now: now).done, [])
     }
 
+    func testWatchDropsPendingFinishedBeforeReset() {
+        let pending = ["w1-d1": now.addingTimeInterval(-120)]
+        let merged = DoneState.watchMerge(received: [], pending: pending, now: now, resetAt: now.addingTimeInterval(-60))
+        XCTAssertEqual(merged.done, [], "une séance de l'ancien plan ne coche pas le plan réimporté")
+    }
+
+    func testLogArrivingAfterResetIsArchivedIfDoneBefore() {
+        let reset = now.addingTimeInterval(60)
+        XCTAssertEqual(DoneState.receiving(log("w1-d1"), lastReset: reset).archivedAt, reset)
+        XCTAssertNil(DoneState.receiving(log("w1-d1"), lastReset: now.addingTimeInterval(-60)).archivedAt)
+        XCTAssertNil(DoneState.receiving(log("w1-d1"), lastReset: nil).archivedAt)
+    }
+
     // MARK: Compatibilité des journaux déjà enregistrés
 
     func testOldLogsWithoutArchiveFieldStillDecode() throws {

@@ -44,10 +44,18 @@ struct StrengthRunView: View {
     @State private var rpe = 6
     @State private var saving = false
     @State private var confirmStop = false
+    /// « Commencer » déjà appuyé (bloque un second appui pendant le démarrage).
+    @State private var starting = false
+    /// Séance figée au « Commencer » : une mise à jour venue de l'iPhone ne la change pas en cours de route.
+    @State private var running: PlannedSession?
+    @FocusState private var crownFocused: Bool
 
     private static let prepareSec: TimeInterval = 5
+    /// Pas de la couronne pour le poids.
+    private static let weightStep = 2.5
 
-    private var exercises: [Exercise] { session.strength?.exercises ?? [] }
+    private var plan: PlannedSession { running ?? session }
+    private var exercises: [Exercise] { plan.strength?.exercises ?? [] }
     private var current: Exercise? {
         exercises.indices.contains(exerciseIndex) ? exercises[exerciseIndex] : nil
     }
@@ -57,9 +65,13 @@ struct StrengthRunView: View {
             .navigationBarBackButtonHidden(phase != .ready)
             .task(id: phase) { await runTimer() }
             // Retour sans avoir commencé : la séance Santé préparée par l'iPhone est abandonnée.
-            .onDisappear { if phase == .ready { workout.discardPrepared() } }
+            .onDisappear {
+                if phase == .ready && !starting { workout.discardPrepared() }
+                // Sortie de l'écran (séance enregistrée ou abandonnée) : plus de séance affichée.
+                if phase == .ready || phase == .feedback { workout.sessionInProgress = false }
+            }
             .task {
-                if autoStart, phase == .ready { await start() }
+                if autoStart, phase == .ready { beginStart() }
             }
             .confirmationDialog("Terminer la séance ?", isPresented: $confirmStop) {
                 Button("Terminer", role: .destructive) { phase = .feedback }
@@ -70,13 +82,14 @@ struct StrengthRunView: View {
             // Fin de séance : on coupe tout de suite le chrono et la séance Santé.
             .onChange(of: phase) { _, newPhase in
                 if newPhase == .feedback { Task { await workout.end() } }
+                if newPhase == .working { crownFocused = true }
             }
     }
 
     @ViewBuilder private var content: some View {
         switch phase {
         case .ready:
-            if autoStart {
+            if autoStart && !exercises.isEmpty {
                 ProgressView()
             } else {
                 readyView
@@ -107,7 +120,7 @@ struct StrengthRunView: View {
         WorkoutReadyView(typeLabel: session.sportLabel, icon: Theme.icon(for: session.type),
                          color: Theme.color(for: session.type), title: session.title,
                          summary: exercises.isEmpty ? nil : session.exerciseSummary) {
-            StartButton(disabled: exercises.isEmpty) { Task { await start() } }
+            StartButton(disabled: exercises.isEmpty || starting) { beginStart() }
         }
     }
 
@@ -128,13 +141,14 @@ struct StrengthRunView: View {
                             background: Theme.effortBackground(for: session.type)) {
             VStack(spacing: 2) {
                 crownValue(Text("\(reps)").font(Theme.watchCountdown) + Text(" reps").font(.footnote.weight(.bold)),
-                           target: .reps, label: "\(reps) répétitions")
+                           target: .reps, label: "Répétitions", value: "\(reps)")
                 if ex?.weightKg != nil {
                     crownValue(Text("\(weight.clean) kg").font(.footnote.weight(.bold)),
-                               target: .weight, label: "\(weight.clean) kilos")
+                               target: .weight, label: "Poids", value: "\(weight.clean) kilos")
                 }
             }
             .focusable()
+            .focused($crownFocused)
             .digitalCrownRotation($crown, from: 0, through: 500, by: 1,
                                   sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
             .onChange(of: crown) { _, value in applyCrown(value) }
@@ -149,10 +163,11 @@ struct StrengthRunView: View {
     }
 
     /// Valeur réglable : touchée, c'est elle que la couronne modifie (entourée).
-    private func crownValue(_ text: Text, target: CrownTarget, label: String) -> some View {
+    private func crownValue(_ text: Text, target: CrownTarget, label: String, value: String) -> some View {
         Button {
             crownTarget = target
             syncCrown()
+            crownFocused = true
         } label: {
             text
                 .monospacedDigit()
@@ -161,14 +176,23 @@ struct StrengthRunView: View {
                 .padding(.horizontal, 8)
                 .overlay {
                     if crownTarget == target {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        RoundedRectangle(cornerRadius: Theme.watchValueRadius, style: .continuous)
                             .stroke(Theme.color(for: session.type), lineWidth: 2)
                     }
                 }
         }
         .buttonStyle(.plain)
         .accessibilityLabel(label)
+        .accessibilityValue(value)
         .accessibilityHint("Tourne la couronne pour régler")
+        .accessibilityAdjustableAction { direction in
+            let delta: Double = direction == .increment ? 1 : -1
+            switch target {
+            case .reps: reps = max(0, reps + Int(delta))
+            case .weight: weight = max(0, weight + delta * Self.weightStep)
+            }
+            if crownTarget == target { syncCrown() }
+        }
     }
 
     /// Effort chronométré, repos ou mise en place.
@@ -246,10 +270,18 @@ struct StrengthRunView: View {
 
     // MARK: Logique
 
+    /// Appui sur « Commencer » (ou départ direct depuis l'accueil) : une seule fois.
+    private func beginStart() {
+        guard phase == .ready, !starting, !exercises.isEmpty else { return }
+        starting = true
+        running = session
+        workout.sessionInProgress = true
+        Task { await start() }
+    }
+
     /// Le seul « Commencer » : séance Santé + premier exercice en même temps.
     private func start() async {
-        guard phase == .ready else { return }
-        await workout.start(activity: session.workoutActivity, location: session.workoutLocation)
+        await workout.start(activity: plan.workoutActivity, location: plan.workoutLocation)
         exerciseIndex = 0
         setNumber = 1
         done = []
@@ -270,9 +302,9 @@ struct StrengthRunView: View {
         syncCrown()
     }
 
-    /// Place la couronne sur la valeur choisie (répétitions, ou poids par pas de 0,5 kg).
+    /// Place la couronne sur la valeur choisie (répétitions, ou poids par pas de 2,5 kg).
     private func syncCrown() {
-        crown = crownTarget == .reps ? Double(reps) : weight * 2
+        crown = crownTarget == .reps ? Double(reps) : weight / Self.weightStep
     }
 
     private func applyCrown(_ value: Double) {
@@ -281,7 +313,7 @@ struct StrengthRunView: View {
         case .reps:
             if step != reps { reps = max(0, step) }
         case .weight:
-            let kg = Double(max(0, step)) / 2
+            let kg = Double(max(0, step)) * Self.weightStep
             if kg != weight { weight = kg }
         }
     }
@@ -399,14 +431,15 @@ struct StrengthRunView: View {
         await workout.end()
         store.record(SessionLog(
             id: UUID(),
-            sessionId: session.id,
+            sessionId: plan.id,
             completedAt: .now,
             rpe: rpe,
             note: nil,
             sets: done,
-            title: session.title,
+            title: plan.title,
             kind: nil
         ))
+        workout.sessionInProgress = false
         dismiss()
     }
 }

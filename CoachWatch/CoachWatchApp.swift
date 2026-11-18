@@ -27,7 +27,8 @@ final class CoachWatchDelegate: NSObject, WKApplicationDelegate {
     let workout = WorkoutManager()
 
     /// Appelé quand l'iPhone lance Coach sur la montre (#5) : la séance Santé est préparée,
-    /// pas démarrée. La séance à ouvrir arrive séparément (`WatchStore.startRequest`).
+    /// pas démarrée (sauf course : elle se fait dans l'app Exercice). La séance à ouvrir arrive
+    /// séparément (`WatchStore.startRequest`).
     func handle(_ workoutConfiguration: HKWorkoutConfiguration) {
         workout.prepare(workoutConfiguration)
     }

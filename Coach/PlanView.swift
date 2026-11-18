@@ -214,17 +214,11 @@ struct PlanView: View {
                 .multilineTextAlignment(.center)
             Button { showNewPlan = true } label: {
                 Label("Créer un plan", systemImage: "sparkles")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
-                    .foregroundStyle(Theme.accentDark)
-                    .frame(maxWidth: .infinity, minHeight: 52)
-                    .background(Theme.accent, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .primaryActionStyle()
             }
             Button { importClipboard() } label: {
                 Label("Coller le plan", systemImage: "doc.on.clipboard")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
-                    .foregroundStyle(Theme.accent)
-                    .frame(maxWidth: .infinity, minHeight: 52)
-                    .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.accent, lineWidth: 1.5))
+                    .secondaryActionStyle(compact: false)
             }
             Button("Importer un fichier") { showImporter = true }
                 .font(.system(size: 15, weight: .semibold, design: .rounded))

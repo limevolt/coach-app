@@ -48,8 +48,9 @@ final class PlanStore {
             templates = IntervalTemplate.defaults
         }
         PhoneConnectivity.shared.onLog = { [weak self] data in
-            guard let log = try? Coding.decoder.decode(SessionLog.self, from: data) else { return }
-            self?.upsert(log)
+            guard let self, let log = try? Coding.decoder.decode(SessionLog.self, from: data) else { return }
+            // Fait avant une réinitialisation mais arrivé après : il reste à l'ancien plan (#14).
+            self.upsert(DoneState.receiving(log, lastReset: self.lastReset))
         }
         PhoneConnectivity.shared.onTemplate = { [weak self] data in
             guard let template = try? Coding.decoder.decode(IntervalTemplate.self, from: data) else { return }
@@ -109,8 +110,10 @@ final class PlanStore {
     /// réimporté avec les mêmes identifiants de séance démarre sans aucune séance faite (#14).
     func resetPlan() async {
         archiveCurrentPlan()
-        logs = DoneState.archiving(logs, at: .now)
+        let now = Date.now
+        logs = DoneState.archiving(logs, at: now)
         persistLogs()
+        UserDefaults.standard.set(now.timeIntervalSince1970, forKey: "lastReset")
         try? FileManager.default.removeItem(at: planURL)
         plan = nil
         originals = [:]
@@ -377,7 +380,8 @@ final class PlanStore {
         guard let sessions = try? Coding.compactEncoder.encode(watchSessions),
               let timers = try? Coding.compactEncoder.encode(templates) else { return }
         PhoneConnectivity.shared.sendWatchData(sessions: sessions, timers: timers,
-                                               doneIds: DoneState.doneIds(plan: plan, logs: logs))
+                                               doneIds: DoneState.doneIds(plan: plan, logs: logs),
+                                               resetAt: lastReset)
     }
 
     // MARK: Démarrer sur la montre (#5)
@@ -425,6 +429,11 @@ final class PlanStore {
     }
 
     // MARK: Journaux
+
+    /// Dernière réinitialisation du plan.
+    private var lastReset: Date? {
+        (UserDefaults.standard.object(forKey: "lastReset") as? Double).map(Date.init(timeIntervalSince1970:))
+    }
 
     /// Journal qui rend la séance « faite » (les journaux archivés et les minuteurs libres ne comptent pas).
     func log(for sessionId: String) -> SessionLog? {

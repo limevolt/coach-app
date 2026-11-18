@@ -43,6 +43,17 @@ enum Theme {
     /// Montre : fond plein écran pendant le repos et la mise en place.
     static let restBackground = card
 
+    /// Montre : contour de la valeur réglée par la Digital Crown.
+    static let watchValueRadius: CGFloat = 12
+
+    // Boutons et cartes de l'iPhone
+    static let buttonRadius: CGFloat = 16
+    static let smallButtonRadius: CGFloat = 14
+    static let heroCardRadius: CGFloat = 22
+    /// Hauteur du bouton principal d'un écran ; `minTap` = cible tactile minimale (44 pt).
+    static let primaryButtonHeight: CGFloat = 56
+    static let minTap: CGFloat = 44
+
     static func icon(for type: SessionType) -> String {
         switch type {
         case .run: return "figure.run"
@@ -66,6 +77,27 @@ extension Font {
     /// Titres : arrondis et très gras, esprit sportif.
     static func display(_ size: CGFloat, _ weight: Font.Weight = .heavy) -> Font {
         .system(size: size, weight: weight, design: .rounded)
+    }
+}
+
+extension View {
+    /// Bouton principal plein (citron vert), pleine largeur.
+    func primaryActionStyle(compact: Bool = false) -> some View {
+        self.font(.system(compact ? .body : .title3, design: .rounded, weight: .heavy))
+            .foregroundStyle(Theme.accentDark)
+            .frame(maxWidth: .infinity, minHeight: compact ? Theme.minTap : Theme.primaryButtonHeight)
+            .background(Theme.accent, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+            .contentShape(Rectangle())
+    }
+
+    /// Bouton secondaire (contour citron vert), pleine largeur.
+    func secondaryActionStyle(compact: Bool = true) -> some View {
+        self.font(.system(compact ? .body : .title3, design: .rounded, weight: .bold))
+            .foregroundStyle(Theme.accent)
+            .frame(maxWidth: .infinity, minHeight: compact ? Theme.minTap : Theme.primaryButtonHeight)
+            .overlay(RoundedRectangle(cornerRadius: compact ? Theme.smallButtonRadius : Theme.buttonRadius, style: .continuous)
+                .stroke(Theme.accent.opacity(0.6), lineWidth: 1))
+            .contentShape(Rectangle())
     }
 }
 

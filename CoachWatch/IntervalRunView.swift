@@ -108,20 +108,25 @@ struct IntervalRunView: View {
     @State private var rpe = 7
     @State private var saving = false
     @State private var confirmStop = false
+    /// « Commencer » déjà appuyé (bloque un second appui pendant le démarrage).
+    @State private var starting = false
+    /// Déroulé figé au « Commencer » : une mise à jour venue de l'iPhone ne le change pas en cours de route.
+    @State private var frozen: IntervalRunConfig?
 
+    private var run: IntervalRunConfig { frozen ?? config }
     private var current: TimedSegment? {
-        config.segments.indices.contains(index) ? config.segments[index] : nil
+        run.segments.indices.contains(index) ? run.segments[index] : nil
     }
     private var next: TimedSegment? {
-        config.segments.indices.contains(index + 1) ? config.segments[index + 1] : nil
+        run.segments.indices.contains(index + 1) ? run.segments[index + 1] : nil
     }
-    private var totalSeconds: Int { config.segments.reduce(0) { $0 + $1.seconds } }
+    private var totalSeconds: Int { run.segments.reduce(0) { $0 + $1.seconds } }
 
     var body: some View {
         Group {
             switch phase {
             case .ready:
-                if autoStart { ProgressView() } else { readyView }
+                if autoStart && !config.segments.isEmpty { ProgressView() } else { readyView }
             case .running:
                 WorkoutPager(step: index) {
                     runningView
@@ -135,9 +140,13 @@ struct IntervalRunView: View {
         .navigationBarBackButtonHidden(phase != .ready)
         .task(id: TickKey(index: index, end: segmentEnd)) { await tick() }
         // Retour sans avoir commencé : la séance Santé préparée par l'iPhone est abandonnée.
-        .onDisappear { if phase == .ready { workout.discardPrepared() } }
+        .onDisappear {
+            if phase == .ready && !starting { workout.discardPrepared() }
+            // Sortie de l'écran (séance enregistrée ou abandonnée) : plus de séance affichée.
+            if phase == .ready || phase == .feedback { workout.sessionInProgress = false }
+        }
         .task {
-            if autoStart, phase == .ready { await start() }
+            if autoStart, phase == .ready { beginStart() }
         }
         .confirmationDialog("Terminer la séance ?", isPresented: $confirmStop) {
             Button("Terminer", role: .destructive) { finishEarly() }
@@ -163,7 +172,7 @@ struct IntervalRunView: View {
                                 icon: config.kind == "libre" ? "timer" : Theme.icon(for: .circuit),
                                 color: tint, title: config.title,
                                 summary: "\(efforts) efforts · \(Durations.label(totalSeconds))") {
-            StartButton(disabled: config.segments.isEmpty) { Task { await start() } }
+            StartButton(disabled: config.segments.isEmpty || starting) { beginStart() }
         }
     }
 
@@ -238,10 +247,18 @@ struct IntervalRunView: View {
 
     // MARK: Logique
 
+    /// Appui sur « Commencer » (ou départ direct depuis l'accueil) : une seule fois.
+    private func beginStart() {
+        guard phase == .ready, !starting, !config.segments.isEmpty else { return }
+        starting = true
+        frozen = config
+        workout.sessionInProgress = true
+        Task { await start() }
+    }
+
     /// Le seul « Commencer » : séance Santé + première étape en même temps.
     private func start() async {
-        guard phase == .ready else { return }
-        await workout.start(activity: config.activity, location: config.location)
+        await workout.start(activity: run.activity, location: run.location)
         index = 0
         workDone = []
         phase = .running
@@ -315,14 +332,15 @@ struct IntervalRunView: View {
         await workout.end()
         store.record(SessionLog(
             id: UUID(),
-            sessionId: config.sessionId,
+            sessionId: run.sessionId,
             completedAt: .now,
             rpe: rpe,
             note: nil,
             sets: workDone,
-            title: config.title,
-            kind: config.kind
+            title: run.title,
+            kind: run.kind
         ))
+        workout.sessionInProgress = false
         dismiss()
     }
 }
