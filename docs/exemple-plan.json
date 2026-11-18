@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "planId": "demo",
+  "version": 1,
+  "title": "Semaine test",
+  "notes": "Plan de démonstration pour vérifier que tout fonctionne (montre, minuteurs, circuit, suivi). Ton vrai plan arrivera après tes réponses à Claude.",
+  "goals": [
+    {
+      "id": "g1",
+      "title": "Courir 5 km sans s'arrêter",
+      "date": "2027-01-31",
+      "baseline": "à évaluer (test semaine 1)",
+      "target": "5 km en continu",
+      "progress": 0.1
+    }
+  ],
+  "sessions": [
+    {
+      "id": "demo-s1",
+      "date": "2026-11-16",
+      "time": "18:30",
+      "type": "run",
+      "title": "Footing + 6 accélérations",
+      "notes": "Footing en aisance respiratoire : tu dois pouvoir parler.",
+      "run": {
+        "location": "outdoor",
+        "warmup": { "goal": { "type": "time", "value": 10, "unit": "min" }, "alert": { "type": "hrZone", "zone": 2 } },
+        "blocks": [
+          { "iterations": 1, "steps": [
+            { "purpose": "work", "goal": { "type": "time", "value": 20, "unit": "min" }, "alert": { "type": "hrZone", "zone": 2 } }
+          ]},
+          { "iterations": 6, "steps": [
+            { "purpose": "work", "goal": { "type": "time", "value": 20, "unit": "s" } },
+            { "purpose": "recovery", "goal": { "type": "time", "value": 60, "unit": "s" } }
+          ]}
+        ],
+        "cooldown": { "goal": { "type": "time", "value": 5, "unit": "min" } }
+      }
+    },
+    {
+      "id": "demo-s2",
+      "date": "2026-11-17",
+      "time": "18:30",
+      "type": "strength",
+      "title": "Renfo A — poids du corps",
+      "strength": {
+        "exercises": [
+          { "name": "Squat", "sets": 3, "reps": 12, "restSec": 60,
+            "instructions": ["Pieds largeur d'épaules, pointes légèrement ouvertes", "Descends en poussant les fesses en arrière, comme pour t'asseoir", "Genoux dans l'axe des pieds, dos droit", "Remonte en poussant dans les talons"] },
+          { "name": "Pompes", "sets": 3, "reps": 10, "restSec": 60, "notes": "Sur les genoux si besoin",
+            "instructions": ["Mains un peu plus larges que les épaules", "Corps gainé, aligné de la tête aux talons", "Descends la poitrine près du sol, coudes à 45°", "Pousse pour remonter sans creuser le dos"] },
+          { "name": "Fentes alternées", "sets": 3, "reps": 10, "restSec": 60, "notes": "10 par jambe",
+            "instructions": ["Grand pas en avant", "Descends jusqu'à ce que les deux genoux soient à 90°", "Genou avant au-dessus de la cheville", "Repousse et change de jambe"] },
+          { "name": "Gainage planche", "sets": 3, "durationSec": 40, "restSec": 45,
+            "instructions": ["Sur les avant-bras, coudes sous les épaules", "Serre les fessiers et le ventre", "Ne laisse pas tomber le bassin", "Respire calmement"] }
+        ]
+      }
+    },
+    {
+      "id": "demo-s3",
+      "date": "2026-11-19",
+      "time": "18:30",
+      "type": "run",
+      "title": "Fractionné 6×400 m",
+      "notes": "Allure indicative : on l'ajustera selon tes données.",
+      "run": {
+        "location": "outdoor",
+        "warmup": { "goal": { "type": "time", "value": 15, "unit": "min" }, "alert": { "type": "hrZone", "zone": 2 } },
+        "blocks": [
+          { "iterations": 6, "steps": [
+            { "purpose": "work", "goal": { "type": "distance", "value": 400, "unit": "m" }, "alert": { "type": "pace", "min": "5:00", "max": "5:30" } },
+            { "purpose": "recovery", "goal": { "type": "time", "value": 90, "unit": "s" } }
+          ]}
+        ],
+        "cooldown": { "goal": { "type": "time", "value": 10, "unit": "min" } }
+      }
+    },
+    {
+      "id": "demo-s4",
+      "date": "2026-11-21",
+      "time": "10:00",
+      "type": "circuit",
+      "title": "Circuit découverte",
+      "notes": "Version douce du Tabata : 30 s d'effort, 15 s de repos. Va à ton rythme.",
+      "circuit": {
+        "rounds": 3,
+        "workSec": 30,
+        "restSec": 15,
+        "roundRestSec": 60,
+        "prepareSec": 10,
+        "exercises": [
+          { "name": "Jumping jacks", "instructions": ["Saute en écartant bras et jambes", "Reviens pieds joints, bras le long du corps", "Reste léger sur la pointe des pieds"] },
+          { "name": "Squat", "instructions": ["Fesses en arrière, dos droit", "Genoux dans l'axe des pieds"] },
+          { "name": "Mountain climbers", "instructions": ["Position de pompe, bras tendus", "Ramène un genou vers la poitrine puis l'autre, en alternance rapide", "Garde le bassin bas"] },
+          { "name": "Gainage planche", "durationSec": 20, "instructions": ["Avant-bras au sol, corps aligné", "Ventre et fessiers serrés"] }
+        ]
+      }
+    }
+  ]
+}

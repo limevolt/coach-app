@@ -1,0 +1,129 @@
+// Collapsible.swift — carte repliable et textes du coach mis en forme
+
+import SwiftUI
+
+/// Carte repliée par défaut : un titre, un court aperçu, et le contenu complet au tap.
+struct CollapsibleCard<Summary: View, Content: View>: View {
+    let title: String
+    var color: Color = Theme.accent
+    @ViewBuilder let summary: () -> Summary
+    @ViewBuilder let content: () -> Content
+    @State private var expanded = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) { expanded.toggle() }
+            } label: {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Eyebrow(text: title, color: color)
+                        Spacer()
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(Theme.muted)
+                            .rotationEffect(.degrees(expanded ? 180 : 0))
+                    }
+                    if !expanded {
+                        summary().transition(.opacity)
+                    }
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if expanded {
+                content()
+                    .transition(.opacity)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .card(padding: 14, radius: 18)
+    }
+}
+
+/// Texte du coach lisible : une idée par ligne, puces, **gras** et titres « Xxx : ».
+/// Un long paragraphe sans retour à la ligne est découpé en phrases.
+struct FormattedNotes: View {
+    let text: String
+    var size: CGFloat = 15
+
+    private enum Line: Hashable {
+        case heading(String)
+        case bullet(String)
+        case paragraph(String)
+    }
+
+    private var lines: [Line] {
+        let raw = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        var parts = raw.components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        if parts.count == 1 { parts = Self.sentences(raw) }
+        let many = parts.count > 1
+        return parts.map { p in
+            for marker in ["- ", "• ", "* ", "– "] where p.hasPrefix(marker) {
+                return .bullet(String(p.dropFirst(marker.count)))
+            }
+            if p.hasPrefix("#") {
+                return .heading(p.drop(while: { $0 == "#" || $0 == " " }).description)
+            }
+            if p.hasSuffix(":") && p.count < 40 { return .heading(String(p.dropLast())) }
+            return many ? .bullet(p) : .paragraph(p)
+        }
+    }
+
+    private static func sentences(_ s: String) -> [String] {
+        var out: [String] = []
+        s.enumerateSubstrings(in: s.startIndex..., options: .bySentences) { sub, _, _, _ in
+            if let t = sub?.trimmingCharacters(in: .whitespacesAndNewlines), !t.isEmpty { out.append(t) }
+        }
+        return out.isEmpty ? [s] : out
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
+                switch line {
+                case .heading(let t):
+                    Text(markdown(t))
+                        .font(.system(size: size, weight: .bold, design: .rounded))
+                        .foregroundStyle(Theme.text)
+                        .padding(.top, 2)
+                case .bullet(let t):
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text("•").bold().foregroundStyle(Theme.accent)
+                        Text(markdown(t))
+                    }
+                    .font(.system(size: size, design: .rounded))
+                    .foregroundStyle(Theme.text)
+                case .paragraph(let t):
+                    Text(markdown(t))
+                        .font(.system(size: size, design: .rounded))
+                        .foregroundStyle(Theme.text)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func markdown(_ s: String) -> AttributedString {
+        (try? AttributedString(markdown: s, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
+            ?? AttributedString(s)
+    }
+}
+
+extension String {
+    /// Première phrase (ou première ligne) d'un texte, pour un aperçu replié.
+    var firstSentence: String {
+        let firstLine = components(separatedBy: .newlines).first { !$0.trimmingCharacters(in: .whitespaces).isEmpty } ?? self
+        var first: String?
+        firstLine.enumerateSubstrings(in: firstLine.startIndex..., options: .bySentences) { sub, _, _, stop in
+            first = sub?.trimmingCharacters(in: .whitespaces)
+            stop = true
+        }
+        return (first ?? firstLine)
+            .replacingOccurrences(of: "**", with: "")
+            .trimmingCharacters(in: CharacterSet(charactersIn: "-•* #").union(.whitespaces))
+    }
+}

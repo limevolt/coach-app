@@ -1,0 +1,117 @@
+// DemoPlan.swift — plan de démo pour les captures automatiques (iPhone et montre)
+// Reprend docs/exemple-plan.json et décale les dates pour que la semaine tombe « maintenant ».
+
+import Foundation
+import XCTest
+
+enum DemoPlan {
+    /// Identifiants des séances du plan d'exemple, dans l'ordre.
+    static let sessionIds = ["demo-s1", "demo-s2", "demo-s3", "demo-s4"]
+
+    /// Le plan d'exemple en JSON. `firstOffset` : nombre de jours entre aujourd'hui et la 1re séance
+    /// (0 = la 1re séance est aujourd'hui, -2 = elle était avant-hier).
+    static func json(firstOffset: Int = 0) -> String {
+        guard let url = Bundle(for: BundleToken.self).url(forResource: "exemple-plan", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              var root = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              var sessions = root["sessions"] as? [[String: Any]] else {
+            XCTFail("exemple-plan.json introuvable dans le bundle de test")
+            return "{}"
+        }
+        let format = DateFormatter()
+        format.calendar = Calendar(identifier: .gregorian)
+        format.locale = Locale(identifier: "en_US_POSIX")
+        format.dateFormat = "yyyy-MM-dd"
+
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let dates = sessions.compactMap { ($0["date"] as? String).flatMap(format.date(from:)) }
+        guard let first = dates.min(),
+              let target = calendar.date(byAdding: .day, value: firstOffset, to: today) else { return "{}" }
+        let shift = calendar.dateComponents([.day], from: calendar.startOfDay(for: first), to: target).day ?? 0
+
+        func moved(_ value: Any?) -> String? {
+            guard let text = value as? String, let date = format.date(from: text),
+                  let new = calendar.date(byAdding: .day, value: shift, to: date) else { return nil }
+            return format.string(from: new)
+        }
+        for i in sessions.indices {
+            if let new = moved(sessions[i]["date"]) { sessions[i]["date"] = new }
+        }
+        root["sessions"] = sessions
+        if var goals = root["goals"] as? [[String: Any]] {
+            for i in goals.indices {
+                if let new = moved(goals[i]["date"]) { goals[i]["date"] = new }
+            }
+            root["goals"] = goals
+        }
+        guard let out = try? JSONSerialization.data(withJSONObject: root),
+              let text = String(data: out, encoding: .utf8) else { return "{}" }
+        return text
+    }
+}
+
+private final class BundleToken {}
+
+extension XCTestCase {
+    /// Lance l'app en mode démo. `plan == nil` : aucun plan (écran vide).
+    @MainActor
+    func launchDemo(plan: String?, done: [String] = [], arguments: [String] = []) -> XCUIApplication {
+        let app = XCUIApplication()
+        app.terminate()
+        app.launchArguments = ["-AppleLanguages", "(fr)", "-AppleLocale", "fr_BE"]
+            + (plan == nil ? ["-coachDemo"] : []) + arguments
+        if let plan { app.launchEnvironment["COACH_DEMO_PLAN"] = plan }
+        if !done.isEmpty { app.launchEnvironment["COACH_DEMO_DONE"] = done.joined(separator: ",") }
+        app.launch()
+        _ = app.wait(for: .runningForeground, timeout: 60)
+        return app
+    }
+
+    /// Capture d'écran gardée dans le résultat du test (exportée ensuite par le build GitHub).
+    @MainActor
+    func shot(_ name: String, settle: TimeInterval = 1.0) {
+        Thread.sleep(forTimeInterval: settle)
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
+    /// Premier bouton dont le libellé contient `text`.
+    @MainActor
+    func button(_ text: String, in app: XCUIApplication) -> XCUIElement {
+        app.buttons.containing(NSPredicate(format: "label CONTAINS[c] %@", text)).firstMatch
+    }
+
+    /// Touche le bouton s'il existe (en faisant défiler si besoin). Renvoie false sinon.
+    @MainActor
+    @discardableResult
+    func tap(_ text: String, in app: XCUIApplication, timeout: TimeInterval = 10) -> Bool {
+        let element = button(text, in: app)
+        guard element.waitForExistence(timeout: timeout) else {
+            note("Bouton introuvable : « \(text) »")
+            return false
+        }
+        var tries = 0
+        while !element.isHittable, tries < 5 {
+            app.swipeUp()
+            tries += 1
+        }
+        guard element.isHittable else {
+            note("Bouton hors écran : « \(text) »")
+            return false
+        }
+        element.tap()
+        return true
+    }
+
+    /// Note visible dans le rapport des captures (étape sautée, bouton introuvable…).
+    @MainActor
+    func note(_ text: String) {
+        let attachment = XCTAttachment(string: text)
+        attachment.name = "note"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+}

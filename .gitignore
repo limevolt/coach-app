@@ -1,0 +1,26 @@
+# Xcode
+xcuserdata/
+*.xcuserstate
+DerivedData/
+build/
+*.log
+.DS_Store
+
+# Données personnelles : ne jamais versionner (le dépôt peut être public)
+# Plans, exports et suivis réels — seul docs/exemple-plan.json (fictif) est autorisé.
+plan-*.json
+archive-*.json
+*suivi*.json
+*suivi*.md
+*suivi*.csv
+*export*.json
+*export*.md
+*export*.csv
+*.gpx
+*.fit
+*.xcresult
+perso/
+prive/
+private/
+*.env
+.env*

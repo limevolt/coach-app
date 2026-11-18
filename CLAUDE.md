@@ -1,0 +1,63 @@
+# Coach — consignes pour Claude
+
+**Méthode de travail : lire `WORKFLOW.md` au début de chaque conversation** (issues comme seule
+source, retour après chaque séance, cycle de développement, relectures, vérification avant le sport).
+
+## Vie privée : rien de personnel sur le dépôt (priorité absolue)
+
+Le dépôt est **public** (depuis le 18/11/2026). Tout ce qui y est poussé — fichiers, historique, messages de
+commit, issues, pull requests, commentaires, branches `ci-logs` et `ci-captures` — doit pouvoir
+être lu par n'importe qui.
+
+- **Jamais** de données réelles de l'utilisateur : plan réel, export ou suivi, séances faites, chiffres de
+  santé (FC, VFC, poids, allure, effort ressenti), dates de séances réelles, captures de son
+  iPhone ou de sa montre, e-mail, adresse, lieu d'entraînement précis, appareils, clés d'accès.
+- Exemples, tests et captures : uniquement des **données fictives** (`docs/exemple-plan.json`,
+  mode démo). Ne jamais y recopier un plan ou un export que l'utilisateur a collé dans une conversation.
+- Les retours de l'utilisateur (issues, PR) : décrire le problème de l'app, pas sa vie (« la séance passée
+  reste marquée faite », pas « mardi j'avais mal au genou après 8 km à 5:40 »).
+- Aucun secret dans le code : clés et adresses viennent des réglages de l'app, sur l'appareil
+  (idéalement dans le trousseau), jamais en dur ni dans `project.yml`.
+- **Avant chaque push**, relire `git diff --cached` et les nouveaux fichiers ; si un fichier
+  ressemble à une donnée réelle (JSON de plan, export, capture d'appareil), ne pas le pousser
+  et demander à l'utilisateur. `.gitignore` bloque déjà `plan-*.json`, `*export*.json`, `*suivi*.md`, `*.gpx`…, `perso/`.
+- En cas de doute : ne pas pousser, demander.
+
+## Compilations GitHub Actions (gratuites en public, mais longues)
+
+- Grouper les corrections et vérifier le code avant de pousser ; éviter les allers-retours.
+- Un commit qui ne change que de la doc ou la config sans code : ajouter `[skip ci]`.
+- `[captures]` seulement pour un vrai changement d'écran, et une fois le code prêt.
+
+## Interface (iPhone et montre)
+
+- **Avant toute modification d'interface, lire `DESIGN.md`** et suivre sa méthode :
+  maquette validée → code → captures réelles → relecture par l'agent `design-reviewer` →
+  pull request avec images.
+- UX et ergonomie : suivre les skills `ios-design-guidelines` (iPhone) et
+  `watchos-design-guidelines` (montre) dans `.claude/skills/`.
+- Code SwiftUI : suivre le skill `swiftui-pro`. L'app vise iOS 17 et watchOS 10 : garder ces
+  cibles, et mettre toute API plus récente sous `#available`.
+- Thème visuel (couleurs, typo, ambiance sportive) : c'est `DESIGN.md` et `Shared/Theme.swift`
+  qui décident, pas l'apparence par défaut proposée par les skills. Le thème doit quand même
+  respecter leurs exigences d'accessibilité (contraste, Dynamic Type, pas de couleur seule).
+
+## Conventions de code pour l'interface
+
+- **Composants partagés d'abord.** Avant de créer un élément visuel (bouton, carte, ligne,
+  pastille, titre de section), chercher s'il existe déjà (`Shared/Theme.swift`,
+  `Coach/Collapsible.swift`, `CoachWatch/WatchButtons.swift`…) et le réutiliser.
+- Un élément utilisé à deux endroits devient un composant commun, au lieu d'être recopié.
+- Jamais de couleur, de taille de police ou de rayon en dur dans une vue : passer par `Theme`
+  et par les styles de texte (`.title`, `.body`…).
+
+## Captures automatiques
+
+- Le build « Captures » ne tourne que si le message du commit contient `[captures]`
+  (il est long : ne le lancer que quand l'interface a changé, une fois le code prêt).
+- Lire le résultat : `git fetch origin ci-captures`, puis ouvrir les images du dossier au nom
+  de la branche (les `/` deviennent des `-`), par exemple avec
+  `git worktree add /tmp/captures origin/ci-captures`. `README.md` liste les écrans, les étapes
+  sautées et l'audit d'accessibilité ; `journaux/` contient les erreurs des tests.
+- Le mode démo (`Shared/DemoMode.swift`) n'existe qu'en Debug : plan d'exemple en mémoire,
+  sans Santé ni synchronisation.

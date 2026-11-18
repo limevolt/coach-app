@@ -1,0 +1,63 @@
+# WORKFLOW.md — app Coach
+
+> Façon de travailler, commune à toutes les conversations Claude (écrites ou vocales).
+> Ce fichier est aussi dans les fichiers du projet Claude « Coach – développement ».
+> Toute nouvelle décision sur la méthode est notée ici, dans les deux copies.
+
+## Qui fait quoi
+
+- **Le propriétaire de l'app** teste l'app pendant ses séances, donne ses retours et valide les maquettes et les pull requests.
+- **Claude en conversation écrite** a accès au dépôt. Il crée les issues, code, ouvre et fusionne les pull requests.
+- **Claude en vocal** n'a pas toujours accès à GitHub. Il recueille les retours, les classe et prépare un texte à coller dans une conversation écrite.
+- Il n'y a pas d'autre outil : tout passe par les conversations Claude du projet.
+
+## Règle n° 1 : les GitHub Issues sont la seule source
+
+- Tout bug, toute idée et toute décision vit dans une issue, pas dans un document à part.
+- Avant de créer une issue, chercher si elle existe déjà. Si oui, ajouter un commentaire avec ce qui est nouveau.
+- Étiquettes : `bug` ou `enhancement`, plus `iPhone`, `Montre` ou `Design`. Ajouter `priorité haute` quand un problème empêche de faire une séance, et `à retester` quand un bug est peut-être déjà corrigé.
+- Une issue de bug dit toujours : ce qui s'est passé, ce qui était attendu, et comment le reproduire. Sans données personnelles (voir `CLAUDE.md`).
+
+## Après chaque séance : le retour
+
+1. Le propriétaire raconte son test, à l'écrit ou en vocal.
+2. Claude résume chaque point en une phrase et le relie à une issue existante ou nouvelle.
+3. Sans accès au dépôt, Claude donne à la fin un texte prêt à coller dans une conversation écrite.
+4. Avec accès, Claude crée ou commente directement les issues, puis donne leur liste.
+
+## Cycle de développement
+
+1. **Choisir un lot** : quelques issues liées, en commençant par `priorité haute`.
+2. **Pour un écran** : proposer une maquette selon `DESIGN.md` et attendre la validation du propriétaire.
+3. **Coder sur une branche**, en suivant `CLAUDE.md` (vie privée, conventions, composants partagés). Jamais de push direct sur `main`.
+4. **Un test automatique pour chaque bug corrigé**, pour qu'il ne revienne pas.
+5. **Relecture par des agents indépendants**, qui n'ont pas écrit le code :
+   - `code-reviewer` : logique, cas limites, régressions, respect de `CLAUDE.md` (à créer) ;
+   - `design-reviewer` : captures comparées à la maquette et à `DESIGN.md`.
+6. **Pull request** : ce qui change, les issues fermées, le résultat des relectures et ce que le propriétaire doit tester.
+7. **Fusion sur `main`** : la version part sur TestFlight (à mettre en place), et les issues sont fermées ou passées en `à retester`.
+
+## Économiser les compilations
+
+- Regrouper les correctifs : une compilation par lot, pas une par correction.
+- `[skip ci]` pour les changements qui ne touchent que la doc ou les règles.
+- `[captures]` seulement quand l'interface change, une fois le code prêt.
+- Ne pas pousser pendant que des captures tournent.
+- Le dépôt est public depuis le 18/11/2026 : les compilations sont gratuites, mais restent longues. Grouper reste la règle.
+
+## Avant le sport : vérification en deux minutes
+
+1. Installer la dernière version.
+2. Sur l'iPhone, ouvrir la semaine, choisir la séance du jour et appuyer sur « Démarrer ».
+3. Sur la montre, vérifier que la séance arrive prête et ne démarre qu'après un seul « Commencer ».
+4. Si ça bloque, noter ce qu'on voit (photo de l'écran si possible) pour le retour d'après séance.
+
+## Début et fin de conversation
+
+- **Au début** : relire `WORKFLOW.md`, `CLAUDE.md` et `DESIGN.md`, regarder les issues ouvertes `priorité haute`, et rappeler en une phrase où on en est.
+- **À la fin** : mettre à jour les issues touchées et noter ici toute nouvelle décision sur la façon de travailler.
+
+## En attente
+
+- Envoi automatique sur TestFlight à chaque fusion sur `main`.
+- Créer l'agent `code-reviewer` dans `.claude/agents/`.

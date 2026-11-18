@@ -1,0 +1,109 @@
+# Compile l'app iPhone + montre sur un Mac de GitHub.
+# - Sur chaque branche / pull request : génère le projet et compile (sans signature).
+# - Sur toutes les branches : si le projet Xcode généré a changé, il est enregistré dans la
+#   branche. Il arrive ainsi sur main en même temps que le code (fusion), et « Mettre a jour
+#   Coach » trouve toujours un projet complet.
+# Les erreurs de compilation apparaissent en annotations sur le commit, et le journal
+# complet est publié sur la branche « ci-logs » (lisible sans accès à l'onglet Actions).
+
+name: Compilation
+
+on:
+  push:
+    branches: ["**"]
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  checks: write
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Outils
+        run: |
+          brew install xcodegen xcbeautify
+          ls -d /Applications/Xcode*.app
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app /Applications/Xcode_16*.app 2>/dev/null | grep -v -i beta | sort -V | tail -1)"
+          xcodebuild -version
+
+      - name: Générer le projet Xcode
+        run: xcodegen generate
+
+      - name: Compiler iPhone (+ montre intégrée)
+        id: ios
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project Coach.xcodeproj -scheme Coach \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee build-ios.log | xcbeautify --renderer github-actions
+
+      - name: Compiler la montre seule
+        id: watch
+        if: always() && steps.ios.conclusion != 'skipped'
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project Coach.xcodeproj -scheme CoachWatch \
+            -destination 'generic/platform=watchOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee build-watch.log | xcbeautify --renderer github-actions
+
+      - name: Publier le journal (branche ci-logs)
+        if: always()
+        run: |
+          {
+            echo "commit: ${GITHUB_SHA}"
+            echo "branche: ${GITHUB_REF_NAME}"
+            echo "ios: ${{ steps.ios.outcome }}"
+            echo "watch: ${{ steps.watch.outcome }}"
+            echo
+            echo "===== ERREURS / AVERTISSEMENTS iOS ====="
+            grep -E "\.swift:[0-9]+:[0-9]+: (error|warning):" build-ios.log | sort -u | head -200 || true
+            echo
+            echo "===== ERREURS / AVERTISSEMENTS MONTRE ====="
+            grep -E "\.swift:[0-9]+:[0-9]+: (error|warning):" build-watch.log | sort -u | head -200 || true
+            echo
+            echo "===== FIN DU JOURNAL iOS ====="
+            grep -E "BUILD (SUCCEEDED|FAILED)|error:" build-ios.log | tail -20 || true
+          } > summary.txt
+          git config user.name "coach-ci"
+          git config user.email "coach-ci@users.noreply.github.com"
+          mkdir -p /tmp/logs && cp summary.txt /tmp/logs/
+          git fetch origin ci-logs:ci-logs 2>/dev/null || true
+          if git show-ref --quiet refs/heads/ci-logs; then
+            git worktree add /tmp/ci-logs ci-logs
+          else
+            git worktree add --detach /tmp/ci-logs
+            git -C /tmp/ci-logs checkout --orphan ci-logs
+            git -C /tmp/ci-logs rm -rf . >/dev/null 2>&1 || true
+          fi
+          mkdir -p "/tmp/ci-logs/${GITHUB_REF_NAME}"
+          cp /tmp/logs/summary.txt "/tmp/ci-logs/${GITHUB_REF_NAME}/latest.txt"
+          git -C /tmp/ci-logs add -A
+          git -C /tmp/ci-logs commit -m "Journal ${GITHUB_REF_NAME} ${GITHUB_SHA::7}" || true
+          git -C /tmp/ci-logs push origin ci-logs || true
+
+      - name: Enregistrer le projet Xcode généré
+        if: success()
+        run: |
+          git config user.name "coach-ci"
+          git config user.email "coach-ci@users.noreply.github.com"
+          git add -f Coach.xcodeproj Coach/Info.plist CoachWatch/Info.plist Coach/Coach.entitlements CoachWatch/CoachWatch.entitlements
+          if git diff --cached --quiet; then
+            echo "Projet inchangé."
+          else
+            git commit -m "Projet Xcode régénéré [skip ci]"
+            git push origin "HEAD:refs/heads/${GITHUB_REF_NAME}"
+          fi

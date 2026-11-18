@@ -1,0 +1,152 @@
+# Captures automatiques des écrans (iPhone + montre) et audit d'accessibilité d'Apple.
+# Sert à la relecture design (voir DESIGN.md) : les images sont publiées sur la branche
+# « ci-captures », dans un dossier au nom de la branche, avec un README qui montre tout.
+#
+# Ce build est long (simulateurs). Il ne tourne donc QUE :
+#   - quand le message du commit contient [captures] (branches autres que main) ;
+#   - ou à la demande, depuis l'onglet Actions (« Run workflow »).
+
+name: Captures
+
+on:
+  push:
+    branches-ignore: ["main", "ci-logs", "ci-captures"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  captures:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[captures]')
+    runs-on: macos-26
+    timeout-minutes: 60
+    # Au niveau du job : un push sans [captures] n'annule pas des captures en cours.
+    concurrency:
+      group: captures-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Outils
+        run: |
+          brew install xcodegen
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app /Applications/Xcode_16*.app 2>/dev/null | grep -v -i beta | sort -V | tail -1)"
+          xcodebuild -version
+          xcodegen generate
+          python3 .github/scripts/pick_simulators.py
+
+      - name: iPhone — compiler les tests
+        id: ios_build
+        if: env.IOS_STD_ID != ''
+        run: |
+          set -o pipefail
+          xcodebuild build-for-testing \
+            -project Coach.xcodeproj -scheme CoachCaptures \
+            -destination "platform=iOS Simulator,id=$IOS_STD_ID" \
+            -derivedDataPath dd-ios CODE_SIGNING_ALLOWED=NO 2>&1 | tee ios-build.log | tail -40
+
+      - name: iPhone — captures (${{ env.IOS_STD_NAME }})
+        if: steps.ios_build.outcome == 'success'
+        continue-on-error: true
+        run: |
+          xcodebuild test-without-building \
+            -project Coach.xcodeproj -scheme CoachCaptures \
+            -destination "platform=iOS Simulator,id=$IOS_STD_ID" \
+            -derivedDataPath dd-ios -resultBundlePath results/ios-std.xcresult \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee ios-std.log | tail -60
+
+      - name: iPhone — captures petit écran (${{ env.IOS_SMALL_NAME }})
+        if: steps.ios_build.outcome == 'success' && env.IOS_SMALL_ID != ''
+        continue-on-error: true
+        run: |
+          xcodebuild test-without-building \
+            -project Coach.xcodeproj -scheme CoachCaptures \
+            -destination "platform=iOS Simulator,id=$IOS_SMALL_ID" \
+            -derivedDataPath dd-ios -resultBundlePath results/ios-small.xcresult \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee ios-small.log | tail -60
+
+      - name: Montre — compiler les tests
+        id: watch_build
+        if: always() && env.WATCH_L_ID != ''
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          xcodebuild build-for-testing \
+            -project Coach.xcodeproj -scheme CoachWatchCaptures \
+            -destination "platform=watchOS Simulator,id=$WATCH_L_ID" \
+            -derivedDataPath dd-watch CODE_SIGNING_ALLOWED=NO 2>&1 | tee watch-build.log | tail -40
+
+      - name: Montre — captures (${{ env.WATCH_L_NAME }})
+        if: always() && steps.watch_build.outcome == 'success'
+        continue-on-error: true
+        run: |
+          xcodebuild test-without-building \
+            -project Coach.xcodeproj -scheme CoachWatchCaptures \
+            -destination "platform=watchOS Simulator,id=$WATCH_L_ID" \
+            -derivedDataPath dd-watch -resultBundlePath results/watch-large.xcresult \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee watch-large.log | tail -60
+
+      - name: Montre — captures petit écran (${{ env.WATCH_S_NAME }})
+        if: always() && steps.watch_build.outcome == 'success' && env.WATCH_S_ID != ''
+        continue-on-error: true
+        run: |
+          xcodebuild test-without-building \
+            -project Coach.xcodeproj -scheme CoachWatchCaptures \
+            -destination "platform=watchOS Simulator,id=$WATCH_S_ID" \
+            -derivedDataPath dd-watch -resultBundlePath results/watch-small.xcresult \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee watch-small.log | tail -60
+
+      - name: Rassembler les captures
+        if: always()
+        run: |
+          python3 .github/scripts/collect_captures.py captures \
+            "iphone=results/ios-std.xcresult=iPhone — ${IOS_STD_NAME:-introuvable}" \
+            "iphone-petit=results/ios-small.xcresult=Petit iPhone — ${IOS_SMALL_NAME:-introuvable}" \
+            "watch-grande=results/watch-large.xcresult=Grande montre — ${WATCH_L_NAME:-introuvable}" \
+            "watch-petite=results/watch-small.xcresult=Petite montre — ${WATCH_S_NAME:-introuvable}"
+          mkdir -p captures/journaux
+          for f in ios-build ios-std ios-small watch-build watch-large watch-small; do
+            if [ -f "$f.log" ]; then
+              { grep -E "error:|Testing failed|\*\* TEST|\*\* BUILD|Test Case .* (passed|failed)|XCTAssert|Failed to|failed:" "$f.log" | sort -u | head -80; echo "-----"; tail -40 "$f.log"; } > "captures/journaux/$f.txt" || true
+            fi
+          done
+
+      - name: Publier sur la branche ci-captures
+        if: always()
+        run: |
+          slug="$(echo "${GITHUB_REF_NAME}" | tr '/' '-')"
+          echo "${GITHUB_REF_NAME}" > captures/.branche
+          git config user.name "coach-ci"
+          git config user.email "coach-ci@users.noreply.github.com"
+          # Branche sans historique : un seul commit, remplacé à chaque fois (pas de dépôt qui grossit).
+          git worktree add --detach /tmp/pub
+          git -C /tmp/pub checkout --orphan ci-captures-new
+          git -C /tmp/pub rm -rf . >/dev/null 2>&1 || true
+          if git -C /tmp/pub fetch --depth=1 origin ci-captures 2>/dev/null; then
+            git -C /tmp/pub checkout FETCH_HEAD -- . 2>/dev/null || true
+          fi
+          # Retire les dossiers des branches supprimées.
+          for dir in /tmp/pub/*/; do
+            [ -f "$dir/.branche" ] || continue
+            git ls-remote --exit-code --heads origin "$(cat "$dir/.branche")" >/dev/null 2>&1 || rm -rf "$dir"
+          done
+          rm -rf "/tmp/pub/$slug"
+          cp -R captures "/tmp/pub/$slug"
+          {
+            echo "# Captures automatiques de Coach"
+            echo
+            echo "Un dossier par branche. Ouvre un dossier pour voir les écrans iPhone et montre."
+            echo
+            for dir in /tmp/pub/*/; do echo "- [$(cat "$dir/.branche" 2>/dev/null || basename "$dir")]($(basename "$dir")/)"; done
+          } > /tmp/pub/README.md
+          git -C /tmp/pub add -A
+          git -C /tmp/pub commit -q -m "Captures ${GITHUB_REF_NAME} ${GITHUB_SHA::7}"
+          git -C /tmp/pub push -f origin HEAD:refs/heads/ci-captures
+
+      - name: Vérifier qu'il y a des captures
+        if: always()
+        run: |
+          count=$(find captures -name '*.png' | wc -l | tr -d ' ')
+          echo "$count captures"
+          [ "$count" -gt 0 ]
