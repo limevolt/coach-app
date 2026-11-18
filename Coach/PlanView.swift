@@ -404,6 +404,7 @@ struct NextSessionCard: View {
                     .frame(width: 110, height: 120)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .card(padding: 16, radius: 24, fill: Theme.card2, stroke: Color(hex: 0x3B4A60))
     }
 }
