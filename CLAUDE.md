@@ -32,8 +32,9 @@ commit, issues, pull requests, commentaires, branches `ci-logs` et `ci-captures`
 ## Interface (iPhone et montre)
 
 - **Avant toute modification d'interface, lire `DESIGN.md`** et suivre sa méthode :
-  maquette validée → code → captures réelles → relecture par l'agent `design-reviewer` →
-  pull request avec images.
+  maquette → critique par l'agent `design-reviewer` (mode maquette) → validation du
+  propriétaire → code → captures réelles → `design-reviewer` (mode conformité) et
+  `code-reviewer` → pull request avec images.
 - UX et ergonomie : suivre les skills `ios-design-guidelines` (iPhone) et
   `watchos-design-guidelines` (montre) dans `.claude/skills/`.
 - Code SwiftUI : suivre le skill `swiftui-pro`. L'app vise iOS 17 et watchOS 10 : garder ces
