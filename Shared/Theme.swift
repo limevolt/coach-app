@@ -28,6 +28,20 @@ enum Theme {
 
     /// Titre compact pour l'écran de la montre.
     static let watchTitle = Font.system(.footnote, design: .rounded, weight: .semibold)
+    /// Montre, pendant la séance : nom de l'exercice (suit la taille du texte).
+    static let watchExercise = Font.system(.headline, design: .rounded, weight: .heavy)
+    /// Montre : petit libellé en capitales (REPOS, ENSUITE…).
+    static let watchLabel = Font.system(.caption2, design: .rounded, weight: .bold)
+    /// Montre : chrono d'effort et nombre de répétitions, lisibles en plein effort.
+    static let watchCountdown = Font.system(size: 60, weight: .heavy, design: .rounded)
+    /// Montre : compte à rebours de repos, le plus grand possible.
+    static let watchRestCountdown = Font.system(size: 72, weight: .heavy, design: .rounded)
+
+    /// Montre : fond plein écran pendant l'effort (teinte du type de séance).
+    static func effortBackground(for type: SessionType) -> Color { effortBackground(color(for: type)) }
+    static func effortBackground(_ tint: Color) -> Color { tint.opacity(0.22) }
+    /// Montre : fond plein écran pendant le repos et la mise en place.
+    static let restBackground = card
 
     static func icon(for type: SessionType) -> String {
         switch type {

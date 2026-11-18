@@ -227,6 +227,8 @@ struct SessionLog: Codable, Identifiable, Hashable {
     var sets: [SetLog]?
     var title: String?
     var kind: String?         // nil = séance du plan, "libre" = minuteur libre
+    /// Plan réinitialisé : le journal reste dans l'historique mais n'est plus relié à une séance.
+    var archivedAt: Date? = nil
 }
 
 // MARK: - Encodage

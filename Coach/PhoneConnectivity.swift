@@ -1,7 +1,14 @@
 // PhoneConnectivity.swift — échanges iPhone ⇄ montre (local, via Bluetooth/Wi-Fi)
 
 import Foundation
+import HealthKit
 import WatchConnectivity
+
+/// Résultat de « Démarrer sur la montre ».
+enum WatchStartResult: Equatable {
+    case sent          // Coach est ouvert sur la montre, la séance y est prête
+    case unreachable   // pas de montre jumelée, app absente, ou montre hors de portée
+}
 
 @MainActor
 final class PhoneConnectivity: NSObject, WCSessionDelegate {
@@ -12,7 +19,10 @@ final class PhoneConnectivity: NSObject, WCSessionDelegate {
     /// Minuteur favori créé sur la montre (JSON d'un IntervalTemplate).
     var onTemplate: ((Data) -> Void)?
 
-    private var pending: [String: Data]?
+    private var pending: [String: Any]?
+    /// Dernière demande « Démarrer sur la montre », gardée dans le contexte tant qu'elle est récente.
+    private var startRequest: StartRequest?
+    private let healthStore = HKHealthStore()
 
     func activate() {
         guard WCSession.isSupported() else { return }
@@ -20,10 +30,44 @@ final class PhoneConnectivity: NSObject, WCSessionDelegate {
         WCSession.default.activate()
     }
 
-    /// Envoie les séances renfo/circuit et les minuteurs libres à la montre.
-    func sendWatchData(sessions: Data, timers: Data) {
-        pending = ["sessions": sessions, "timers": timers]
+    /// Envoie les séances, les minuteurs libres et la liste des séances faites à la montre.
+    /// Le contexte remplace entièrement le précédent : tout part à chaque fois.
+    func sendWatchData(sessions: Data, timers: Data, doneIds: [String]) {
+        var context: [String: Any] = ["sessions": sessions, "timers": timers, "done": doneIds]
+        if let startRequest, startRequest.isFresh(now: .now),
+           let data = try? Coding.compactEncoder.encode(startRequest) {
+            context["start"] = data
+        }
+        pending = context
         flush()
+    }
+
+    /// Ouvre Coach sur la montre avec la séance demandée, prête à commencer (#5, #15).
+    /// La demande part dans le contexte (reçu même si l'app montre se lance après) et, si la montre
+    /// est joignable, aussi en message direct (plus rapide quand Coach y est déjà ouvert).
+    func startOnWatch(_ request: StartRequest, configuration: HKWorkoutConfiguration) async -> WatchStartResult {
+        guard WCSession.isSupported() else { return .unreachable }
+        let session = WCSession.default
+        guard session.activationState == .activated, session.isPaired, session.isWatchAppInstalled else {
+            return .unreachable
+        }
+        startRequest = request
+        guard let data = try? Coding.compactEncoder.encode(request) else { return .unreachable }
+        var context = pending ?? session.applicationContext
+        context["start"] = data
+        pending = context
+        flush()
+        if session.isReachable {
+            session.sendMessage(["start": data], replyHandler: nil, errorHandler: nil)
+        }
+        // Réveille l'app Coach de la montre (elle reçoit la configuration et prépare la séance Santé).
+        let opened: Bool = await withCheckedContinuation { continuation in
+            healthStore.startWatchApp(with: configuration) { success, error in
+                if let error { print("Ouverture de Coach sur la montre impossible : \(error)") }
+                continuation.resume(returning: success)
+            }
+        }
+        return opened ? .sent : .unreachable
     }
 
     private func flush() {

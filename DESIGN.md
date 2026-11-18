@@ -95,6 +95,11 @@ Direction : **sportif, énergique, lisible en plein effort**. Le thème actuel d
 - Retour haptique aux transitions (début, fin de série, fin de repos).
 - Vérifier l'affichage permanent (luminosité réduite, `isLuminanceReduced`).
 - **Pas d'explications sur la montre** (pas de « Comment faire ? ») : elles restent sur l'iPhone.
+- **Commandes sur une page à part** (pause, passer, +30 s, terminer, FC, durée) : on y arrive en
+  glissant vers la droite, comme dans l'app Exercice. Les écrans d'effort et de repos n'ont pas
+  d'autre bouton que l'action de l'étape (« Série faite »).
+- **Lancer depuis l'iPhone** : « Démarrer sur la montre » ouvre Coach sur la montre, sur la séance,
+  prête. Rien ne démarre avant le « Commencer » de la montre.
 - Doit rester utilisable en courant, en sueur, avec des doigts mouillés.
 
 ## iPhone

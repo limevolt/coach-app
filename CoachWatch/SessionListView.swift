@@ -1,17 +1,26 @@
 // SessionListView.swift — écran d'accueil de la montre
-// En haut : « Prochain entraînement » + gros bouton GO.
+// En haut : « Prochain entraînement » + « Commencer » (le seul : la séance démarre aussitôt, #16).
+// Une séance lancée depuis l'iPhone (« Démarrer sur la montre », #5) s'ouvre ici, prête.
 // En faisant défiler : les autres séances de la semaine, pour en lancer une autre.
 // Tout en bas : « Entraînement libre » → les minuteurs libres enregistrés (créés sur l'iPhone).
 
 import SwiftUI
 import WorkoutKit
 
+/// Séance à ouvrir : `autoStart` = elle démarre aussitôt (« Commencer » de l'accueil),
+/// sinon elle s'ouvre prête, avec un seul « Commencer ».
+struct SessionRoute: Hashable {
+    var session: PlannedSession
+    var autoStart: Bool
+}
+
 struct SessionListView: View {
     @Environment(WatchStore.self) private var store
     @Environment(WorkoutManager.self) private var workout
+    @State private var path = NavigationPath()
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {
                     if let next = store.nextSession {
@@ -28,7 +37,7 @@ struct SessionListView: View {
                             .foregroundStyle(Theme.muted)
                             .padding(.top, 6)
                         ForEach(others) { session in
-                            SessionLauncher(session: session) {
+                            NavigationLink(value: SessionRoute(session: session, autoStart: false)) {
                                 SessionRow(session: session, done: store.doneIds.contains(session.id))
                             }
                             .buttonStyle(.plain)
@@ -46,21 +55,43 @@ struct SessionListView: View {
             }
             .navigationTitle("Coach")
             .navigationBarTitleDisplayMode(.inline)
-            .navigationDestination(for: PlannedSession.self) { session in
-                if session.type == .circuit, let config = IntervalRunConfig.circuit(session) {
-                    IntervalRunView(config: config)
+            .navigationDestination(for: SessionRoute.self) { route in
+                let session = route.session
+                if session.type == .run {
+                    RunReadyView(session: session)
+                } else if session.type == .circuit, let config = IntervalRunConfig.circuit(session) {
+                    IntervalRunView(config: config, autoStart: route.autoStart, tint: Theme.color(for: session.type))
                 } else {
-                    StrengthRunView(session: session)
+                    StrengthRunView(session: session, autoStart: route.autoStart)
                 }
             }
             .navigationDestination(for: IntervalTemplate.self) { template in
-                IntervalRunView(config: .template(template))
+                IntervalRunView(config: .template(template), tint: Theme.teal)
             }
         }
         .task { await workout.requestAuthorization() }
         // Filet de sécurité : si une séance tourne encore en revenant à l'accueil, on l'arrête.
         .onAppear {
             if workout.isActive { Task { await workout.end() } }
+        }
+        .onChange(of: store.startRequest) { _, _ in openRequestedSession() }
+        .onAppear { openRequestedSession() }
+    }
+
+    /// « Démarrer sur la montre » : la séance demandée s'ouvre, prête, par-dessus tout le reste
+    /// (sauf si une séance est déjà en cours : on ne l'interrompt pas).
+    private func openRequestedSession() {
+        guard let request = store.startRequest else { return }
+        store.startRequest = nil
+        guard !workout.isActive else { return }
+        if request.isTimer {
+            guard let template = store.template(id: request.id) else { return }
+            path = NavigationPath()
+            path.append(template)
+        } else {
+            guard let session = store.session(id: request.id) else { return }
+            path = NavigationPath()
+            path.append(SessionRoute(session: session, autoStart: false))
         }
     }
 
@@ -100,11 +131,19 @@ private struct NextSessionCard: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
 
-            SessionLauncher(session: session) {
-                Label("Commencer", systemImage: "play.fill")
+            if session.type == .run {
+                RunLauncher(session: session) {
+                    Label("Commencer", systemImage: "play.fill")
+                }
+                .buttonStyle(.coachPrimary)
+                .padding(.top, 2)
+            } else {
+                NavigationLink(value: SessionRoute(session: session, autoStart: true)) {
+                    Label("Commencer", systemImage: "play.fill")
+                }
+                .buttonStyle(.coachPrimary)
+                .padding(.top, 2)
             }
-            .buttonStyle(.coachPrimary)
-            .padding(.top, 2)
         }
     }
 }
@@ -189,21 +228,27 @@ private struct SessionRow: View {
 
 // MARK: - Lancement
 
-/// Bouton qui lance la séance : renfo / circuit dans Coach, course dans l'app Exercice
-/// (avec échauffement, blocs, alertes d'allure et de zone FC du plan).
-private struct SessionLauncher<Content: View>: View {
+/// Course prête (ouverte depuis la liste ou l'iPhone) : « Commencer » ouvre l'app Exercice,
+/// avec échauffement, blocs, alertes d'allure et de zone FC du plan.
+private struct RunReadyView: View {
     let session: PlannedSession
-    @ViewBuilder let content: () -> Content
+    @Environment(WorkoutManager.self) private var workout
 
     var body: some View {
-        if session.type == .run {
-            RunLauncher(session: session, content: content)
-        } else {
-            NavigationLink(value: session, label: content)
+        WorkoutReadyView(typeLabel: session.sportLabel, icon: Theme.icon(for: session.type),
+                         color: Theme.color(for: session.type), title: session.title,
+                         summary: session.shortDayLabel) {
+            RunLauncher(session: session) {
+                Label("Commencer", systemImage: "play.fill")
+            }
+            .buttonStyle(.coachPrimary)
         }
+        // La course est enregistrée par l'app Exercice : la séance préparée par l'iPhone ne sert pas.
+        .onAppear { workout.discardPrepared() }
     }
 }
 
+/// Bouton qui ouvre la course dans l'app Exercice.
 private struct RunLauncher<Content: View>: View {
     let session: PlannedSession
     let content: () -> Content

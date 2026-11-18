@@ -11,15 +11,21 @@ struct TimersView: View {
             List {
                 Section {
                     ForEach(store.templates) { template in
-                        Button {
-                            editing = template
-                        } label: {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(template.name).font(.system(size: 16, weight: .bold, design: .rounded)).foregroundStyle(Theme.text)
-                                Text("\(IntervalTemplate.activityLabel(template.activity)) · \(template.summary)")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                        HStack(spacing: 8) {
+                            Button {
+                                editing = template
+                            } label: {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(template.name).font(.system(size: 16, weight: .bold, design: .rounded)).foregroundStyle(Theme.text)
+                                    Text("\(IntervalTemplate.activityLabel(template.activity)) · \(template.summary)")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
+                            .buttonStyle(.borderless)
+                            // Démarrer sur la montre (#5) : le minuteur s'ouvre prêt sur la montre.
+                            StartOnWatchIconButton(name: template.name) { await store.startOnWatch(template) }
                         }
                     }
                     .onDelete { store.deleteTemplates(at: $0) }

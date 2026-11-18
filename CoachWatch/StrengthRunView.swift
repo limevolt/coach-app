@@ -1,19 +1,23 @@
-// StrengthRunView.swift — déroulé guidé : séries, répétitions, minuteur de repos
-// Les exercices chronométrés s'enchaînent seuls : repos → exercice → repos…, sans toucher la montre.
-// Pendant un minuteur : pause / reprendre, passer, arrêter la séance.
+// StrengthRunView.swift — déroulé guidé du renfo : séries, répétitions, minuteur de repos
+// Un seul « Commencer » (#16) : il lance la séance Santé et le premier exercice en même temps,
+// puis tout s'enchaîne : série → repos → série… Les exercices chronométrés partent seuls.
+// Pause, passer, +30 s et terminer sont sur la page de gauche (WorkoutControlsPage).
 
 import SwiftUI
 import WatchKit
 
 struct StrengthRunView: View {
     let session: PlannedSession
+    /// Lancée depuis « Commencer » de l'accueil : la séance démarre tout de suite, sans écran « prête ».
+    var autoStart = false
+
     @Environment(WatchStore.self) private var store
     @Environment(WorkoutManager.self) private var workout
     @Environment(\.dismiss) private var dismiss
 
     /// Minuteurs de la séance.
     private enum Countdown: Equatable {
-        case prepare   // « Prépare-toi » avant un exercice chronométré
+        case prepare   // « Prêt ? » avant un premier exercice chronométré (automatique, sans appui)
         case timed     // exercice chronométré (gainage…)
         case rest      // repos entre les séries
     }
@@ -26,15 +30,19 @@ struct StrengthRunView: View {
         case feedback
     }
 
+    /// Valeur réglée par la Digital Crown pendant une série.
+    private enum CrownTarget { case reps, weight }
+
     @State private var phase: Phase = .ready
     @State private var exerciseIndex = 0
     @State private var setNumber = 1
     @State private var reps = 0
     @State private var weight = 0.0
+    @State private var crownTarget: CrownTarget = .reps
+    @State private var crown = 0.0
     @State private var done: [SetLog] = []
     @State private var rpe = 6
     @State private var saving = false
-    @State private var showHelp: Exercise?
     @State private var confirmStop = false
 
     private static let prepareSec: TimeInterval = 5
@@ -48,9 +56,13 @@ struct StrengthRunView: View {
         content
             .navigationBarBackButtonHidden(phase != .ready)
             .task(id: phase) { await runTimer() }
-            .sheet(item: $showHelp) { ex in ExerciseHelpView(exercise: ex) }
-            .confirmationDialog("Arrêter la séance ?", isPresented: $confirmStop) {
-                Button("Arrêter", role: .destructive) { phase = .feedback }
+            // Retour sans avoir commencé : la séance Santé préparée par l'iPhone est abandonnée.
+            .onDisappear { if phase == .ready { workout.discardPrepared() } }
+            .task {
+                if autoStart, phase == .ready { await start() }
+            }
+            .confirmationDialog("Terminer la séance ?", isPresented: $confirmStop) {
+                Button("Terminer", role: .destructive) { phase = .feedback }
                 Button("Continuer", role: .cancel) {}
             } message: {
                 Text("Les séries déjà faites sont gardées.")
@@ -63,175 +75,164 @@ struct StrengthRunView: View {
 
     @ViewBuilder private var content: some View {
         switch phase {
-        case .ready: readyView
-        case .working: workingView
-        case .countdown(let timer, let end): countdownView(timer, end: end, remaining: nil)
-        case .paused(let timer, let remaining): countdownView(timer, end: nil, remaining: remaining)
-        case .feedback: feedbackView
+        case .ready:
+            if autoStart {
+                ProgressView()
+            } else {
+                readyView
+            }
+        case .feedback:
+            feedbackView
+        default:
+            WorkoutPager(step: stepKey) {
+                mainView
+            } controls: {
+                controlsPage
+            }
+        }
+    }
+
+    /// Change à chaque nouvelle étape : la page principale revient au premier plan.
+    private var stepKey: AnyHashable {
+        switch phase {
+        case .working: return "w-\(exerciseIndex)-\(setNumber)"
+        case .countdown(let t, _), .paused(let t, _): return "\(t)-\(exerciseIndex)-\(setNumber)"
+        default: return "other"
         }
     }
 
     // MARK: Vues
 
     private var readyView: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(session.title).font(Theme.watchTitle)
-                if let notes = session.notes {
-                    Text(notes).font(.caption2).foregroundStyle(.secondary)
-                }
-                ForEach(Array(exercises.enumerated()), id: \.offset) { _, ex in
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(ex.name).font(.footnote.weight(.semibold))
-                        Text(ex.targetLabel).font(.caption2).foregroundStyle(.secondary)
-                    }
-                }
-                Button {
-                    Task { await start() }
-                } label: {
-                    Label("Commencer", systemImage: "play.fill")
-                }
-                .buttonStyle(.coachPrimary)
-                .disabled(exercises.isEmpty)
-                .padding(.top, 4)
-            }
+        WorkoutReadyView(typeLabel: session.sportLabel, icon: Theme.icon(for: session.type),
+                         color: Theme.color(for: session.type), title: session.title,
+                         summary: exercises.isEmpty ? nil : session.exerciseSummary) {
+            StartButton(disabled: exercises.isEmpty) { Task { await start() } }
         }
     }
 
+    @ViewBuilder private var mainView: some View {
+        switch phase {
+        case .working: workingView
+        case .countdown(let timer, let end): countdownView(timer, end: end, remaining: nil)
+        case .paused(let timer, let remaining): countdownView(timer, end: nil, remaining: remaining)
+        default: EmptyView()
+        }
+    }
+
+    /// Série en répétitions : nom, série x/y, répétitions (Digital Crown), « Série faite ».
     private var workingView: some View {
-        ScrollView {
-            VStack(spacing: 6) {
-                if let ex = current {
-                    if let anim = ExerciseLibrary.animation(for: ex) {
-                        AnimatedExerciseFigure(animation: anim, fps: 20)
-                            .frame(height: 78)
-                    }
-                    Text(ex.name)
-                        .font(Theme.watchTitle)
-                        .multilineTextAlignment(.center)
-                    Text("Série \(setNumber)/\(ex.setCount) · exo \(exerciseIndex + 1)/\(exercises.count)")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-
-                    if let duration = ex.durationSec {
-                        Text("\(duration) s").font(.title2.monospacedDigit())
-                        Button {
-                            startTimed()
-                        } label: {
-                            Label("Commencer", systemImage: "play.fill")
-                        }
-                        .buttonStyle(.coachPrimary)
-                    } else {
-                        adjuster(value: "\(reps) reps",
-                                 minus: { reps = max(0, reps - 1) },
-                                 plus: { reps += 1 })
-                        if ex.weightKg != nil {
-                            adjuster(value: "\(weight.clean) kg",
-                                     minus: { weight = max(0, weight - 2.5) },
-                                     plus: { weight += 2.5 })
-                        }
-                        Button {
-                            completeSet()
-                        } label: {
-                            Label("Série faite", systemImage: "checkmark")
-                        }
-                        .buttonStyle(.coachPrimary)
-                    }
-
-                    Button {
-                        showHelp = ex
-                    } label: {
-                        Label("Comment faire ?", systemImage: "questionmark.circle")
-                    }
-                    .buttonStyle(.coachSecondary)
-                    if let notes = ex.notes {
-                        Text(notes)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                    }
-                    heartRateLabel
-                    Button {
-                        confirmStop = true
-                    } label: {
-                        Label("Arrêter la séance", systemImage: "xmark")
-                    }
-                    .buttonStyle(.coachDestructive)
-                }
-            }
-        }
-    }
-
-    /// Minuteur en cours (end) ou en pause (remaining).
-    private func countdownView(_ timer: Countdown, end: Date?, remaining: TimeInterval?) -> some View {
-        let tint: Color = timer == .rest ? Theme.teal : (timer == .prepare ? Theme.warm : Theme.accent)
-        // Pendant le repos et la préparation, on montre l'exercice qui arrive.
         let ex = current
-        return VStack(spacing: 2) {
-            Text(title(timer, ex))
-                .font(Theme.watchTitle)
-                .lineLimit(2)
-                .minimumScaleFactor(0.7)
-                .multilineTextAlignment(.center)
-            if let ex {
-                Text(timer == .timed
-                     ? "Série \(setNumber)/\(ex.setCount)"
-                     : "Ensuite : \(ex.name) · \(setNumber)/\(ex.setCount)")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            HStack(spacing: 4) {
-                if let ex, let anim = ExerciseLibrary.animation(for: ex) {
-                    AnimatedExerciseFigure(animation: anim, playing: end != nil, fps: 18)
-                        .frame(width: 52, height: 56)
-                        .opacity(timer == .timed ? 1 : 0.6)
+        return WorkoutStage(title: ex?.name,
+                            subtitle: ex.map { "Série \(setNumber)/\($0.setCount)" },
+                            background: Theme.effortBackground(for: session.type)) {
+            VStack(spacing: 2) {
+                crownValue(Text("\(reps)").font(Theme.watchCountdown) + Text(" reps").font(.footnote.weight(.bold)),
+                           target: .reps, label: "\(reps) répétitions")
+                if ex?.weightKg != nil {
+                    crownValue(Text("\(weight.clean) kg").font(.footnote.weight(.bold)),
+                               target: .weight, label: "\(weight.clean) kilos")
                 }
-                Group {
-                    if let end {
-                        Text(timerInterval: Date.now...max(end, Date.now), countsDown: true)
-                    } else {
-                        Text(Durations.clock(Int((remaining ?? 0).rounded(.up))))
-                    }
-                }
-                .font(.system(size: 38, weight: .bold, design: .rounded))
-                .monospacedDigit()
-                .minimumScaleFactor(0.6)
-                .lineLimit(1)
-                .foregroundStyle(end == nil ? Theme.muted : tint)
             }
-            if end == nil {
-                Text("En pause").font(.caption2.weight(.bold)).foregroundStyle(Theme.warm)
-            } else {
-                heartRateLabel
+            .focusable()
+            .digitalCrownRotation($crown, from: 0, through: 500, by: 1,
+                                  sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
+            .onChange(of: crown) { _, value in applyCrown(value) }
+        } bottom: {
+            Button {
+                completeSet()
+            } label: {
+                Label("Série faite", systemImage: "checkmark")
             }
-
-            if timer == .rest, let end {
-                Button("+30 s") { phase = .countdown(.rest, end: end.addingTimeInterval(30)) }
-                    .buttonStyle(.coachSecondary)
-            }
-            HStack(spacing: 4) {
-                Button { togglePause() } label: {
-                    Image(systemName: end == nil ? "play.fill" : "pause.fill")
-                }
-                Button { skip(timer) } label: {
-                    Image(systemName: "forward.fill")
-                }
-                Button { confirmStop = true } label: {
-                    Image(systemName: "xmark")
-                }
-                .buttonStyle(.coachDestructive)
-            }
-            .buttonStyle(.coachSecondary)
+            .buttonStyle(.coachPrimary)
         }
     }
 
-    private func title(_ timer: Countdown, _ ex: Exercise?) -> String {
-        switch timer {
-        case .prepare: return "Prépare-toi"
-        case .timed: return ex?.name ?? "Tiens bon !"
-        case .rest: return "Repos"
+    /// Valeur réglable : touchée, c'est elle que la couronne modifie (entourée).
+    private func crownValue(_ text: Text, target: CrownTarget, label: String) -> some View {
+        Button {
+            crownTarget = target
+            syncCrown()
+        } label: {
+            text
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .padding(.horizontal, 8)
+                .overlay {
+                    if crownTarget == target {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(Theme.color(for: session.type), lineWidth: 2)
+                    }
+                }
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+        .accessibilityHint("Tourne la couronne pour régler")
+    }
+
+    /// Effort chronométré, repos ou mise en place.
+    @ViewBuilder
+    private func countdownView(_ timer: Countdown, end: Date?, remaining: TimeInterval?) -> some View {
+        let ex = current
+        switch timer {
+        case .timed:
+            WorkoutStage(title: ex?.name,
+                                subtitle: ex.map { "Série \(setNumber)/\($0.setCount)" },
+                                background: Theme.effortBackground(for: session.type)) {
+                CountdownText(end: end, remaining: remaining, color: Theme.color(for: session.type))
+            } bottom: {
+                pausedLabel(end == nil)
+            }
+        case .rest, .prepare:
+            WorkoutStage(label: timer == .rest ? "Repos" : "Prêt ?",
+                                background: Theme.restBackground) {
+                CountdownText(end: end, remaining: remaining, font: Theme.watchRestCountdown)
+            } bottom: {
+                VStack(spacing: 0) {
+                    pausedLabel(end == nil)
+                    if let ex {
+                        Text("ENSUITE")
+                            .font(Theme.watchLabel)
+                            .tracking(1)
+                            .foregroundStyle(Theme.text.opacity(0.8))
+                        Text("\(ex.name) · \(setNumber)/\(ex.setCount)")
+                            .font(.footnote.weight(.heavy))
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.7)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private func pausedLabel(_ paused: Bool) -> some View {
+        if paused {
+            Text("En pause").font(.footnote.weight(.bold)).foregroundStyle(Theme.warm)
+        }
+    }
+
+    private var controlsPage: some View {
+        let timer: Countdown?
+        let paused: Bool
+        switch phase {
+        case .countdown(let t, _): timer = t; paused = false
+        case .paused(let t, _): timer = t; paused = true
+        default: timer = nil; paused = false
+        }
+        return WorkoutControlsPage(
+            isPaused: paused,
+            canPause: timer != nil,
+            canSkip: timer != nil,
+            canAddRest: timer == .rest,
+            heartRate: workout.heartRate,
+            startedAt: workout.startedAt,
+            onPause: togglePause,
+            onSkip: { if let timer { skip(timer) } },
+            onAddRest: addRest,
+            onStop: { confirmStop = true }
+        )
     }
 
     private var feedbackView: some View {
@@ -243,37 +244,18 @@ struct StrengthRunView: View {
         }
     }
 
-    @ViewBuilder private var heartRateLabel: some View {
-        if workout.heartRate > 0 {
-            Label("\(Int(workout.heartRate))", systemImage: "heart.fill")
-                .font(.caption)
-                .foregroundStyle(.red)
-        }
-    }
-
-    private func adjuster(value: String, minus: @escaping () -> Void, plus: @escaping () -> Void) -> some View {
-        HStack(spacing: 4) {
-            Button(action: minus) { Image(systemName: "minus") }
-                .frame(width: 44)
-            Text(value)
-                .font(.title3.monospacedDigit())
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-                .frame(maxWidth: .infinity)
-            Button(action: plus) { Image(systemName: "plus") }
-                .frame(width: 44)
-        }
-    }
-
     // MARK: Logique
 
+    /// Le seul « Commencer » : séance Santé + premier exercice en même temps.
     private func start() async {
-        await workout.start(activity: .traditionalStrengthTraining, location: .indoor)
+        guard phase == .ready else { return }
+        await workout.start(activity: session.workoutActivity, location: session.workoutLocation)
         exerciseIndex = 0
         setNumber = 1
         done = []
         loadTargets()
-        // Premier exercice chronométré : 5 s pour se mettre en place, puis ça part tout seul.
+        WKInterfaceDevice.current().play(.start)
+        // Premier exercice chronométré : 5 s pour se mettre en place, puis il part tout seul.
         if current?.durationSec != nil {
             phase = .countdown(.prepare, end: Date.now.addingTimeInterval(Self.prepareSec))
         } else {
@@ -284,6 +266,24 @@ struct StrengthRunView: View {
     private func loadTargets() {
         reps = current?.reps ?? 0
         weight = current?.weightKg ?? 0
+        crownTarget = .reps
+        syncCrown()
+    }
+
+    /// Place la couronne sur la valeur choisie (répétitions, ou poids par pas de 0,5 kg).
+    private func syncCrown() {
+        crown = crownTarget == .reps ? Double(reps) : weight * 2
+    }
+
+    private func applyCrown(_ value: Double) {
+        let step = Int(value.rounded())
+        switch crownTarget {
+        case .reps:
+            if step != reps { reps = max(0, step) }
+        case .weight:
+            let kg = Double(max(0, step)) / 2
+            if kg != weight { weight = kg }
+        }
     }
 
     private func startTimed() {
@@ -343,10 +343,19 @@ struct StrengthRunView: View {
     }
 
     private func skip(_ timer: Countdown) {
+        if case .paused = phase { workout.resume() }
         switch timer {
         case .prepare: startTimed()
         case .timed: completeSet()
         case .rest: goToNextSet()
+        }
+    }
+
+    private func addRest() {
+        switch phase {
+        case .countdown(.rest, let end): phase = .countdown(.rest, end: end.addingTimeInterval(30))
+        case .paused(.rest, let remaining): phase = .paused(.rest, remaining: remaining + 30)
+        default: break
         }
     }
 
@@ -399,5 +408,15 @@ struct StrengthRunView: View {
             kind: nil
         ))
         dismiss()
+    }
+}
+
+extension PlannedSession {
+    /// « 6 exercices · 40 min » (durée seulement si le plan la donne).
+    var exerciseSummary: String {
+        let count = strength?.exercises.count ?? circuit?.exercises.count ?? 0
+        var parts = ["\(count) exercice\(count > 1 ? "s" : "")"]
+        if let circuit { parts.append(Durations.label(circuit.totalSeconds)) }
+        return parts.joined(separator: " · ")
     }
 }

@@ -23,9 +23,10 @@ final class WatchCaptures: XCTestCase {
             shot("03-renfo-pret")
             if tap("Commencer", in: app) {
                 shot("04-renfo-serie")
-                app.swipeUp()
-                shot("05-renfo-serie-bas")
-                app.swipeDown()
+                // Page de commandes (pause, passer, +30 s, terminer) : glisser vers la droite
+                app.swipeRight()
+                shot("05-renfo-commandes")
+                app.swipeLeft()
                 if tap("Série faite", in: app) {
                     shot("06-renfo-repos")
                 }

@@ -10,6 +10,8 @@ struct PlanView: View {
     @State private var busy = false
     @State private var showNewPlan = false
     @State private var confirmReset = false
+    /// Appui long › « Marquer comme non faite » : séance à confirmer (#13).
+    @State private var notDone: PlannedSession?
 
     var body: some View {
         NavigationStack {
@@ -53,6 +55,14 @@ struct PlanView: View {
             }
             .sheet(isPresented: $showNewPlan) { NewPlanView() }
             .resetPlanConfirmation(isPresented: $confirmReset, store: store)
+            .confirmationDialog("Marquer comme non faite ?",
+                                isPresented: Binding(get: { notDone != nil }, set: { if !$0 { notDone = nil } }),
+                                titleVisibility: .visible, presenting: notDone) { session in
+                Button("Marquer comme non faite", role: .destructive) { store.markNotDone(session.id) }
+                Button("Annuler", role: .cancel) {}
+            } message: { _ in
+                Text(SessionDetailView.notDoneMessage)
+            }
             .alert("Import impossible",
                    isPresented: Binding(get: { importError != nil }, set: { if !$0 { importError = nil } })) {
                 Button("OK", role: .cancel) {}
@@ -174,6 +184,11 @@ struct PlanView: View {
             }
             .buttonStyle(.plain)
             .contextMenu {
+                if store.log(for: session.id) != nil {
+                    Button("Marquer comme non faite", systemImage: "arrow.uturn.backward", role: .destructive) {
+                        notDone = session
+                    }
+                }
                 if store.isMissed(session) {
                     Button("Reprogrammer aujourd'hui", systemImage: "calendar") {
                         perform { await store.move(session.id, to: Day.key(.now)) }
