@@ -39,7 +39,7 @@ struct SessionListView: View {
                     let others = store.otherSessions
                     if !others.isEmpty {
                         Text("AUTRES SÉANCES")
-                            .font(.system(size: 11, weight: .semibold, design: .rounded))
+                            .font(.coach(size: 11, weight: .semibold))
                             .tracking(1.2)
                             .foregroundStyle(Theme.muted)
                             .padding(.top, 6)
@@ -59,6 +59,7 @@ struct SessionListView: View {
                     .buttonStyle(.coachDashed)
                     .padding(.top, 6)
                 }
+                .padding(.horizontal, Theme.watchMargin)
             }
             .navigationTitle("Coach")
             .navigationBarTitleDisplayMode(.inline)
@@ -67,7 +68,7 @@ struct SessionListView: View {
                     destination(session, autoStart: route.autoStart)
                 } else {
                     Text("Séance introuvable. Ouvre Coach sur l'iPhone pour synchroniser.")
-                        .font(.footnote)
+                        .font(.coach(.footnote))
                         .foregroundStyle(Theme.muted)
                 }
             }
@@ -125,19 +126,14 @@ struct SessionListView: View {
         store.markOpened(request)
     }
 
+    /// Rien à faire : une phrase courte, sans titre (#27).
     private var emptyState: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("PROCHAIN ENTRAÎNEMENT")
-                .font(.system(size: 11, weight: .semibold, design: .rounded))
-                .tracking(1.2)
-                .foregroundStyle(Theme.accent)
-            Text(store.sessions.isEmpty
-                 ? "Aucune séance. Ouvre Coach sur l'iPhone pour synchroniser."
-                 : "Rien de prévu pour l'instant. Repos ! 😌")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-        }
+        Text(store.sessions.isEmpty ? "Aucune séance. Synchronise depuis l'iPhone." : "Rien de prévu. Repos !")
+            .font(.coach(.footnote, weight: .semibold))
+            .foregroundStyle(Theme.muted)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
+
 }
 
 // MARK: - Prochain entraînement
@@ -146,20 +142,15 @@ private struct NextSessionCard: View {
     let session: PlannedSession
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("PROCHAIN ENTRAÎNEMENT")
-                .font(.system(size: 11, weight: .semibold, design: .rounded))
-                .tracking(1.2)
-                .foregroundStyle(Theme.accent)
+        // Accueil épuré (#27) : l'activité en grand + « Commencer ». Le titre et la date restent
+        // lus par VoiceOver.
+        VStack(alignment: .leading, spacing: 8) {
             Label(session.sportLabel, systemImage: Theme.icon(for: session.type))
-                .font(Theme.watchTitle)
+                .font(Theme.watchHomeActivity)
                 .foregroundStyle(Theme.color(for: session.type))
-            Text(session.title)
-                .font(.footnote)
-                .lineLimit(2)
-            Text(session.shortDayLabel)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .accessibilityLabel("Prochain entraînement : \(session.sportLabel), \(session.title), \(session.shortDayLabel)")
 
             if session.type == .run {
                 RunLauncher(session: session) {
@@ -189,22 +180,22 @@ private struct FreeWorkoutListView: View {
             VStack(spacing: 8) {
                 if store.templates.isEmpty {
                     Text("Aucun entraînement libre. Crée-les dans Coach sur l'iPhone.")
-                        .font(.footnote)
+                        .font(.coach(.footnote))
                         .foregroundStyle(.secondary)
                 }
                 ForEach(store.templates) { template in
                     NavigationLink(value: template) {
                         HStack(spacing: 8) {
                             Image(systemName: "timer")
-                                .font(.footnote)
+                                .font(.coach(.footnote))
                                 .foregroundStyle(Theme.teal)
                                 .frame(width: 22)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(template.name)
-                                    .font(.footnote.weight(.semibold))
+                                    .font(.coach(.footnote, weight: .semibold))
                                     .lineLimit(1)
                                 Text(template.summary)
-                                    .font(.caption2)
+                                    .font(.coach(.caption2))
                                     .foregroundStyle(.secondary)
                                     .lineLimit(1)
                             }
@@ -218,6 +209,7 @@ private struct FreeWorkoutListView: View {
                     .buttonStyle(.plain)
                 }
             }
+            .padding(.horizontal, Theme.watchMargin)
         }
         .navigationTitle("Libre")
         .navigationBarTitleDisplayMode(.inline)
@@ -233,15 +225,15 @@ private struct SessionRow: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: Theme.icon(for: session.type))
-                .font(.footnote)
+                .font(.coach(.footnote))
                 .foregroundStyle(Theme.color(for: session.type))
                 .frame(width: 22)
             VStack(alignment: .leading, spacing: 1) {
                 Text(session.shortDayLabel)
-                    .font(.caption2)
+                    .font(.coach(.caption2))
                     .foregroundStyle(.secondary)
                 Text(session.sportLabel)
-                    .font(.footnote.weight(.semibold))
+                    .font(.coach(.footnote, weight: .semibold))
                     .lineLimit(1)
             }
             Spacer(minLength: 4)

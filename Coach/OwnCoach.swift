@@ -293,7 +293,7 @@ struct OwnCoachSettingsView: View {
                 .disabled(testing || url.isEmpty)
                 if let testResult {
                     Text(testResult)
-                        .font(.footnote)
+                        .font(.coach(.footnote))
                         .foregroundStyle(testFailed ? Theme.danger : Theme.accent)
                 }
             }
@@ -391,9 +391,9 @@ struct PlanProposalView: View {
                                     .foregroundStyle(Theme.color(for: s.type))
                                     .frame(width: 24)
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(s.title).font(.subheadline.weight(.semibold))
+                                    Text(s.title).font(.coach(.subheadline, weight: .semibold))
                                     Text("\(s.date) · \(s.typeLabel)")
-                                        .font(.caption)
+                                        .font(.coach(.caption))
                                         .foregroundStyle(.secondary)
                                 }
                             }

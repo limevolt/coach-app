@@ -87,7 +87,7 @@ struct FormattedNotes: View {
                 switch line {
                 case .heading(let t):
                     Text(markdown(t))
-                        .font(.system(size: size, weight: .bold, design: .rounded))
+                        .font(.coach(size: size, weight: .bold))
                         .foregroundStyle(Theme.text)
                         .padding(.top, 2)
                 case .bullet(let t):
@@ -95,11 +95,11 @@ struct FormattedNotes: View {
                         Text("•").bold().foregroundStyle(Theme.accent)
                         Text(markdown(t))
                     }
-                    .font(.system(size: size, design: .rounded))
+                    .font(.coach(size: size))
                     .foregroundStyle(Theme.text)
                 case .paragraph(let t):
                     Text(markdown(t))
-                        .font(.system(size: size, design: .rounded))
+                        .font(.coach(size: size))
                         .foregroundStyle(Theme.text)
                 }
             }

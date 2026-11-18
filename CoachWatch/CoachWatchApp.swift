@@ -14,6 +14,7 @@ struct CoachWatchApp: App {
                 .environment(appDelegate.store)
                 .environment(appDelegate.workout)
                 .tint(Theme.accent)
+                .font(.coach(.body))
                 .dynamicTypeSize(...DynamicTypeSize.large)
         }
     }

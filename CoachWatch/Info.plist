@@ -24,6 +24,15 @@
 	<string>Coach lit ta fréquence cardiaque et tes calories pendant la séance.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Coach enregistre tes séances (durée, calories, fréquence cardiaque) dans Santé.</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Outfit-Regular.ttf</string>
+		<string>Outfit-Medium.ttf</string>
+		<string>Outfit-SemiBold.ttf</string>
+		<string>Outfit-Bold.ttf</string>
+		<string>Outfit-ExtraBold.ttf</string>
+		<string>Outfit-Black.ttf</string>
+	</array>
 	<key>WKApplication</key>
 	<true/>
 	<key>WKBackgroundModes</key>

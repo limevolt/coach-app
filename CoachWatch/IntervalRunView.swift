@@ -223,7 +223,7 @@ struct IntervalRunView: View {
 
     @ViewBuilder private var pausedLabel: some View {
         if segmentEnd == nil {
-            Text("En pause").font(.footnote.weight(.bold)).foregroundStyle(Theme.warm)
+            Text("En pause").font(.coach(.footnote, weight: .bold)).foregroundStyle(Theme.warm)
         }
     }
 
@@ -288,12 +288,12 @@ struct IntervalRunView: View {
     private func beginSegment() {
         guard let seg = current else {
             phase = .feedback
-            WKInterfaceDevice.current().play(.success)
+            Haptics.done()
             return
         }
         pausedRemaining = nil
         segmentEnd = Date.now.addingTimeInterval(TimeInterval(seg.seconds))
-        WKInterfaceDevice.current().play(seg.kind == .work ? .start : .stop)
+        if seg.kind == .work { Haptics.go() } else { Haptics.rest() }
     }
 
     private func tick() async {
@@ -304,7 +304,7 @@ struct IntervalRunView: View {
             if remaining > 3.5 {
                 try? await Task.sleep(for: .seconds(remaining - 3))
             } else {
-                WKInterfaceDevice.current().play(.click)
+                Haptics.tick()
                 try? await Task.sleep(for: .seconds(min(1, remaining)))
             }
             if Task.isCancelled { return }

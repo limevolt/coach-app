@@ -91,7 +91,7 @@ struct AdaptSessionView: View {
                 .pickerStyle(.segmented)
             case .martial:
                 Label("Avec matériel : il faut un sac de frappe.", systemImage: "info.circle")
-                    .font(.footnote)
+                    .font(.coach(.footnote))
                     .foregroundStyle(Theme.muted)
             case .run:
                 EmptyView()
@@ -99,21 +99,21 @@ struct AdaptSessionView: View {
 
             if let source, !isSame {
                 Text("Reprend « \(source.title) », prévue \(source.dateLabel).")
-                    .font(.subheadline)
+                    .font(.coach(.subheadline))
                     .foregroundStyle(Theme.text)
                 if canSwap {
                     Toggle(isOn: $swapDates) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Échanger les jours")
                             Text("« \(slot.title) » passe \(source.dateLabel).")
-                                .font(.caption)
+                                .font(.coach(.caption))
                                 .foregroundStyle(Theme.muted)
                         }
                     }
                 }
             } else if source == nil {
                 Text("Aucune séance de ce type dans ton plan : l'app te propose une séance type (\(DefaultSessions.make(choice, id: "", date: slot.date, time: nil).title)).")
-                    .font(.subheadline)
+                    .font(.coach(.subheadline))
                     .foregroundStyle(Theme.muted)
             }
 
@@ -124,7 +124,7 @@ struct AdaptSessionView: View {
                 }
             } label: {
                 Label(buttonTitle(isSame: isSame), systemImage: "checkmark")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .font(.coach(size: 17, weight: .bold))
                     .foregroundStyle(Theme.accentDark)
                     .frame(maxWidth: .infinity, minHeight: 48)
                     .background(unchanged ? Theme.line : Theme.accent,
@@ -162,10 +162,10 @@ struct AdaptSessionView: View {
                                 .frame(width: 24)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(other.title)
-                                    .font(.subheadline.weight(.semibold))
+                                    .font(.coach(.subheadline, weight: .semibold))
                                     .foregroundStyle(Theme.text)
                                 Text("\(other.typeLabel) · \(other.dateLabel)")
-                                    .font(.caption)
+                                    .font(.coach(.caption))
                                     .foregroundStyle(Theme.muted)
                             }
                             Spacer()
@@ -198,9 +198,9 @@ struct AdaptSessionView: View {
                             } label: {
                                 VStack(spacing: 2) {
                                     Text(day.formatted(.dateTime.weekday(.abbreviated)))
-                                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                                        .font(.coach(size: 12, weight: .semibold))
                                     Text(day.formatted(.dateTime.day()))
-                                        .font(.system(size: 20, weight: .heavy, design: .rounded))
+                                        .font(.coach(size: 20, weight: .heavy))
                                 }
                                 .foregroundStyle(preferred ? Theme.accentDark : Theme.muted)
                                 .frame(width: 54, height: 60)

@@ -17,7 +17,7 @@ struct CoachPrimaryButtonStyle: ButtonStyle {
         var body: some View {
             configuration.label
                 .labelStyle(.titleAndIcon)
-                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .font(.coach(size: 16, weight: .bold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
                 .foregroundStyle(Theme.accentDark)
@@ -33,7 +33,7 @@ struct CoachSecondaryButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 14, weight: .semibold, design: .rounded))
+            .font(.coach(size: 14, weight: .semibold))
             .lineLimit(1)
             .minimumScaleFactor(0.7)
             .foregroundStyle(tint)
@@ -47,8 +47,11 @@ struct CoachDashedButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .labelStyle(.titleAndIcon)
-            .font(.system(size: 14, weight: .semibold, design: .rounded))
+            .font(.coach(size: 14, weight: .semibold))
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
             .foregroundStyle(Theme.muted)
+            .padding(.horizontal, 8)
             .frame(maxWidth: .infinity, minHeight: 44)
             .background(Theme.card.opacity(0.5), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
