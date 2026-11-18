@@ -1,4 +1,4 @@
-commit: 3395f2136c39d9c9ba838c2604c2f51de3f64b67
+commit: 14b7c832a1252f35e281552e6b49ea7a2d68e8a2
 branche: main
 ios: success
 watch: success
@@ -9,22 +9,22 @@ tests: success
 ===== ERREURS / AVERTISSEMENTS MONTRE =====
 
 ===== TESTS UNITAIRES =====
-Test Case '-[CoachTests.DoneStateTests testDoneIdsOnlyForSessionsOfThePlan]' passed (0.010 seconds).
+Test Case '-[CoachTests.DoneStateTests testDoneIdsOnlyForSessionsOfThePlan]' passed (0.003 seconds).
 Test Case '-[CoachTests.DoneStateTests testLogArrivingAfterResetIsArchivedIfDoneBefore]' passed (0.001 seconds).
-Test Case '-[CoachTests.DoneStateTests testMarkNotDoneRemovesOnlyThatSessionsActiveLogs]' passed (0.008 seconds).
-Test Case '-[CoachTests.DoneStateTests testNewLogAfterResetCountsAgain]' passed (0.001 seconds).
+Test Case '-[CoachTests.DoneStateTests testMarkNotDoneRemovesOnlyThatSessionsActiveLogs]' passed (0.005 seconds).
+Test Case '-[CoachTests.DoneStateTests testNewLogAfterResetCountsAgain]' passed (0.479 seconds).
 Test Case '-[CoachTests.DoneStateTests testOldLogsWithoutArchiveFieldStillDecode]' passed (0.003 seconds).
 Test Case '-[CoachTests.DoneStateTests testResetDetachesLogsFromReimportedPlanWithSameIds]' passed (0.001 seconds).
 Test Case '-[CoachTests.DoneStateTests testResetKeepsFreeTimerLogsAndOldArchiveDates]' passed (0.001 seconds).
-Test Case '-[CoachTests.DoneStateTests testStartRequestFreshness]' passed (0.001 seconds).
-Test Case '-[CoachTests.DoneStateTests testStartRequestRoundTrip]' passed (0.004 seconds).
-Test Case '-[CoachTests.DoneStateTests testWatchDropsPendingFinishedBeforeReset]' passed (1.402 seconds).
-Test Case '-[CoachTests.DoneStateTests testWatchKeepsSessionFinishedHereUntilPhoneConfirms]' passed (0.001 seconds).
-Test Case '-[CoachTests.DoneStateTests testWatchPendingExpires]' passed (0.001 seconds).
-Test Case '-[CoachTests.DoneStateTests testWatchReplacesItsListWithThePhoneOne]' passed (0.001 seconds).
-	 Executed 13 tests, with 0 failures (0 unexpected) in 1.433 (1.684) seconds
-	 Executed 13 tests, with 0 failures (0 unexpected) in 1.433 (1.685) seconds
-	 Executed 13 tests, with 0 failures (0 unexpected) in 1.433 (3.018) seconds
+Test Case '-[CoachTests.DoneStateTests testStartRequestFreshness]' passed (0.000 seconds).
+Test Case '-[CoachTests.DoneStateTests testStartRequestRoundTrip]' passed (0.002 seconds).
+Test Case '-[CoachTests.DoneStateTests testWatchDropsPendingFinishedBeforeReset]' passed (0.001 seconds).
+Test Case '-[CoachTests.DoneStateTests testWatchKeepsSessionFinishedHereUntilPhoneConfirms]' passed (0.000 seconds).
+Test Case '-[CoachTests.DoneStateTests testWatchPendingExpires]' passed (0.000 seconds).
+Test Case '-[CoachTests.DoneStateTests testWatchReplacesItsListWithThePhoneOne]' passed (6.475 seconds).
+	 Executed 13 tests, with 0 failures (0 unexpected) in 6.972 (7.212) seconds
+	 Executed 13 tests, with 0 failures (0 unexpected) in 6.972 (7.213) seconds
+	 Executed 13 tests, with 0 failures (0 unexpected) in 6.972 (7.216) seconds
 
 ===== FIN DU JOURNAL iOS =====
 ** BUILD SUCCEEDED **
