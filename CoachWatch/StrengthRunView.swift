@@ -343,7 +343,7 @@ struct StrengthRunView: View {
 
     private func startTimed() {
         guard let duration = current?.durationSec else { return }
-        WKInterfaceDevice.current().play(.start)
+        Haptics.go()
         phase = .countdown(.timed, end: Date.now.addingTimeInterval(TimeInterval(duration)))
     }
 
@@ -356,7 +356,7 @@ struct StrengthRunView: View {
         if current?.durationSec != nil {
             startTimed()
         } else {
-            WKInterfaceDevice.current().play(.start)
+            Haptics.go()
             phase = .working
         }
     }
@@ -378,7 +378,7 @@ struct StrengthRunView: View {
             durationSec: ex.durationSec,
             weightKg: weight > 0 ? weight : nil
         )) }
-        WKInterfaceDevice.current().play(.click)
+        Haptics.tap()
 
         if setNumber < ex.setCount {
             setNumber += 1
@@ -389,12 +389,12 @@ struct StrengthRunView: View {
         }
 
         if current == nil {
-            WKInterfaceDevice.current().play(.success)
+            Haptics.done()
             phase = .feedback
         } else {
             let rest = TimeInterval(ex.restSec ?? 60)
             if rest > 0 {
-                WKInterfaceDevice.current().play(.stop)
+                Haptics.rest()
                 phase = .countdown(.rest, end: Date.now.addingTimeInterval(rest))
             } else {
                 goToNextSet()
@@ -445,7 +445,7 @@ struct StrengthRunView: View {
             if remaining > 3.5 {
                 try? await Task.sleep(for: .seconds(remaining - 3))
             } else {
-                WKInterfaceDevice.current().play(.click)
+                Haptics.tick()
                 try? await Task.sleep(for: .seconds(min(1, remaining)))
             }
             if Task.isCancelled { return }

@@ -103,6 +103,7 @@ struct SessionDoneView: View {
                 .buttonStyle(.coachPrimary)
                 .disabled(saving)
             }
+            .padding(.horizontal, Theme.watchMargin)
         }
         .onAppear { crown = Double(rpe) }
     }

@@ -75,6 +75,10 @@ Direction : **sportif, énergique, lisible en plein effort**. Le thème actuel d
 - Composants natifs SwiftUI d'abord (comportement et accessibilité), habillés avec `Theme`.
 - Trois niveaux de texte maximum par écran.
 - Cibles tactiles d'au moins 44 pt, contraste suffisant, libellés VoiceOver sur les icônes.
+- **Une icône a la couleur de son texte.** Une action destructive (rouge) a son icône rouge aussi,
+  y compris dans les menus (`DestructiveButton`).
+- **Chaque appui a un retour visible** : état de chargement dans le bouton pendant une attente,
+  sans que la mise en page saute.
 
 ## Apple Watch
 

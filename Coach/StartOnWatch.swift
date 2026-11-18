@@ -1,26 +1,19 @@
 // StartOnWatch.swift — « Démarrer l'entraînement » (#5) : Coach s'ouvre sur la montre et la séance
-// y démarre aussitôt (une course s'ouvre prête dans l'app Exercice, qui demande son propre départ).
+// y démarre (5 s « Prêt ? »). Une course s'ouvre prête dans l'app Exercice, qui demande son départ.
 
 import SwiftUI
 
-/// Gros bouton de la séance ; ensuite « En cours sur ta montre », ou « Montre injoignable ».
+/// Gros bouton de la séance ; puis « En cours sur ta montre », ou la raison de l'échec + « Réessayer ».
+/// Pendant l'envoi, le bouton affiche un indicateur, sans que la mise en page bouge (#20).
 struct StartOnWatchButton: View {
     let start: () async -> WatchStartResult
 
-    private enum Status { case idle, sending, sent, unreachable }
-    @State private var status: Status = .idle
+    @State private var sending = false
+    @State private var result: WatchStartResult?
 
     var body: some View {
-        Group {
-            switch status {
-            case .idle, .sending:
-                Button { send() } label: {
-                    Label("Démarrer l'entraînement", systemImage: "play.fill")
-                        .primaryActionStyle(large: true)
-                }
-                .buttonStyle(.plain)
-                .disabled(status == .sending)
-                .accessibilityHint("La séance démarre sur ta montre")
+        VStack(alignment: .leading, spacing: 10) {
+            switch result {
             case .sent:
                 Label("En cours sur ta montre", systemImage: "applewatch")
                     .font(.system(.title3, design: .rounded, weight: .heavy))
@@ -28,31 +21,54 @@ struct StartOnWatchButton: View {
                     .frame(maxWidth: .infinity, minHeight: Theme.largeButtonHeight)
                     .background(Theme.accent.opacity(0.15),
                                 in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
-            case .unreachable:
+                    .transition(.opacity)
+            case .failed(let reason):
                 VStack(alignment: .leading, spacing: 10) {
                     Label("Montre injoignable", systemImage: "exclamationmark.circle")
                         .font(.system(.title3, design: .rounded, weight: .heavy))
                         .foregroundStyle(Theme.text)
-                    Text("Vérifie qu'elle est au poignet, déverrouillée et près de l'iPhone. Tu peux aussi ouvrir Coach sur la montre : la séance sera en haut.")
+                    Text(reason)
                         .font(.subheadline)
                         .foregroundStyle(Theme.muted)
-                    Button { send() } label: {
-                        Text("Réessayer").primaryActionStyle(compact: true)
-                    }
-                    .buttonStyle(.plain)
+                        .fixedSize(horizontal: false, vertical: true)
+                    sendButton(title: "Réessayer", large: false)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .card(radius: Theme.heroCardRadius, stroke: Theme.warm.opacity(0.5))
+            case nil:
+                sendButton(title: "Démarrer l'entraînement", large: true)
             }
         }
-        .sensoryFeedback(.success, trigger: status) { _, new in new == .sent }
-        .animation(.snappy, value: status)
+        .sensoryFeedback(.success, trigger: result) { _, new in new == .sent }
+        .sensoryFeedback(.error, trigger: result) { _, new in new.map { !$0.isSent } ?? false }
+    }
+
+    /// Bouton principal : pendant l'envoi, un indicateur remplace l'icône, à taille identique.
+    private func sendButton(title: String, large: Bool) -> some View {
+        Button(action: send) {
+            HStack(spacing: 10) {
+                ZStack {
+                    Image(systemName: "play.fill").opacity(sending ? 0 : 1)
+                    if sending { ProgressView().tint(Theme.accentDark) }
+                }
+                Text(sending ? "Envoi à la montre…" : title)
+            }
+            .primaryActionStyle(compact: !large, large: large)
+        }
+        .buttonStyle(PressableButtonStyle())
+        .disabled(sending)
+        .accessibilityHint("La séance démarre sur ta montre")
     }
 
     private func send() {
-        status = .sending
+        guard !sending else { return }
+        sending = true
         Task {
-            status = await start() == .sent ? .sent : .unreachable
+            let outcome = await start()
+            withAnimation(.snappy) {
+                result = outcome
+                sending = false
+            }
         }
     }
 }
@@ -73,21 +89,36 @@ struct StartOnWatchIconButton: View {
                 sending = false
             }
         } label: {
-            Image(systemName: "play.circle.fill")
-                .font(.title)
-                .foregroundStyle(Theme.accent)
-                .frame(minWidth: Theme.minTap, minHeight: Theme.minTap)
+            ZStack {
+                Image(systemName: "play.circle.fill")
+                    .font(.title)
+                    .foregroundStyle(Theme.accent)
+                    .opacity(sending ? 0 : 1)
+                if sending { ProgressView() }
+            }
+            .frame(minWidth: Theme.minTap, minHeight: Theme.minTap)
         }
         .buttonStyle(.borderless)
         .disabled(sending)
         .accessibilityLabel("Démarrer « \(name) » sur la montre")
-        .alert(result == .sent ? "En cours sur ta montre" : "Montre injoignable",
+        .alert(result?.isSent == true ? "En cours sur ta montre" : "Montre injoignable",
                isPresented: Binding(get: { result != nil }, set: { if !$0 { result = nil } })) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text(result == .sent
-                 ? "Le minuteur a démarré sur ta montre."
-                 : "Vérifie qu'elle est au poignet, déverrouillée et près de l'iPhone.")
+            switch result {
+            case .failed(let reason): Text(reason)
+            default: Text("Le minuteur a démarré sur ta montre.")
+            }
         }
+    }
+}
+
+/// Retour au toucher : le bouton s'enfonce légèrement (iPhone).
+struct PressableButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .opacity(configuration.isPressed ? 0.9 : 1)
+            .animation(.snappy(duration: 0.15), value: configuration.isPressed)
     }
 }

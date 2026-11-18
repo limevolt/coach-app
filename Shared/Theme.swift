@@ -45,6 +45,10 @@ enum Theme {
     /// Montre : fond plein écran pendant le repos et la mise en place.
     static let restBackground = card
 
+    /// Montre : marge autour du contenu, pour qu'aucun texte ne touche le bord arrondi de l'écran (#23).
+    static let watchMargin: CGFloat = 8
+    /// Montre : activité de la prochaine séance sur l'accueil.
+    static let watchHomeActivity = Font.system(.title2, design: .rounded, weight: .heavy)
     /// Montre : contour de la valeur réglée par la Digital Crown.
     static let watchValueRadius: CGFloat = 12
     /// Montre : grands boutons de la page de commandes (pause, passer, repos, terminer).

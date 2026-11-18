@@ -37,7 +37,7 @@ struct PlanView: View {
                                 perform { await store.sync() }
                             }
                             Divider()
-                            Button("Réinitialiser le plan", systemImage: "trash", role: .destructive) {
+                            DestructiveButton("Réinitialiser le plan", systemImage: "trash") {
                                 confirmReset = true
                             }
                         }
@@ -185,7 +185,7 @@ struct PlanView: View {
             .buttonStyle(.plain)
             .contextMenu {
                 if store.log(for: session.id) != nil {
-                    Button("Marquer comme non faite", systemImage: "arrow.uturn.backward", role: .destructive) {
+                    DestructiveButton("Marquer comme non faite", systemImage: "arrow.uturn.backward") {
                         notDone = session
                     }
                 }

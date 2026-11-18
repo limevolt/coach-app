@@ -59,6 +59,7 @@ struct SessionListView: View {
                     .buttonStyle(.coachDashed)
                     .padding(.top, 6)
                 }
+                .padding(.horizontal, Theme.watchMargin)
             }
             .navigationTitle("Coach")
             .navigationBarTitleDisplayMode(.inline)
@@ -146,20 +147,15 @@ private struct NextSessionCard: View {
     let session: PlannedSession
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("PROCHAIN ENTRAÎNEMENT")
-                .font(.system(size: 11, weight: .semibold, design: .rounded))
-                .tracking(1.2)
-                .foregroundStyle(Theme.accent)
+        // Accueil épuré (#27) : l'activité en grand + « Commencer ». Le titre et la date restent
+        // lus par VoiceOver.
+        VStack(alignment: .leading, spacing: 8) {
             Label(session.sportLabel, systemImage: Theme.icon(for: session.type))
-                .font(Theme.watchTitle)
+                .font(Theme.watchHomeActivity)
                 .foregroundStyle(Theme.color(for: session.type))
-            Text(session.title)
-                .font(.footnote)
-                .lineLimit(2)
-            Text(session.shortDayLabel)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .accessibilityLabel("Prochain entraînement : \(session.sportLabel), \(session.title), \(session.shortDayLabel)")
 
             if session.type == .run {
                 RunLauncher(session: session) {

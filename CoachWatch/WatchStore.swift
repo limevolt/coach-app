@@ -59,10 +59,10 @@ final class WatchStore {
         return sessions.first { !doneIds.contains($0.id) && ($0.dayStart ?? .distantPast) >= today }
     }
 
-    /// Les autres séances (des deux derniers jours et à venir), pour en lancer une autre.
+    /// Les autres séances pas encore faites (des deux derniers jours et à venir), pour en lancer une autre (#27).
     var otherSessions: [PlannedSession] {
         let nextId = nextSession?.id
-        return visibleSessions.filter { $0.id != nextId }
+        return visibleSessions.filter { $0.id != nextId && !doneIds.contains($0.id) }
     }
 
     func applySessions(_ data: Data) {
@@ -164,9 +164,16 @@ final class WatchBridge: NSObject, WCSessionDelegate {
         receive(applicationContext)
     }
 
-    /// Message direct (iPhone et montre joignables) : « Démarrer sur la montre ».
+    /// Message direct (iPhone et montre joignables) : « Démarrer l'entraînement ».
     nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
         receive(message)
+    }
+
+    /// Même message, avec accusé de réception : l'iPhone sait que la montre l'a reçu.
+    nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any],
+                             replyHandler: @escaping ([String: Any]) -> Void) {
+        receive(message)
+        replyHandler(["ok": true])
     }
 
     private nonisolated func receive(_ context: [String: Any]) {

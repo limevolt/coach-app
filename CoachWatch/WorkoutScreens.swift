@@ -38,6 +38,7 @@ struct WorkoutReadyView<Action: View>: View {
             Spacer(minLength: 4)
             action()
         }
+        .padding(.horizontal, Theme.watchMargin)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
@@ -94,6 +95,7 @@ struct WorkoutStage<Center: View, Bottom: View>: View {
             Spacer(minLength: 0)
             bottom()
         }
+        .padding(.horizontal, Theme.watchMargin)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(background.ignoresSafeArea())
     }
@@ -213,6 +215,7 @@ struct WorkoutControlsPage: View {
             }
             Spacer(minLength: 0)
         }
+        .padding(.horizontal, Theme.watchMargin)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 

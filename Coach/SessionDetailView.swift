@@ -114,7 +114,8 @@ struct SessionDetailView: View {
             }
             HStack(spacing: 8) {
                 Button { showAdapt = true } label: {
-                    Label("Autre jour", systemImage: "calendar.day.timeline.left")
+                    // « Adapter » comme sur une séance à venir : autre activité, sans matériel, autre jour (#21).
+                    Label("Adapter", systemImage: "slider.horizontal.3")
                         .missedStyle(filled: false)
                 }
                 .buttonStyle(.plain)
@@ -287,7 +288,7 @@ struct SessionDetailView: View {
                         Spacer(minLength: 8)
                         Menu {
                             Button("Modifier mon ressenti", systemImage: "pencil") { showFeedback = true }
-                            Button("Marquer comme non faite", systemImage: "arrow.uturn.backward", role: .destructive) {
+                            DestructiveButton("Marquer comme non faite", systemImage: "arrow.uturn.backward") {
                                 confirmNotDone = true
                             }
                         } label: {
