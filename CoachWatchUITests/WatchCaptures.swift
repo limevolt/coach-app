@@ -17,12 +17,13 @@ final class WatchCaptures: XCTestCase {
         app.swipeUp()
         shot("02-accueil-bas")
 
-        // 2. Renfo : prêt → série en cours → repos
+        // 2. Renfo : prêt → « Prêt ? » 5 s → série en cours → repos
         app = launchDemo(plan: DemoPlan.json())
         if tap("Renfo", in: app) {
             shot("03-renfo-pret")
             if tap("Commencer", in: app) {
-                shot("04-renfo-serie")
+                shot("04a-depart-pret", settle: 0.5)
+                shot("04-renfo-serie", settle: 6.0)
                 // Page de commandes (pause, passer, +30 s, terminer) : glisser vers la droite
                 app.swipeRight()
                 shot("05-renfo-commandes")
@@ -38,7 +39,7 @@ final class WatchCaptures: XCTestCase {
         if tap("Circuit", in: app) {
             shot("07-circuit-pret")
             if tap("Commencer", in: app) {
-                shot("08-circuit-en-cours", settle: 2.0)
+                shot("08-circuit-en-cours", settle: 7.0)
             }
         }
 
