@@ -33,6 +33,7 @@
 		62AB6368CBD9755740382A47 /* PlanStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99C07CEB41DF40D00D6B5767 /* PlanStore.swift */; };
 		63851E5726409024D24A042C /* WatchCaptures.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8267B20E1E74B1EB1864AF5 /* WatchCaptures.swift */; };
 		67F5FB0946201DBC784B9941 /* IntervalRunView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720370AB747C8CF84F1B287C /* IntervalRunView.swift */; };
+		6DA58566B452EF5C798AA72E /* DestructiveButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAEAC8B7EFE1AEA3EEB3B30A /* DestructiveButton.swift */; };
 		71C78F6391EE995302756648 /* ExerciseLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F5A6F77FC2EA09B7D407281 /* ExerciseLibrary.swift */; };
 		79EDDA1211FD2C5DDF7CC9B4 /* DemoMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6097D8724285314AF6D5C949 /* DemoMode.swift */; };
 		7A8243231ABA8AE95DE5175B /* AdaptSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65672ED6E3738AAB9E7493A0 /* AdaptSessionView.swift */; };
@@ -61,6 +62,7 @@
 		EEA60429663CA54E818171BE /* MailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6BCAB4F5CBE08EEAD7F59B9 /* MailView.swift */; };
 		F533457EF39F3BE7E1DE96C1 /* SessionDoneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31857B518B57159858C98E18 /* SessionDoneView.swift */; };
 		F5A2AE37FD052F65299898C6 /* WatchStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA085961E84987A69F4FA339 /* WatchStore.swift */; };
+		FB0D2D64C67351495CB834FF /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE446A4EDFE26F62C24A7DEF /* Haptics.swift */; };
 		FCC04B15F68D6F665D314BE2 /* exemple-plan.json in Resources */ = {isa = PBXBuildFile; fileRef = C4C696570245BF16A3413FEB /* exemple-plan.json */; };
 /* End PBXBuildFile section */
 
@@ -150,6 +152,7 @@
 		A4F7CC45AA5631D89F50FAE4 /* PlanTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanTools.swift; sourceTree = "<group>"; };
 		A5D9DF1F858DC7BA1C579113 /* PlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanView.swift; sourceTree = "<group>"; };
 		A7E2BDDF89704716BC45D9B3 /* StartOnWatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartOnWatch.swift; sourceTree = "<group>"; };
+		AE446A4EDFE26F62C24A7DEF /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
 		BDB438F4240531354BF3015C /* TrainingDays.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingDays.swift; sourceTree = "<group>"; };
 		C38A57DE47A7143F483FAF37 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		C4C696570245BF16A3413FEB /* exemple-plan.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "exemple-plan.json"; sourceTree = "<group>"; };
@@ -161,6 +164,7 @@
 		E1A605DA9E42746D6AAD11D4 /* DemoPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoPlan.swift; sourceTree = "<group>"; };
 		E5087627E360F0D4D6FD9FC7 /* CoachCaptures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachCaptures.swift; sourceTree = "<group>"; };
 		EA085961E84987A69F4FA339 /* WatchStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchStore.swift; sourceTree = "<group>"; };
+		EAEAC8B7EFE1AEA3EEB3B30A /* DestructiveButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DestructiveButton.swift; sourceTree = "<group>"; };
 		EEE5665EC92A631AFA09DBCE /* Collapsible.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Collapsible.swift; sourceTree = "<group>"; };
 		EFB32011DD22151450EEEB28 /* WatchButtons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchButtons.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -228,6 +232,7 @@
 				55CC634D74040B9A1862DFB4 /* Coach.entitlements */,
 				912D6F261042F3CACC531D2D /* CoachApp.swift */,
 				EEE5665EC92A631AFA09DBCE /* Collapsible.swift */,
+				EAEAC8B7EFE1AEA3EEB3B30A /* DestructiveButton.swift */,
 				3819F510E1AE826C638EB6F3 /* ExerciseGuideView.swift */,
 				5BC2FE5D6D5989A6C962A7D0 /* HealthReader.swift */,
 				4E6C06F91F59B047799297AF /* Info.plist */,
@@ -256,6 +261,7 @@
 				36ED7C29460F89A7A9A816B1 /* Assets.xcassets */,
 				D1AC925D4774AE0F09DEF41D /* CoachWatch.entitlements */,
 				05EED4368A1C5978F355FC97 /* CoachWatchApp.swift */,
+				AE446A4EDFE26F62C24A7DEF /* Haptics.swift */,
 				C38A57DE47A7143F483FAF37 /* Info.plist */,
 				720370AB747C8CF84F1B287C /* IntervalRunView.swift */,
 				31857B518B57159858C98E18 /* SessionDoneView.swift */,
@@ -503,6 +509,7 @@
 				87993750DF9FB3D9A8CD62CB /* CoachApp.swift in Sources */,
 				A61F07ADD1A3211330292A7A /* Collapsible.swift in Sources */,
 				79EDDA1211FD2C5DDF7CC9B4 /* DemoMode.swift in Sources */,
+				6DA58566B452EF5C798AA72E /* DestructiveButton.swift in Sources */,
 				294F0DEA3F6FF74A5BD4EC75 /* DoneState.swift in Sources */,
 				DD164B74B9D4B53CA1728B62 /* ExerciseAnimation.swift in Sources */,
 				1E20496EC9E94FA4A73CAD8F /* ExerciseGuideView.swift in Sources */,
@@ -548,6 +555,7 @@
 				29F5E25112DCAEDF6319B32F /* DoneState.swift in Sources */,
 				E40098F7E50B53627A343BEE /* ExerciseAnimation.swift in Sources */,
 				71C78F6391EE995302756648 /* ExerciseLibrary.swift in Sources */,
+				FB0D2D64C67351495CB834FF /* Haptics.swift in Sources */,
 				67F5FB0946201DBC784B9941 /* IntervalRunView.swift in Sources */,
 				7F2A1FD7C7F9E547512CE23A /* PlanModels.swift in Sources */,
 				1840EC39007B41B7A9DA84B5 /* RunWorkoutFactory.swift in Sources */,
