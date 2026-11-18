@@ -20,7 +20,12 @@
 
 1. **Maquette validée.** Avant de coder, proposer une maquette sur un canevas (comme
    « Coach — maquette accueil iPhone »), au format décrit plus bas, et attendre la validation
-   du propriétaire.
+   du propriétaire… mais seulement après l'étape suivante.
+   - **Critique de la maquette (avant le propriétaire).** Lancer l'agent `design-reviewer` en
+     mode « maquette » : il raisonne comme un designer Apple expérimenté (skills iOS/watchOS,
+     ce fichier, checklist de relecture) et rend une liste courte de remarques classées.
+     Corriger la maquette, puis la présenter au propriétaire avec les remarques non retenues.
+     C'est ici que la relecture design rapporte le plus : corriger un dessin ne coûte rien.
 2. **Coder avec des composants partagés.** Réutiliser ce qui existe (`Theme`, `Eyebrow`,
    `.card()`, `Collapsible`, styles de boutons). Un élément visuel utilisé à deux endroits
    devient un composant dans `Shared/` ou un fichier commun, au lieu d'être recopié.
@@ -31,9 +36,11 @@
    Résultat : branche `ci-captures`, dossier au nom de la branche (`README.md` montre tout).
    Un nouvel écran s'ajoute dans `CoachUITests/CoachCaptures.swift` ou
    `CoachWatchUITests/WatchCaptures.swift`.
-4. **Relecture indépendante.** Lancer l'agent `design-reviewer` (`.claude/agents/`) sur les
-   captures : il compare le rendu réel à la maquette et à ce fichier, sans avoir écrit le
-   code. Corriger les écarts, puis refaire les captures si le rendu a changé.
+4. **Contrôle de conformité.** Lancer l'agent `design-reviewer` en mode « conformité » sur les
+   captures : il vérifie seulement que le rendu réel correspond à la maquette validée et qu'il
+   tient (texte coupé, très grand texte, petits écrans, contraste réel), sans refaire de
+   critique du design. Corriger les écarts, puis refaire les captures si le rendu a changé.
+   En parallèle, l'agent `code-reviewer` relit la logique du code.
 5. **Pull request avec images.** Lister les écrans touchés et joindre les captures clés
    (liens vers `ci-captures`), avec les écarts restants assumés. Le propriétaire valide sur les images.
 6. **Retour d'usage.** Chaque remarque du propriétaire après un test sur son iPhone ou sa montre
