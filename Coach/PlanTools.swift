@@ -162,7 +162,7 @@ struct NewPlanView: View {
         let today = Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide).year()
             .locale(Locale(identifier: "fr_FR")))
         var out: [String] = []
-        out.append("Crée-moi un nouveau plan d'entraînement pour l'app Coach : format JSON de PLAN_FORMAT.md (schemaVersion 1), nouveau planId, version 1, séances à partir d'aujourd'hui.")
+        out.append("Crée-moi un nouveau plan d'entraînement pour l'app Coach : plan JSON au format décrit à la fin de ce message (schemaVersion 1), nouveau planId, version 1, séances à partir d'aujourd'hui.")
         out.append("Pour chaque exercice avec charge ou matériel, ajoute une variante « noEquipment » (au poids du corps), pour les jours où je m'entraîne à la maison.")
         out.append("")
         out.append("Date du jour : \(today) (\(Day.key(.now))).")
@@ -179,6 +179,8 @@ struct NewPlanView: View {
         } else {
             out.append("Je ne joins pas d'historique : commence prudemment.")
         }
+        out.append("")
+        out.append(PlanFormat.section)
         return out.joined(separator: "\n")
     }
 

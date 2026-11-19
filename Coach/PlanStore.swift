@@ -14,6 +14,8 @@ final class PlanStore {
     var isSyncing = false
     /// Message affiché en alerte (ex. après « Ouvrir avec Coach »).
     var alertMessage: String?
+    /// Demande de correction à copier pour l'IA quand un plan importé est refusé (#37).
+    var alertRepair: String?
     /// Séances adaptées dans l'app : leur version d'origine (pour pouvoir y revenir).
     private(set) var originals: [String: SessionOriginal] = [:]
 
@@ -353,6 +355,10 @@ final class PlanStore {
             alertMessage = "Plan « \(plan?.title ?? "") » v\(plan?.version ?? 0) importé.\n\n\(status ?? "")"
         } catch {
             alertMessage = "Import impossible : \(error.localizedDescription)"
+            if error is PlanError {
+                alertMessage? += "\n\n" + PlanFormat.importHelp
+                alertRepair = PlanFormat.repairRequest(error: error.localizedDescription)
+            }
         }
     }
 
@@ -507,7 +513,8 @@ final class PlanStore {
         }
         switch e {
         case .keyNotFound(let key, let ctx):
-            return "Champ manquant « \(key.stringValue) » (\(path(ctx)))"
+            let place = path(ctx)
+            return "Champ manquant « \(key.stringValue) » " + (place.isEmpty ? "(plan)" : "(\(place))")
         case .typeMismatch(_, let ctx), .valueNotFound(_, let ctx):
             return "Valeur incorrecte à \(path(ctx)) : \(ctx.debugDescription)"
         case .dataCorrupted(let ctx):

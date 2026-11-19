@@ -160,6 +160,9 @@ struct ReportBuilder {
             out.append(json)
             out.append("```")
             out.append("")
+            // Format du plan : le suivi se suffit à lui-même, même dans une nouvelle conversation (#37).
+            out.append(PlanFormat.section)
+            out.append("")
         }
 
         if footer {
