@@ -1,0 +1,16 @@
+commit: e0e53e325c930a02084112fbe8fdde9efbf3778c
+branche: fix/37-format-plan-dans-la-demande
+ios: success
+watch: success
+tests: failure
+
+===== ERREURS / AVERTISSEMENTS iOS =====
+
+===== ERREURS / AVERTISSEMENTS MONTRE =====
+
+===== TESTS UNITAIRES =====
+/Users/runner/work/coach-app/coach-app/CoachTests/PlanFormatTests.swift:39:44: error: call to main actor-isolated static method 'decodePlan(text:)' in a synchronous nonisolated context
+/Users/runner/work/coach-app/coach-app/CoachTests/PlanFormatTests.swift:57:38: error: call to main actor-isolated static method 'decodePlan(text:)' in a synchronous nonisolated context
+
+===== FIN DU JOURNAL iOS =====
+** BUILD SUCCEEDED **
