@@ -14,7 +14,6 @@ struct ReportView: View {
     @State private var generating = false
     @State private var showMail = false
     @State private var copied = false
-    @State private var copying = false
     /// Données utilisées par le dernier suivi généré, et Santé au dernier passage sur l'écran (#35).
     @State private var lastInputs: ReportInputs?
     @State private var healthStamp: String?
@@ -100,8 +99,7 @@ struct ReportView: View {
                         ShareLink(item: report, subject: Text(subject)) {
                             Label("Partager (Gmail, Notes…)", systemImage: "square.and.arrow.up")
                         }
-                        BusyButton(copied ? "Copié" : "Copier", systemImage: copied ? "checkmark" : "doc.on.doc",
-                                   isRunning: $copying) {
+                        Button(copied ? "Copié" : "Copier", systemImage: copied ? "checkmark" : "doc.on.doc") {
                             UIPasteboard.general.string = report
                             copied = true
                         }
@@ -153,7 +151,8 @@ struct ReportView: View {
         defer { askingCoach = false }
         // Le plan actuel est toujours joint : le coach en a besoin pour le mettre à jour.
         let builder = ReportBuilder(plan: store.plan, logs: store.logs, profile: profile)
-        report = await builder.build(days: days, comment: comment, includePlan: true)
+        report = await builder.build(days: days, comment: comment, includePlan: true, includeFormat: false)
+        lastInputs = nil
         copied = false
         let reply: String
         do {
@@ -211,7 +210,7 @@ struct ReportInputs: Equatable {
             hasher.combine(log.id)
             hasher.combine(log.rpe)
             hasher.combine(log.note)
-            hasher.combine(log.sets?.count)
+            hasher.combine(log.sets)
         }
         return "\(logs.count)-\(archived)-\(latest)-\(hasher.finalize())"
     }

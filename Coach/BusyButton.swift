@@ -51,26 +51,6 @@ struct BusyButton: View {
     }
 }
 
-/// Variante sans état partagé : le bouton gère seul son indicateur.
-struct SelfBusyButton: View {
-    let title: String
-    let systemImage: String
-    var busyTitle: String?
-    let action: () async -> Void
-    @State private var running = false
-
-    init(_ title: String, systemImage: String, busyTitle: String? = nil, action: @escaping () async -> Void) {
-        self.title = title
-        self.systemImage = systemImage
-        self.busyTitle = busyTitle
-        self.action = action
-    }
-
-    var body: some View {
-        BusyButton(title, systemImage: systemImage, busyTitle: busyTitle, isRunning: $running, action: action)
-    }
-}
-
 // MARK: - Aperçu d'un long texte
 
 struct LongTextPreview: View {
@@ -154,9 +134,13 @@ struct SharedFile: Identifiable {
 
 private struct ActivityView: UIViewControllerRepresentable {
     let items: [Any]
+    /// Appelé quand la feuille se ferme d'elle-même (après Enregistrer, AirDrop…).
+    let onFinish: () -> Void
 
     func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: items, applicationActivities: nil)
+        let controller = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        controller.completionWithItemsHandler = { _, _, _, _ in onFinish() }
+        return controller
     }
 
     func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
@@ -165,8 +149,8 @@ private struct ActivityView: UIViewControllerRepresentable {
 extension View {
     /// Feuille de partage iOS pour un fichier déjà écrit sur le disque.
     func shareFileSheet(_ file: Binding<SharedFile?>) -> some View {
-        sheet(item: file) { file in
-            ActivityView(items: [file.url])
+        sheet(item: file) { shared in
+            ActivityView(items: [shared.url]) { file.wrappedValue = nil }
                 .presentationDetents([.medium, .large])
                 .ignoresSafeArea()
         }

@@ -273,7 +273,11 @@ struct PlanView: View {
     private func export(_ plan: TrainingPlan) {
         exporting = true
         Task {
-            exportFile = try? await PlanExport.file(for: plan)
+            do {
+                exportFile = try await PlanExport.file(for: plan)
+            } catch {
+                importError = "Export impossible : \(error.localizedDescription)"
+            }
             exporting = false
         }
     }

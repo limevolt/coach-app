@@ -28,8 +28,10 @@ final class PlanFormatTests: XCTestCase {
     func testNewPlanRequestIsSelfContained() {
         let text = NewPlanView.request(today: Date(timeIntervalSince1970: 1_900_000_000),
                                        goal: "10 km fictif", profile: "", trainingDays: nil, history: nil)
-        XCTAssertTrue(text.contains(PlanFormat.text), "la demande inclut tout le format")
+        XCTAssertTrue(text.contains("## Structure"), "la demande inclut tout le format")
         XCTAssertTrue(text.contains("\"planId\""))
+        XCTAssertTrue(text.contains("### Séance"))
+        XCTAssertFalse(text.contains("colle ce fichier"), "la note destinée à l'utilisateur n'est pas envoyée à l'IA")
         XCTAssertFalse(text.contains("de PLAN_FORMAT.md"), "plus de renvoi à un fichier que l'IA ne voit pas")
         XCTAssertFalse(text.contains("Claude"), "texte générique, pour n'importe quelle IA (#31)")
     }

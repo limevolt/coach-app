@@ -55,7 +55,22 @@ final class HealthReader {
         let start = cal.date(byAdding: .day, value: -(days - 1), to: todayStart) ?? todayStart
         guard let list = try? await workouts(from: start, to: .now) else { return nil }
         let last = list.map { $0.start.addingTimeInterval($0.duration).timeIntervalSince1970 }.max() ?? 0
-        return "\(list.count)-\(last)"
+        // Récupération (FC au repos, VFC, poids, VO2max) : aussi dans le suivi, souvent ajoutée plus tard.
+        var recovery: [Double] = []
+        for id in [HKQuantityTypeIdentifier.restingHeartRate, .heartRateVariabilitySDNN, .bodyMass, .vo2Max] {
+            recovery.append(await latestSampleEnd(id))
+        }
+        return "\(list.count)-\(last)-" + recovery.map { "\($0)" }.joined(separator: "-")
+    }
+
+    /// Fin du dernier échantillon enregistré pour ce type (0 si aucun ou pas d'accès).
+    private func latestSampleEnd(_ id: HKQuantityTypeIdentifier) async -> Double {
+        let query = HKSampleQueryDescriptor(
+            predicates: [.quantitySample(type: HKQuantityType(id), predicate: nil)],
+            sortDescriptors: [SortDescriptor(\.endDate, order: .reverse)],
+            limit: 1
+        )
+        return (try? await query.result(for: store))?.first?.endDate.timeIntervalSince1970 ?? 0
     }
 
     func workouts(from start: Date, to end: Date) async throws -> [WorkoutSummary] {

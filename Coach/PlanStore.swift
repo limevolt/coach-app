@@ -352,7 +352,7 @@ final class PlanStore {
             try await importPlan(text: text)
             alertMessage = "Plan « \(plan?.title ?? "") » v\(plan?.version ?? 0) importé.\n\n\(status ?? "")"
         } catch {
-            alertMessage = "Import impossible : \(error.localizedDescription)"
+            alertMessage = "Import impossible : \(Self.importMessage(for: error))"
         }
     }
 

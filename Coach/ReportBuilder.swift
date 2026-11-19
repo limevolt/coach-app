@@ -9,7 +9,10 @@ struct ReportBuilder {
     let logs: [SessionLog]
     let profile: String
 
-    func build(days: Int, comment: String, includePlan: Bool, footer: Bool = true) async -> String {
+    /// `includeFormat` : ajoute le format du plan (texte copié pour une IA, #37). Pas pour « Mon propre
+    /// coach », dont la consigne contient déjà le format.
+    func build(days: Int, comment: String, includePlan: Bool, footer: Bool = true,
+               includeFormat: Bool = true) async -> String {
         let health = HealthReader()
         try? await health.requestAuthorization()
 
@@ -166,7 +169,7 @@ struct ReportBuilder {
             out.append("_Généré localement par l'app Coach. Colle ce suivi dans une conversation avec ton IA pour obtenir le plan mis à jour._")
         }
         // Le format du plan accompagne le plan, pour que l'IA puisse répondre même sans historique (#37).
-        if includePlan, plan != nil {
+        if includePlan, includeFormat, plan != nil {
             out.append("")
             out.append(PlanFormat.section)
         }
@@ -176,7 +179,7 @@ struct ReportBuilder {
     // MARK: Formatage
 
     nonisolated static func json(_ plan: TrainingPlan) async -> String? {
-        await Task.detached(priority: .userInitiated) {
+        await Task.detached(priority: .userInitiated) { () -> String? in
             guard let data = try? Coding.compactEncoder.encode(plan) else { return nil }
             return String(data: data, encoding: .utf8)
         }.value

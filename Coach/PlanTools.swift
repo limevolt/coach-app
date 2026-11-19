@@ -32,9 +32,12 @@ enum PlanFormat {
         return text
     }
 
-    /// Section à ajouter à la fin d'une demande ou d'un suivi.
+    /// Section à ajouter à la fin d'une demande ou d'un suivi (sans la note « > … » destinée à l'utilisateur).
     static var section: String {
-        "---\n\n## Format du plan à respecter (réponds avec le plan complet dans un seul bloc de code JSON)\n\n" + text
+        let body = text.split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.hasPrefix(">") }
+            .joined(separator: "\n")
+        return "---\n\n## Format du plan à respecter (réponds avec le plan complet dans un seul bloc de code JSON)\n\n" + body
     }
 }
 
@@ -51,7 +54,6 @@ struct NewPlanView: View {
     @State private var request = ""
     @State private var preparing = false
     @State private var copied = false
-    @State private var copying = false
     @State private var askingCoach = false
     @State private var coachError: String?
     @State private var proposal: PlanProposal?
@@ -111,8 +113,7 @@ struct NewPlanView: View {
 
                 if !request.isEmpty {
                     Section {
-                        BusyButton(copied ? "Copié" : "Copier", systemImage: copied ? "checkmark" : "doc.on.doc",
-                                   isRunning: $copying) {
+                        Button(copied ? "Copié" : "Copier", systemImage: copied ? "checkmark" : "doc.on.doc") {
                             UIPasteboard.general.string = request
                             copied = true
                         }

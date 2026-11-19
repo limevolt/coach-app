@@ -109,7 +109,11 @@ struct SettingsView: View {
                         LabeledContent("Journaux", value: "\(store.logs.count)")
                         BusyButton("Exporter le plan", systemImage: "square.and.arrow.up",
                                    busyTitle: "Préparation du fichier…", isRunning: $exporting) {
-                            exportFile = try? await PlanExport.file(for: plan)
+                            do {
+                                exportFile = try await PlanExport.file(for: plan)
+                            } catch {
+                                healthMessage = "Export impossible : \(error.localizedDescription)"
+                            }
                         }
                         // Bulle attachée au bouton : elle s'affiche juste à côté (#33).
                         Button("Réinitialiser le plan", role: .destructive) { confirmReset = true }
