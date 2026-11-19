@@ -19,9 +19,9 @@ final class HealthReader {
 
     static var bpm: HKUnit { HKUnit.count().unitDivided(by: .minute()) }
 
-    func requestAuthorization() async throws {
-        guard HKHealthStore.isHealthDataAvailable() else { return }
-        let read: Set<HKObjectType> = [
+    /// Données lues par l'app (rien n'est écrit depuis l'iPhone).
+    static var readTypes: Set<HKObjectType> {
+        [
             HKObjectType.workoutType(),
             HKQuantityType(.heartRate),
             HKQuantityType(.restingHeartRate),
@@ -31,7 +31,46 @@ final class HealthReader {
             HKQuantityType(.bodyMass),
             HKQuantityType(.vo2Max)
         ]
-        try await store.requestAuthorization(toShare: [], read: read)
+    }
+
+    func requestAuthorization() async throws {
+        guard HKHealthStore.isHealthDataAvailable() else { return }
+        try await store.requestAuthorization(toShare: [], read: Self.readTypes)
+    }
+
+    /// L'accès à Santé a-t-il déjà été demandé ? HealthKit ne dit pas ce qui a été autorisé en
+    /// lecture (vie privée), seulement si la demande a été faite (#36).
+    func wasAuthorizationRequested() async -> Bool {
+        guard HKHealthStore.isHealthDataAvailable() else { return false }
+        let status = try? await store.statusForAuthorizationRequest(toShare: [], read: Self.readTypes)
+        return status == .unnecessary
+    }
+
+    /// Empreinte des entraînements Santé de la période (nombre + dernière fin) : change dès qu'un
+    /// entraînement est ajouté. Sert à savoir si le suivi déjà généré est encore à jour (#35).
+    func workoutStamp(days: Int) async -> String? {
+        guard HKHealthStore.isHealthDataAvailable() else { return nil }
+        let cal = Calendar.current
+        let todayStart = cal.startOfDay(for: .now)
+        let start = cal.date(byAdding: .day, value: -(days - 1), to: todayStart) ?? todayStart
+        guard let list = try? await workouts(from: start, to: .now) else { return nil }
+        let last = list.map { $0.start.addingTimeInterval($0.duration).timeIntervalSince1970 }.max() ?? 0
+        // Récupération (FC au repos, VFC, poids, VO2max) : aussi dans le suivi, souvent ajoutée plus tard.
+        var recovery: [Double] = []
+        for id in [HKQuantityTypeIdentifier.restingHeartRate, .heartRateVariabilitySDNN, .bodyMass, .vo2Max] {
+            recovery.append(await latestSampleEnd(id))
+        }
+        return "\(list.count)-\(last)-" + recovery.map { "\($0)" }.joined(separator: "-")
+    }
+
+    /// Fin du dernier échantillon enregistré pour ce type (0 si aucun ou pas d'accès).
+    private func latestSampleEnd(_ id: HKQuantityTypeIdentifier) async -> Double {
+        let query = HKSampleQueryDescriptor(
+            predicates: [.quantitySample(type: HKQuantityType(id), predicate: nil)],
+            sortDescriptors: [SortDescriptor(\.endDate, order: .reverse)],
+            limit: 1
+        )
+        return (try? await query.result(for: store))?.first?.endDate.timeIntervalSince1970 ?? 0
     }
 
     func workouts(from start: Date, to end: Date) async throws -> [WorkoutSummary] {

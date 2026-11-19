@@ -5,31 +5,21 @@ import UniformTypeIdentifiers
 
 // MARK: - Export
 
-/// Le plan en fichier JSON, pour la feuille de partage (Fichiers, Mail, AirDrop…).
-struct PlanFile: Transferable {
-    let plan: TrainingPlan
-
-    var fileName: String {
+/// Le plan en fichier JSON, préparé en arrière-plan pour ne pas figer l'écran (#34).
+enum PlanExport {
+    static func fileName(for plan: TrainingPlan) -> String {
         let id = plan.planId.replacingOccurrences(of: "/", with: "-")
         return "plan-\(id)-v\(plan.version).json"
     }
 
-    static var transferRepresentation: some TransferRepresentation {
-        FileRepresentation(exportedContentType: .json) { item in
-            let url = URL.temporaryDirectory.appending(path: item.fileName)
-            try Coding.encoder.encode(item.plan).write(to: url, options: .atomic)
-            return SentTransferredFile(url)
-        }
-    }
-}
-
-struct ExportPlanLink: View {
-    let plan: TrainingPlan
-
-    var body: some View {
-        ShareLink(item: PlanFile(plan: plan), preview: SharePreview("Plan « \(plan.title) » v\(plan.version)")) {
-            Label("Exporter le plan", systemImage: "square.and.arrow.up")
-        }
+    static func file(for plan: TrainingPlan) async throws -> SharedFile {
+        let name = fileName(for: plan)
+        let url = try await Task.detached(priority: .userInitiated) {
+            let url = URL.temporaryDirectory.appending(path: name)
+            try Coding.encoder.encode(plan).write(to: url, options: .atomic)
+            return url
+        }.value
+        return SharedFile(url: url)
     }
 }
 
@@ -80,16 +70,11 @@ struct NewPlanView: View {
                 }
 
                 Section {
-                    Button {
-                        Task { await prepare() }
-                    } label: {
-                        if preparing {
-                            ProgressView()
-                        } else {
-                            Label("Préparer la demande", systemImage: "doc.text.magnifyingglass")
-                        }
+                    BusyButton("Préparer la demande", systemImage: "doc.text.magnifyingglass",
+                               busyTitle: "Préparation…", isRunning: $preparing) {
+                        await prepare()
                     }
-                    .disabled(preparing || askingCoach)
+                    .disabled(askingCoach)
 
                     if ownCoachEnabled && !ownCoachURL.isEmpty {
                         Button {
@@ -110,7 +95,7 @@ struct NewPlanView: View {
 
                 if !request.isEmpty {
                     Section {
-                        Button(copied ? "Copié ✓" : "Copier", systemImage: "doc.on.doc") {
+                        Button(copied ? "Copié" : "Copier", systemImage: copied ? "checkmark" : "doc.on.doc") {
                             UIPasteboard.general.string = request
                             copied = true
                         }
@@ -122,9 +107,7 @@ struct NewPlanView: View {
                     }
 
                     Section("Aperçu") {
-                        Text(request)
-                            .font(.system(.caption2, design: .monospaced))
-                            .textSelection(.enabled)
+                        LongTextPreview(text: request)
                     }
                 }
             }
@@ -185,10 +168,8 @@ struct NewPlanView: View {
     }
 
     private func prepare() async {
-        preparing = true
         request = await buildRequest()
         copied = false
-        preparing = false
     }
 
     private func askCoach() async {

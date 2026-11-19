@@ -11,6 +11,8 @@ struct PlanView: View {
     @State private var busy = false
     @State private var showNewPlan = false
     @State private var confirmReset = false
+    @State private var exporting = false
+    @State private var exportFile: SharedFile?
     /// Appui long › « Marquer comme non faite » : séance à confirmer (#13).
     @State private var notDone: PlannedSession?
 
@@ -33,7 +35,7 @@ struct PlanView: View {
                         Button("Importer un fichier", systemImage: "folder") { showImporter = true }
                         if let plan = store.plan {
                             Divider()
-                            ExportPlanLink(plan: plan)
+                            Button("Exporter le plan", systemImage: "square.and.arrow.up") { export(plan) }
                             Button("Resynchroniser la montre", systemImage: "arrow.triangle.2.circlepath") {
                                 perform { await store.sync() }
                             }
@@ -44,8 +46,11 @@ struct PlanView: View {
                         }
                     } label: {
                         Image(systemName: "ellipsis.circle")
+                            .accessibilityLabel("Actions du plan")
                     }
-                    .disabled(busy)
+                    .disabled(busy || exporting)
+                    // Bulle attachée au bouton ••• qui la déclenche, pas à tout l'écran (#33).
+                    .resetPlanConfirmation(isPresented: $confirmReset, store: store)
                 }
             }
             .fileImporter(isPresented: $showImporter, allowedContentTypes: [.json, .plainText]) { result in
@@ -55,7 +60,7 @@ struct PlanView: View {
                 }
             }
             .sheet(isPresented: $showNewPlan) { NewPlanView() }
-            .resetPlanConfirmation(isPresented: $confirmReset, store: store)
+            .shareFileSheet($exportFile)
             .confirmationDialog("Marquer comme non faite ?",
                                 isPresented: Binding(get: { notDone != nil }, set: { if !$0 { notDone = nil } }),
                                 titleVisibility: .visible, presenting: notDone) { session in
@@ -75,7 +80,11 @@ struct PlanView: View {
                 Text(importError ?? "")
             }
             .overlay {
-                if busy || store.isSyncing {
+                if exporting {
+                    ProgressView("Préparation du fichier…")
+                        .padding()
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: Theme.smallButtonRadius))
+                } else if busy || store.isSyncing {
                     ProgressView("Envoi vers la montre…")
                         .padding()
                         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
@@ -262,6 +271,19 @@ struct PlanView: View {
             performThrowing { try await store.importPlan(data: data) }
         } catch {
             importError = error.localizedDescription
+        }
+    }
+
+    /// Exporte le plan : fichier préparé en arrière-plan, indicateur pendant ce temps (#34).
+    private func export(_ plan: TrainingPlan) {
+        exporting = true
+        Task {
+            do {
+                exportFile = try await PlanExport.file(for: plan)
+            } catch {
+                importError = "Export impossible : \(error.localizedDescription)"
+            }
+            exporting = false
         }
     }
 

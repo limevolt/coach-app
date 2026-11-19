@@ -14,6 +14,10 @@ struct ReportView: View {
     @State private var generating = false
     @State private var showMail = false
     @State private var copied = false
+    /// Données utilisées par le dernier suivi généré, et Santé au dernier passage sur l'écran (#35).
+    @State private var lastInputs: ReportInputs?
+    @State private var healthStamp: String?
+    @Environment(\.scenePhase) private var scenePhase
     @AppStorage(OwnCoach.Keys.enabled) private var ownCoachEnabled = false
     @AppStorage(OwnCoach.Keys.url) private var ownCoachURL = ""
     @State private var askingCoach = false
@@ -47,16 +51,20 @@ struct ReportView: View {
                 }
 
                 Section {
-                    Button {
-                        Task { await generate() }
-                    } label: {
-                        if generating {
-                            ProgressView()
-                        } else {
-                            Label("Générer le suivi", systemImage: "doc.text.magnifyingglass")
+                    if isUpToDate {
+                        Label("Suivi à jour", systemImage: "checkmark.circle")
+                            .foregroundStyle(Theme.muted)
+                    } else {
+                        BusyButton("Générer le suivi", systemImage: "doc.text.magnifyingglass",
+                                   busyTitle: "Préparation du suivi…", isRunning: $generating) {
+                            await generate()
                         }
+                        .disabled(askingCoach)
                     }
-                    .disabled(generating || askingCoach)
+                } footer: {
+                    if isUpToDate {
+                        Text("Rien de nouveau depuis le dernier suivi : il est prêt à partager ci-dessous.")
+                    }
                 }
 
                 if ownCoachEnabled && !ownCoachURL.isEmpty {
@@ -91,7 +99,7 @@ struct ReportView: View {
                         ShareLink(item: report, subject: Text(subject)) {
                             Label("Partager (Gmail, Notes…)", systemImage: "square.and.arrow.up")
                         }
-                        Button(copied ? "Copié ✓" : "Copier", systemImage: "doc.on.doc") {
+                        Button(copied ? "Copié" : "Copier", systemImage: copied ? "checkmark" : "doc.on.doc") {
                             UIPasteboard.general.string = report
                             copied = true
                         }
@@ -102,14 +110,17 @@ struct ReportView: View {
                     }
 
                     Section("Aperçu") {
-                        Text(report)
-                            .font(.system(.caption2, design: .monospaced))
-                            .textSelection(.enabled)
+                        LongTextPreview(text: report)
                     }
                 }
             }
             .themedForm()
             .navigationTitle("Suivi")
+            // Nouvel entraînement dans Santé ? Vérifié à l'ouverture de l'écran et au retour dans l'app.
+            .task(id: "\(days)-\(scenePhase == .active)") {
+                guard scenePhase == .active else { return }
+                healthStamp = await HealthReader().workoutStamp(days: days)
+            }
             .sheet(item: $proposal) { proposal in
                 PlanProposalView(proposal: proposal, current: store.plan) {
                     Task {
@@ -143,6 +154,7 @@ struct ReportView: View {
         // Sans le format : il est déjà dans la consigne du coach, et un petit modèle a peu de contexte.
         let coachReport = await builder.build(days: days, comment: comment, includePlan: true, includeFormat: false)
         report = store.plan == nil ? coachReport : PlanFormat.appending(to: coachReport)
+        lastInputs = nil
         copied = false
         let reply: String
         do {
@@ -160,10 +172,48 @@ struct ReportView: View {
     }
 
     private func generate() async {
-        generating = true
         let builder = ReportBuilder(plan: store.plan, logs: store.logs, profile: profile)
         report = await builder.build(days: days, comment: comment, includePlan: includePlan)
+        healthStamp = await HealthReader().workoutStamp(days: days)
+        lastInputs = currentInputs
         copied = false
-        generating = false
+    }
+
+    private var currentInputs: ReportInputs {
+        ReportInputs(day: Day.key(.now), days: days, comment: comment, includePlan: includePlan,
+                     profile: profile, trainingDays: TrainingDays.exportLine,
+                     plan: store.plan, logs: ReportInputs.stamp(store.logs), health: healthStamp)
+    }
+
+    /// Le suivi affiché correspond déjà aux données actuelles : inutile de le régénérer (#35).
+    private var isUpToDate: Bool {
+        !report.isEmpty && !generating && lastInputs == currentInputs
+    }
+}
+
+/// Tout ce dont dépend le texte du suivi. Égal = le suivi généré est encore à jour (#35).
+struct ReportInputs: Equatable {
+    var day: String
+    var days: Int
+    var comment: String
+    var includePlan: Bool
+    var profile: String
+    var trainingDays: String?
+    var plan: TrainingPlan?
+    var logs: String
+    var health: String?
+
+    /// Résumé des journaux : nombre, dernier ajout, ressentis et notes (modifiables après coup).
+    static func stamp(_ logs: [SessionLog]) -> String {
+        let latest = logs.map(\.completedAt).max()?.timeIntervalSince1970 ?? 0
+        let archived = logs.filter { $0.archivedAt != nil }.count
+        var hasher = Hasher()
+        for log in logs {
+            hasher.combine(log.id)
+            hasher.combine(log.rpe)
+            hasher.combine(log.note)
+            hasher.combine(log.sets)
+        }
+        return "\(logs.count)-\(archived)-\(latest)-\(hasher.finalize())"
     }
 }
