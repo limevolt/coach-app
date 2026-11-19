@@ -1,0 +1,36 @@
+commit: cc0b928457ac2015c184d68d73248a7b9a6a3b1d
+branche: lot/34-figement-suivi-reglages
+ios: success
+watch: success
+tests: success
+
+===== ERREURS / AVERTISSEMENTS iOS =====
+
+===== ERREURS / AVERTISSEMENTS MONTRE =====
+
+===== TESTS UNITAIRES =====
+Test Case '-[CoachTests.DoneStateTests testDoneIdsOnlyForSessionsOfThePlan]' passed (0.004 seconds).
+Test Case '-[CoachTests.DoneStateTests testLogArrivingAfterResetIsArchivedIfDoneBefore]' passed (0.001 seconds).
+Test Case '-[CoachTests.DoneStateTests testMarkNotDoneRemovesOnlyThatSessionsActiveLogs]' passed (0.008 seconds).
+Test Case '-[CoachTests.DoneStateTests testNewLogAfterResetCountsAgain]' passed (0.001 seconds).
+Test Case '-[CoachTests.DoneStateTests testOldLogsWithoutArchiveFieldStillDecode]' passed (0.004 seconds).
+Test Case '-[CoachTests.DoneStateTests testResetDetachesLogsFromReimportedPlanWithSameIds]' passed (0.001 seconds).
+Test Case '-[CoachTests.DoneStateTests testResetKeepsFreeTimerLogsAndOldArchiveDates]' passed (0.000 seconds).
+Test Case '-[CoachTests.DoneStateTests testStartRequestFreshness]' passed (0.000 seconds).
+Test Case '-[CoachTests.DoneStateTests testStartRequestRoundTrip]' passed (0.002 seconds).
+Test Case '-[CoachTests.DoneStateTests testWatchDropsPendingFinishedBeforeReset]' passed (0.307 seconds).
+Test Case '-[CoachTests.DoneStateTests testWatchKeepsSessionFinishedHereUntilPhoneConfirms]' passed (0.001 seconds).
+Test Case '-[CoachTests.DoneStateTests testWatchPendingExpires]' passed (0.001 seconds).
+Test Case '-[CoachTests.DoneStateTests testWatchReplacesItsListWithThePhoneOne]' passed (0.001 seconds).
+	 Executed 13 tests, with 0 failures (0 unexpected) in 0.330 (1.088) seconds
+Test Case '-[CoachTests.PlanFormatTests testBundledFormatIsTheDocsFile]' passed (0.003 seconds).
+Test Case '-[CoachTests.PlanFormatTests testMissingTitleGivesClearMessage]' passed (0.008 seconds).
+Test Case '-[CoachTests.PlanFormatTests testNewPlanRequestIsSelfContained]' passed (0.005 seconds).
+Test Case '-[CoachTests.PlanFormatTests testPreviewKeepsOnlyFirstLines]' passed (0.001 seconds).
+Test Case '-[CoachTests.PlanFormatTests testReportInputsChangeWithNewLogOrComment]' passed (0.896 seconds).
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.913 (1.818) seconds
+	 Executed 18 tests, with 0 failures (0 unexpected) in 1.243 (2.907) seconds
+	 Executed 18 tests, with 0 failures (0 unexpected) in 1.243 (2.908) seconds
+
+===== FIN DU JOURNAL iOS =====
+** BUILD SUCCEEDED **
