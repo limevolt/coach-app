@@ -1,4 +1,4 @@
-// ReportBuilder.swift — construit le texte du suivi à envoyer à Claude
+// ReportBuilder.swift — construit le texte du suivi à envoyer à l'IA
 
 import Foundation
 import HealthKit
@@ -9,7 +9,10 @@ struct ReportBuilder {
     let logs: [SessionLog]
     let profile: String
 
-    func build(days: Int, comment: String, includePlan: Bool, footer: Bool = true) async -> String {
+    /// `includeFormat` : ajoute le format du plan à la fin quand le plan est joint, pour que le suivi
+    /// se suffise dans une nouvelle conversation (#37). Désactivé pour « Mon propre coach » (déjà dans sa consigne).
+    func build(days: Int, comment: String, includePlan: Bool, footer: Bool = true,
+               includeFormat: Bool = true) async -> String {
         let health = HealthReader()
         try? await health.requestAuthorization()
 
@@ -163,9 +166,10 @@ struct ReportBuilder {
         }
 
         if footer {
-            out.append("_Généré localement par l'app Coach. Colle ce suivi dans ta conversation avec Claude pour obtenir le plan mis à jour._")
+            out.append("_Généré localement par l'app Coach. Colle ce suivi dans ta conversation avec ton IA pour obtenir le plan mis à jour._")
         }
-        return out.joined(separator: "\n")
+        let text = out.joined(separator: "\n")
+        return includePlan && plan != nil && includeFormat ? PlanFormat.appending(to: text) : text
     }
 
     // MARK: Formatage

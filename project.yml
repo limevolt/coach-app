@@ -31,6 +31,9 @@ targets:
     sources:
       - path: Coach
       - path: Shared
+      # Format du plan, ajouté aux textes envoyés à l'IA (#37) : une seule source, la doc.
+      - path: docs/PLAN_FORMAT.md
+        buildPhase: resources
     dependencies:
       - target: CoachWatch
     info:

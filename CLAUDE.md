@@ -41,6 +41,7 @@ chacune avec ses propres réglages et son propre plan.
 
 - Grouper les corrections et vérifier le code avant de pousser ; éviter les allers-retours.
 - Un commit qui ne change que de la doc ou la config sans code : ajouter `[skip ci]`.
+  Exception : `docs/PLAN_FORMAT.md` est embarqué dans l'app (texte envoyé à l'IA) : pas de `[skip ci]`.
 - `[captures]` seulement pour un vrai changement d'écran, et une fois le code prêt.
 
 ## Interface (iPhone et montre)

@@ -7,6 +7,7 @@ struct PlanView: View {
     @Environment(PlanStore.self) private var store
     @State private var showImporter = false
     @State private var importError: String?
+    @State private var importRepair: String?
     @State private var busy = false
     @State private var showNewPlan = false
     @State private var confirmReset = false
@@ -64,7 +65,11 @@ struct PlanView: View {
                 Text(SessionDetailView.notDoneMessage)
             }
             .alert("Import impossible",
-                   isPresented: Binding(get: { importError != nil }, set: { if !$0 { importError = nil } })) {
+                   isPresented: Binding(get: { importError != nil },
+                                        set: { if !$0 { importError = nil; importRepair = nil } })) {
+                if let repair = importRepair {
+                    Button("Copier la demande de correction") { UIPasteboard.general.string = repair }
+                }
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(importError ?? "")
@@ -209,7 +214,7 @@ struct PlanView: View {
                 .foregroundStyle(Theme.accent)
                 .accessibilityHidden(true)
             Text("Aucun plan").font(.display(28)).foregroundStyle(Theme.text)
-            Text("Prépare ta demande (avec ton dernier mois de sport), envoie-la à Claude, puis colle ici le plan JSON reçu.")
+            Text("Prépare ta demande (avec ton dernier mois de sport), envoie-la à ton IA, puis colle ici le plan JSON reçu.")
                 .font(.coach(size: 15))
                 .foregroundStyle(Theme.muted)
                 .multilineTextAlignment(.center)
@@ -243,7 +248,7 @@ struct PlanView: View {
 
     private func importClipboard() {
         guard let text = UIPasteboard.general.string, !text.isEmpty else {
-            importError = "Le presse-papiers est vide. Copie d'abord le plan JSON envoyé par Claude."
+            importError = "Le presse-papiers est vide. Copie d'abord le plan JSON envoyé par ton IA."
             return
         }
         performThrowing { try await store.importPlan(text: text) }
@@ -260,6 +265,13 @@ struct PlanView: View {
         }
     }
 
+    /// Plan refusé : l'erreur, une aide et la demande de correction à copier pour l'IA (#37).
+    private func showImportError(_ error: Error) {
+        let failure = PlanFormat.importFailure(error)
+        importError = failure.message
+        importRepair = failure.repair
+    }
+
     private func perform(_ operation: @escaping () async -> Void) {
         busy = true
         Task {
@@ -271,7 +283,7 @@ struct PlanView: View {
     private func performThrowing(_ operation: @escaping () async throws -> Void) {
         busy = true
         Task {
-            do { try await operation() } catch { importError = error.localizedDescription }
+            do { try await operation() } catch { showImportError(error) }
             busy = false
         }
     }
