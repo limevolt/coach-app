@@ -214,7 +214,7 @@ struct PlanView: View {
                 .foregroundStyle(Theme.accent)
                 .accessibilityHidden(true)
             Text("Aucun plan").font(.display(28)).foregroundStyle(Theme.text)
-            Text("Prépare ta demande (avec ton dernier mois de sport), envoie-la à Claude, puis colle ici le plan JSON reçu.")
+            Text("Prépare ta demande (avec ton dernier mois de sport), envoie-la à ton IA, puis colle ici le plan JSON reçu.")
                 .font(.coach(size: 15))
                 .foregroundStyle(Theme.muted)
                 .multilineTextAlignment(.center)
@@ -267,14 +267,9 @@ struct PlanView: View {
 
     /// Plan refusé : l'erreur, une aide et la demande de correction à copier pour l'IA (#37).
     private func showImportError(_ error: Error) {
-        let message = error.localizedDescription
-        if error is PlanError {
-            importError = message + "\n\n" + PlanFormat.importHelp
-            importRepair = PlanFormat.repairRequest(error: message)
-        } else {
-            importError = message
-            importRepair = nil
-        }
+        let failure = PlanFormat.importFailure(error)
+        importError = failure.message
+        importRepair = failure.repair
     }
 
     private func perform(_ operation: @escaping () async -> Void) {

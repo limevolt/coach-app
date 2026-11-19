@@ -35,6 +35,18 @@ enum PlanFormat {
         """
     }
 
+    /// Ajoute le format à la fin d'un texte destiné à l'IA (demande de plan, suivi).
+    static func appending(to text: String) -> String {
+        text + "\n\n" + section
+    }
+
+    /// Message d'erreur d'import, et demande de correction à copier quand c'est le plan qui est en cause.
+    static func importFailure(_ error: Error) -> (message: String, repair: String?) {
+        let message = error.localizedDescription
+        guard error is PlanError else { return (message, nil) }
+        return (message + "\n\n" + importHelp, repairRequest(error: message))
+    }
+
     /// Texte à coller à l'IA quand son plan est refusé : l'erreur + le format complet.
     static func repairRequest(error: String) -> String {
         """

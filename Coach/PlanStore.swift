@@ -346,6 +346,7 @@ final class PlanStore {
 
     /// Fichier ouvert depuis Mail, Fichiers ou le partage (« Ouvrir avec Coach »).
     func importFile(_ url: URL) async {
+        alertRepair = nil
         let access = url.startAccessingSecurityScopedResource()
         defer { if access { url.stopAccessingSecurityScopedResource() } }
         do {
@@ -354,11 +355,9 @@ final class PlanStore {
             try await importPlan(text: text)
             alertMessage = "Plan « \(plan?.title ?? "") » v\(plan?.version ?? 0) importé.\n\n\(status ?? "")"
         } catch {
-            alertMessage = "Import impossible : \(error.localizedDescription)"
-            if error is PlanError {
-                alertMessage? += "\n\n" + PlanFormat.importHelp
-                alertRepair = PlanFormat.repairRequest(error: error.localizedDescription)
-            }
+            let failure = PlanFormat.importFailure(error)
+            alertMessage = "Import impossible : \(failure.message)"
+            alertRepair = failure.repair
         }
     }
 

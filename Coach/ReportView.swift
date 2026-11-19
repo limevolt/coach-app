@@ -38,7 +38,7 @@ struct ReportView: View {
                 } header: {
                     Text("Période")
                 } footer: {
-                    Text("Joindre le plan permet à Claude de le mettre à jour, même dans une nouvelle conversation.")
+                    Text("Joindre le plan (et son format) permet à ton IA de le mettre à jour, même dans une nouvelle conversation.")
                 }
 
                 Section("Ton ressenti général") {
@@ -91,7 +91,7 @@ struct ReportView: View {
                         ShareLink(item: report, subject: Text(subject)) {
                             Label("Partager (Gmail, Notes…)", systemImage: "square.and.arrow.up")
                         }
-                        Button(copied ? "Copié ✓" : "Copier pour Claude", systemImage: "doc.on.doc") {
+                        Button(copied ? "Copié ✓" : "Copier", systemImage: "doc.on.doc") {
                             UIPasteboard.general.string = report
                             copied = true
                         }
@@ -140,12 +140,14 @@ struct ReportView: View {
         defer { askingCoach = false }
         // Le plan actuel est toujours joint : le coach en a besoin pour le mettre à jour.
         let builder = ReportBuilder(plan: store.plan, logs: store.logs, profile: profile)
-        report = await builder.build(days: days, comment: comment, includePlan: true)
+        // Sans le format : il est déjà dans la consigne du coach, et un petit modèle a peu de contexte.
+        let coachReport = await builder.build(days: days, comment: comment, includePlan: true, includeFormat: false)
+        report = store.plan == nil ? coachReport : PlanFormat.appending(to: coachReport)
         copied = false
         let reply: String
         do {
             reply = try await OwnCoach.client().send(system: OwnCoach.prompt,
-                                                     user: OwnCoach.userMessage(report: report))
+                                                     user: OwnCoach.userMessage(report: coachReport))
         } catch {
             coachError = OwnCoachSettingsView.explain(error)
             return

@@ -110,7 +110,7 @@ struct NewPlanView: View {
 
                 if !request.isEmpty {
                     Section {
-                        Button(copied ? "Copié ✓" : "Copier pour Claude", systemImage: "doc.on.doc") {
+                        Button(copied ? "Copié ✓" : "Copier", systemImage: "doc.on.doc") {
                             UIPasteboard.general.string = request
                             copied = true
                         }
@@ -118,7 +118,7 @@ struct NewPlanView: View {
                             Label("Partager", systemImage: "square.and.arrow.up")
                         }
                     } footer: {
-                        Text("Colle la demande dans ta conversation avec Claude, puis colle ici le plan JSON reçu (menu ••• › Coller le plan).")
+                        Text("Colle la demande dans ta conversation avec ton IA, puis colle ici le plan JSON reçu (menu ••• › Coller le plan).")
                     }
 
                     Section("Aperçu") {
@@ -158,7 +158,8 @@ struct NewPlanView: View {
         }
     }
 
-    private func buildRequest() async -> String {
+    /// `includeFormat` : format du plan à la fin (#37) ; sans lui pour « Mon propre coach », qui l'a déjà.
+    private func buildRequest(includeFormat: Bool = true) async -> String {
         let today = Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide).year()
             .locale(Locale(identifier: "fr_FR")))
         var out: [String] = []
@@ -179,9 +180,8 @@ struct NewPlanView: View {
         } else {
             out.append("Je ne joins pas d'historique : commence prudemment.")
         }
-        out.append("")
-        out.append(PlanFormat.section)
-        return out.joined(separator: "\n")
+        let text = out.joined(separator: "\n")
+        return includeFormat ? PlanFormat.appending(to: text) : text
     }
 
     private func prepare() async {
@@ -194,13 +194,14 @@ struct NewPlanView: View {
     private func askCoach() async {
         askingCoach = true
         defer { askingCoach = false }
-        request = await buildRequest()
+        let coachRequest = await buildRequest(includeFormat: false)
+        request = PlanFormat.appending(to: coachRequest)   // ce qui est affiché et copié reste complet
         copied = false
         let reply: String
         do {
             reply = try await OwnCoach.client().send(
                 system: OwnCoach.prompt,
-                user: request + "\n\nRéponds uniquement avec le plan complet, en JSON.")
+                user: coachRequest + "\n\nRéponds uniquement avec le plan complet, en JSON.")
         } catch {
             coachError = OwnCoachSettingsView.explain(error)
             return
