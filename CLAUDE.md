@@ -23,6 +23,20 @@ commit, issues, pull requests, commentaires, branches `ci-logs` et `ci-captures`
   et demander à l'utilisateur. `.gitignore` bloque déjà `plan-*.json`, `*export*.json`, `*suivi*.md`, `*.gpx`…, `perso/`.
 - En cas de doute : ne pas pousser, demander.
 
+## Une app réutilisable par d'autres
+
+Coach est développée par et pour son propriétaire, mais doit pouvoir servir à d'autres personnes,
+chacune avec ses propres réglages et son propre plan.
+
+- **Fonctions génériques.** Ne pas lier l'app à un outil précis : « Partager », « Copier »,
+  « ton IA » ou « ton coach », pas « Claude ». L'utilisateur choisit l'IA ou l'app dans le menu
+  de partage d'iOS. Quand le propriétaire parle de Claude, comprendre « l'IA » et proposer la
+  version générique.
+- **Rien de propre au propriétaire dans le code** : objectif, course, lieu, matériel, jours
+  d'entraînement viennent du plan (`goals`, `notes`…) ou des réglages, jamais d'une chaîne en dur.
+- Un service extérieur (une API d'IA, par exemple) reste une option désactivée par défaut,
+  activée et configurée par l'utilisateur dans les réglages (clé dans le trousseau).
+
 ## Compilations GitHub Actions (gratuites en public, mais longues)
 
 - Grouper les corrections et vérifier le code avant de pousser ; éviter les allers-retours.
