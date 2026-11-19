@@ -9,6 +9,11 @@ struct SettingsView: View {
     @State private var healthMessage: String?
     @AppStorage(OwnCoach.Keys.enabled) private var ownCoachEnabled = false
     @State private var confirmReset = false
+    /// nil = pas encore vérifié ; true = l'accès à Santé a déjà été demandé (#36).
+    @State private var healthRequested: Bool?
+    @State private var exporting = false
+    @State private var exportFile: SharedFile?
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         NavigationStack {
@@ -61,14 +66,21 @@ struct SettingsView: View {
                     Text("Profil (ajouté en tête du suivi)")
                 }
 
-                Section("Autorisations et synchronisation") {
-                    Button("Autoriser l'accès à Santé") {
-                        Task {
-                            do {
-                                try await HealthReader().requestAuthorization()
-                                healthMessage = "C'est fait. Tu peux vérifier dans Réglages > Santé > Accès aux données et appareils > Coach."
-                            } catch {
-                                healthMessage = error.localizedDescription
+                Section {
+                    if healthRequested == true {
+                        Button("Gérer les autorisations Santé", systemImage: "heart.text.square") {
+                            openHealthSettings()
+                        }
+                    } else {
+                        Button("Autoriser l'accès à Santé", systemImage: "heart") {
+                            Task {
+                                do {
+                                    try await HealthReader().requestAuthorization()
+                                    healthMessage = nil
+                                } catch {
+                                    healthMessage = error.localizedDescription
+                                }
+                                healthRequested = await HealthReader().wasAuthorizationRequested()
                             }
                         }
                     }
@@ -81,6 +93,12 @@ struct SettingsView: View {
                     if let status = store.status {
                         Text(status).font(.coach(.footnote)).foregroundStyle(.secondary)
                     }
+                } header: {
+                    Text("Autorisations et synchronisation")
+                } footer: {
+                    if healthRequested == true {
+                        Text("Ce que Coach peut lire se règle dans Santé : ton profil › Apps › Coach.")
+                    }
                 }
 
                 if let plan = store.plan {
@@ -89,8 +107,13 @@ struct SettingsView: View {
                         LabeledContent("Version", value: "\(plan.planId) v\(plan.version)")
                         LabeledContent("Séances", value: "\(plan.sessions.count)")
                         LabeledContent("Journaux", value: "\(store.logs.count)")
-                        ExportPlanLink(plan: plan)
+                        BusyButton("Exporter le plan", systemImage: "square.and.arrow.up",
+                                   busyTitle: "Préparation du fichier…", isRunning: $exporting) {
+                            exportFile = try? await PlanExport.file(for: plan)
+                        }
+                        // Bulle attachée au bouton : elle s'affiche juste à côté (#33).
                         Button("Réinitialiser le plan", role: .destructive) { confirmReset = true }
+                            .resetPlanConfirmation(isPresented: $confirmReset, store: store)
                     }
                 }
 
@@ -102,7 +125,17 @@ struct SettingsView: View {
             }
             .themedForm()
             .navigationTitle("Réglages")
-            .resetPlanConfirmation(isPresented: $confirmReset, store: store)
+            .shareFileSheet($exportFile)
+            .task { healthRequested = await HealthReader().wasAuthorizationRequested() }
+        }
+    }
+
+    /// App Santé (où l'on règle ce que Coach peut lire) ; à défaut, la page de Coach dans Réglages.
+    private func openHealthSettings() {
+        guard let health = URL(string: "x-apple-health://"),
+              let settings = URL(string: UIApplication.openSettingsURLString) else { return }
+        openURL(health) { accepted in
+            if !accepted { openURL(settings) }
         }
     }
 }

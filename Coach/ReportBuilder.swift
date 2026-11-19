@@ -1,4 +1,4 @@
-// ReportBuilder.swift — construit le texte du suivi à envoyer à Claude
+// ReportBuilder.swift — construit le texte du suivi à envoyer à son IA
 
 import Foundation
 import HealthKit
@@ -153,8 +153,8 @@ struct ReportBuilder {
         out.append("")
 
         // 6. Plan actuel (pour que Claude puisse le mettre à jour, même dans une nouvelle conversation)
-        if includePlan, let plan, let data = try? Coding.compactEncoder.encode(plan),
-           let json = String(data: data, encoding: .utf8) {
+        // Encodé en arrière-plan : un grand plan ne fige pas l'écran (#34).
+        if includePlan, let plan, let json = await Self.json(plan) {
             out.append("## Plan actuel (JSON)")
             out.append("```json")
             out.append(json)
@@ -163,12 +163,24 @@ struct ReportBuilder {
         }
 
         if footer {
-            out.append("_Généré localement par l'app Coach. Colle ce suivi dans ta conversation avec Claude pour obtenir le plan mis à jour._")
+            out.append("_Généré localement par l'app Coach. Colle ce suivi dans une conversation avec ton IA pour obtenir le plan mis à jour._")
+        }
+        // Le format du plan accompagne le plan, pour que l'IA puisse répondre même sans historique (#37).
+        if includePlan, plan != nil {
+            out.append("")
+            out.append(PlanFormat.section)
         }
         return out.joined(separator: "\n")
     }
 
     // MARK: Formatage
+
+    nonisolated static func json(_ plan: TrainingPlan) async -> String? {
+        await Task.detached(priority: .userInitiated) {
+            guard let data = try? Coding.compactEncoder.encode(plan) else { return nil }
+            return String(data: data, encoding: .utf8)
+        }.value
+    }
 
     static func duration(_ t: TimeInterval) -> String {
         let s = Int(t.rounded())

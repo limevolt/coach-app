@@ -500,6 +500,13 @@ final class PlanStore {
         return String(cleaned[a...b])
     }
 
+    /// Message d'erreur d'import : la cause, puis comment obtenir un plan valide (#37).
+    static func importMessage(for error: Error) -> String {
+        guard error is PlanError else { return error.localizedDescription }
+        return error.localizedDescription
+            + "\n\nLe plan ne suit pas le format attendu. Dans « Créer un nouveau plan », le texte copié contient le format complet : renvoie-le à ton IA et demande-lui de corriger le plan."
+    }
+
     static func describe(_ error: Error) -> String {
         guard let e = error as? DecodingError else { return error.localizedDescription }
         func path(_ c: DecodingError.Context) -> String {
@@ -507,7 +514,10 @@ final class PlanStore {
         }
         switch e {
         case .keyNotFound(let key, let ctx):
-            return "Champ manquant « \(key.stringValue) » (\(path(ctx)))"
+            let place = path(ctx)
+            return place.isEmpty
+                ? "Champ manquant « \(key.stringValue) » (en tête du plan)"
+                : "Champ manquant « \(key.stringValue) » (dans \(place))"
         case .typeMismatch(_, let ctx), .valueNotFound(_, let ctx):
             return "Valeur incorrecte à \(path(ctx)) : \(ctx.debugDescription)"
         case .dataCorrupted(let ctx):

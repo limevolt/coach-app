@@ -5,31 +5,36 @@ import UniformTypeIdentifiers
 
 // MARK: - Export
 
-/// Le plan en fichier JSON, pour la feuille de partage (Fichiers, Mail, AirDrop…).
-struct PlanFile: Transferable {
-    let plan: TrainingPlan
-
-    var fileName: String {
+/// Le plan en fichier JSON, préparé en arrière-plan pour ne pas figer l'écran (#34).
+enum PlanExport {
+    static func fileName(for plan: TrainingPlan) -> String {
         let id = plan.planId.replacingOccurrences(of: "/", with: "-")
         return "plan-\(id)-v\(plan.version).json"
     }
 
-    static var transferRepresentation: some TransferRepresentation {
-        FileRepresentation(exportedContentType: .json) { item in
-            let url = URL.temporaryDirectory.appending(path: item.fileName)
-            try Coding.encoder.encode(item.plan).write(to: url, options: .atomic)
-            return SentTransferredFile(url)
-        }
+    static func file(for plan: TrainingPlan) async throws -> SharedFile {
+        let name = fileName(for: plan)
+        let url = try await Task.detached(priority: .userInitiated) {
+            let url = URL.temporaryDirectory.appending(path: name)
+            try Coding.encoder.encode(plan).write(to: url, options: .atomic)
+            return url
+        }.value
+        return SharedFile(url: url)
     }
 }
 
-struct ExportPlanLink: View {
-    let plan: TrainingPlan
+/// Format du plan (docs/PLAN_FORMAT.md, embarqué dans l'app) : joint aux textes envoyés à l'IA
+/// pour qu'ils se suffisent à eux-mêmes, même dans une nouvelle conversation (#37).
+enum PlanFormat {
+    static var text: String {
+        guard let url = Bundle.main.url(forResource: "PLAN_FORMAT", withExtension: "md"),
+              let text = try? String(contentsOf: url, encoding: .utf8) else { return "" }
+        return text
+    }
 
-    var body: some View {
-        ShareLink(item: PlanFile(plan: plan), preview: SharePreview("Plan « \(plan.title) » v\(plan.version)")) {
-            Label("Exporter le plan", systemImage: "square.and.arrow.up")
-        }
+    /// Section à ajouter à la fin d'une demande ou d'un suivi.
+    static var section: String {
+        "---\n\n## Format du plan à respecter (réponds avec le plan complet dans un seul bloc de code JSON)\n\n" + text
     }
 }
 
@@ -46,6 +51,7 @@ struct NewPlanView: View {
     @State private var request = ""
     @State private var preparing = false
     @State private var copied = false
+    @State private var copying = false
     @State private var askingCoach = false
     @State private var coachError: String?
     @State private var proposal: PlanProposal?
@@ -80,16 +86,11 @@ struct NewPlanView: View {
                 }
 
                 Section {
-                    Button {
-                        Task { await prepare() }
-                    } label: {
-                        if preparing {
-                            ProgressView()
-                        } else {
-                            Label("Préparer la demande", systemImage: "doc.text.magnifyingglass")
-                        }
+                    BusyButton("Préparer la demande", systemImage: "doc.text.magnifyingglass",
+                               busyTitle: "Préparation…", isRunning: $preparing) {
+                        await prepare()
                     }
-                    .disabled(preparing || askingCoach)
+                    .disabled(askingCoach)
 
                     if ownCoachEnabled && !ownCoachURL.isEmpty {
                         Button {
@@ -110,7 +111,8 @@ struct NewPlanView: View {
 
                 if !request.isEmpty {
                     Section {
-                        Button(copied ? "Copié ✓" : "Copier pour Claude", systemImage: "doc.on.doc") {
+                        BusyButton(copied ? "Copié" : "Copier", systemImage: copied ? "checkmark" : "doc.on.doc",
+                                   isRunning: $copying) {
                             UIPasteboard.general.string = request
                             copied = true
                         }
@@ -118,13 +120,11 @@ struct NewPlanView: View {
                             Label("Partager", systemImage: "square.and.arrow.up")
                         }
                     } footer: {
-                        Text("Colle la demande dans ta conversation avec Claude, puis colle ici le plan JSON reçu (menu ••• › Coller le plan).")
+                        Text("Colle la demande dans une conversation avec ton IA (le format du plan est inclus), puis colle ici le plan JSON reçu (menu ••• › Coller le plan).")
                     }
 
                     Section("Aperçu") {
-                        Text(request)
-                            .font(.system(.caption2, design: .monospaced))
-                            .textSelection(.enabled)
+                        LongTextPreview(text: request)
                     }
                 }
             }
@@ -159,34 +159,45 @@ struct NewPlanView: View {
     }
 
     private func buildRequest() async -> String {
-        let today = Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide).year()
+        var history: String?
+        if includeHistory {
+            let builder = ReportBuilder(plan: store.plan, logs: store.logs, profile: "")
+            history = await builder.build(days: Self.historyDays, comment: "", includePlan: false, footer: false)
+        }
+        return Self.request(today: .now, goal: goal, profile: profile,
+                            trainingDays: TrainingDays.exportLine, history: history)
+    }
+
+    /// Texte de la demande : se suffit à lui-même (format du plan inclus), pour n'importe quelle IA (#37).
+    static func request(today: Date, goal: String, profile: String, trainingDays: String?, history: String?,
+                        format: String = PlanFormat.section) -> String {
+        let todayLabel = today.formatted(.dateTime.weekday(.wide).day().month(.wide).year()
             .locale(Locale(identifier: "fr_FR")))
         var out: [String] = []
-        out.append("Crée-moi un nouveau plan d'entraînement pour l'app Coach : format JSON de PLAN_FORMAT.md (schemaVersion 1), nouveau planId, version 1, séances à partir d'aujourd'hui.")
+        out.append("Crée-moi un nouveau plan d'entraînement pour l'app Coach, au format JSON décrit à la fin de ce message (schemaVersion 1) : nouveau planId, version 1, séances à partir d'aujourd'hui.")
         out.append("Pour chaque exercice avec charge ou matériel, ajoute une variante « noEquipment » (au poids du corps), pour les jours où je m'entraîne à la maison.")
         out.append("")
-        out.append("Date du jour : \(today) (\(Day.key(.now))).")
+        out.append("Date du jour : \(todayLabel) (\(Day.key(today))).")
         let g = goal.trimmingCharacters(in: .whitespacesAndNewlines)
         out.append("Ce que je veux : \(g.isEmpty ? "—" : g)")
         if !profile.isEmpty { out.append("Profil : \(profile)") }
-        if let days = TrainingDays.exportLine { out.append(days) }
+        if let trainingDays { out.append(trainingDays) }
         out.append("")
-        if includeHistory {
-            let builder = ReportBuilder(plan: store.plan, logs: store.logs, profile: "")
+        if let history {
             out.append("Voici mon dernier mois de sport, pour partir de ma condition physique actuelle :")
             out.append("")
-            out.append(await builder.build(days: Self.historyDays, comment: "", includePlan: false, footer: false))
+            out.append(history)
         } else {
             out.append("Je ne joins pas d'historique : commence prudemment.")
         }
+        out.append("")
+        out.append(format)
         return out.joined(separator: "\n")
     }
 
     private func prepare() async {
-        preparing = true
         request = await buildRequest()
         copied = false
-        preparing = false
     }
 
     private func askCoach() async {
