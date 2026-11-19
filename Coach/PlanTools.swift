@@ -23,24 +23,6 @@ enum PlanExport {
     }
 }
 
-/// Format du plan (docs/PLAN_FORMAT.md, embarqué dans l'app) : joint aux textes envoyés à l'IA
-/// pour qu'ils se suffisent à eux-mêmes, même dans une nouvelle conversation (#37).
-enum PlanFormat {
-    static var text: String {
-        guard let url = Bundle.main.url(forResource: "PLAN_FORMAT", withExtension: "md"),
-              let text = try? String(contentsOf: url, encoding: .utf8) else { return "" }
-        return text
-    }
-
-    /// Section à ajouter à la fin d'une demande ou d'un suivi (sans la note « > … » destinée à l'utilisateur).
-    static var section: String {
-        let body = text.split(separator: "\n", omittingEmptySubsequences: false)
-            .filter { !$0.hasPrefix(">") }
-            .joined(separator: "\n")
-        return "---\n\n## Format du plan à respecter (réponds avec le plan complet dans un seul bloc de code JSON)\n\n" + body
-    }
-}
-
 // MARK: - Nouveau plan
 
 struct NewPlanView: View {
@@ -121,7 +103,7 @@ struct NewPlanView: View {
                             Label("Partager", systemImage: "square.and.arrow.up")
                         }
                     } footer: {
-                        Text("Colle la demande dans une conversation avec ton IA (le format du plan est inclus), puis colle ici le plan JSON reçu (menu ••• › Coller le plan).")
+                        Text("Colle la demande dans ta conversation avec ton IA, puis colle ici le plan JSON reçu (menu ••• › Coller le plan).")
                     }
 
                     Section("Aperçu") {
@@ -159,41 +141,30 @@ struct NewPlanView: View {
         }
     }
 
-    private func buildRequest() async -> String {
-        var history: String?
-        if includeHistory {
-            let builder = ReportBuilder(plan: store.plan, logs: store.logs, profile: "")
-            history = await builder.build(days: Self.historyDays, comment: "", includePlan: false, footer: false)
-        }
-        return Self.request(today: .now, goal: goal, profile: profile,
-                            trainingDays: TrainingDays.exportLine, history: history)
-    }
-
-    /// Texte de la demande : se suffit à lui-même (format du plan inclus), pour n'importe quelle IA (#37).
-    static func request(today: Date, goal: String, profile: String, trainingDays: String?, history: String?,
-                        format: String = PlanFormat.section) -> String {
-        let todayLabel = today.formatted(.dateTime.weekday(.wide).day().month(.wide).year()
+    /// `includeFormat` : format du plan à la fin (#37) ; sans lui pour « Mon propre coach », qui l'a déjà.
+    private func buildRequest(includeFormat: Bool = true) async -> String {
+        let today = Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide).year()
             .locale(Locale(identifier: "fr_FR")))
         var out: [String] = []
-        out.append("Crée-moi un nouveau plan d'entraînement pour l'app Coach, au format JSON décrit à la fin de ce message (schemaVersion 1) : nouveau planId, version 1, séances à partir d'aujourd'hui.")
+        out.append("Crée-moi un nouveau plan d'entraînement pour l'app Coach : plan JSON au format décrit à la fin de ce message (schemaVersion 1), nouveau planId, version 1, séances à partir d'aujourd'hui.")
         out.append("Pour chaque exercice avec charge ou matériel, ajoute une variante « noEquipment » (au poids du corps), pour les jours où je m'entraîne à la maison.")
         out.append("")
-        out.append("Date du jour : \(todayLabel) (\(Day.key(today))).")
+        out.append("Date du jour : \(today) (\(Day.key(.now))).")
         let g = goal.trimmingCharacters(in: .whitespacesAndNewlines)
         out.append("Ce que je veux : \(g.isEmpty ? "—" : g)")
         if !profile.isEmpty { out.append("Profil : \(profile)") }
-        if let trainingDays { out.append(trainingDays) }
+        if let days = TrainingDays.exportLine { out.append(days) }
         out.append("")
-        if let history {
+        if includeHistory {
+            let builder = ReportBuilder(plan: store.plan, logs: store.logs, profile: "")
             out.append("Voici mon dernier mois de sport, pour partir de ma condition physique actuelle :")
             out.append("")
-            out.append(history)
+            out.append(await builder.build(days: Self.historyDays, comment: "", includePlan: false, footer: false))
         } else {
             out.append("Je ne joins pas d'historique : commence prudemment.")
         }
-        out.append("")
-        out.append(format)
-        return out.joined(separator: "\n")
+        let text = out.joined(separator: "\n")
+        return includeFormat ? PlanFormat.appending(to: text) : text
     }
 
     private func prepare() async {
@@ -204,13 +175,14 @@ struct NewPlanView: View {
     private func askCoach() async {
         askingCoach = true
         defer { askingCoach = false }
-        request = await buildRequest()
+        let coachRequest = await buildRequest(includeFormat: false)
+        request = PlanFormat.appending(to: coachRequest)   // ce qui est affiché et copié reste complet
         copied = false
         let reply: String
         do {
             reply = try await OwnCoach.client().send(
                 system: OwnCoach.prompt,
-                user: request + "\n\nRéponds uniquement avec le plan complet, en JSON.")
+                user: coachRequest + "\n\nRéponds uniquement avec le plan complet, en JSON.")
         } catch {
             coachError = OwnCoachSettingsView.explain(error)
             return

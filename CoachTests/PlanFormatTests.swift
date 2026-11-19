@@ -1,76 +1,76 @@
-// PlanFormatTests.swift — textes envoyés à l'IA et import (#37), aperçu léger (#34),
-// suivi « à jour » (#35). Données fictives uniquement.
+// PlanFormatTests.swift — le format du plan accompagne les textes envoyés à l'IA (#37).
+// Données fictives uniquement.
 
 import XCTest
 @testable import Coach
 
 @MainActor
 final class PlanFormatTests: XCTestCase {
-    private var docsFormat: String {
-        let url = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent().deletingLastPathComponent()
-            .appending(path: "docs/PLAN_FORMAT.md")
-        return (try? String(contentsOf: url, encoding: .utf8)) ?? ""
+
+    /// docs/PLAN_FORMAT.md est bien embarqué dans l'app (sinon l'IA ne reçoit que le texte de secours).
+    func testFormatIsBundled() throws {
+        let document = try XCTUnwrap(PlanFormat.document, "docs/PLAN_FORMAT.md manque dans l'app (project.yml)")
+        XCTAssertTrue(document.contains("## Consigne pour l'IA"))
     }
 
-    // MARK: #37 — le texte copié contient le format du plan
-
-    func testBundledFormatIsTheDocsFile() {
-        let bundled = PlanFormat.text
-        XCTAssertFalse(bundled.isEmpty, "PLAN_FORMAT.md doit être embarqué dans l'app")
-        XCTAssertTrue(bundled.contains("\"schemaVersion\""))
-        XCTAssertTrue(bundled.contains("\"title\""))
-        if !docsFormat.isEmpty {
-            XCTAssertEqual(bundled, docsFormat, "le format embarqué doit rester identique à docs/PLAN_FORMAT.md")
+    /// Le texte envoyé contient la consigne et tous les champs obligatoires, sans renvoi à un fichier.
+    func testInstructionsAreSelfContained() {
+        let text = PlanFormat.section
+        XCTAssertTrue(text.hasPrefix("---"))
+        XCTAssertTrue(text.contains("Consigne pour l'IA"))
+        for field in ["schemaVersion", "planId", "version", "title", "sessions", "noEquipment"] {
+            XCTAssertTrue(text.contains("\"\(field)\""), "champ \(field) absent du format envoyé")
         }
+        XCTAssertFalse(text.contains("PLAN_FORMAT.md"), "le texte renvoie encore au fichier")
+        XCTAssertFalse(text.contains("# Format du plan — app Coach"), "l'en-tête du fichier ne doit pas être envoyé")
     }
 
-    func testNewPlanRequestIsSelfContained() {
-        let text = NewPlanView.request(today: Date(timeIntervalSince1970: 1_900_000_000),
-                                       goal: "10 km fictif", profile: "", trainingDays: nil, history: nil)
-        XCTAssertTrue(text.contains("## Structure"), "la demande inclut tout le format")
-        XCTAssertTrue(text.contains("\"planId\""))
-        XCTAssertTrue(text.contains("### Séance"))
-        XCTAssertFalse(text.contains("colle ce fichier"), "la note destinée à l'utilisateur n'est pas envoyée à l'IA")
-        XCTAssertFalse(text.contains("de PLAN_FORMAT.md"), "plus de renvoi à un fichier que l'IA ne voit pas")
-        XCTAssertFalse(text.contains("Claude"), "texte générique, pour n'importe quelle IA (#31)")
+    func testInstructionsStartAtFirstSection() {
+        let doc = "# Titre\n\n> Remarque\n\n## Consigne\n\nTexte\n"
+        XCTAssertEqual(PlanFormat.instructions(from: doc), "## Consigne\n\nTexte")
     }
 
-    func testMissingTitleGivesClearMessage() {
-        let json = #"{"schemaVersion":1,"planId":"demo","version":1,"sessions":[]}"#
+    /// Un plan sans « title » est refusé avec un message qui nomme le champ.
+    func testMissingTitleIsNamed() {
+        let json = """
+        {"schemaVersion": 1, "planId": "demo", "version": 1,
+         "sessions": [{"id": "s1", "date": "2030-01-07", "type": "strength", "title": "Renfo démo",
+                       "strength": {"exercises": [{"name": "Squat", "sets": 3, "reps": 10}]}}]}
+        """
         XCTAssertThrowsError(try PlanStore.decodePlan(text: json)) { error in
-            let message = PlanStore.importMessage(for: error)
+            XCTAssertTrue(error is PlanError)
+            let message = error.localizedDescription
             XCTAssertTrue(message.contains("« title »"), message)
-            XCTAssertTrue(message.contains("en tête du plan"), message)
-            XCTAssertTrue(message.contains("format"), "propose de renvoyer le format à l'IA")
+            XCTAssertTrue(message.contains("(plan)"), message)
+            let repair = PlanFormat.repairRequest(error: message)
+            XCTAssertTrue(repair.contains(message))
+            XCTAssertTrue(repair.contains("Consigne pour l'IA"))
         }
     }
 
-    // MARK: #34 — aperçu léger d'un long texte
-
-    func testPreviewKeepsOnlyFirstLines() {
-        let text = (1...500).map { "ligne \($0)" }.joined(separator: "\n")
-        XCTAssertEqual(LongTextPreview.lineCount(text), 500)
-        let head = LongTextPreview.head(of: text, lines: 12)
-        XCTAssertEqual(LongTextPreview.lineCount(head), 12)
-        XCTAssertTrue(head.hasSuffix("ligne 12"))
-        XCTAssertEqual(LongTextPreview.head(of: "court", lines: 12), "court")
+    /// Le format est ajouté à la fin, une seule fois.
+    func testAppendingAddsFormatOnce() {
+        let text = PlanFormat.appending(to: "Demande de démo")
+        XCTAssertTrue(text.hasPrefix("Demande de démo\n\n---"))
+        XCTAssertEqual(text.components(separatedBy: "## Consigne pour l'IA").count, 2)
     }
 
-    // MARK: #35 — le suivi généré reste « à jour » tant que rien ne change
+    /// Erreur sans lien avec le plan (fichier illisible…) : pas de demande de correction.
+    func testOtherErrorsHaveNoRepair() {
+        let failure = PlanFormat.importFailure(CocoaError(.fileReadNoSuchFile))
+        XCTAssertNil(failure.repair)
+        let planFailure = PlanFormat.importFailure(PlanError.invalid("Le plan ne contient aucune séance."))
+        XCTAssertNotNil(planFailure.repair)
+        XCTAssertTrue(planFailure.message.contains(PlanFormat.importHelp))
+    }
 
-    func testReportInputsChangeWithNewLogOrComment() {
-        let log = SessionLog(id: UUID(), sessionId: "s1", completedAt: Date(timeIntervalSince1970: 1_900_000_000),
-                             rpe: 5, note: nil, sets: nil, title: "Démo", kind: nil, archivedAt: nil)
-        func inputs(_ logs: [SessionLog], comment: String = "") -> ReportInputs {
-            ReportInputs(day: "2030-01-07", days: 7, comment: comment, includePlan: true, profile: "",
-                         trainingDays: nil, plan: nil, logs: ReportInputs.stamp(logs), health: "0-0.0")
-        }
-        XCTAssertEqual(inputs([log]), inputs([log]))
-        XCTAssertNotEqual(inputs([log]), inputs([]), "nouvelle séance faite")
-        var edited = log
-        edited.note = "note fictive"
-        XCTAssertNotEqual(inputs([log]), inputs([edited]), "ressenti ajouté après coup")
-        XCTAssertNotEqual(inputs([log]), inputs([log], comment: "fatigue"), "nouveau commentaire")
+    /// Le même plan, avec son titre, est accepté.
+    func testCompletePlanDecodes() throws {
+        let json = """
+        {"schemaVersion": 1, "planId": "demo", "version": 1, "title": "Plan de démo",
+         "sessions": [{"id": "s1", "date": "2030-01-07", "type": "strength", "title": "Renfo démo",
+                       "strength": {"exercises": [{"name": "Squat", "sets": 3, "reps": 10}]}}]}
+        """
+        XCTAssertEqual(try PlanStore.decodePlan(text: json).title, "Plan de démo")
     }
 }

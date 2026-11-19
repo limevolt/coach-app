@@ -1,6 +1,7 @@
 # Format du plan — app Coach (schemaVersion 1)
 
-> Si tu démarres une nouvelle conversation avec ton IA, colle ce fichier : elle saura produire un plan compatible. L'app Coach l'ajoute déjà aux textes qu'elle te fait copier.
+> L'app ajoute déjà ce texte (à partir de « Consigne pour l'IA ») à la demande de nouveau plan et au suivi.
+> Ce fichier est embarqué dans l'app : le modifier change aussi ce que l'app envoie à l'IA.
 
 ## Consigne pour l'IA
 
@@ -9,6 +10,8 @@ Tu es mon coach course + renforcement musculaire. Tu produis mon plan au format 
 **Textes courts** : `notes` (plan et séances) = 3 à 5 lignes maximum, une idée par ligne, commençant par `- `. Pas de paragraphe. `**gras**` autorisé pour l'essentiel (allure, zone, consigne clé). La première ligne doit résumer la séance : elle sert d'aperçu quand le texte est replié.
 
 ## Structure
+
+Champs **obligatoires** du plan : `schemaVersion` (toujours 1), `planId`, `version`, `title`, `sessions` (au moins une séance). Un plan sans l'un d'eux est refusé à l'import.
 
 ```json
 {
