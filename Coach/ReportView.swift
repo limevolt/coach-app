@@ -32,12 +32,8 @@ struct ReportView: View {
         NavigationStack {
             Form {
                 Section {
-                    Picker("Période", selection: $days) {
-                        Text("7 jours").tag(7)
-                        Text("14 jours").tag(14)
-                        Text("28 jours").tag(28)
-                    }
-                    .pickerStyle(.segmented)
+                    SegmentedChoice("Période", selection: $days,
+                                    options: [(7, "7 jours"), (14, "14 jours"), (28, "28 jours")])
                     Toggle("Joindre le plan actuel", isOn: $includePlan)
                 } header: {
                     Text("Période")

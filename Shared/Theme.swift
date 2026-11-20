@@ -89,6 +89,9 @@ enum Theme {
     static let chipPadding: CGFloat = 14
     /// Barre de progression de l'assistant.
     static let progressHeight: CGFloat = 4
+    /// Choix en onglets (SegmentedChoice) : rayon d'une option et espace autour.
+    static let segmentRadius: CGFloat = 10
+    static let segmentSpacing: CGFloat = 4
 
     // Espacements iPhone (multiples de 4/8)
     /// Marge latérale de l'écran.

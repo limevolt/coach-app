@@ -191,11 +191,8 @@ private struct ObjectiveStep: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.blockSpacing) {
-            Picker("Type d'objectif", selection: $draft.hasEvent) {
-                Text("Une date à viser").tag(true)
-                Text("Être en forme").tag(false)
-            }
-            .pickerStyle(.segmented)
+            SegmentedChoice("Type d'objectif", selection: $draft.hasEvent,
+                            options: [(true, "Une date à viser"), (false, "Être en forme")])
 
             if draft.hasEvent {
                 WizardSection(title: "Événement") {
@@ -316,11 +313,8 @@ private struct DisciplinesStep: View {
         let mode = Binding<MartialCrossMode>(
             get: { draft.modules[.martialCross]?.martialCrossMode ?? .solo },
             set: { draft.modules[.martialCross]?.martialCrossMode = $0 })
-        Picker("Martial cross", selection: mode) {
-            Text("Seul").tag(MartialCrossMode.solo)
-            Text("En cours").tag(MartialCrossMode.group)
-        }
-        .pickerStyle(.segmented)
+        SegmentedChoice("Martial cross", selection: mode,
+                        options: [(MartialCrossMode.solo, "Seul"), (MartialCrossMode.group, "En cours")])
         if mode.wrappedValue == .group {
             let day = Binding<Int>(
                 get: { draft.modules[.martialCross]?.classDay ?? 4 },
@@ -364,10 +358,8 @@ private struct AvailabilityStep: View {
                 DayGrid(selection: $draft.trainingDays)
             }
             WizardSection(title: "Durée") {
-                Picker("Durée par séance", selection: $draft.sessionMinutes) {
-                    ForEach(PlanSettings.sessionMinuteChoices, id: \.self) { Text(Self.label($0)).tag($0) }
-                }
-                .pickerStyle(.segmented)
+                SegmentedChoice("Durée par séance", selection: $draft.sessionMinutes,
+                                options: PlanSettings.sessionMinuteChoices.map { (value: $0, label: Self.label($0)) })
                 if draft.isActive(.run) {
                     Menu {
                         Picker("Sortie longue jusqu'à", selection: longRun) {
@@ -532,11 +524,8 @@ private struct StaircaseEditor: View {
                     TextField("Escalier du parc", text: $name)
                 }
                 Section {
-                    Picker("Je connais", selection: $byTime) {
-                        Text("Marches").tag(false)
-                        Text("Temps de montée").tag(true)
-                    }
-                    .pickerStyle(.segmented)
+                    SegmentedChoice("Je connais", selection: $byTime,
+                                    options: [(false, "Marches"), (true, "Temps de montée")])
                     HStack {
                         TextField(byTime ? "Secondes" : "Nombre de marches", text: $value)
                             .keyboardType(.numberPad)

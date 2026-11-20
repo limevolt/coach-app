@@ -163,6 +163,9 @@ repos et « Prêt ? », chiffre blanc sur fond carte.
   consignes et autres semaines viennent ensuite, repliés. Pas de graphique sur l'accueil.
 - **Titres d'écran courts, sur une seule ligne** même sur un iPhone de 375 pt (« Ton objectif »,
   pas « Quel est ton objectif ? ») : la question va dans le texte gris dessous (retour du propriétaire, #45).
+- **Choix en onglets : composant `SegmentedChoice`**, jamais le `Picker` segmenté natif (style par défaut
+  d'Apple, pas celui de Coach) : cadre gris fin, option choisie sur fond `Theme.card2` en blanc (retour du
+  propriétaire, #45).
 - **Jours de la semaine en 2 lettres** (Lu, Ma, Me…) dans les grilles de 7 : pas de coche ni d'abréviation
   de 3 lettres, qui ne tiennent pas. Jour choisi = fond `Theme.card2`, contour citron vert, texte gras (#45).
 - Action principale en bas de l'écran ou dans la carte, à portée de pouce.
