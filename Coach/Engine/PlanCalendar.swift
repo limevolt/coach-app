@@ -65,46 +65,65 @@ enum PlanCalendar {
     }
 
     /// Semaines du plan, du premier jour à la veille de l'événement (ou l'horizon sans date).
+    /// L'affûtage est compté à rebours depuis l'événement, en jours : une semaine est d'affûtage si au moins
+    /// 3 de ses jours tombent dans les 7 derniers jours (14 pour un plan de 16 semaines ou plus), ou si
+    /// c'est la dernière. Une semaine sans aucun jour avant l'événement (événement un lundi) n'existe pas.
     static func weeks(firstDay: Date, eventDate: Date?) -> [PlanWeek] {
         let cal = calendar
         let firstMonday = monday(of: firstDay)
-        let count: Int
-        if let eventDate {
-            let lastMonday = monday(of: eventDate)
-            let days = cal.dateComponents([.day], from: firstMonday, to: lastMonday).day ?? 0
-            count = max(1, days / 7 + 1)
-        } else {
-            count = fitnessHorizonWeeks
+        guard let eventDate else {
+            let phases = fitnessPhases(fitnessHorizonWeeks)
+            return (0..<fitnessHorizonWeeks).map { i in
+                PlanWeek(index: i, monday: cal.date(byAdding: .day, value: 7 * i, to: firstMonday) ?? firstMonday,
+                         phase: phases[i], isDeload: isDeload(index: i, phases: phases))
+            }
         }
-        let phases = eventDate == nil ? fitnessPhases(count) : eventPhases(count)
+        let lastDay = cal.date(byAdding: .day, value: -1, to: cal.startOfDay(for: eventDate)) ?? eventDate
+        let lastMonday = monday(of: lastDay)
+        let days = cal.dateComponents([.day], from: firstMonday, to: lastMonday).day ?? 0
+        let count = max(1, days / 7 + 1)
+        let window = count >= 16 ? 14 : 7
+        let windowStart = cal.date(byAdding: .day, value: -window, to: cal.startOfDay(for: eventDate)) ?? eventDate
+        let firstDayStart = cal.startOfDay(for: firstDay)
+        let mondays = (0..<count).map { cal.date(byAdding: .day, value: 7 * $0, to: firstMonday) ?? firstMonday }
+        let taper = mondays.indices.map { i -> Bool in
+            if i == count - 1 { return true }
+            let inWindow = (1...7).filter { iso in
+                let d = day(iso, of: mondays[i])
+                return d >= windowStart && d <= lastDay && d >= firstDayStart
+            }.count
+            return inWindow >= 3
+        }
+        let taperCount = taper.filter { $0 }.count
+        let rest = split(nonTaper: count - taperCount, total: count)
+        let phases = rest + Array(repeating: TrainingPhase.taper, count: taperCount)
         return (0..<count).map { i in
-            PlanWeek(index: i,
-                     monday: cal.date(byAdding: .day, value: 7 * i, to: firstMonday) ?? firstMonday,
-                     phase: phases[i],
-                     isDeload: isDeload(index: i, phases: phases))
+            PlanWeek(index: i, monday: mondays[i], phase: phases[i], isDeload: isDeload(index: i, phases: phases))
         }
     }
 
-    /// Phases d'un plan daté de `count` semaines (#43) :
-    /// < 4 : entretien puis affûtage ; < 8 : pas de base ; sinon base / développement / spécifique / affûtage.
+    /// Phases d'un plan daté de `count` semaines, affûtage = dernière semaine (2 à partir de 16 semaines).
     static func eventPhases(_ count: Int) -> [TrainingPhase] {
         guard count > 1 else { return [.taper] }
-        if count < PlanSettings.maintenanceOnlyWeeks {
-            return Array(repeating: .maintenance, count: count - 1) + [.taper]
-        }
-        if count < PlanSettings.shortPlanWeeks {
-            let rest = count - 1
-            let dev = rest / 2
-            return Array(repeating: .development, count: dev)
-                + Array(repeating: .specific, count: rest - dev) + [.taper]
-        }
         let taper = count >= 16 ? 2 : 1
-        let rest = count - taper
-        let base = Int((Double(rest) * 0.35).rounded())
-        let dev = Int((Double(rest) * 0.35).rounded())
-        let spec = rest - base - dev
+        return split(nonTaper: count - taper, total: count) + Array(repeating: .taper, count: taper)
+    }
+
+    /// Semaines avant l'affûtage (#43) : plan < 4 semaines → entretien ; < 8 → pas de base ;
+    /// sinon base / développement / spécifique (35 / 35 / 30 %).
+    static func split(nonTaper: Int, total: Int) -> [TrainingPhase] {
+        guard nonTaper > 0 else { return [] }
+        if total < PlanSettings.maintenanceOnlyWeeks {
+            return Array(repeating: .maintenance, count: nonTaper)
+        }
+        if total < PlanSettings.shortPlanWeeks {
+            let dev = nonTaper / 2
+            return Array(repeating: .development, count: dev) + Array(repeating: .specific, count: nonTaper - dev)
+        }
+        let base = Int((Double(nonTaper) * 0.35).rounded())
+        let dev = Int((Double(nonTaper) * 0.35).rounded())
         return Array(repeating: .base, count: base) + Array(repeating: .development, count: dev)
-            + Array(repeating: .specific, count: spec) + Array(repeating: .taper, count: taper)
+            + Array(repeating: .specific, count: max(0, nonTaper - base - dev))
     }
 
     /// Sans date : un cycle de base, puis du développement.
@@ -126,16 +145,19 @@ enum PlanCalendar {
 
     /// Facteurs appliqués au volume de la dernière semaine de progression.
     static let deloadFactor = 0.65
-    static let taperFactors = (last: 0.55, beforeLast: 0.75)
+    /// Affûtage (#47) : volume réduit de 40 puis 50 %.
+    static let taperFactors = (last: 0.5, beforeLast: 0.6)
 
     /// Volume de course de chaque semaine (#47) :
     /// +`weeklyIncrease` au plus par semaine de progression, jamais au-dessus de `capacity` ;
-    /// semaine allégée à 65 % ; affûtage à 75 % puis 55 % du pic ; entretien sans hausse.
+    /// semaine allégée à 65 %, puis reprise au niveau d'avant (pas au-dessus) ; affûtage à 60 % puis 50 % du pic ;
+    /// entretien sans hausse.
     static func runMinutes(weeks: [PlanWeek], start: Double, weeklyIncrease: Double, capacity: Double) -> [Double] {
         let increase = min(CoachMemory.maxWeeklyIncrease, max(0, weeklyIncrease))
         var result: [Double] = []
         var lastBuild = min(start, capacity)
         var built = false
+        var afterDeload = false
         let taperWeeks = weeks.filter { $0.phase == .taper }.count
         var taperSeen = 0
         for week in weeks {
@@ -149,9 +171,11 @@ enum PlanCalendar {
             default:
                 if week.isDeload {
                     result.append(lastBuild * deloadFactor)
+                    afterDeload = true
                 } else {
-                    if built { lastBuild = min(capacity, lastBuild * (1 + increase)) }
+                    if built && !afterDeload { lastBuild = min(capacity, lastBuild * (1 + increase)) }
                     built = true
+                    afterDeload = false
                     result.append(lastBuild)
                 }
             }

@@ -4,12 +4,19 @@
 
 import Foundation
 
-/// Point de départ connu (lu dans Santé par l'appelant, ou rien : séance test).
+/// Point de départ connu (lu dans Santé par l'appelant), ou rien : départ prudent et séance test.
 struct StartingPoint: Equatable {
     /// Minutes de course par semaine, en moyenne sur les dernières semaines.
     var runMinutesPerWeek: Double?
 
     static let unknown = StartingPoint(runMinutesPerWeek: nil)
+
+    /// Valeurs plausibles : en dehors, la donnée est ignorée (doublons, marche comptée comme course…).
+    static let plausibleRange = 20.0...600.0
+
+    var plausibleRunMinutes: Double? {
+        runMinutesPerWeek.flatMap { Self.plausibleRange.contains($0) ? $0 : nil }
+    }
 }
 
 struct GeneratedSession: Equatable {
@@ -24,6 +31,8 @@ struct GeneratedWeek: Equatable {
     var week: PlanWeek
     var runMinutes: Int
     var sessions: [GeneratedSession]
+    /// Semaine incomplète (début ou fin du plan) : moins de jours disponibles.
+    var isPartial: Bool
 }
 
 struct GenerationReport: Equatable {
@@ -37,7 +46,7 @@ struct GenerationReport: Equatable {
             && a.phases.map(\.phase) == b.phases.map(\.phase) && a.phases.map(\.weeks) == b.phases.map(\.weeks)
     }
 
-    /// « Base 8 · Développement 9 · Spécifique 10 · Affûtage 2 »
+    /// « Base 6 · Développement 6 · Spécifique 6 · Affûtage 2 »
     var phasesLabel: String {
         phases.map { "\($0.phase.label) \($0.weeks)" }.joined(separator: " · ")
     }
@@ -59,87 +68,140 @@ struct PlanGenerator {
     var memory: CoachMemory = CoachMemory()
     var start: StartingPoint = .unknown
 
-    /// Part du volume prudente au départ quand le niveau est inconnu.
-    static let unknownStartShare = 0.6
+    /// Niveau inconnu : départ prudent, au plus 90 min de course la première semaine, jusqu'à la séance test.
+    static let unknownStartMinutes = 90.0
     static let minRunMinutes = 20
     static let minQualityMinutes = 30
+    /// Rien de dur dans les derniers jours avant l'événement ; la veille, repos.
+    static let easyDaysBeforeEvent = 3
 
     func generate(today: Date = .now) throws -> GeneratedPlan {
         let issues = settings.validationIssues(profile: profile, today: today)
         guard issues.isEmpty else { throw PlanGeneratorError.invalidSettings(issues) }
         guard let firstDay = settings.firstDay(today: today) else { throw PlanGeneratorError.invalidSettings([.invalidStartDate]) }
-        let eventDate = settings.objective.eventDate
+        let cal = PlanCalendar.calendar
+        let eventDate = settings.objective.eventDate.map { cal.startOfDay(for: $0) }
+        let firstDayStart = cal.startOfDay(for: firstDay)
 
         let weeks = PlanCalendar.weeks(firstDay: firstDay, eventDate: eventDate)
         let days = WeekComposer.usableDays(settings)
         let counts = WeekComposer.counts(settings: settings, dayCount: days.count)
         var adjustments: [String] = []
-        if settings.effectiveTrainingDays.count == 7 {
-            adjustments.append("Un jour de repos complet est gardé chaque semaine.")
-        }
+        func note(_ message: String) { if !adjustments.contains(message) { adjustments.append(message) } }
+        if settings.effectiveTrainingDays.count == 7 { note("Un jour de repos complet est gardé chaque semaine.") }
         for module in settings.activeModules where (counts[module] ?? 0) == 0 {
-            adjustments.append("\(module.label) : pas assez de jours pour une séance par semaine.")
+            note("\(module.label) : pas assez de jours pour une séance par semaine.")
+        }
+        for zone in profile.sparedZones.sorted(by: { $0.rawValue < $1.rawValue }) {
+            note("\(zone.label) à ménager : les séances qui sollicitent cette zone sont remplacées ou raccourcies. Si la gêne persiste, consulte.")
         }
 
-        // Volume de course
+        // Volume de course : départ prudent si le niveau est inconnu ou la donnée Santé invraisemblable.
         let runCount = counts[.run] ?? 0
         let sessionCap = Double(settings.sessionMinutes)
         let longCap = Double(settings.defaultLongRunMinutes)
         let capacity = runCount == 0 ? 0 : sessionCap * Double(runCount - 1) + longCap
-        let startVolume = start.runMinutesPerWeek.map { min($0, capacity) }
-            ?? capacity * Self.unknownStartShare
+        let known = start.plausibleRunMinutes
+        let startVolume = min(capacity, known ?? Self.unknownStartMinutes)
         let volumes = PlanCalendar.runMinutes(weeks: weeks, start: startVolume,
                                               weeklyIncrease: memory.weeklyIncreaseLimit, capacity: capacity)
+        // Séance test : niveau choisi « séance test », ou Santé sans donnée utilisable. Reportée si impossible.
+        var testPending = runCount > 0 && (settings.startLevel == .test || known == nil)
 
         var generated: [GeneratedWeek] = []
         var previousSunday = DayLoad.rest
         var sessions: [PlannedSession] = []
-        let builderFor = { (week: PlanWeek) in SessionBuilder(settings: settings, profile: profile, week: week) }
+        var lastBuildRun: Int?
+        var afterDeload = false
+        let classDay = settings.choice(for: .martialCross).flatMap { $0.martialCrossMode == .group ? $0.classDay : nil }
 
         for (i, week) in weeks.enumerated() {
+            let isEventWeek = eventDate != nil && i == weeks.count - 1
             let weekDays = days.filter { iso in
                 let date = PlanCalendar.day(iso, of: week.monday)
-                if date < Calendar.current.startOfDay(for: firstDay) { return false }
-                if let eventDate, date >= eventDate { return false }
+                if date < firstDayStart { return false }
+                if let eventDate {
+                    // La veille de l'événement : repos.
+                    let eve = cal.date(byAdding: .day, value: -1, to: eventDate) ?? eventDate
+                    if date >= eve { return false }
+                }
                 return true
             }
-            var composed = compose(week: week, counts: counts, runVolume: volumes[i],
-                                   isFirstWeek: i == 0)
-            // Moins de jours cette semaine (début ou fin du plan) : on garde les plus importantes.
-            composed = trim(composed, toDays: weekDays.count)
+            let isPartial = weekDays.count < days.count
+            func weekNote(_ message: String) {
+                note(isPartial ? message.prefix(1).uppercased() + message.dropFirst() : "Semaine \(week.index + 1) : \(message)")
+            }
 
+            var composed = compose(week: week, counts: counts, runVolume: volumes[i], withTest: testPending,
+                                   isEventWeek: isEventWeek)
+            // Cours collectif dont le jour n'existe pas cette semaine (début ou fin du plan) : retiré.
+            composed.removeAll { $0.fixedDay.map { !weekDays.contains($0) } ?? false }
+            composed = capIntensity(composed)
+            composed = trim(composed, toDays: weekDays.count)
+            if !week.isDeload && week.phase != .taper && !isPartial, let lastBuildRun {
+                composed = capRunIncrease(composed, last: lastBuildRun, noIncrease: afterDeload)
+            }
+
+            let nextMonday: DayLoad = (classDay == 1 && i + 1 < weeks.count) ? DayLoad([.martialCrossClass]) : .rest
+            let monday = week.monday
             let placer = DayPlacer(usableDays: weekDays, gymDays: settings.gymDays.intersection(Set(weekDays)),
                                    allowTwoSessionsPerDay: settings.allowTwoSessionsPerDay,
-                                   previousSunday: previousSunday,
+                                   previousSunday: previousSunday, nextMonday: nextMonday,
+                                   allowed: { kind, iso in
+                                       guard let eventDate else { return true }
+                                       let date = PlanCalendar.day(iso, of: monday)
+                                       let left = cal.dateComponents([.day], from: date, to: eventDate).day ?? 99
+                                       return left > Self.easyDaysBeforeEvent || (!kind.countsAsHard && !kind.isKeySession)
+                                   },
                                    needsGym: needsGym, prefersGym: prefersGym)
             var placement = placer.place(composed)
             var attempts = 0
             while placement == nil && attempts < 12 && !composed.isEmpty {
                 let (next, message) = degrade(composed)
+                if next == composed { break }
                 composed = next
-                if let message, !adjustments.contains(message) { adjustments.append(message) }
+                if let message { weekNote(message) }
                 placement = placer.place(composed)
                 attempts += 1
             }
+            if placement == nil {
+                // Dernier recours : sans la séance fixe impossible, plutôt qu'une semaine vide.
+                placement = placer.place(composed.filter { $0.fixedDay == nil })
+                if placement != nil { weekNote("cours collectif impossible à caser avec les règles de récupération.") }
+            }
             let placed = placement ?? [:]
+            if placed.isEmpty && !weekDays.isEmpty { weekNote("aucune séance possible avec ces jours.") }
 
             var weekSessions: [GeneratedSession] = []
-            let builder = builderFor(week)
+            let builder = SessionBuilder(settings: settings, profile: profile, week: week)
             var n = 0
             for iso in placed.keys.sorted() {
                 for s in placed[iso] ?? [] {
                     n += 1
                     let date = PlanCalendar.day(iso, of: week.monday)
-                    let dateString = PlanCalendar.string(date)
-                    var planned = builder.build(s, id: String(format: "w%02d-%d", week.index + 1, n), date: dateString)
-                    if s.isTest { planned = testSession(planned) }
+                    var planned = builder.build(s, id: String(format: "w%02d-%d", week.index + 1, n),
+                                                date: PlanCalendar.string(date))
+                    if s.isTest {
+                        planned = testSession(planned, minutes: s.minutes)
+                        testPending = false
+                    }
                     sessions.append(planned)
-                    weekSessions.append(GeneratedSession(date: date, isoDay: iso, kind: s.kind,
-                                                         minutes: s.minutes, isTest: s.isTest))
+                    weekSessions.append(GeneratedSession(date: date, isoDay: iso, kind: s.kind, minutes: s.minutes,
+                                                         isTest: s.isTest))
                 }
             }
+            if testPending && runCount > 0 && i == 0 { note("Séance test reportée à la semaine suivante.") }
+
             let weekRun = weekSessions.filter { $0.kind.module == .run }.reduce(0) { $0 + $1.minutes }
-            generated.append(GeneratedWeek(week: week, runMinutes: weekRun, sessions: weekSessions))
+            generated.append(GeneratedWeek(week: week, runMinutes: weekRun, sessions: weekSessions, isPartial: isPartial))
+            if week.phase != .taper && week.phase != .maintenance {
+                if week.isDeload {
+                    afterDeload = true
+                } else {
+                    if !isPartial { lastBuildRun = weekRun }
+                    afterDeload = false
+                }
+            }
             previousSunday = DayLoad((placed[7] ?? []).map(\.kind))
         }
 
@@ -162,22 +224,28 @@ struct PlanGenerator {
 
     // MARK: Composition
 
-    func compose(week: PlanWeek, counts: [CoachModuleID: Int], runVolume: Double, isFirstWeek: Bool) -> [ComposedSession] {
+    func compose(week: PlanWeek, counts: [CoachModuleID: Int], runVolume: Double, withTest: Bool,
+                 isEventWeek: Bool) -> [ComposedSession] {
         var slots: [ComposedSession] = []
         let zones = profile.sparedZones
         if let run = settings.choice(for: .run), let n = counts[.run], n > 0 {
-            let kinds = WeekComposer.runKinds(count: n, week: week, choice: run, profile: profile)
-                .map { WeekComposer.sparing($0, zones: zones) }
-            let minutes = runMinutes(kinds: kinds, volume: runVolume)
-            var testDone = !(isFirstWeek && settings.startLevel == .test)
-            for (kind, m) in zip(kinds, minutes) {
+            var kinds = WeekComposer.runKinds(count: n, week: week, choice: run, profile: profile)
+            // Semaine de l'événement : pas de sortie longue.
+            if isEventWeek { kinds = kinds.map { ($0 == .longRunEasy || $0 == .longRunProgressive) ? .easyRun : $0 } }
+            let spared = kinds.map { WeekComposer.spared($0, zones: zones) }
+            let minutes = runMinutes(kinds: spared.map(\.kind), volume: runVolume)
+            var testDone = !withTest
+            for (index, item) in spared.enumerated() {
+                let kind = item.kind
+                let m = minutes[index]
                 var isTest = false
                 if !testDone && kind != .longRunEasy && kind != .longRunProgressive {
                     isTest = true
                     testDone = true
                 }
+                let duration = item.reduced ? max(Self.minRunMinutes, Int(Double(m) * 0.8 / 5) * 5) : m
                 // La séance test est intense : elle compte comme une séance clé pour les règles.
-                slots.append(ComposedSession(kind: isTest ? .tempo : kind, minutes: m, isTest: isTest))
+                slots.append(ComposedSession(kind: isTest ? .tempo : kind, minutes: duration, isTest: isTest))
             }
         }
         if let n = counts[.strength], n > 0 {
@@ -187,7 +255,8 @@ struct PlanGenerator {
         }
         if let mc = settings.choice(for: .martialCross), let n = counts[.martialCross], n > 0 {
             if mc.martialCrossMode == .group {
-                slots.append(ComposedSession(kind: .martialCrossClass, minutes: 60, fixedDay: mc.classDay, time: mc.classTime))
+                slots.append(ComposedSession(kind: .martialCrossClass, minutes: SessionBuilder.groupClassMinutes,
+                                             fixedDay: mc.classDay, time: mc.classTime))
             } else {
                 let count = (week.isDeload || week.phase == .taper) ? 1 : n
                 for _ in 0..<count {
@@ -198,12 +267,57 @@ struct PlanGenerator {
         return slots
     }
 
-    /// Durées des séances de course : sortie longue ≈ 1/3 du volume (la moitié avec 2 séances), plafonnée ;
-    /// les autres se partagent le reste, sans dépasser la durée d'une séance.
+    /// Part d'intensité (#43) : au plus 2 séances dures (modérées comprises) ou 40 % des séances.
+    static func intensityCap(sessions: Int) -> Int { max(2, Int(Double(sessions) * 0.4)) }
+
+    /// On rend d'abord facile la sortie longue dynamique, puis les séances de qualité de course en trop
+    /// (en gardant au moins une). Les séances de renfo et de martial cross ne deviennent pas faciles.
+    func capIntensity(_ slots: [ComposedSession]) -> [ComposedSession] {
+        var s = slots
+        let cap = Self.intensityCap(sessions: s.count)
+        func hardCount() -> Int { s.filter { $0.kind.countsAsHard }.count }
+        if hardCount() > cap, let i = s.firstIndex(where: { $0.kind == .longRunProgressive }) {
+            s[i].kind = .longRunEasy
+        }
+        while hardCount() > cap {
+            let qualities = s.indices.filter { s[$0].kind.module == .run && s[$0].kind.countsAsHard && !s[$0].isTest }
+            let tests = s.filter(\.isTest).count
+            guard qualities.count + tests > 1, let i = qualities.last else { break }
+            s[i].kind = .easyRun
+        }
+        return s
+    }
+
+    /// Hausse de volume réelle (#47) : au plus +10 % par rapport à la dernière semaine de progression complète,
+    /// et aucune hausse juste après une semaine allégée. On raccourcit d'abord les footings, puis le reste.
+    func capRunIncrease(_ slots: [ComposedSession], last: Int, noIncrease: Bool) -> [ComposedSession] {
+        let increase = noIncrease ? 0 : min(CoachMemory.maxWeeklyIncrease, memory.weeklyIncreaseLimit)
+        let limit = Int((Double(last) * (1 + increase)).rounded(.down))
+        var s = slots
+        func total() -> Int { s.filter { $0.kind.module == .run }.reduce(0) { $0 + $1.minutes } }
+        func rank(_ k: SessionKind) -> Int { k.countsAsHard ? 1 : (k.isKeySession ? 2 : 0) }
+        let order = s.indices.filter { s[$0].kind.module == .run }
+            .sorted { (rank(s[$0].kind), $0) < (rank(s[$1].kind), $1) }
+        var progressed = true
+        while total() > limit && progressed {
+            progressed = false
+            for i in order where total() > limit {
+                let minimum = s[i].kind.countsAsHard ? Self.minQualityMinutes : Self.minRunMinutes
+                if s[i].minutes - 5 >= minimum {
+                    s[i].minutes -= 5
+                    progressed = true
+                }
+            }
+        }
+        return s
+    }
+
+    /// Durées des séances de course : sortie longue ≈ 1/3 du volume (la moitié avec 2 séances), jamais plus
+    /// courte qu'une autre course de la semaine ni au-dessus du plafond ; les autres se partagent le reste.
     func runMinutes(kinds: [SessionKind], volume: Double) -> [Int] {
         let n = kinds.count
         guard n > 0 else { return [] }
-        func round5(_ x: Double) -> Int { Int((x / 5).rounded()) * 5 }
+        func round5(_ x: Double) -> Int { Int((x / 5).rounded(.down)) * 5 }
         let sessionCap = Double(settings.sessionMinutes)
         let longCap = Double(settings.defaultLongRunMinutes)
         let share = n >= 3 ? 1.0 / 3 : (n == 2 ? 0.5 : 1)
@@ -219,13 +333,17 @@ struct PlanGenerator {
 
     /// Garde les séances les plus importantes quand la semaine a moins de jours (début ou fin du plan).
     func trim(_ slots: [ComposedSession], toDays count: Int) -> [ComposedSession] {
-        let capacity = settings.allowTwoSessionsPerDay ? count * 2 : count
+        // Deux séances le même jour : seul un renfo peut suivre une course dure.
+        let stackable = settings.allowTwoSessionsPerDay
+            ? min(slots.filter { $0.kind.module == .strength }.count,
+                  slots.filter { $0.kind.module == .run && $0.kind.countsAsHard }.count)
+            : 0
+        let capacity = count + stackable
         guard slots.count > capacity else { return slots }
         func priority(_ s: ComposedSession) -> Int {
             if s.fixedDay != nil { return 0 }
-            if s.kind.module == settings.principal {
-                return s.kind.isKeySession ? 1 : 3
-            }
+            if s.isTest { return 1 }
+            if s.kind.module == settings.principal { return s.kind.isKeySession ? 1 : 3 }
             return s.kind.isKeySession ? 2 : 4
         }
         let kept = slots.enumerated().sorted { (priority($0.element), $0.offset) < (priority($1.element), $1.offset) }
@@ -234,31 +352,37 @@ struct PlanGenerator {
     }
 
     /// Quand aucun placement ne respecte les règles : on allège, du moins important au plus important.
+    /// La séance test n'est jamais transformée : elle est retirée (et reportée) avant de toucher au reste.
     func degrade(_ slots: [ComposedSession]) -> ([ComposedSession], String?) {
         var s = slots
         let qualityKinds: Set<SessionKind> = [.tempo, .shortIntervals, .longIntervals, .hillsOrStairs, .stairsEndurance]
-        let qualities = s.indices.filter { qualityKinds.contains(s[$0].kind) }
+        let qualities = s.indices.filter { qualityKinds.contains(s[$0].kind) && !s[$0].isTest }
         // 1. Deuxième séance de qualité → footing.
         if qualities.count >= 2, let i = qualities.last {
             s[i].kind = .easyRun
-            return (s, "Une séance de qualité devient un footing : pas assez de jours pour bien récupérer.")
+            return (s, "une séance de qualité devient un footing, pour bien récupérer.")
         }
         // 2. Un complément en moins (renfo, puis martial cross), jamais la discipline principale ni un cours.
         for module in [CoachModuleID.strength, .martialCross] where module != settings.principal {
             if let i = s.lastIndex(where: { $0.kind.module == module && $0.fixedDay == nil }) {
                 s.remove(at: i)
-                return (s, "\(module.label) : une séance en moins certaines semaines, pour éviter deux jours durs d'affilée.")
+                return (s, "\(module.label) : une séance en moins, pour éviter deux jours durs d'affilée.")
             }
         }
-        // 3. La dernière séance de qualité → footing.
+        // 3. La séance test : reportée à la semaine suivante.
+        if let i = s.firstIndex(where: \.isTest) {
+            s.remove(at: i)
+            return (s, nil)
+        }
+        // 4. La dernière séance de qualité → footing.
         if let i = qualities.last {
             s[i].kind = .easyRun
-            return (s, "Une séance de qualité devient un footing : pas assez de jours pour bien récupérer.")
+            return (s, "une séance de qualité devient un footing, pour bien récupérer.")
         }
-        // 4. Une séance en moins (jamais un cours collectif).
+        // 5. Une séance en moins (jamais un cours collectif).
         if let i = s.lastIndex(where: { $0.fixedDay == nil }) {
             s.remove(at: i)
-            return (s, "Une séance en moins certaines semaines, pour respecter la récupération.")
+            return (s, "une séance en moins, pour respecter la récupération.")
         }
         return (s, nil)
     }
@@ -282,17 +406,18 @@ struct PlanGenerator {
 
     // MARK: Séance test
 
-    /// Semaine 1, niveau inconnu : la première séance de qualité devient un test de 6 minutes (#43).
-    func testSession(_ s: PlannedSession) -> PlannedSession {
+    /// Niveau inconnu : la première séance de qualité devient un test (#43), dans la durée de la séance.
+    func testSession(_ s: PlannedSession, minutes: Int) -> PlannedSession {
         var t = s
+        let (warm, cool): (Double, Double) = minutes < 40 ? (10, 5) : (15, 10)
         t.title = "Séance test"
         t.notes = "Après l'échauffement, cours 6 minutes le plus vite possible en tenant jusqu'au bout. Le coach en déduit ton niveau."
         t.run = RunWorkout(location: nil,
-                           warmup: RunStep(purpose: nil, goal: StepGoal(type: "time", value: 15, unit: "min"),
+                           warmup: RunStep(purpose: nil, goal: StepGoal(type: "time", value: warm, unit: "min"),
                                            alert: StepAlert(type: "hrZone", zone: 2, min: nil, max: nil)),
                            blocks: [RunBlock(iterations: 1, steps: [
                                RunStep(purpose: "work", goal: StepGoal(type: "time", value: 6, unit: "min"), alert: nil)])],
-                           cooldown: RunStep(purpose: nil, goal: StepGoal(type: "time", value: 10, unit: "min"), alert: nil))
+                           cooldown: RunStep(purpose: nil, goal: StepGoal(type: "time", value: cool, unit: "min"), alert: nil))
         return t
     }
 }

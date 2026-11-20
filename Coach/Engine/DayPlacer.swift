@@ -53,6 +53,10 @@ struct DayPlacer {
     var allowTwoSessionsPerDay: Bool
     /// Charge du dimanche précédent (fin de la semaine d'avant).
     var previousSunday: DayLoad
+    /// Charge déjà connue du lundi suivant (cours collectif le lundi), sinon repos.
+    var nextMonday: DayLoad = .rest
+    /// Séance permise ce jour-là (ex. rien de dur dans les 3 derniers jours avant l'événement).
+    var allowed: (SessionKind, Int) -> Bool = { _, _ in true }
     /// La séance doit-elle avoir lieu un jour à la salle ?
     var needsGym: (SessionKind) -> Bool
     /// Préférence (pas obligatoire) pour un jour à la salle.
@@ -86,6 +90,7 @@ struct DayPlacer {
                 let existing = current[day] ?? []
                 if !existing.isEmpty && !canStack(session, on: existing) { continue }
                 if needsGym(session.kind) && !gymDays.contains(day) { continue }
+                if !allowed(session.kind, day) { continue }
                 current[day] = existing + [session]
                 if partialOK(current) { search(i + 1) }
                 current[day] = existing.isEmpty ? nil : existing
@@ -104,18 +109,12 @@ struct DayPlacer {
     }
 
     private func loads(_ plan: [Int: [ComposedSession]]) -> [DayLoad] {
-        [previousSunday] + (1...7).map { DayLoad((plan[$0] ?? []).map(\.kind)) }
+        [previousSunday] + (1...7).map { DayLoad((plan[$0] ?? []).map(\.kind)) } + [nextMonday]
     }
 
     private func partialOK(_ plan: [Int: [ComposedSession]]) -> Bool {
-        // Les jours déjà remplis ne doivent pas se contredire entre eux (un jour vide peut encore changer).
-        let l = loads(plan)
-        for i in 0..<(l.count - 1) {
-            let a = l[i], b = l[i + 1]
-            if a.hard && b.hard { return false }
-            if a.legs && b.key { return false }
-        }
-        return true
+        // Ajouter une séance ne retire jamais une erreur : on coupe dès qu'il y en a une.
+        PlanRules.violations(loads(plan)).isEmpty
     }
 
     func isValid(_ plan: [Int: [ComposedSession]]) -> Bool {

@@ -8,6 +8,9 @@ struct SessionBuilder {
     var profile: AthleteProfile
     var week: PlanWeek
 
+    /// Durée d'un cours collectif (repère pour la charge de la semaine).
+    static let groupClassMinutes = 60
+
     func build(_ session: ComposedSession, id: String, date: String) -> PlannedSession {
         var planned = PlannedSession(id: id, date: date, time: session.time, type: session.kind.module.sessionType,
                                      title: session.kind.label, notes: nil, run: nil, strength: nil, circuit: nil,
@@ -25,11 +28,13 @@ struct SessionBuilder {
             planned.notes = home ? "À la maison, avec ton matériel." : "À la salle."
             if home && profile.homeEquipment.isEmpty { planned.equipment = "none" }
         case .martialCross:
+            let iso = PlanDate.date(date).map(TrainingDays.isoWeekday) ?? 1
+            let atGym = settings.gymDays.contains(iso)
             if session.kind == .martialCrossClass {
                 planned.notes = "Ton cours collectif. Le coach compte sa fatigue dans la semaine."
                 planned.circuit = classPlaceholder(minutes: session.minutes)
             } else {
-                planned.circuit = martialCircuit(minutes: session.minutes)
+                planned.circuit = martialCircuit(minutes: session.minutes, atGym: atGym)
                 planned.notes = "Chaque atelier est suivi de 40 s d'abdos, puis 20 s de repos."
             }
         }
@@ -49,8 +54,11 @@ struct SessionBuilder {
 
     func runWorkout(_ kind: SessionKind, minutes: Int) -> (RunWorkout, String?) {
         let m = Double(minutes)
-        let warm = step(15, zone: 2)
-        let cool = step(10, zone: nil)
+        // Échauffement et retour au calme proportionnés : la séance tient dans la durée choisie.
+        let (w, c): (Double, Double) = minutes < 40 ? (10, 5) : (15, 10)
+        let warm = step(w, zone: 2)
+        let cool = step(c, zone: nil)
+        let main = max(5, m - w - c)
         let taper = week.phase == .taper
         switch kind {
         case .recoveryRun:
@@ -60,37 +68,35 @@ struct SessionBuilder {
             return (RunWorkout(location: nil, warmup: nil, blocks: [RunBlock(iterations: 1, steps: [step(m, zone: 2, purpose: "work")])], cooldown: nil),
                     kind == .longRunEasy ? "Sortie longue en aisance : la durée compte, pas la vitesse." : "En aisance respiratoire.")
         case .longRunProgressive:
-            let end = min(20, m / 3)
+            let end = (min(20, m / 3) / 5).rounded(.down) * 5
             return (RunWorkout(location: nil, warmup: nil, blocks: [RunBlock(iterations: 1, steps: [
-                step(m - end, zone: 2, purpose: "work"), step(end.rounded(), zone: 4, purpose: "work")])], cooldown: nil),
+                step(m - end, zone: 2, purpose: "work"), step(end, zone: 4, purpose: "work")])], cooldown: nil),
                     "Les dernières minutes à allure objectif.")
         case .trailRun:
             return (RunWorkout(location: nil, warmup: nil, blocks: [RunBlock(iterations: 1, steps: [step(m, zone: 3, purpose: "work")])], cooldown: nil),
                     "Sur sentier : marche dans les montées raides, descentes prudentes.")
         case .tempo:
-            let work = max(10, m - 25)
-            return (RunWorkout(location: nil, warmup: warm, blocks: [RunBlock(iterations: 1, steps: [step(work, zone: 4, purpose: "work")])], cooldown: cool),
+            return (RunWorkout(location: nil, warmup: warm, blocks: [RunBlock(iterations: 1, steps: [step(main, zone: 4, purpose: "work")])], cooldown: cool),
                     "Allure soutenue mais tenable, sans finir à bout.")
         case .longIntervals:
-            var reps = Int(((m - 25) / 6).rounded(.down))
-            reps = max(3, min(6, reps))
-            if taper { reps = max(2, reps / 2) }
+            var reps = Int((main / 6).rounded(.down))
+            reps = max(1, min(6, reps))
+            if taper { reps = max(1, reps / 2) }
             return (RunWorkout(location: nil, warmup: warm, blocks: [RunBlock(iterations: reps, steps: [
                 step(4, zone: 4, purpose: "work"), step(2, zone: nil, purpose: "recovery")])], cooldown: cool),
                     "\(reps) × 4 min soutenues, 2 min de trot entre deux.")
         case .shortIntervals:
-            var reps = Int(((m - 25) / 2).rounded(.down))
-            reps = max(6, min(12, reps))
-            if taper { reps = max(4, reps / 2) }
+            var reps = Int((main / 2).rounded(.down))
+            reps = max(2, min(12, reps))
+            if taper { reps = max(2, reps / 2) }
             return (RunWorkout(location: nil, warmup: warm, blocks: [RunBlock(iterations: reps, steps: [
                 step(60, zone: 5, purpose: "work", unit: "s"), step(60, zone: nil, purpose: "recovery", unit: "s")])], cooldown: cool),
                     "\(reps) × 1 min vite, 1 min de trot.")
         case .hillsOrStairs:
-            return hillsOrStairs(minutes: m, warm: warm, cool: cool)
+            return hillsOrStairs(main: main, warm: warm, cool: cool)
         case .stairsEndurance:
-            let work = max(10, m - 15)
             let name = stairs.map { " (\($0.name))" } ?? ""
-            return (RunWorkout(location: nil, warmup: step(10, zone: 2), blocks: [RunBlock(iterations: 1, steps: [step(work, zone: 3, purpose: "work")])], cooldown: step(5, zone: nil)),
+            return (RunWorkout(location: nil, warmup: warm, blocks: [RunBlock(iterations: 1, steps: [step(main, zone: 3, purpose: "work")])], cooldown: cool),
                     "Escaliers en continu\(name) : montées et descentes enchaînées, à ton rythme. Descends en marchant si les genoux tirent.")
         default:
             return (RunWorkout(location: nil, warmup: nil, blocks: [RunBlock(iterations: 1, steps: [step(m, zone: 2, purpose: "work")])], cooldown: nil), nil)
@@ -105,8 +111,11 @@ struct SessionBuilder {
             ?? profile.staircases.first(where: \.isValid)
     }
 
-    private func hillsOrStairs(minutes m: Double, warm: RunStep, cool: RunStep) -> (RunWorkout, String?) {
-        let reps = max(4, min(10, Int(((m - 25) / 3).rounded(.down))))
+    /// Montée complète chronométrée, test de progrès (#47) : toutes les 5 semaines.
+    var isTimedClimbWeek: Bool { week.index % 5 == 4 && week.phase != .taper }
+
+    private func hillsOrStairs(main: Double, warm: RunStep, cool: RunStep) -> (RunWorkout, String?) {
+        let reps = max(2, min(10, Int((main / 3).rounded(.down))))
         let base = week.phase == .base
         guard let stairs else {
             let effort = base ? 30.0 : 45.0
@@ -114,21 +123,26 @@ struct SessionBuilder {
                 step(effort, zone: base ? 4 : 5, purpose: "work", unit: "s"), openStep("recovery")])], cooldown: cool),
                     "Côtes : \(reps) × \(Int(effort)) s en montée, retour en descendant en marchant.")
         }
+        let timed = isTimedClimbWeek
+            ? " Commence par une montée complète chronométrée, à fond mais régulière : c'est ton test de progrès."
+            : ""
+        var blocks: [RunBlock] = timed.isEmpty ? [] : [RunBlock(iterations: 1, steps: [openStep("work"), openStep("recovery")])]
         if stairs.isLong {
             // Escalier long : consigne en minutes de montée rapide, retour au départ en récupération (#47).
+            // En phase de base : zone 4 au plus.
             let effort = base ? 60.0 : 90.0
-            return (RunWorkout(location: nil, warmup: warm, blocks: [RunBlock(iterations: reps, steps: [
-                step(effort, zone: 5, purpose: "work", unit: "s"), openStep("recovery")])], cooldown: cool),
-                    "\(stairs.name) : \(reps) × \(Int(effort)) s de montée rapide, puis redescends en marchant au départ.")
+            blocks.append(RunBlock(iterations: reps, steps: [
+                step(effort, zone: base ? 4 : 5, purpose: "work", unit: "s"), openStep("recovery")]))
+            return (RunWorkout(location: nil, warmup: warm, blocks: blocks, cooldown: cool),
+                    "\(stairs.name) : \(reps) × \(Int(effort)) s de montée rapide, puis redescends en marchant au départ.\(timed)")
         }
+        blocks.append(RunBlock(iterations: reps, steps: [openStep("work"), openStep("recovery")]))
         if stairs.isVeryShort {
-            return (RunWorkout(location: nil, warmup: warm, blocks: [RunBlock(iterations: reps, steps: [
-                openStep("work"), openStep("recovery")])], cooldown: cool),
-                    "\(stairs.name) : \(reps) répétitions de 3 montées enchaînées, redescends en marchant entre deux.")
+            return (RunWorkout(location: nil, warmup: warm, blocks: blocks, cooldown: cool),
+                    "\(stairs.name) : \(reps) répétitions de 3 montées enchaînées, redescends en marchant entre deux.\(timed)")
         }
-        return (RunWorkout(location: nil, warmup: warm, blocks: [RunBlock(iterations: reps, steps: [
-            openStep("work"), openStep("recovery")])], cooldown: cool),
-                "\(stairs.name) : \(reps) montées rapides, redescends en marchant. Appuie en haut pour passer à la récupération.")
+        return (RunWorkout(location: nil, warmup: warm, blocks: blocks, cooldown: cool),
+                "\(stairs.name) : \(reps) montées rapides, redescends en marchant. Appuie en haut pour passer à la récupération.\(timed)")
     }
 
     // MARK: Renfo
@@ -146,12 +160,16 @@ struct SessionBuilder {
         let goals = profile.strengthGoals
         let (sets, reps, rest): (Int, Int, Int) = goals.contains(.strength) ? (4, 5, 150)
             : goals.contains(.muscle) ? (3, 10, 90) : (3, 12, 60)
-        let weights = available([.dumbbells], atHome: atHome)
+        let weights = available([.dumbbells], atHome: atHome) || available([.kettlebell], atHome: atHome)
         let bar = available([.pullUpBar], atHome: atHome)
+        let rdl = weights ? "Soulevé de terre roumain" : "Soulevé de terre roumain sur une jambe"
+        let row = available([.dumbbells], atHome: atHome) ? "Rowing haltères" : "Rowing inversé sous une table"
+        let zones = profile.sparedZones
+        let workout: StrengthWorkout
         switch kind {
         case .runnerCore:
-            return StrengthWorkout(exercises: [
-                ex(weights ? "Soulevé de terre roumain" : "Soulevé de terre roumain sur une jambe", sets: 3, reps: 8, rest: 90),
+            workout = StrengthWorkout(exercises: [
+                ex(rdl, sets: 3, reps: 8, rest: 90),
                 ex("Pont fessier", sets: 3, reps: 12, rest: 60),
                 ex("Nordic curl", sets: 3, reps: 4, rest: 120, notes: "Pieds calés sous un meuble lourd ou tenus. Descends le plus lentement possible."),
                 ex("Mollets debout", sets: 3, reps: 15, rest: 45),
@@ -159,29 +177,35 @@ struct SessionBuilder {
                 ex("Gainage latéral", sets: 2, sec: 30, rest: 30, notes: "Chaque côté")
             ])
         case .strengthLower:
-            return StrengthWorkout(exercises: [
+            workout = StrengthWorkout(exercises: [
                 ex(weights ? "Squat goblet" : "Squat", sets: sets, reps: reps, rest: rest),
-                ex("Soulevé de terre roumain", sets: sets, reps: reps, rest: rest),
+                ex(rdl, sets: sets, reps: reps, rest: rest),
                 ex("Fentes alternées", sets: 3, reps: 10, rest: 60, notes: "Par jambe"),
                 ex("Pont fessier", sets: 3, reps: 12, rest: 60),
                 ex("Mollets debout", sets: 3, reps: 15, rest: 45)
             ])
         case .strengthUpper:
-            return StrengthWorkout(exercises: [
+            workout = StrengthWorkout(exercises: [
                 ex("Pompes", sets: sets, reps: max(reps, 8), rest: rest),
-                bar ? ex("Tractions", sets: sets, reps: max(3, reps - 2), rest: rest) : ex("Rowing haltères", sets: sets, reps: reps, rest: rest),
+                bar ? ex("Tractions", sets: sets, reps: max(3, reps - 2), rest: rest) : ex(row, sets: sets, reps: reps, rest: rest),
                 ex(weights ? "Développé haltères au-dessus de la tête" : "Pompes piquées", sets: 3, reps: 10, rest: 60),
                 ex("Gainage planche", sets: 3, sec: 40, rest: 45)
             ])
         default:
-            return StrengthWorkout(exercises: [
+            workout = StrengthWorkout(exercises: [
                 ex(weights ? "Squat goblet" : "Squat", sets: sets, reps: reps, rest: rest),
                 ex("Pompes", sets: sets, reps: max(reps, 8), rest: rest),
-                ex("Soulevé de terre roumain", sets: 3, reps: reps, rest: rest),
-                bar ? ex("Tractions", sets: 3, reps: max(3, reps - 2), rest: rest) : ex("Rowing haltères", sets: 3, reps: reps, rest: rest),
+                ex(rdl, sets: 3, reps: reps, rest: rest),
+                bar ? ex("Tractions", sets: 3, reps: max(3, reps - 2), rest: rest) : ex(row, sets: 3, reps: reps, rest: rest),
                 ex("Gainage planche", sets: 3, sec: 40, rest: 45)
             ])
         }
+        // Zones à ménager : on retire les exercices qui les sollicitent le plus.
+        var removed: Set<String> = []
+        if zones.contains(.hamstring) { removed.insert("Nordic curl") }
+        if zones.contains(.knee) { removed.insert("Fentes alternées") }
+        if zones.contains(.shoulder) { removed.insert("Développé haltères au-dessus de la tête") }
+        return StrengthWorkout(exercises: workout.exercises.filter { !removed.contains($0.name) })
     }
 
     // MARK: Martial cross
@@ -194,24 +218,31 @@ struct SessionBuilder {
                       "Mountain climbers", "Hollow hold"]
 
     /// Format (#49) : 45 min = ateliers de 2 min, 1 h = ateliers de 3 min, 5 tours. Moins de temps = moins de tours.
-    func martialCircuit(minutes: Int) -> CircuitWorkout {
+    func martialCircuit(minutes: Int, atGym: Bool) -> CircuitWorkout {
         let station = minutes >= 60 ? 180 : 120
-        let perRound = 3 * station + 3 * (40 + 20)
-        let rounds = max(2, min(5, (minutes * 60) / perRound))
         let w = week.index
-        let cardio = available([.rower], atHome: false) && w % 2 == 1 ? "Rameur" : "Course sur place ou tapis"
+        let home = !atGym
+        let cardio = available([.rower], atHome: home) && w % 2 == 1 ? "Rameur" : "Course sur place ou tapis"
+        let moves = Self.strengthMoves.filter { $0 != "Kettlebell swing" || available([.kettlebell], atHome: home) }
+            .filter { !(profile.sparedZones.contains(.knee) && ($0 == "Squat sauté" || $0 == "Burpees")) }
         func pick(_ list: [String], _ offset: Int) -> String { list[(w + offset) % list.count] }
         let exercises = [
             ex(cardio, sets: 1, sec: station, rest: 20),
             ex(pick(Self.abs, 0), sets: 1, sec: 40, rest: 20),
-            ex(pick(Self.strengthMoves, 0), sets: 1, sec: station, rest: 20),
+            ex(pick(moves, 0), sets: 1, sec: station, rest: 20),
             ex(pick(Self.abs, 2), sets: 1, sec: 40, rest: 20),
             ex(pick(Self.boxing, 0), sets: 1, sec: station, rest: 20),
             ex(pick(Self.abs, 4), sets: 1, sec: 40, rest: 20)
         ]
-        // Le format actuel n'a qu'un repos commun (20 s) : le repos propre à chaque exercice arrive avec #49.
-        return CircuitWorkout(rounds: rounds, workSec: station, restSec: 20, roundRestSec: 60, prepareSec: 10,
-                              exercises: exercises)
+        // Le format actuel n'a qu'un repos commun (20 s, aussi après les ateliers) : le repos propre à chaque
+        // exercice arrive avec #49. En attendant, le nombre de tours est calculé sur la durée réelle.
+        var circuit = CircuitWorkout(rounds: 1, workSec: station, restSec: 20, roundRestSec: 20, prepareSec: 10,
+                                     exercises: exercises)
+        for rounds in stride(from: 5, through: 1, by: -1) {
+            circuit.rounds = rounds
+            if circuit.totalSeconds <= minutes * 60 { break }
+        }
+        return circuit
     }
 
     /// Cours collectif : séance repère (le contenu est celui du cours).

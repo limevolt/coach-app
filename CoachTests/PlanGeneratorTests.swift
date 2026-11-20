@@ -70,6 +70,28 @@ final class PlanGeneratorTests: XCTestCase {
         }
         XCTAssertEqual(PlanRules.violations(loads), [], "jamais deux jours durs d'affilée, rien pour les jambes la veille d'une séance clé",
                        file: file, line: line)
+
+        // Le contenu tient dans la durée prévue (parties chronométrées).
+        let minutesById = Dictionary(uniqueKeysWithValues: zip(g.plan.sessions.map(\.id),
+                                                               g.weeks.flatMap(\.sessions).map(\.minutes)))
+        for session in g.plan.sessions {
+            let limit = (minutesById[session.id] ?? 0) * 60
+            if let run = session.run {
+                XCTAssertLessThanOrEqual(Self.timedSeconds(run), limit, "\(session.title) tient dans sa durée", file: file, line: line)
+            }
+            if let circuit = session.circuit, session.title != SessionKind.martialCrossClass.label {
+                XCTAssertLessThanOrEqual(circuit.totalSeconds, limit, "martial cross dans sa durée", file: file, line: line)
+            }
+        }
+    }
+
+    static func timedSeconds(_ run: RunWorkout) -> Int {
+        func sec(_ step: RunStep?) -> Double {
+            guard let step, step.goal.type == "time", let v = step.goal.value else { return 0 }
+            return step.goal.unit == "s" ? v : v * 60
+        }
+        let blocks = run.blocks.reduce(0.0) { $0 + Double($1.iterations) * $1.steps.reduce(0.0) { $0 + sec($1) } }
+        return Int((sec(run.warmup) + blocks + sec(run.cooldown)).rounded())
     }
 
     // MARK: Calendrier
@@ -96,22 +118,27 @@ final class PlanGeneratorTests: XCTestCase {
         var lastBuild: Double?
         var peak = 0.0
         for (week, minutes) in zip(weeks, v) {
+        var afterDeload = false
+        for (week, minutes) in zip(weeks, v) {
             switch week.phase {
             case .taper:
-                XCTAssertLessThanOrEqual(minutes, peak * 0.75 + 0.001, "affûtage : volume réduit")
+                XCTAssertLessThanOrEqual(minutes, peak * 0.6 + 0.001, "affûtage : volume réduit de 40 % au moins")
             default:
                 if week.isDeload {
                     XCTAssertEqual(minutes, (lastBuild ?? 0) * PlanCalendar.deloadFactor, accuracy: 0.001)
+                    afterDeload = true
                 } else {
                     if let lastBuild {
-                        XCTAssertLessThanOrEqual(minutes, lastBuild * 1.10 + 0.001, "jamais plus de +10 % par semaine")
+                        let factor = afterDeload ? 1.0 : 1.10
+                        XCTAssertLessThanOrEqual(minutes, lastBuild * factor + 0.001, "jamais plus de +10 %, rien après une semaine allégée")
                     }
+                    afterDeload = false
                     lastBuild = minutes
                     peak = max(peak, minutes)
                 }
             }
         }
-        XCTAssertEqual(v.last!, peak * 0.55, accuracy: 0.001)
+        XCTAssertEqual(v.last!, peak * 0.5, accuracy: 0.001)
         let capped = PlanCalendar.runMinutes(weeks: weeks, start: 100, weeklyIncrease: 0.10, capacity: 120)
         XCTAssertLessThanOrEqual(capped.max()!, 120)
     }
@@ -127,8 +154,8 @@ final class PlanGeneratorTests: XCTestCase {
             let hard = week.sessions.filter { $0.kind.countsAsHard && !$0.isTest }
             XCTAssertLessThanOrEqual(hard.count, 1, "au plus une séance d'intensité par semaine")
         }
-        XCTAssertTrue(g.weeks[0].sessions.contains(where: \.isTest) || g.weeks[0].sessions.allSatisfy { $0.kind == .longRunEasy || $0.kind == .easyRun },
-                      "séance test la première semaine quand elle est possible")
+        XCTAssertTrue(g.weeks[0].sessions.contains(where: \.isTest), "séance test la première semaine")
+        XCTAssertEqual(g.weeks.flatMap(\.sessions).filter(\.isTest).count, 1)
         XCTAssertNil(g.plan.goals)
     }
 
@@ -159,6 +186,28 @@ final class PlanGeneratorTests: XCTestCase {
         for (i, week) in g.weeks.enumerated() where week.week.isDeload && i > 0 {
             XCTAssertLessThan(week.runMinutes, g.weeks[i - 1].runMinutes)
         }
+        // Hausse réelle : +10 % au plus d'une semaine de progression à l'autre, rien après une semaine allégée.
+        var lastBuild: Int?
+        var afterDeload = false
+        for week in g.weeks where week.week.phase != .taper && !week.isPartial {
+            if week.week.isDeload { afterDeload = true; continue }
+            if let lastBuild {
+                XCTAssertLessThanOrEqual(week.runMinutes, Int(Double(lastBuild) * (afterDeload ? 1.0 : 1.10)),
+                                         "semaine \(week.week.index + 1)")
+            }
+            lastBuild = week.runMinutes
+            afterDeload = false
+        }
+        // Semaine de l'événement : pas de sortie longue, rien de dur dans les 3 derniers jours, repos la veille.
+        let event = StrictDate.date("2030-05-26")!
+        let last = g.weeks.last!
+        XCTAssertFalse(last.sessions.contains { $0.kind == .longRunEasy || $0.kind == .longRunProgressive })
+        for session in last.sessions {
+            let left = Calendar.current.dateComponents([.day], from: session.date, to: event).day!
+            XCTAssertGreaterThan(left, 1, "repos la veille")
+            if left <= PlanGenerator.easyDaysBeforeEvent { XCTAssertFalse(session.kind.countsAsHard) }
+        }
+        XCTAssertFalse(g.weeks.flatMap(\.sessions).contains(where: \.isTest), "niveau connu : pas de séance test")
     }
 
     func testVeryShortPlanIsMaintenanceOnly() throws {
@@ -178,8 +227,9 @@ final class PlanGeneratorTests: XCTestCase {
         XCTAssertFalse(mc.isEmpty)
         XCTAssertTrue(mc.allSatisfy { $0.isoDay == 3 })
         let circuit = g.plan.sessions.first { $0.type == .circuit }?.circuit
-        XCTAssertEqual(circuit?.rounds, 5, "45 min : 5 tours d'ateliers de 2 min")
-        XCTAssertEqual(circuit?.workSec, 120)
+        XCTAssertEqual(circuit?.workSec, 120, "45 min : ateliers de 2 min")
+        XCTAssertEqual(circuit?.rounds, 4, "4 tours tant que le repos est commun (#49)")
+        XCTAssertLessThanOrEqual(circuit?.totalSeconds ?? .max, 45 * 60)
     }
 
     func testGroupClassIsKeptAndProtected() throws {
@@ -219,6 +269,36 @@ final class PlanGeneratorTests: XCTestCase {
         let off = try generate(settings(modules: modules, days: [2, 4, 6, 7]))
         XCTAssertTrue(off.weeks.allSatisfy { w in Set(w.sessions.map(\.isoDay)).count == w.sessions.count })
         _ = try generate(settings(modules: modules, days: [2, 4, 6, 7], twoPerDay: true))
+    }
+
+    func testUnknownLevelStartsCarefully() throws {
+        let s = settings(days: [1, 2, 4, 6, 7], minutes: 90)
+        let g = try generate(s, start: StartingPoint(runMinutesPerWeek: 5000))
+        XCTAssertLessThanOrEqual(g.weeks[0].runMinutes, 150, "départ prudent quand la donnée Santé est invraisemblable")
+        XCTAssertTrue(g.weeks[0].sessions.contains(where: \.isTest), "séance test si Santé ne donne rien d'utilisable")
+    }
+
+    func testGroupClassOnMondayWithAMidWeekStart() throws {
+        var s = settings(modules: [ModuleChoice(module: .run),
+                                   ModuleChoice(module: .martialCross, martialCrossMode: .group, classDay: 1, classTime: "19:00")],
+                         days: [3, 5, 7])
+        s.startDate = "2030-01-09"
+        let g = try generate(s)
+        XCTAssertFalse(g.weeks[0].sessions.isEmpty, "la première semaine n'est pas vide")
+        XCTAssertTrue(g.weeks.dropFirst().allSatisfy { $0.sessions.contains { $0.kind == .martialCrossClass && $0.isoDay == 1 } })
+    }
+
+    func testSparedZonesAdaptExercises() throws {
+        var profile = AthleteProfile()
+        profile.sparedZones = [.hamstring]
+        let s = settings(modules: [ModuleChoice(module: .run), ModuleChoice(module: .strength, variants: [.home])],
+                         days: [1, 3, 5, 7])
+        let g = try generate(s, profile: profile)
+        let names = g.plan.sessions.compactMap(\.strength).flatMap(\.exercises).map(\.name)
+        XCTAssertFalse(names.isEmpty)
+        XCTAssertFalse(names.contains("Nordic curl"), "ischios à ménager : pas de Nordic curl")
+        XCTAssertFalse(names.contains("Rowing haltères"), "sans haltères à la maison")
+        XCTAssertTrue(g.report.adjustments.contains { $0.hasPrefix("Ischios à ménager") })
     }
 
     func testInvalidSettingsAreRefused() {

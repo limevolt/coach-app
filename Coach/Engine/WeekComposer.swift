@@ -95,8 +95,10 @@ enum WeekComposer {
         }
         // Alternance d'une semaine à l'autre pour la deuxième séance de qualité.
         if quality.count == 2 && week.index % 2 == 1 { quality.reverse() }
+        // #47 : 2 séances = 1 qualité + sortie longue ; 3 = 2 qualités + sortie longue (plafonné ensuite par la
+        // part d'intensité de la semaine, voir PlanGenerator.capIntensity) ; en base, une seule qualité (côtes douces).
         var qualityCount = n >= 3 ? 2 : 1
-        if week.phase == .base { qualityCount = n >= 3 ? 1 : 0 }
+        if week.phase == .base { qualityCount = 1 }
         if week.phase == .taper || week.phase == .maintenance { qualityCount = 1 }
         if week.isDeload { qualityCount -= 1 }
         qualityCount = max(0, min(qualityCount, quality.count, n - 1))
@@ -128,6 +130,15 @@ enum WeekComposer {
         }
         if light { kinds = Array(kinds.prefix(1)) }
         return kinds
+    }
+
+    /// Zone à ménager (#47) : une variante plus douce si elle existe ; sinon, une séance dure devient un footing
+        /// et une séance facile est raccourcie (`reduced`).
+    static func spared(_ kind: SessionKind, zones: Set<BodyZone>) -> (kind: SessionKind, reduced: Bool) {
+        let gentler = sparing(kind, zones: zones)
+        guard !gentler.stressedZones.isDisjoint(with: zones) else { return (gentler, false) }
+        if gentler.module == .run && gentler.countsAsHard && !gentler.isKeySession { return (.easyRun, true) }
+        return (gentler, true)
     }
 
     /// Remplace une séance qui sollicite une zone à ménager, quand une variante plus douce existe (#47).
