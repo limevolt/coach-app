@@ -113,8 +113,8 @@ struct WizardProgress: View {
                     .frame(height: Theme.progressHeight)
             }
         }
-        .accessibilityElement()
-        .accessibilityLabel("Étape \(step.rawValue) sur \(WizardStep.count)")
+        // Annoncée avec le titre de l'étape ; la barre elle-même est décorative.
+        .accessibilityHidden(true)
     }
 }
 
@@ -149,7 +149,7 @@ struct RadioRow: View {
             HStack(alignment: .top, spacing: 14) {
                 Image(systemName: isOn ? "largecircle.fill.circle" : "circle")
                     .font(Theme.iconFont)
-                    .foregroundStyle(isOn ? Theme.accent : Theme.line)
+                    .foregroundStyle(isOn ? Theme.accent : Theme.muted)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title).font(.coach(.body, weight: .semibold)).foregroundStyle(Theme.text)

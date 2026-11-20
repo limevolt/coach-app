@@ -289,37 +289,50 @@ struct PlanView: View {
         Button("Préparer une demande pour ton IA", systemImage: "text.bubble") { showNewPlan = true }
     }
 
-    /// Aucun plan (#45, maquette validée) : « Créer mon plan » (coach local) et « Importer un plan ».
+    /// Aucun plan (#45, maquette validée) : titre « Plan », message au centre, « Créer mon plan » (coach local)
+    /// et « Importer un plan » en bas, à portée de pouce.
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "flag.fill")
-                .font(Theme.iconFont)
-                .foregroundStyle(Theme.accent)
-                .frame(width: Theme.dayDot + 32, height: Theme.dayDot + 32)
-                .background(Theme.card2, in: Circle())
-                .accessibilityHidden(true)
-            Text("Aucun plan pour l'instant")
-                .font(.number)
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Plan")
+                .font(.screenTitle)
                 .foregroundStyle(Theme.text)
-                .padding(.top, 8)
-            Text("Le coach crée ton plan sur ton iPhone, à partir de ton objectif, de tes disciplines et de tes disponibilités.")
-                .font(.detail)
-                .foregroundStyle(Theme.muted)
-                .multilineTextAlignment(.center)
+                .accessibilityAddTraits(.isHeader)
             Spacer(minLength: Theme.blockSpacing)
-            Button { showWizard = true } label: {
-                Text("Créer mon plan").primaryActionStyle()
+            VStack(spacing: 12) {
+                Image(systemName: "flag.fill")
+                    .font(Theme.iconFont)
+                    .foregroundStyle(Theme.accent)
+                    .frame(width: Theme.dayDot + 32, height: Theme.dayDot + 32)
+                    .background(Theme.card2, in: Circle())
+                    .accessibilityHidden(true)
+                Text("Aucun plan pour l'instant")
+                    .font(.number)
+                    .foregroundStyle(Theme.text)
+                    .padding(.top, 8)
+                Text("Le coach crée ton plan sur ton iPhone, à partir de ton objectif, de tes disciplines et de tes disponibilités.")
+                    .font(.detail)
+                    .foregroundStyle(Theme.muted)
+                    .multilineTextAlignment(.center)
             }
-            .buttonStyle(.plain)
-            Menu {
-                importItems
-            } label: {
-                Label("Importer un plan", systemImage: "doc")
-                    .quietActionStyle()
+            .frame(maxWidth: .infinity)
+            Spacer(minLength: Theme.blockSpacing)
+            VStack(spacing: 12) {
+                Button { showWizard = true } label: {
+                    Text("Créer mon plan").primaryActionStyle()
+                }
+                .buttonStyle(.plain)
+                Menu {
+                    importItems
+                } label: {
+                    Label("Importer un plan", systemImage: "doc")
+                        .quietActionStyle()
+                }
             }
         }
         .padding(.horizontal, Theme.screenMargin)
-        .padding(.top, 120)
+        .padding(.top, 8)
+        .padding(.bottom, Theme.blockSpacing)
+        .containerRelativeFrame(.vertical, alignment: .top)
     }
 
     // MARK: Import

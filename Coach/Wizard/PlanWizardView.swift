@@ -57,11 +57,11 @@ private struct WizardStepView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.blockSpacing) {
-                WizardProgress(step: step)
                 VStack(alignment: .leading, spacing: 8) {
                     Text(step.title)
                         .font(.screenTitle)
                         .foregroundStyle(Theme.text)
+                        .accessibilityLabel("\(step.title), étape \(step.rawValue) sur \(WizardStep.count)")
                         .accessibilityAddTraits(.isHeader)
                     if let subtitle = step.subtitle {
                         Text(subtitle).font(.detail).foregroundStyle(Theme.muted)
@@ -75,10 +75,23 @@ private struct WizardStepView: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .background(Theme.bg.ignoresSafeArea())
+        // Barre de progression fixe ; le contenu qui défile ne passe jamais sous les boutons du haut.
+        .safeAreaInset(edge: .top, spacing: 0) {
+            WizardProgress(step: step)
+                .padding(.horizontal, Theme.screenMargin)
+                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity)
+                .background(Theme.bg)
+        }
+        .wizardTopBar()
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: step == .objective ? .cancellationAction : .topBarTrailing) {
-                Button("Annuler", action: cancel).disabled(creating)
+            // « Annuler » toujours à droite, en blanc (maquette validée).
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(action: cancel) {
+                    Text("Annuler").font(.text).foregroundStyle(Theme.text)
+                }
+                .disabled(creating)
             }
         }
         // Pendant la création : ni retour ni annulation (le plan serait remplacé quand même).
@@ -174,6 +187,7 @@ private struct WizardStepView: View {
 
 private struct ObjectiveStep: View {
     @Bindable var draft: PlanDraft
+    @State private var showCalendar = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.blockSpacing) {
@@ -189,11 +203,25 @@ private struct ObjectiveStep: View {
                         .textInputAutocapitalization(.sentences)
                         .fieldStyle()
                 }
-                WizardSection(title: "Date", footer: weeksLine) {
-                    DatePicker("Date de l'événement", selection: $draft.eventDate, in: draft.earliestEventDate...,
-                               displayedComponents: .date)
-                        .font(.text)
-                        .tint(Theme.accent)
+                WizardSection(title: "Date") {
+                    Button { withAnimation { showCalendar.toggle() } } label: {
+                        HStack {
+                            Text(draft.eventDate.formatted(.dateTime.weekday(.wide).day().month(.wide).year()).capitalizingFirst)
+                                .foregroundStyle(Theme.text)
+                            Spacer(minLength: 8)
+                            if let weeksLine { Text(weeksLine).font(.detail).foregroundStyle(Theme.muted) }
+                        }
+                        .fieldStyle()
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint(showCalendar ? "Masquer le calendrier" : "Choisir la date")
+                    if showCalendar {
+                        DatePicker("Date de l'événement", selection: $draft.eventDate, in: draft.earliestEventDate...,
+                                   displayedComponents: .date)
+                            .datePickerStyle(.graphical)
+                            .tint(Theme.accent)
+                    }
                 }
                 if let warning = draft.settings().warnings().first(where: { $0 == .shortPlan || $0 == .maintenanceOnly }) {
                     Label(warning.message, systemImage: "info.circle")
@@ -212,7 +240,7 @@ private struct ObjectiveStep: View {
         let s = draft.settings()
         guard let first = s.firstDay(today: .now), let event = s.objective.eventDate else { return nil }
         let weeks = PlanCalendar.weeks(firstDay: first, eventDate: event).count
-        return "Dans \(weeks) semaine\(weeks > 1 ? "s" : "")."
+        return "dans \(weeks) semaine\(weeks > 1 ? "s" : "")"
     }
 }
 
@@ -341,20 +369,29 @@ private struct AvailabilityStep: View {
                 }
                 .pickerStyle(.segmented)
                 if draft.isActive(.run) {
-                    HStack {
-                        Text("Sortie longue jusqu'à").font(.text).foregroundStyle(Theme.text)
-                        Spacer()
+                    Menu {
                         Picker("Sortie longue jusqu'à", selection: longRun) {
-                            Text("Automatique").tag(0)
+                            Text("Automatique (\(Self.label(draft.settings().defaultLongRunMinutes)))").tag(0)
                             ForEach(PlanSettings.longRunMinuteChoices.filter { $0 >= draft.sessionMinutes }, id: \.self) {
                                 Text(Self.label($0)).tag($0)
                             }
                         }
-                        .pickerStyle(.menu)
-                        .labelsHidden()
-                        .tint(Theme.muted)
+                    } label: {
+                        HStack(spacing: 8) {
+                            Text("Sortie longue jusqu'à").font(.text).foregroundStyle(Theme.text)
+                            Spacer(minLength: 8)
+                            Text(Self.label(draft.longRunMinutes ?? draft.settings().defaultLongRunMinutes))
+                                .font(.text).foregroundStyle(Theme.muted)
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(Theme.chevronFont).foregroundStyle(Theme.chevron)
+                                .accessibilityHidden(true)
+                        }
+                        .frame(minHeight: Theme.rowHeight)
+                        .overlay(alignment: .top) { Rectangle().fill(Theme.separator).frame(height: Theme.quietStroke) }
+                        .overlay(alignment: .bottom) { Rectangle().fill(Theme.separator).frame(height: Theme.quietStroke) }
+                        .contentShape(Rectangle())
                     }
-                    .frame(minHeight: Theme.rowHeight)
+                    .buttonStyle(.plain)
                 }
             }
             if draft.needsGymDays && !draft.trainingDays.isEmpty {
@@ -648,7 +685,9 @@ private struct SummaryStep: View {
     }
 
     private func objectiveLabel(_ s: PlanSettings) -> String {
-        if case .event(let name, _) = s.objective { return name.isEmpty ? "Une date" : name }
+        if case .event(let name, _) = s.objective {
+            return name.isEmpty ? (s.objective.eventDate?.formatted(.dateTime.day().month(.abbreviated).year()) ?? "Une date") : name
+        }
         return "Être en forme"
     }
 
@@ -680,7 +719,8 @@ private struct SummaryStep: View {
                     .accessibilityHidden(true)
             }
             .frame(minHeight: Theme.rowHeight)
-            .overlay(alignment: .bottom) { Divider().overlay(Theme.separator) }
+            // Séparateur horizontal (un Divider dans une HStack serait vertical).
+            .overlay(alignment: .bottom) { Rectangle().fill(Theme.separator).frame(height: Theme.quietStroke) }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -690,4 +730,17 @@ private struct SummaryStep: View {
 
 private extension String {
     var capitalizingFirst: String { prefix(1).uppercased() + dropFirst() }
+}
+
+private extension View {
+    /// Haut de l'écran lisible quand le contenu défile : bord net sous iOS 26 (Liquid Glass, barre native),
+    /// fond de l'app avant.
+    @ViewBuilder func wizardTopBar() -> some View {
+        if #available(iOS 26, *) {
+            self.scrollEdgeEffectStyle(.hard, for: .top)
+        } else {
+            self.toolbarBackground(Theme.bg, for: .navigationBar)
+                .toolbarBackground(.visible, for: .navigationBar)
+        }
+    }
 }

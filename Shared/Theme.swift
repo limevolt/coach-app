@@ -165,6 +165,8 @@ extension View {
                    minHeight: compact ? Theme.minTap : (large ? Theme.largeButtonHeight : Theme.primaryButtonHeight))
             .background(enabled ? Theme.accent : Theme.card2,
                         in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous)
+                .stroke(enabled ? Color.clear : Theme.line, lineWidth: 1))
             .contentShape(Rectangle())
     }
 
