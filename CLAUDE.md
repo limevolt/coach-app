@@ -37,6 +37,14 @@ chacune avec ses propres réglages et son propre plan.
 - Un service extérieur (une API d'IA, par exemple) reste une option désactivée par défaut,
   activée et configurée par l'utilisateur dans les réglages (clé dans le trousseau).
 
+## Moteur de coaching local (#52)
+
+- Le coach est un moteur de règles 100 % local, par modules, dans `Coach/Engine/` : pas d'IA en V1.
+- Les règles et leurs valeurs de départ sont décidées dans les issues des modules : le code les suit,
+  et toute valeur différente se discute d'abord dans l'issue.
+- Chaque règle a un test automatique avec des données fictives.
+- Avant la pull request d'un lot qui touche le moteur : agent `coach-reviewer` en plus du `code-reviewer`.
+
 ## Compilations GitHub Actions (gratuites en public, mais longues)
 
 - Grouper les corrections et vérifier le code avant de pousser ; éviter les allers-retours.
