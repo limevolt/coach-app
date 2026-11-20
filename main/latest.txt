@@ -1,4 +1,4 @@
-commit: bb1de29b3fc8a6bf8ee90c2ab21629ca7130227c
+commit: c2c6efb3cfef9f41b95e1b7e629c320705664e70
 branche: main
 ios: success
 watch: success
@@ -9,33 +9,46 @@ tests: success
 ===== ERREURS / AVERTISSEMENTS MONTRE =====
 
 ===== TESTS UNITAIRES =====
-Test Case '-[CoachTests.DoneStateTests testDoneIdsOnlyForSessionsOfThePlan]' passed (0.007 seconds).
-Test Case '-[CoachTests.DoneStateTests testLogArrivingAfterResetIsArchivedIfDoneBefore]' passed (0.002 seconds).
+Test Case '-[CoachTests.DoneStateTests testDoneIdsOnlyForSessionsOfThePlan]' passed (0.004 seconds).
+Test Case '-[CoachTests.DoneStateTests testLogArrivingAfterResetIsArchivedIfDoneBefore]' passed (0.001 seconds).
 Test Case '-[CoachTests.DoneStateTests testMarkNotDoneRemovesOnlyThatSessionsActiveLogs]' passed (0.007 seconds).
 Test Case '-[CoachTests.DoneStateTests testNewLogAfterResetCountsAgain]' passed (0.001 seconds).
-Test Case '-[CoachTests.DoneStateTests testOldLogsWithoutArchiveFieldStillDecode]' passed (0.005 seconds).
-Test Case '-[CoachTests.DoneStateTests testResetDetachesLogsFromReimportedPlanWithSameIds]' passed (0.001 seconds).
-Test Case '-[CoachTests.DoneStateTests testResetKeepsFreeTimerLogsAndOldArchiveDates]' passed (0.001 seconds).
-Test Case '-[CoachTests.DoneStateTests testStartRequestFreshness]' passed (0.001 seconds).
-Test Case '-[CoachTests.DoneStateTests testStartRequestRoundTrip]' passed (0.003 seconds).
-Test Case '-[CoachTests.DoneStateTests testWatchDropsPendingFinishedBeforeReset]' passed (0.086 seconds).
+Test Case '-[CoachTests.DoneStateTests testOldLogsWithoutArchiveFieldStillDecode]' passed (0.007 seconds).
+Test Case '-[CoachTests.DoneStateTests testResetDetachesLogsFromReimportedPlanWithSameIds]' passed (0.002 seconds).
+Test Case '-[CoachTests.DoneStateTests testResetKeepsFreeTimerLogsAndOldArchiveDates]' passed (0.003 seconds).
+Test Case '-[CoachTests.DoneStateTests testStartRequestFreshness]' passed (0.004 seconds).
+Test Case '-[CoachTests.DoneStateTests testStartRequestRoundTrip]' passed (0.004 seconds).
+Test Case '-[CoachTests.DoneStateTests testWatchDropsPendingFinishedBeforeReset]' passed (0.002 seconds).
 Test Case '-[CoachTests.DoneStateTests testWatchKeepsSessionFinishedHereUntilPhoneConfirms]' passed (0.002 seconds).
 Test Case '-[CoachTests.DoneStateTests testWatchPendingExpires]' passed (0.002 seconds).
-Test Case '-[CoachTests.DoneStateTests testWatchReplacesItsListWithThePhoneOne]' passed (0.002 seconds).
-	 Executed 13 tests, with 0 failures (0 unexpected) in 0.120 (0.141) seconds
-Test Case '-[CoachTests.PlanFormatTests testAppendingAddsFormatOnce]' passed (0.007 seconds).
-Test Case '-[CoachTests.PlanFormatTests testCompletePlanDecodes]' passed (0.028 seconds).
+Test Case '-[CoachTests.DoneStateTests testWatchReplacesItsListWithThePhoneOne]' passed (0.001 seconds).
+	 Executed 13 tests, with 0 failures (0 unexpected) in 0.039 (0.259) seconds
+Test Case '-[CoachTests.PlanFormatTests testAppendingAddsFormatOnce]' passed (0.023 seconds).
+Test Case '-[CoachTests.PlanFormatTests testCompletePlanDecodes]' passed (0.013 seconds).
 Test Case '-[CoachTests.PlanFormatTests testFormatIsBundled]' passed (0.001 seconds).
 Test Case '-[CoachTests.PlanFormatTests testInstructionsAreSelfContained]' passed (0.002 seconds).
-Test Case '-[CoachTests.PlanFormatTests testInstructionsStartAtFirstSection]' passed (0.002 seconds).
-Test Case '-[CoachTests.PlanFormatTests testMissingTitleIsNamed]' passed (0.014 seconds).
-Test Case '-[CoachTests.PlanFormatTests testOtherErrorsHaveNoRepair]' passed (0.019 seconds).
-	 Executed 7 tests, with 0 failures (0 unexpected) in 0.074 (0.362) seconds
-Test Case '-[CoachTests.ReportPreviewTests testPreviewKeepsOnlyFirstLines]' passed (0.003 seconds).
-Test Case '-[CoachTests.ReportPreviewTests testReportInputsChangeWithNewLogOrComment]' passed (0.002 seconds).
-	 Executed 2 tests, with 0 failures (0 unexpected) in 0.005 (0.007) seconds
-	 Executed 22 tests, with 0 failures (0 unexpected) in 0.200 (0.512) seconds
-	 Executed 22 tests, with 0 failures (0 unexpected) in 0.200 (0.519) seconds
+Test Case '-[CoachTests.PlanFormatTests testInstructionsStartAtFirstSection]' passed (0.001 seconds).
+Test Case '-[CoachTests.PlanFormatTests testMissingTitleIsNamed]' passed (0.031 seconds).
+Test Case '-[CoachTests.PlanFormatTests testOtherErrorsHaveNoRepair]' passed (0.024 seconds).
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.095 (0.100) seconds
+Test Case '-[CoachTests.ReportPreviewTests testPreviewKeepsOnlyFirstLines]' passed (0.001 seconds).
+Test Case '-[CoachTests.ReportPreviewTests testReportInputsChangeWithNewLogOrComment]' passed (0.001 seconds).
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.002 (0.003) seconds
+Test Case '-[CoachTests.WeekOverviewTests testPlanEnded]' passed (0.018 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testPlannedMinutes]' passed (0.004 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testPlannedMinutesUnits]' passed (0.001 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testRestDayShowsNextSessionAndUpcoming]' passed (0.002 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testSeveralSessionsSameDay]' passed (0.004 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testTodayToDoThenDone]' passed (0.003 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testUpcomingSkipsDoneSessions]' passed (0.003 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testWeekBeforePlanStarts]' passed (0.003 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testWeekHasSevenDaysWithStatuses]' passed (0.003 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testWeekLineAcrossMonths]' passed (0.009 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testWeekOutsidePlanHasNoNumber]' passed (0.005 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testWeekStartsOnMondayWhateverTheRegion]' passed (0.005 seconds).
+	 Executed 12 tests, with 0 failures (0 unexpected) in 0.061 (0.094) seconds
+	 Executed 34 tests, with 0 failures (0 unexpected) in 0.197 (0.458) seconds
+	 Executed 34 tests, with 0 failures (0 unexpected) in 0.197 (0.462) seconds
 
 ===== FIN DU JOURNAL iOS =====
 ** BUILD SUCCEEDED **
