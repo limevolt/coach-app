@@ -429,7 +429,9 @@ extension PlanSettings {
 
     func warnings(today: Date = .now) -> [PlanSettingsWarning] {
         var warnings: [PlanSettingsWarning] = []
-        if let weeks = weeksUntilEvent(today: today) {
+        // Même compte que le calendrier du plan (semaines jusqu'à la veille de l'événement).
+        if let event = objective.eventDate, let first = firstDay(today: today), first < event {
+            let weeks = PlanCalendar.weeks(firstDay: first, eventDate: event).count
             if weeks < Self.maintenanceOnlyWeeks { warnings.append(.maintenanceOnly) }
             else if weeks < Self.shortPlanWeeks { warnings.append(.shortPlan) }
         }
