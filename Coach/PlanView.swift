@@ -13,6 +13,8 @@ struct PlanView: View {
     @State private var importRepair: String?
     @State private var busy = false
     @State private var showNewPlan = false
+    /// Assistant de création d'un plan par le coach local (#45).
+    @State private var showWizard = false
     @State private var confirmReset = false
     @State private var exporting = false
     @State private var exportFile: SharedFile?
@@ -49,6 +51,7 @@ struct PlanView: View {
                 }
             }
             .sheet(isPresented: $showNewPlan) { NewPlanView() }
+            .fullScreenCover(isPresented: $showWizard) { PlanWizardView() }
             .shareFileSheet($exportFile)
             .confirmationDialog("Marquer comme non faite ?",
                                 isPresented: Binding(get: { notDone != nil }, set: { if !$0 { notDone = nil } }),
@@ -99,7 +102,7 @@ struct PlanView: View {
             WeekDots(days: week.days) { sessionMenu($0) }
 
             TodayCard(today: week.today, planEnded: week.planEnded,
-                      openTimers: openTimers, newPlan: { showNewPlan = true })
+                      openTimers: openTimers, newPlan: { showWizard = true })
 
             OffDaysBanner()
 
@@ -219,9 +222,8 @@ struct PlanView: View {
     /// Actions du plan, dans un menu ••• (rond, cible de 44 pt).
     private var planMenu: some View {
         Menu {
-            Button("Créer un nouveau plan", systemImage: "sparkles") { showNewPlan = true }
-            Button("Coller le plan (presse-papiers)", systemImage: "doc.on.clipboard") { importClipboard() }
-            Button("Importer un fichier", systemImage: "folder") { showImporter = true }
+            Button("Créer un nouveau plan", systemImage: "sparkles") { showWizard = true }
+            importItems
             if let plan = store.plan {
                 Divider()
                 Button("Exporter le plan", systemImage: "square.and.arrow.up") { export(plan) }
@@ -280,34 +282,44 @@ struct PlanView: View {
         }
     }
 
+    /// Importer un plan fait ailleurs (IA, fichier) : regroupé dans un menu (#45).
+    @ViewBuilder private var importItems: some View {
+        Button("Coller le plan (presse-papiers)", systemImage: "doc.on.clipboard") { importClipboard() }
+        Button("Importer un fichier", systemImage: "folder") { showImporter = true }
+        Button("Préparer une demande pour ton IA", systemImage: "text.bubble") { showNewPlan = true }
+    }
+
+    /// Aucun plan (#45, maquette validée) : « Créer mon plan » (coach local) et « Importer un plan ».
     private var emptyState: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "figure.run.circle.fill")
-                .font(.system(size: 64))
+        VStack(spacing: 12) {
+            Image(systemName: "flag.fill")
+                .font(Theme.iconFont)
                 .foregroundStyle(Theme.accent)
+                .frame(width: Theme.dayDot + 32, height: Theme.dayDot + 32)
+                .background(Theme.card2, in: Circle())
                 .accessibilityHidden(true)
-            Text("Aucun plan").font(.screenTitle).foregroundStyle(Theme.text)
-            Text("Prépare ta demande (avec ton dernier mois de sport), envoie-la à ton IA, puis colle ici le plan JSON reçu.")
+            Text("Aucun plan pour l'instant")
+                .font(.number)
+                .foregroundStyle(Theme.text)
+                .padding(.top, 8)
+            Text("Le coach crée ton plan sur ton iPhone, à partir de ton objectif, de tes disciplines et de tes disponibilités.")
                 .font(.detail)
                 .foregroundStyle(Theme.muted)
                 .multilineTextAlignment(.center)
-            Button { showNewPlan = true } label: {
-                Label("Créer un plan", systemImage: "sparkles")
-                    .primaryActionStyle()
+            Spacer(minLength: Theme.blockSpacing)
+            Button { showWizard = true } label: {
+                Text("Créer mon plan").primaryActionStyle()
             }
-            Button { importClipboard() } label: {
-                Label("Coller le plan", systemImage: "doc.on.clipboard")
-                    .secondaryActionStyle(compact: false)
-            }
-            Button { showImporter = true } label: {
-                Text("Importer un fichier")
-                    .font(.coach(.body, weight: .semibold))
-                    .frame(maxWidth: .infinity, minHeight: Theme.minTap)
-                    .contentShape(Rectangle())
+            .buttonStyle(.plain)
+            Menu {
+                importItems
+            } label: {
+                Label("Importer un plan", systemImage: "doc")
+                    .quietActionStyle()
             }
         }
-        .padding(24)
-        .padding(.top, 80)
+        .padding(.horizontal, Theme.screenMargin)
+        .padding(.top, 120)
     }
 
     // MARK: Import

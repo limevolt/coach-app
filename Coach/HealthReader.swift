@@ -46,6 +46,18 @@ final class HealthReader {
         return status == .unnecessary
     }
 
+    /// Coach local (#45) : minutes de course par semaine, en moyenne sur les `weeks` dernières semaines.
+    /// nil si Santé n'est pas disponible, refusé ou sans aucune course (le plan part alors d'une séance test).
+    func averageRunMinutesPerWeek(weeks: Int = 8) async -> Double? {
+        guard HKHealthStore.isHealthDataAvailable() else { return nil }
+        let end = Date.now
+        guard let start = Calendar.current.date(byAdding: .day, value: -7 * weeks, to: end),
+              let list = try? await workouts(from: start, to: end) else { return nil }
+        let runs = list.filter { $0.activity == .running }
+        guard !runs.isEmpty else { return nil }
+        return runs.reduce(0) { $0 + $1.duration } / 60 / Double(weeks)
+    }
+
     /// Empreinte des entraînements Santé de la période (nombre + dernière fin) : change dès qu'un
     /// entraînement est ajouté. Sert à savoir si le suivi déjà généré est encore à jour (#35).
     func workoutStamp(days: Int) async -> String? {
