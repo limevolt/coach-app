@@ -117,7 +117,6 @@ final class PlanGeneratorTests: XCTestCase {
         let v = PlanCalendar.runMinutes(weeks: weeks, start: 100, weeklyIncrease: 0.25, capacity: 10_000)
         var lastBuild: Double?
         var peak = 0.0
-        for (week, minutes) in zip(weeks, v) {
         var afterDeload = false
         for (week, minutes) in zip(weeks, v) {
             switch week.phase {
