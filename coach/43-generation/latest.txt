@@ -1,74 +1,27 @@
-commit: 3f12425e0b2e4ea2faefe81f956621592506ce15
+commit: ae72a5491138a38a56f59742bfe9463b298986bd
 branche: coach/43-generation
 ios: success
 watch: success
-tests: success
+tests: failure
 
 ===== ERREURS / AVERTISSEMENTS iOS =====
 
 ===== ERREURS / AVERTISSEMENTS MONTRE =====
 
 ===== TESTS UNITAIRES =====
-Test Case '-[CoachTests.PlanGeneratorTests testGenerationIsDeterministic]' passed (0.016 seconds).
-Test Case '-[CoachTests.PlanGeneratorTests testGroupClassIsKeptAndProtected]' passed (0.009 seconds).
-Test Case '-[CoachTests.PlanGeneratorTests testGroupClassOnMondayWithAMidWeekStart]' passed (0.006 seconds).
-Test Case '-[CoachTests.PlanGeneratorTests testInvalidSettingsAreRefused]' passed (0.003 seconds).
-Test Case '-[CoachTests.PlanGeneratorTests testMartialCrossSoloOnlyOnGymDay]' passed (0.006 seconds).
-Test Case '-[CoachTests.PlanGeneratorTests testPhasesOfAnEventPlan]' passed (0.001 seconds).
-Test Case '-[CoachTests.PlanGeneratorTests testPlanStartsOnTheStartDateAndCarriesTheNote]' passed (0.004 seconds).
-Test Case '-[CoachTests.PlanGeneratorTests testRunVolumeRules]' passed (0.001 seconds).
-Test Case '-[CoachTests.PlanGeneratorTests testSevenDaysKeepsARestDay]' passed (0.102 seconds).
-Test Case '-[CoachTests.PlanGeneratorTests testSparedKneeAvoidsStairsAndHills]' passed (0.014 seconds).
-Test Case '-[CoachTests.PlanGeneratorTests testSparedZonesAdaptExercises]' passed (0.010 seconds).
-Test Case '-[CoachTests.PlanGeneratorTests testTwoSessionsPerDayOnlyWhenAllowed]' passed (0.028 seconds).
-Test Case '-[CoachTests.PlanGeneratorTests testUnknownLevelStartsCarefully]' passed (0.041 seconds).
-Test Case '-[CoachTests.PlanGeneratorTests testVeryShortPlanIsMaintenanceOnly]' passed (0.002 seconds).
-	 Executed 17 tests, with 0 failures (0 unexpected) in 0.394 (0.402) seconds
-Test Case '-[CoachTests.PlanSettingsTests testAvailableSessionsFollowVariants]' passed (0.001 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testChoiceDropsVariantsOfOtherModules]' passed (0.002 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testCoachMemoryNeverSpeedsUpPastTheRule]' passed (0.004 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testEventIsCountedFromThePlanStart]' passed (0.001 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testEventTooCloseOrMissingDate]' passed (0.008 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testEverySessionDeclaresItsZones]' passed (0.002 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testGroupClassNeedsDayAndTime]' passed (0.007 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testGymOnlyModulesNeedAGymDay]' passed (0.002 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testHardSessionsAndLegLoad]' passed (0.001 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testKeySessionsAreProtected]' passed (0.001 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testLongRunAndTwoSessionsAreSettings]' passed (0.008 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testMartialCrossModeChoosesSessionKind]' passed (0.002 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testMissingModuleAndDay]' passed (0.001 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testModulesWithoutVariantOrTwice]' passed (0.005 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testOldOrUnknownDataIsReadWithoutLoss]' passed (0.004 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testPrincipalMustBeActive]' passed (0.001 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testPunchingBagAtHomeAllowsMartialCrossWithoutGym]' passed (0.001 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testRepeatedMarkedPainInTheSameZone]' passed (0.001 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testSessionMinutesMustBeAChoice]' passed (0.001 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testSettingsAndProfileRoundTripThroughJSON]' passed (0.006 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testStaircaseEstimatesClimbFromSteps]' passed (0.001 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testStairsVariantNeedsAStaircase]' passed (0.001 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testSuggestedName]' passed (0.000 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testValidSettingsHaveNoIssue]' passed (0.002 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testVariantsBelongToTheirModule]' passed (0.001 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testWarnings]' passed (0.001 seconds).
-	 Executed 26 tests, with 0 failures (0 unexpected) in 0.064 (0.118) seconds
-Test Case '-[CoachTests.ReportPreviewTests testPreviewKeepsOnlyFirstLines]' passed (0.001 seconds).
-Test Case '-[CoachTests.ReportPreviewTests testReportInputsChangeWithNewLogOrComment]' passed (0.001 seconds).
-	 Executed 2 tests, with 0 failures (0 unexpected) in 0.002 (0.072) seconds
-Test Case '-[CoachTests.WeekOverviewTests testPlanEnded]' passed (0.007 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testPlannedMinutes]' passed (0.003 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testPlannedMinutesUnits]' passed (0.001 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testRestDayShowsNextSessionAndUpcoming]' passed (0.002 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testSeveralSessionsSameDay]' passed (0.001 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testTodayToDoThenDone]' passed (0.018 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testUpcomingSkipsDoneSessions]' passed (0.002 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testWeekBeforePlanStarts]' passed (0.004 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testWeekHasSevenDaysWithStatuses]' passed (0.003 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testWeekLineAcrossMonths]' passed (0.006 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testWeekOutsidePlanHasNoNumber]' passed (0.001 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testWeekStartsOnMondayWhateverTheRegion]' passed (0.001 seconds).
-	 Executed 12 tests, with 0 failures (0 unexpected) in 0.050 (0.059) seconds
-	 Executed 77 tests, with 0 failures (0 unexpected) in 0.611 (0.942) seconds
-	 Executed 77 tests, with 0 failures (0 unexpected) in 0.611 (0.945) seconds
+/Users/runner/work/coach-app/coach-app/CoachTests/PlanGeneratorTests.swift:100:37: error: type 'PlanCalendar' has no member 'eventPhases'
+/Users/runner/work/coach-app/coach-app/CoachTests/PlanGeneratorTests.swift:100:69: error: cannot infer contextual base in reference to member 'base'
+/Users/runner/work/coach-app/coach-app/CoachTests/PlanGeneratorTests.swift:101:37: error: type 'PlanCalendar' has no member 'eventPhases'
+/Users/runner/work/coach-app/coach-app/CoachTests/PlanGeneratorTests.swift:101:69: error: cannot infer contextual base in reference to member 'taper'
+/Users/runner/work/coach-app/coach-app/CoachTests/PlanGeneratorTests.swift:102:37: error: type 'PlanCalendar' has no member 'eventPhases'
+/Users/runner/work/coach-app/coach-app/CoachTests/PlanGeneratorTests.swift:102:60: error: type 'Equatable' has no member 'taper'
+/Users/runner/work/coach-app/coach-app/CoachTests/PlanGeneratorTests.swift:103:37: error: type 'PlanCalendar' has no member 'eventPhases'
+/Users/runner/work/coach-app/coach-app/CoachTests/PlanGeneratorTests.swift:103:62: error: cannot infer contextual base in reference to member 'base'
+/Users/runner/work/coach-app/coach-app/CoachTests/PlanGeneratorTests.swift:104:9: error: type 'Any' cannot conform to 'Equatable'
+/Users/runner/work/coach-app/coach-app/CoachTests/PlanGeneratorTests.swift:104:37: error: type 'PlanCalendar' has no member 'eventPhases'
+/Users/runner/work/coach-app/coach-app/CoachTests/PlanGeneratorTests.swift:104:55: error: reference to member 'maintenance' cannot be resolved without a contextual type
+/Users/runner/work/coach-app/coach-app/CoachTests/PlanGeneratorTests.swift:104:69: error: reference to member 'maintenance' cannot be resolved without a contextual type
+/Users/runner/work/coach-app/coach-app/CoachTests/PlanGeneratorTests.swift:104:83: error: reference to member 'taper' cannot be resolved without a contextual type
 
 ===== FIN DU JOURNAL iOS =====
 ** BUILD SUCCEEDED **
