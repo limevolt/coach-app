@@ -44,6 +44,7 @@
 5. **Relecture par des agents indépendants**, qui n'ont pas écrit le code :
    - `code-reviewer` : logique, cas limites, régressions, tests, respect de `CLAUDE.md`, cohérence iPhone ↔ montre ;
    - `design-reviewer` (mode « conformité ») : vérifie seulement que les captures correspondent à la maquette validée et que le rendu réel tient (texte coupé, grand texte, petits écrans, contraste). Pas de nouvelle critique du design.
+   - `coach-reviewer` [Coach], dès qu'un lot touche le moteur de coaching (`Coach/Engine/`) : relit les décisions d'entraînement comme un entraîneur (sécurité, règles décidées, sportifs fictifs) et propose des règles pour améliorer le coach.
 6. **Pull request** : ce qui change, les issues fermées, le résultat des relectures et ce que le propriétaire doit tester.
 7. **Fusion sur `main`** : la version part sur TestFlight (à mettre en place), et les issues sont fermées ou passées en `à retester`.
 
