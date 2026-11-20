@@ -32,6 +32,7 @@
 		34D490917ADCECB31226691D /* StrengthRunView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06DC198093FF72A80A0765C0 /* StrengthRunView.swift */; };
 		3B1B88D7CB6ABAC1DFAD6330 /* HomeWeek.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F7A31251C7C102888E383FC /* HomeWeek.swift */; };
 		3BBEDC71D00F1CD8C1951D6D /* PlanModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E1EC1613EDFBF0429687AC5 /* PlanModels.swift */; };
+		3F6CC9E499FC5CAF6599E731 /* PlanDraftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9945A4A769C10E083F4822CB /* PlanDraftTests.swift */; };
 		409A0307919FCEEA9C15A517 /* WatchButtons.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFB32011DD22151450EEEB28 /* WatchButtons.swift */; };
 		411B948974297B5F628405D6 /* CoachStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = E56D00CF919BDFFFD3935AD2 /* CoachStorage.swift */; };
 		43F18FB2DCD8D19787D3F09F /* CoachMemory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B3EB494C46C4402E73C0E32 /* CoachMemory.swift */; };
@@ -204,6 +205,7 @@
 		9065AE64029D887414A302BC /* Outfit-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Outfit-Medium.ttf"; sourceTree = "<group>"; };
 		91216996909C0C840A8EA989 /* PlanGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanGeneratorTests.swift; sourceTree = "<group>"; };
 		912D6F261042F3CACC531D2D /* CoachApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachApp.swift; sourceTree = "<group>"; };
+		9945A4A769C10E083F4822CB /* PlanDraftTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanDraftTests.swift; sourceTree = "<group>"; };
 		99BD1ECD404DB2315F4CB7D8 /* RunScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunScheduler.swift; sourceTree = "<group>"; };
 		99C07CEB41DF40D00D6B5767 /* PlanStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanStore.swift; sourceTree = "<group>"; };
 		9AD7181E658FD44CEBD338B0 /* ExerciseAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseAnimation.swift; sourceTree = "<group>"; };
@@ -283,6 +285,7 @@
 			isa = PBXGroup;
 			children = (
 				734F29FDA42962E3833F9726 /* DoneStateTests.swift */,
+				9945A4A769C10E083F4822CB /* PlanDraftTests.swift */,
 				A0C41F2C2A11F70869772F1C /* PlanFormatTests.swift */,
 				91216996909C0C840A8EA989 /* PlanGeneratorTests.swift */,
 				73F64AF60B5707465F757F75 /* PlanSettingsTests.swift */,
@@ -731,6 +734,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C41EB81B2413AEF3EC2FF805 /* DoneStateTests.swift in Sources */,
+				3F6CC9E499FC5CAF6599E731 /* PlanDraftTests.swift in Sources */,
 				ECFB996FDF42F74172BEB5B5 /* PlanFormatTests.swift in Sources */,
 				BC5EF199242F3CD6B4BC4119 /* PlanGeneratorTests.swift in Sources */,
 				4F7F79FEF1450AA7D96D4FBD /* PlanSettingsTests.swift in Sources */,
