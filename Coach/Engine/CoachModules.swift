@@ -83,7 +83,9 @@ enum MartialCrossMode: String, Codable, Hashable {
 
 // MARK: - Séances types
 
-/// Intensité d'une séance, pour la règle « jamais deux séances dures d'affilée ».
+/// Intensité d'une séance.
+/// Règle de prudence (#43) : une séance **modérée compte comme dure** pour l'enchaînement des jours
+/// et dans la part d'intensité (≈ 80 % facile / 20 % intensité). Voir `countsAsHard`.
 enum SessionIntensity: String, Codable, Hashable {
     case easy
     case moderate
@@ -91,7 +93,7 @@ enum SessionIntensity: String, Codable, Hashable {
 }
 
 /// Séance type d'un module : le moteur choisit parmi elles selon les variantes actives.
-/// Les zones de FC sont des valeurs de départ, ajustées ensuite à chaque utilisateur.
+/// Les zones de FC sont des valeurs de départ (#47), ajustées ensuite à chaque utilisateur.
 enum SessionKind: String, Codable, CaseIterable, Hashable {
     // Course
     case recoveryRun
@@ -134,7 +136,7 @@ enum SessionKind: String, Codable, CaseIterable, Hashable {
         case .tempo: return "Tempo"
         case .shortIntervals: return "Intervalles courts"
         case .longIntervals: return "Intervalles longs"
-        case .hillsOrStairs: return "Côtes et escaliers"
+        case .hillsOrStairs: return "Côtes ou escaliers"
         case .trailRun: return "Sortie trail"
         case .stairsEndurance: return "Escaliers en continu"
         case .strengthLower: return "Renfo jambes"
@@ -148,34 +150,82 @@ enum SessionKind: String, Codable, CaseIterable, Hashable {
 
     var intensity: SessionIntensity {
         switch self {
-        case .recoveryRun, .easyRun, .longRunEasy, .trailRun, .runnerCore:
+        case .recoveryRun, .easyRun, .longRunEasy:
             return .easy
-        case .stairsEndurance, .strengthUpper:
+        // Trail : dénivelé et descentes ; socle coureur : Nordic curl et soulevé de terre roumain
+        // donnent de fortes courbatures aux ischios au début.
+        case .trailRun, .runnerCore, .strengthUpper:
             return .moderate
-        case .longRunProgressive, .tempo, .shortIntervals, .longIntervals, .hillsOrStairs,
+        // Escaliers en continu : zones 3 à 4 et descentes répétées, comme un tempo.
+        case .longRunProgressive, .tempo, .shortIntervals, .longIntervals, .hillsOrStairs, .stairsEndurance,
              .strengthLower, .strengthFull, .martialCrossSolo, .martialCrossClass:
             return .hard
         }
     }
 
-    /// Zones de fréquence cardiaque visées (1 à 5) ; nil pour le renfo.
-    var heartRateZones: ClosedRange<Int>? {
+    /// Compte comme séance dure pour « jamais deux séances dures d'affilée » (modéré compris).
+    var countsAsHard: Bool { intensity != .easy }
+
+    /// Séance clé à protéger : rien de dur pour les jambes, ni martial cross, la veille.
+    /// Les sorties longues en font partie : lourdes pour le lendemain, même en zone 2.
+    var isKeySession: Bool {
         switch self {
-        case .recoveryRun: return 1...2
-        case .easyRun, .longRunEasy: return 2...2
-        case .longRunProgressive: return 2...4
-        case .tempo: return 3...4
-        case .shortIntervals: return 5...5
-        case .longIntervals: return 4...4
-        case .hillsOrStairs: return 4...5
-        case .trailRun: return 2...3
-        case .stairsEndurance: return 3...4
-        case .martialCrossSolo, .martialCrossClass: return 3...5
-        case .strengthLower, .strengthUpper, .strengthFull, .runnerCore: return nil
+        case .tempo, .shortIntervals, .longIntervals, .hillsOrStairs, .stairsEndurance,
+             .longRunEasy, .longRunProgressive:
+            return true
+        default:
+            return false
+        }
+    }
+
+    /// Fatigue les jambes : interdit la veille d'une séance clé (#47, #48, #49).
+    var loadsLegs: Bool {
+        switch self {
+        case .strengthLower, .strengthFull, .runnerCore, .martialCrossSolo, .martialCrossClass,
+             .stairsEndurance, .hillsOrStairs, .trailRun, .longRunEasy, .longRunProgressive:
+            return true
+        default:
+            return module == .run && intensity == .hard
+        }
+    }
+
+    /// Heures de récupération avant une autre séance dure (valeur de départ, apprise ensuite : #44).
+    var recoveryHours: Int {
+        switch intensity {
+        case .easy: return isKeySession ? 36 : 12
+        case .moderate: return 24
+        case .hard: return 48
+        }
+    }
+
+    /// Zones du corps sollicitées : le moteur allège ou remplace la séance si l'une est à ménager.
+    var stressedZones: Set<BodyZone> {
+        switch self {
+        case .recoveryRun, .easyRun: return [.calf, .foot]
+        case .longRunEasy, .longRunProgressive: return [.knee, .calf, .foot, .shin]
+        case .tempo, .longIntervals: return [.calf, .hamstring, .foot]
+        case .shortIntervals: return [.calf, .hamstring, .foot, .shin]
+        case .hillsOrStairs: return [.knee, .calf, .hip]
+        case .stairsEndurance: return [.knee, .calf, .hip]
+        case .trailRun: return [.ankle, .knee, .calf]
+        case .strengthLower: return [.knee, .back, .hamstring]
+        case .strengthUpper: return [.shoulder, .wrist]
+        case .strengthFull: return [.back, .knee, .shoulder]
+        case .runnerCore: return [.hamstring, .back]
+        case .martialCrossSolo, .martialCrossClass: return [.wrist, .shoulder, .knee, .ankle]
+        }
+    }
+
+    /// Matériel indispensable (les exercices de renfo, eux, s'adaptent au matériel disponible).
+    var requiredEquipment: Set<Equipment> {
+        switch self {
+        case .martialCrossSolo: return [.punchingBag]
+        default: return []
         }
     }
 
     /// Variante de course nécessaire (nil = toujours possible quand le module est actif).
+    /// « Côtes ou escaliers » reste possible sans la variante Escaliers : ce sont alors des côtes.
     var requiredVariant: ModuleVariant? {
         switch self {
         case .stairsEndurance: return .stairs
@@ -183,17 +233,6 @@ enum SessionKind: String, Codable, CaseIterable, Hashable {
         default: return nil
         }
     }
-
-    /// Travaille surtout les jambes : compte pour « pas de grosse séance de jambes la veille ».
-    var loadsLegs: Bool {
-        switch self {
-        case .strengthLower, .strengthFull: return true
-        default: return module == .run && intensity == .hard
-        }
-    }
-
-    /// Séance qui doit se faire à la salle (sac de frappe pour le martial cross seul).
-    var needsGym: Bool { self == .martialCrossSolo }
 
     /// Séances types disponibles pour un module, selon les variantes et le mode choisis.
     static func available(for choice: ModuleChoice) -> [SessionKind] {

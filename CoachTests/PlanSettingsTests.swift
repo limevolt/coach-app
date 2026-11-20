@@ -54,17 +54,41 @@ final class PlanSettingsTests: XCTestCase {
         let group = SessionKind.available(for: ModuleChoice(module: .martialCross, martialCrossMode: .group))
         XCTAssertEqual(solo, [.martialCrossSolo])
         XCTAssertEqual(group, [.martialCrossClass])
-        XCTAssertTrue(SessionKind.martialCrossSolo.needsGym)
+        XCTAssertEqual(SessionKind.martialCrossSolo.requiredEquipment, [.punchingBag])
     }
 
     func testHardSessionsAndLegLoad() {
         XCTAssertEqual(SessionKind.shortIntervals.intensity, .hard)
         XCTAssertEqual(SessionKind.longRunEasy.intensity, .easy)
         XCTAssertEqual(SessionKind.martialCrossSolo.intensity, .hard, "le martial cross compte comme séance dure")
-        XCTAssertTrue(SessionKind.strengthLower.loadsLegs)
-        XCTAssertTrue(SessionKind.hillsOrStairs.loadsLegs)
+        XCTAssertEqual(SessionKind.stairsEndurance.intensity, .hard, "escaliers en continu : zones 3-4 et descentes")
+        XCTAssertTrue(SessionKind.trailRun.countsAsHard, "une séance modérée compte comme dure pour l'enchaînement")
+        XCTAssertTrue(SessionKind.runnerCore.countsAsHard)
+        XCTAssertFalse(SessionKind.easyRun.countsAsHard)
+
+        for kind in [SessionKind.strengthLower, .hillsOrStairs, .stairsEndurance, .martialCrossSolo,
+                     .martialCrossClass, .longRunEasy, .trailRun] {
+            XCTAssertTrue(kind.loadsLegs, "\(kind) fatigue les jambes")
+        }
         XCTAssertFalse(SessionKind.strengthUpper.loadsLegs)
         XCTAssertFalse(SessionKind.easyRun.loadsLegs)
+    }
+
+    func testKeySessionsAreProtected() {
+        XCTAssertTrue(SessionKind.longRunEasy.isKeySession, "la sortie longue est lourde pour le lendemain")
+        XCTAssertTrue(SessionKind.stairsEndurance.isKeySession)
+        XCTAssertTrue(SessionKind.shortIntervals.isKeySession)
+        XCTAssertFalse(SessionKind.recoveryRun.isKeySession)
+        XCTAssertFalse(SessionKind.martialCrossSolo.isKeySession)
+        XCTAssertGreaterThan(SessionKind.longRunEasy.recoveryHours, SessionKind.easyRun.recoveryHours)
+    }
+
+    func testEverySessionDeclaresItsZones() {
+        for kind in SessionKind.allCases {
+            XCTAssertFalse(kind.stressedZones.isEmpty, "\(kind)")
+        }
+        XCTAssertTrue(SessionKind.stairsEndurance.stressedZones.contains(.knee))
+        XCTAssertTrue(SessionKind.martialCrossSolo.stressedZones.contains(.wrist))
     }
 
     // MARK: Escaliers
@@ -72,9 +96,14 @@ final class PlanSettingsTests: XCTestCase {
     func testStaircaseEstimatesClimbFromSteps() {
         XCTAssertEqual(stairs.estimatedClimbSec, 90)
         XCTAssertFalse(stairs.isLong)
+        XCTAssertFalse(stairs.isVeryShort)
 
         let long = Staircase(id: "s2", name: "Grand escalier", steps: 400, climbSec: nil)
+        XCTAssertEqual(long.estimatedClimbSec, 315, "on ralentit après 300 marches")
         XCTAssertTrue(long.isLong, "un long escalier se travaille en minutes de montée")
+
+        let short = Staircase(id: "s6", name: "Petit escalier", steps: 20, climbSec: nil)
+        XCTAssertTrue(short.isVeryShort, "très court : montées enchaînées, pas d'endurance continue")
 
         let timed = Staircase(id: "s3", name: "Escalier chronométré", steps: 400, climbSec: 60)
         XCTAssertEqual(timed.estimatedClimbSec, 60, "le temps mesuré prime sur le nombre de marches")
@@ -87,6 +116,13 @@ final class PlanSettingsTests: XCTestCase {
 
     func testValidSettingsHaveNoIssue() {
         XCTAssertEqual(settings().validationIssues(profile: AthleteProfile(), today: today), [])
+    }
+
+    func testModulesWithoutVariantOrTwice() {
+        let s = settings(modules: [ModuleChoice(module: .run), ModuleChoice(module: .strength, variants: []),
+                                   ModuleChoice(module: .run)])
+        XCTAssertEqual(s.validationIssues(profile: AthleteProfile(), today: today),
+                       [.duplicateModule(.run), .noVariant(.strength)])
     }
 
     func testMissingModuleAndDay() {
@@ -110,16 +146,42 @@ final class PlanSettingsTests: XCTestCase {
         let missing = settings(objective: .event(name: "Course", date: ""))
         XCTAssertEqual(missing.validationIssues(profile: AthleteProfile(), today: today), [.eventDateMissing])
 
+        let impossible = settings(objective: .event(name: "Course", date: "2030-13-45"))
+        XCTAssertEqual(impossible.validationIssues(profile: AthleteProfile(), today: today), [.eventDateMissing],
+                       "une date impossible n'est pas « normalisée » en une autre date")
+
+        let past = settings(objective: .event(name: "Course", date: "2029-12-01"))
+        XCTAssertEqual(past.validationIssues(profile: AthleteProfile(), today: today),
+                       [.eventTooClose(minDays: PlanSettings.minimumDaysBeforeEvent)])
+
         let fitness = settings(objective: .fitness)
         XCTAssertEqual(fitness.validationIssues(profile: AthleteProfile(), today: today), [])
         XCTAssertNil(fitness.weeksUntilEvent(today: today))
     }
 
-    func testShortPlanWarning() {
+    func testEventIsCountedFromThePlanStart() {
+        var s = settings(objective: .event(name: "Course", date: "2030-02-18"))
+        s.startDate = "2030-02-11"
+        XCTAssertEqual(s.daysUntilEvent(today: today), 7, "compté depuis le début du plan, pas depuis aujourd'hui")
+        XCTAssertEqual(s.validationIssues(profile: AthleteProfile(), today: today),
+                       [.eventTooClose(minDays: PlanSettings.minimumDaysBeforeEvent)])
+
+        s.startDate = "2030-02-31"
+        XCTAssertEqual(s.validationIssues(profile: AthleteProfile(), today: today), [.invalidStartDate])
+    }
+
+    func testWarnings() {
         let short = settings(objective: .event(name: "Course", date: "2030-02-18"))
         XCTAssertEqual(short.weeksUntilEvent(today: today), 6)
-        XCTAssertTrue(short.isShortPlan(today: today))
-        XCTAssertFalse(settings().isShortPlan(today: today))
+        XCTAssertEqual(short.warnings(today: today), [.shortPlan])
+
+        let veryShort = settings(objective: .event(name: "Course", date: "2030-01-28"))
+        XCTAssertEqual(veryShort.warnings(today: today), [.maintenanceOnly])
+
+        XCTAssertEqual(settings().warnings(today: today), [])
+        XCTAssertEqual(settings(days: Set(1...7)).warnings(today: today), [.noRestDay])
+        XCTAssertEqual(settings(modules: [ModuleChoice(module: .martialCross)], principal: .martialCross,
+                                gymDays: [1], minutes: 30).warnings(today: today), [.shortMartialCross])
     }
 
     func testGymOnlyModulesNeedAGymDay() {
@@ -142,6 +204,19 @@ final class PlanSettingsTests: XCTestCase {
                        "renfo maison possible sans jour à la salle")
     }
 
+    func testPunchingBagAtHomeAllowsMartialCrossWithoutGym() {
+        let s = settings(modules: [ModuleChoice(module: .martialCross)], principal: .martialCross)
+        var profile = AthleteProfile()
+        XCTAssertEqual(s.validationIssues(profile: profile, today: today), [.gymNeededWithoutGymDay(.martialCross)])
+
+        profile.homeEquipment = [.punchingBag]
+        XCTAssertEqual(s.validationIssues(profile: profile, today: today), [])
+
+        profile.homeEquipment = []
+        profile.gymEquipment = [.rower]
+        XCTAssertEqual(s.validationIssues(profile: profile, today: today), [.missingEquipment(.martialCross, .punchingBag)])
+    }
+
     func testStairsVariantNeedsAStaircase() {
         let s = settings(modules: [ModuleChoice(module: .run, variants: [.urban, .stairs])])
         XCTAssertEqual(s.validationIssues(profile: AthleteProfile(), today: today), [.stairsWithoutStaircase])
@@ -153,11 +228,18 @@ final class PlanSettingsTests: XCTestCase {
 
     func testGroupClassNeedsDayAndTime() {
         let s = settings(modules: [ModuleChoice(module: .run), ModuleChoice(module: .martialCross, martialCrossMode: .group)])
-        XCTAssertEqual(s.validationIssues(profile: AthleteProfile(), today: today), [.groupClassMissingSchedule])
+        XCTAssertEqual(s.validationIssues(profile: AthleteProfile(), today: today), [.invalidClassSchedule])
+
+        for (day, time) in [(9, "19:00"), (4, "abc"), (4, "25:00"), (4, "7:00")] {
+            let bad = settings(modules: [ModuleChoice(module: .run),
+                                         ModuleChoice(module: .martialCross, martialCrossMode: .group, classDay: day, classTime: time)])
+            XCTAssertEqual(bad.validationIssues(profile: AthleteProfile(), today: today), [.invalidClassSchedule], "\(day) \(time)")
+        }
 
         let ok = settings(modules: [ModuleChoice(module: .run),
                                     ModuleChoice(module: .martialCross, martialCrossMode: .group, classDay: 4, classTime: "19:00")])
         XCTAssertEqual(ok.validationIssues(profile: AthleteProfile(), today: today), [])
+        XCTAssertEqual(ok.effectiveTrainingDays, [1, 3, 4, 6], "le jour du cours compte comme jour d'entraînement")
     }
 
     func testSessionMinutesMustBeAChoice() {
@@ -172,6 +254,51 @@ final class PlanSettingsTests: XCTestCase {
         XCTAssertEqual(settings(objective: .event(name: "Course 2030", date: "2030-06-16")).suggestedName, "Course 2030")
         XCTAssertEqual(settings(objective: .fitness).suggestedName, "Être en forme")
         XCTAssertEqual(settings(objective: .event(name: " ", date: "2030-06-16")).suggestedName, "Mon plan")
+    }
+
+    func testOldOrUnknownDataIsReadWithoutLoss() throws {
+        let profileJSON = #"{"homeEquipment":["dumbbells","jetpack"],"staircases":[{"id":"s1","name":"Escalier du parc","steps":120}]}"#
+        let profile = try Coding.decoder.decode(AthleteProfile.self, from: Data(profileJSON.utf8))
+        XCTAssertEqual(profile.homeEquipment, [.dumbbells], "un matériel inconnu est ignoré, pas tout le profil")
+        XCTAssertEqual(profile.gymEquipment, Equipment.fullGym)
+        XCTAssertEqual(profile.staircases.count, 1)
+
+        let choiceJSON = #"{"module":"run","variants":["urban","gym"],"martialCrossMode":"group","classDay":4}"#
+        let choice = try Coding.decoder.decode(ModuleChoice.self, from: Data(choiceJSON.utf8))
+        XCTAssertEqual(choice.variants, [.urban])
+        XCTAssertNil(choice.martialCrossMode)
+        XCTAssertNil(choice.classDay)
+
+        let settingsJSON = #"{"id":"old","modules":[{"module":"run"}],"trainingDays":[1,3]}"#
+        let old = try Coding.decoder.decode(PlanSettings.self, from: Data(settingsJSON.utf8))
+        XCTAssertEqual(old.principal, .run)
+        XCTAssertEqual(old.objective, .fitness)
+        XCTAssertEqual(old.sessionMinutes, 60)
+    }
+
+    func testCoachMemoryNeverSpeedsUpPastTheRule() throws {
+        var memory = CoachMemory()
+        memory.setWeeklyIncreaseLimit(0.25)
+        XCTAssertEqual(memory.weeklyIncreaseLimit, CoachMemory.maxWeeklyIncrease, "jamais plus de +10 % par semaine")
+        memory.setWeeklyIncreaseLimit(0.0)
+        XCTAssertEqual(memory.weeklyIncreaseLimit, CoachMemory.minWeeklyIncrease)
+
+        let json = #"{"weeklyIncreaseLimit":0.5,"recoveryHoursAfterHard":5,"painReports":[{"date":"2030-01-02","zone":"knee","severity":"marked"},{"date":"2030-01-03","zone":"elbow","severity":"marked"}]}"#
+        let read = try Coding.decoder.decode(CoachMemory.self, from: Data(json.utf8))
+        XCTAssertEqual(read.weeklyIncreaseLimit, CoachMemory.maxWeeklyIncrease, "une valeur relue reste bornée")
+        XCTAssertEqual(read.recoveryHoursAfterHard, CoachMemory.recoveryHoursRange.lowerBound)
+        XCTAssertEqual(read.painReports.count, 1, "un signalement illisible est ignoré, pas tout l'historique")
+    }
+
+    func testRepeatedMarkedPainInTheSameZone() {
+        var memory = CoachMemory()
+        memory.painReports = [PainReport(date: "2030-01-02", zone: .knee, severity: .marked),
+                              PainReport(date: "2030-01-05", zone: .knee, severity: .light)]
+        XCTAssertFalse(memory.hasRepeatedMarkedPain(in: .knee))
+        memory.painReports.append(PainReport(date: "2030-01-08", zone: .knee, severity: .marked))
+        XCTAssertTrue(memory.hasRepeatedMarkedPain(in: .knee))
+        memory.painReports.append(PainReport(date: "2030-01-10", zone: .ankle, severity: .marked))
+        XCTAssertFalse(memory.hasRepeatedMarkedPain(in: .knee), "deux fois de suite au même endroit")
     }
 
     func testSettingsAndProfileRoundTripThroughJSON() throws {
