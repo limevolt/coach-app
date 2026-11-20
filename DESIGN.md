@@ -161,6 +161,10 @@ repos et « Prêt ? », chiffre blanc sur fond carte.
   qui change selon le jour (à faire → « Démarrer » ; faite → ses chiffres et « Voir le détail » ;
   repos → la prochaine séance et « Séance libre ») ; puis « À venir » en lignes simples. Objectifs,
   consignes et autres semaines viennent ensuite, repliés. Pas de graphique sur l'accueil.
+- **Titres d'écran courts, sur une seule ligne** même sur un iPhone de 375 pt (« Ton objectif »,
+  pas « Quel est ton objectif ? ») : la question va dans le texte gris dessous (retour du propriétaire, #45).
+- **Jours de la semaine en 2 lettres** (Lu, Ma, Me…) dans les grilles de 7 : pas de coche ni d'abréviation
+  de 3 lettres, qui ne tiennent pas. Jour choisi = fond `Theme.card2`, contour citron vert, texte gras (#45).
 - Action principale en bas de l'écran ou dans la carte, à portée de pouce.
 - Le contenu principal se voit sans zoom ni défilement horizontal.
 - Espacements en multiples de 8 pt, réguliers d'un écran à l'autre ; marges latérales 16 à 20 pt.
