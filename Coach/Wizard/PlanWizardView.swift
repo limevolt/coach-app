@@ -279,10 +279,20 @@ private struct DisciplinesStep: View {
                         .accessibilityHidden(true)
                     Text(module.label).font(.coach(.body, weight: .semibold)).foregroundStyle(Theme.text)
                     Spacer()
-                    Image(systemName: on ? "checkmark.circle.fill" : "circle")
-                        .font(Theme.iconFont)
-                        .foregroundStyle(on ? Theme.accent : Theme.line)
-                        .accessibilityHidden(true)
+                    // Maquette : rond gris à contour citron vert et coche citron vert quand coché, contour gris sinon.
+                    ZStack {
+                        Circle()
+                            .fill(on ? Theme.card2 : Color.clear)
+                        Circle()
+                            .stroke(on ? Theme.accent : Theme.line, lineWidth: on ? Theme.selectionStroke : 2)
+                        if on {
+                            Image(systemName: "checkmark")
+                                .font(Theme.chevronFont)
+                                .foregroundStyle(Theme.accent)
+                        }
+                    }
+                    .frame(width: Theme.checkCircle, height: Theme.checkCircle)
+                    .accessibilityHidden(true)
                 }
                 .frame(minHeight: Theme.rowHeight)
                 .contentShape(Rectangle())

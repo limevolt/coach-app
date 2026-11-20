@@ -92,6 +92,8 @@ enum Theme {
     /// Choix en onglets (SegmentedChoice) : rayon d'une option et espace autour.
     static let segmentRadius: CGFloat = 10
     static let segmentSpacing: CGFloat = 4
+    /// Rond coché d'une discipline (assistant).
+    static let checkCircle: CGFloat = 26
 
     // Espacements iPhone (multiples de 4/8)
     /// Marge latérale de l'écran.
