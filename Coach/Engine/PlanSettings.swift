@@ -27,6 +27,9 @@ struct PlanSettings: Codable, Equatable {
     var sessionMinutes: Int
     /// Durée maximale de la sortie longue (nil = le moteur décide, jusqu'à `defaultLongRunMinutes`).
     var longRunMinutes: Int? = nil
+    /// Autoriser deux séances le même jour (ex. renfo jambes juste après une course dure, #48).
+    /// Désactivé par défaut : une seule séance par jour.
+    var allowTwoSessionsPerDay: Bool = false
     /// Jours (parmi `trainingDays`) avec accès à la salle.
     var gymDays: Set<Int>
     /// Choix unique dans l'assistant validé (#45) ; s'applique à chaque module.
@@ -86,6 +89,7 @@ extension PlanSettings {
         trainingDays = Set(try c.decodeIfPresent([Int].self, forKey: .trainingDays) ?? [])
         sessionMinutes = try c.decodeIfPresent(Int.self, forKey: .sessionMinutes) ?? 60
         longRunMinutes = try c.decodeIfPresent(Int.self, forKey: .longRunMinutes)
+        allowTwoSessionsPerDay = try c.decodeIfPresent(Bool.self, forKey: .allowTwoSessionsPerDay) ?? false
         gymDays = Set(try c.decodeIfPresent([Int].self, forKey: .gymDays) ?? [])
         startLevel = (try? c.decodeIfPresent(StartLevelSource.self, forKey: .startLevel)) ?? .test
         startDate = try c.decodeIfPresent(String.self, forKey: .startDate) ?? ""
@@ -296,6 +300,7 @@ enum PlanSettingsIssue: Equatable {
     case stairsWithoutStaircase
     case invalidClassSchedule
     case invalidSessionMinutes
+    case invalidLongRunMinutes
 
     var message: String {
         switch self {
@@ -313,6 +318,7 @@ enum PlanSettingsIssue: Equatable {
         case .stairsWithoutStaircase: return "Ajoute au moins un escalier, ou décoche « Escaliers »."
         case .invalidClassSchedule: return "Indique le jour et l'heure de ton cours."
         case .invalidSessionMinutes: return "Choisis une durée par séance."
+        case .invalidLongRunMinutes: return "Choisis une durée de sortie longue au moins égale à une séance."
         }
     }
 }
@@ -379,6 +385,9 @@ extension PlanSettings {
         if effectiveTrainingDays.isEmpty { issues.append(.noTrainingDay) }
         if !modules.isEmpty, choice(for: principal) == nil { issues.append(.principalNotActive) }
         if !Self.sessionMinuteChoices.contains(sessionMinutes) { issues.append(.invalidSessionMinutes) }
+        if let longRunMinutes, !Self.longRunMinuteChoices.contains(longRunMinutes) || longRunMinutes < sessionMinutes {
+            issues.append(.invalidLongRunMinutes)
+        }
 
         if StrictDate.date(startDate) == nil {
             issues.append(.invalidStartDate)

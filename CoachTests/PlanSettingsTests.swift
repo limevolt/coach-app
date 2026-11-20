@@ -242,6 +242,29 @@ final class PlanSettingsTests: XCTestCase {
         XCTAssertEqual(ok.effectiveTrainingDays, [1, 3, 4, 6], "le jour du cours compte comme jour d'entraînement")
     }
 
+    func testLongRunAndTwoSessionsAreSettings() throws {
+        var s = settings(minutes: 60)
+        XCTAssertFalse(s.allowTwoSessionsPerDay, "une seule séance par jour par défaut")
+        XCTAssertEqual(s.defaultLongRunMinutes, 120)
+        XCTAssertEqual(settings(minutes: 30).defaultLongRunMinutes, 60)
+
+        s.longRunMinutes = 150
+        XCTAssertEqual(s.defaultLongRunMinutes, 150)
+        XCTAssertEqual(s.validationIssues(profile: AthleteProfile(), today: today), [])
+
+        s.longRunMinutes = 45
+        XCTAssertEqual(s.validationIssues(profile: AthleteProfile(), today: today), [.invalidLongRunMinutes])
+
+        var m = settings(minutes: 90)
+        m.longRunMinutes = 60
+        XCTAssertEqual(m.validationIssues(profile: AthleteProfile(), today: today), [.invalidLongRunMinutes],
+                       "la sortie longue n'est pas plus courte qu'une séance")
+
+        s.longRunMinutes = nil
+        s.allowTwoSessionsPerDay = true
+        XCTAssertEqual(try Coding.decoder.decode(PlanSettings.self, from: Coding.encoder.encode(s)), s)
+    }
+
     func testSessionMinutesMustBeAChoice() {
         XCTAssertEqual(settings(minutes: 50).validationIssues(profile: AthleteProfile(), today: today),
                        [.invalidSessionMinutes])
@@ -274,6 +297,7 @@ final class PlanSettingsTests: XCTestCase {
         XCTAssertEqual(old.principal, .run)
         XCTAssertEqual(old.objective, .fitness)
         XCTAssertEqual(old.sessionMinutes, 60)
+        XCTAssertFalse(old.allowTwoSessionsPerDay)
     }
 
     func testCoachMemoryNeverSpeedsUpPastTheRule() throws {
