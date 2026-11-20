@@ -24,13 +24,9 @@ struct SelectChip: View {
                     .font(.coach(.subheadline, weight: isOn ? .semibold : .medium))
                     .foregroundStyle(Theme.text)
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, Theme.chipPadding)
             .frame(minHeight: Theme.minTap)
-            .background(isOn ? Theme.card2 : Color.clear,
-                        in: RoundedRectangle(cornerRadius: Theme.smallButtonRadius, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: Theme.smallButtonRadius, style: .continuous)
-                .stroke(isOn ? Theme.accent : Theme.line, lineWidth: isOn ? 1.5 : 1))
-            .contentShape(Rectangle())
+            .selectableStyle(isOn: isOn)
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isOn ? .isSelected : [])
@@ -45,7 +41,7 @@ struct ChipFlow: Layout {
         let width = proposal.width ?? .infinity
         var x: CGFloat = 0, y: CGFloat = 0, rowHeight: CGFloat = 0, maxX: CGFloat = 0
         for view in subviews {
-            let size = view.sizeThatFits(.unspecified)
+            let size = view.sizeThatFits(ProposedViewSize(width: proposal.width, height: nil))
             if x > 0 && x + size.width > width {
                 x = 0
                 y += rowHeight + spacing
@@ -61,7 +57,7 @@ struct ChipFlow: Layout {
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         var x = bounds.minX, y = bounds.minY, rowHeight: CGFloat = 0
         for view in subviews {
-            let size = view.sizeThatFits(.unspecified)
+            let size = view.sizeThatFits(ProposedViewSize(width: bounds.width, height: nil))
             if x > bounds.minX && x + size.width > bounds.maxX {
                 x = bounds.minX
                 y += rowHeight + spacing
@@ -94,11 +90,7 @@ struct DayGrid: View {
                         .font(.coach(.subheadline, weight: on ? .bold : .medium))
                         .foregroundStyle(on ? Theme.text : Theme.muted)
                         .frame(maxWidth: .infinity, minHeight: Theme.minTap)
-                        .background(on ? Theme.card2 : Color.clear,
-                                    in: RoundedRectangle(cornerRadius: Theme.smallButtonRadius, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: Theme.smallButtonRadius, style: .continuous)
-                            .stroke(on ? Theme.accent : Theme.line, lineWidth: on ? 1.5 : 1))
-                        .contentShape(Rectangle())
+                        .selectableStyle(isOn: on)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(TrainingDays.names[day - 1].capitalized)
@@ -118,7 +110,7 @@ struct WizardProgress: View {
             ForEach(WizardStep.allCases, id: \.self) { s in
                 Capsule()
                     .fill(s.rawValue <= step.rawValue ? Theme.accent : Theme.line)
-                    .frame(height: 4)
+                    .frame(height: Theme.progressHeight)
             }
         }
         .accessibilityElement()

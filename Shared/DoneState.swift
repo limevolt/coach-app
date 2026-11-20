@@ -22,6 +22,14 @@ enum DoneState {
             .sorted()
     }
 
+    /// Un autre plan (identifiant différent) remplace le plan actuel : ses séances ne doivent pas hériter des
+    /// journaux de l'ancien, même avec les mêmes identifiants de séance (ex. « w01-1 » du coach local, #45).
+    /// Une nouvelle version du même plan (même identifiant) garde ses séances faites.
+    static func isDifferentPlan(current: TrainingPlan?, new: TrainingPlan) -> Bool {
+        guard let current else { return true }
+        return current.planId != new.planId
+    }
+
     /// Plan réinitialisé : les journaux de séances restent dans l'historique (suivi, export)
     /// mais ne sont plus reliés à aucune séance, même si le nouveau plan reprend les mêmes identifiants.
     static func archiving(_ logs: [SessionLog], at date: Date) -> [SessionLog] {

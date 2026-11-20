@@ -1,5 +1,7 @@
 // CoachStorage.swift — coach local (#52) : réglages du plan, profil et mémoire du coach, enregistrés
-// uniquement sur l'iPhone (fichiers chiffrés quand le téléphone est verrouillé). Rien n'est envoyé ailleurs.
+// uniquement sur l'iPhone, chiffrés au repos (lisibles après le premier déverrouillage, pour que l'app
+// puisse les lire en arrière-plan). Rien n'est envoyé ailleurs.
+// Un fichier présent mais illisible n'est jamais écrasé par des valeurs par défaut.
 
 import Foundation
 
@@ -32,6 +34,10 @@ enum CoachStorage {
 
     static func save(memory: CoachMemory) throws {
         guard !DemoMode.isOn else { return }
+        // Mémoire présente mais illisible (téléphone pas encore déverrouillé) : on n'écrase pas.
+        if FileManager.default.fileExists(atPath: memoryURL.path), load(CoachMemory.self, from: memoryURL) == nil {
+            throw CocoaError(.fileReadNoPermission)
+        }
         try write(memory, to: memoryURL)
     }
 
@@ -41,6 +47,6 @@ enum CoachStorage {
     }
 
     private static func write<T: Encodable>(_ value: T, to url: URL) throws {
-        try Coding.encoder.encode(value).write(to: url, options: [.atomic, .completeFileProtection])
+        try Coding.encoder.encode(value).write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
     }
 }

@@ -32,7 +32,7 @@ struct PlanWizardView: View {
     }
 
     private func cancel() {
-        if draft.activeModules.isEmpty && draft.trainingDays.isEmpty && draft.eventName.isEmpty {
+        if !draft.hasChanges {
             dismiss()
         } else {
             confirmCancel = true
@@ -52,6 +52,7 @@ private struct WizardStepView: View {
     @Environment(PlanStore.self) private var store
     @State private var creating = false
     @State private var createError: String?
+    @State private var confirmReplace = false
 
     var body: some View {
         ScrollView {
@@ -77,10 +78,19 @@ private struct WizardStepView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: step == .objective ? .cancellationAction : .topBarTrailing) {
-                Button("Annuler", action: cancel)
+                Button("Annuler", action: cancel).disabled(creating)
             }
         }
+        // Pendant la création : ni retour ni annulation (le plan serait remplacé quand même).
+        .navigationBarBackButtonHidden(creating)
+        .interactiveDismissDisabled(creating)
         .safeAreaInset(edge: .bottom) { bottomBar }
+        .confirmationDialog("Remplacer ton plan actuel ?", isPresented: $confirmReplace, titleVisibility: .visible) {
+            Button("Remplacer mon plan", role: .destructive) { create() }
+            Button("Annuler", role: .cancel) {}
+        } message: {
+            Text("Le plan en cours est archivé sur ton iPhone. Tes séances faites restent dans le suivi.")
+        }
     }
 
     // MARK: Bas de l'écran
@@ -95,11 +105,17 @@ private struct WizardStepView: View {
                 Text(issue.message).font(.detail).foregroundStyle(Theme.muted)
             }
             Button {
-                if step == .summary { create() } else if let next = step.next { path.append(next) }
+                if step == .summary {
+                    if store.plan != nil { confirmReplace = true } else { create() }
+                } else if let next = step.next {
+                    path.append(next)
+                }
             } label: {
                 HStack(spacing: 10) {
                     if creating { ProgressView().tint(Theme.accentDark) }
-                    Text(step == .summary ? (creating ? "Création…" : "Créer le plan") : "Continuer")
+                    Text(step == .summary
+                         ? (creating ? "Création…" : (store.plan == nil ? "Créer le plan" : "Remplacer mon plan"))
+                         : "Continuer")
                 }
                 .primaryActionStyle(enabled: issue == nil)
             }
@@ -138,8 +154,9 @@ private struct WizardStepView: View {
                 let generated = try await Task.detached(priority: .userInitiated) {
                     try PlanGenerator(settings: settings, profile: profile, memory: memory, start: start).generate()
                 }.value
+                // Réglages et profil d'abord : en cas d'échec, le plan actuel n'est pas remplacé.
+                try CoachStorage.save(settings: settings, profile: profile)
                 try await store.apply(generated.plan)
-                try? CoachStorage.save(settings: settings, profile: profile)
                 creating = false
                 finish()
             } catch PlanGeneratorError.invalidSettings(let issues) {
@@ -169,11 +186,8 @@ private struct ObjectiveStep: View {
             if draft.hasEvent {
                 WizardSection(title: "Événement") {
                     TextField("Nom de la course ou de l'épreuve", text: $draft.eventName)
-                        .font(.text)
                         .textInputAutocapitalization(.sentences)
-                        .padding(.horizontal, 16)
-                        .frame(minHeight: Theme.primaryButtonHeight)
-                        .background(Theme.card2, in: RoundedRectangle(cornerRadius: Theme.smallButtonRadius, style: .continuous))
+                        .fieldStyle()
                 }
                 WizardSection(title: "Date", footer: weeksLine) {
                     DatePicker("Date de l'événement", selection: $draft.eventDate, in: draft.earliestEventDate...,
@@ -391,6 +405,11 @@ private struct EquipmentStep: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.blockSpacing) {
+            if draft.missingGymDay && !draft.trainingDays.isEmpty {
+                WizardSection(title: "Jours à la salle", footer: "Choisis au moins un jour, ou un sac de frappe à la maison.") {
+                    DayGrid(selection: $draft.gymDays, days: draft.trainingDays.sorted())
+                }
+            }
             WizardSection(title: "À la maison") {
                 ChipFlow { ForEach(Self.home, id: \.self) { chip($0, in: \.homeEquipment) } }
             }
@@ -407,13 +426,17 @@ private struct EquipmentStep: View {
                                 Text(stairs.name).font(.text).foregroundStyle(Theme.text)
                                 Spacer()
                                 Text(Self.describe(stairs)).font(.detail).foregroundStyle(Theme.muted)
+                                Button(role: .destructive) {
+                                    draft.profile.staircases.removeAll { $0.id == stairs.id }
+                                } label: {
+                                    Image(systemName: "trash")
+                                        .font(Theme.smallIconFont)
+                                        .foregroundStyle(Theme.danger)
+                                        .frame(width: Theme.minTap, height: Theme.minTap)
+                                }
+                                .accessibilityLabel("Supprimer \(stairs.name)")
                             }
                             .frame(minHeight: Theme.rowHeight)
-                            .contextMenu {
-                                Button("Supprimer", systemImage: "trash", role: .destructive) {
-                                    draft.profile.staircases.removeAll { $0.id == stairs.id }
-                                }
-                            }
                             Divider().overlay(Theme.separator)
                         }
                         Button { addingStairs = true } label: {
@@ -526,8 +549,13 @@ private struct LevelStep: View {
                     draft.startLevel = .test
                 }
             }
-            Text("Dans les deux cas, le coach ajuste ton niveau après chaque séance.")
+            Text(draft.isActive(.run)
+                 ? "Dans les deux cas, le coach ajuste ton niveau après chaque séance."
+                 : "Sans course à pied, le niveau sert peu au départ : le coach ajuste au fil des séances.")
                 .font(.detail).foregroundStyle(Theme.muted)
+        }
+        .onAppear {
+            if draft.startLevel == .health && draft.healthState == .notAsked { readHealth() }
         }
     }
 
@@ -543,6 +571,8 @@ private struct LevelStep: View {
 
     private func readHealth() {
         guard draft.healthState != .reading else { return }
+        // Captures (mode démo) : jamais de Santé.
+        guard !DemoMode.isOn else { draft.healthState = .nothing; return }
         draft.healthState = .reading
         Task {
             let reader = HealthReader()
@@ -562,11 +592,12 @@ private struct SummaryStep: View {
 
     var body: some View {
         let s = draft.settings()
+        let top = hero(s)
         VStack(alignment: .leading, spacing: Theme.blockSpacing) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
-                    Text(hero(s).value).font(.hero).foregroundStyle(Theme.text).monospacedDigit()
-                    Text(hero(s).unit).font(.text).foregroundStyle(Theme.muted)
+                    Text(top.value).font(.hero).foregroundStyle(Theme.text).monospacedDigit()
+                    Text(top.unit).font(.text).foregroundStyle(Theme.muted)
                 }
                 .accessibilityElement(children: .combine)
                 Text(phases(s)).font(.detail).foregroundStyle(Theme.muted)
@@ -578,24 +609,20 @@ private struct SummaryStep: View {
                 TextField(draft.suggestedName, text: Binding(
                     get: { draft.nameEdited ? draft.name : draft.suggestedName },
                     set: { draft.name = $0; draft.nameEdited = true }))
-                    .font(.text)
-                    .padding(.horizontal, 16)
-                    .frame(minHeight: Theme.primaryButtonHeight)
-                    .background(Theme.card2, in: RoundedRectangle(cornerRadius: Theme.smallButtonRadius, style: .continuous))
+                    .fieldStyle()
             }
             WizardSection(title: "Description (facultatif)") {
                 TextField("Une note pour toi…", text: $draft.notes, axis: .vertical)
                     .lineLimit(3...6)
-                    .font(.text)
-                    .padding(16)
-                    .background(Theme.card2, in: RoundedRectangle(cornerRadius: Theme.smallButtonRadius, style: .continuous))
+                    .padding(.vertical, Theme.fieldPadding)
+                    .fieldStyle()
             }
             VStack(spacing: 0) {
                 row("Objectif", value: objectiveLabel(s), step: .objective)
                 row("Disciplines", value: s.activeModules.map(\.label).joined(separator: ", "), step: .disciplines)
                 row("Jours", value: "\(s.trainingDays.count) par semaine · \(AvailabilityStep.label(s.sessionMinutes))", step: .availability)
                 row("Matériel", value: equipmentLabel, step: .equipment)
-                row("Niveau de départ", value: s.startLevel == .health ? "Santé" : "Séance test", step: .level)
+                row("Niveau de départ", value: levelLabel, step: .level)
             }
         }
     }
@@ -603,9 +630,10 @@ private struct SummaryStep: View {
     private func hero(_ s: PlanSettings) -> (value: String, unit: String) {
         if let first = s.firstDay(today: .now), let event = s.objective.eventDate {
             let n = PlanCalendar.weeks(firstDay: first, eventDate: event).count
-            return ("\(n)", "semaine\(n > 1 ? "s" : "") jusqu'au \(event.formatted(.dateTime.day().month(.wide)))")
+            return ("\(n)", "semaine\(n > 1 ? "s" : "") jusqu'au \(event.formatted(.dateTime.day().month(.wide).year()))")
         }
-        return ("\(WeekComposer.usableDays(s).count)", "séances par semaine")
+        let days = WeekComposer.usableDays(s).count
+        return ("\(days)", "jour\(days > 1 ? "s" : "") d'entraînement par semaine")
     }
 
     private func phases(_ s: PlanSettings) -> String {
@@ -624,10 +652,16 @@ private struct SummaryStep: View {
         return "Être en forme"
     }
 
+    private var levelLabel: String {
+        if draft.usesHealthData { return "Santé" }
+        if draft.startLevel == .health { return "Séance test (rien trouvé dans Santé)" }
+        return "Séance test"
+    }
+
     private var equipmentLabel: String {
         var parts: [String] = []
         if !draft.profile.homeEquipment.isEmpty { parts.append("maison") }
-        if !draft.gymDays.isEmpty { parts.append("salle") }
+        if !draft.gymDays.intersection(draft.trainingDays).isEmpty { parts.append("salle") }
         let stairs = draft.usesStairs ? draft.profile.staircases.count : 0
         if stairs > 0 { parts.append("\(stairs) escalier\(stairs > 1 ? "s" : "")") }
         return parts.isEmpty ? "Sans matériel" : parts.joined(separator: " · ").capitalizingFirst

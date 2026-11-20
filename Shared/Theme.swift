@@ -81,6 +81,14 @@ enum Theme {
     static let minTap: CGFloat = 44
     /// Hauteur d'une ligne de liste simple (titre + valeur + chevron).
     static let rowHeight: CGFloat = 52
+    /// Contour d'un choix (assistant de création, #45) : gris fin, ou citron vert un peu plus épais quand choisi.
+    static let selectionStroke: CGFloat = 1.5
+    static let quietStroke: CGFloat = 1
+    /// Marge intérieure d'un champ de saisie ou d'une pastille de choix.
+    static let fieldPadding: CGFloat = 16
+    static let chipPadding: CGFloat = 14
+    /// Barre de progression de l'assistant.
+    static let progressHeight: CGFloat = 4
 
     // Espacements iPhone (multiples de 4/8)
     /// Marge latérale de l'écran.
@@ -178,6 +186,26 @@ extension View {
             .overlay(RoundedRectangle(cornerRadius: compact ? Theme.smallButtonRadius : Theme.buttonRadius, style: .continuous)
                 .stroke(Theme.accent.opacity(0.6), lineWidth: 1))
             .contentShape(Rectangle())
+    }
+}
+
+extension View {
+    /// Choix sélectionnable (#45) : fond gris et contour citron vert quand choisi, contour gris sinon.
+    /// Le citron vert plein reste réservé à l'action principale.
+    func selectableStyle(isOn: Bool) -> some View {
+        self.background(isOn ? Theme.card2 : Color.clear,
+                        in: RoundedRectangle(cornerRadius: Theme.smallButtonRadius, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.smallButtonRadius, style: .continuous)
+                .stroke(isOn ? Theme.accent : Theme.line, lineWidth: isOn ? Theme.selectionStroke : Theme.quietStroke))
+            .contentShape(Rectangle())
+    }
+
+    /// Champ de saisie sur fond gris arrondi (#45).
+    func fieldStyle() -> some View {
+        self.font(.text)
+            .padding(.horizontal, Theme.fieldPadding)
+            .frame(minHeight: Theme.primaryButtonHeight)
+            .background(Theme.card2, in: RoundedRectangle(cornerRadius: Theme.smallButtonRadius, style: .continuous))
     }
 }
 

@@ -35,22 +35,20 @@ enum WizardStep: Int, CaseIterable, Hashable {
 
     /// Erreurs qui bloquent « Continuer » à cette étape.
     func blocks(_ issue: PlanSettingsIssue) -> Bool {
-        switch (self, issue) {
-        case (.objective, .eventDateMissing), (.objective, .eventTooClose), (.objective, .invalidStartDate):
-            return true
-        case (.disciplines, .noModule), (.disciplines, .noVariant), (.disciplines, .duplicateModule),
-             (.disciplines, .principalNotActive), (.disciplines, .invalidClassSchedule):
-            return true
-        case (.availability, .noTrainingDay), (.availability, .invalidSessionMinutes),
-             (.availability, .invalidLongRunMinutes):
-            return true
-        case (.equipment, .gymNeededWithoutGymDay), (.equipment, .missingEquipment),
-             (.equipment, .stairsWithoutStaircase):
-            return true
-        case (.summary, _):
-            return true
-        default:
-            return false
+        self == .summary || self == Self.step(for: issue)
+    }
+
+    /// L'étape où chaque erreur se corrige (switch exhaustif : une nouvelle erreur doit choisir son étape).
+    static func step(for issue: PlanSettingsIssue) -> WizardStep {
+        switch issue {
+        case .eventDateMissing, .eventTooClose, .invalidStartDate:
+            return .objective
+        case .noModule, .noVariant, .duplicateModule, .principalNotActive, .invalidClassSchedule:
+            return .disciplines
+        case .noTrainingDay, .invalidSessionMinutes, .invalidLongRunMinutes:
+            return .availability
+        case .gymNeededWithoutGymDay, .missingEquipment, .stairsWithoutStaircase:
+            return .equipment
         }
     }
 }
@@ -79,6 +77,16 @@ final class PlanDraft {
 
     enum HealthState: Equatable { case notAsked, reading, found, nothing }
 
+    /// Le niveau de départ réellement utilisé : Santé seulement si une course plausible y a été trouvée.
+    var usesHealthData: Bool { startLevel == .health && startingPoint.plausibleRunMinutes != nil }
+
+    /// Quelque chose a-t-il été saisi ? (« Annuler » demande alors confirmation.)
+    var hasChanges: Bool {
+        !activeModules.isEmpty || !trainingDays.isEmpty || !eventName.isEmpty || !hasEvent
+            || profile != initialProfile || !notes.isEmpty || nameEdited
+    }
+    @ObservationIgnored private var initialProfile = AthleteProfile()
+
     /// Délai minimal avant l'événement, pour le choix de la date.
     let earliestEventDate: Date
 
@@ -88,6 +96,7 @@ final class PlanDraft {
         earliestEventDate = cal.date(byAdding: .day, value: PlanSettings.minimumDaysBeforeEvent, to: start) ?? start
         eventDate = cal.date(byAdding: .day, value: 7 * 16, to: start) ?? start
         self.profile = profile
+        initialProfile = profile
         if let previous { load(previous) }
     }
 
@@ -118,7 +127,7 @@ final class PlanDraft {
     func isActive(_ module: CoachModuleID) -> Bool { modules[module] != nil }
 
     /// Décocher garde les variantes en mémoire le temps de l'assistant.
-    private var remembered: [CoachModuleID: ModuleChoice] = [:]
+    @ObservationIgnored private var remembered: [CoachModuleID: ModuleChoice] = [:]
 
     func toggle(_ module: CoachModuleID) {
         if let current = modules[module] {
@@ -141,6 +150,11 @@ final class PlanDraft {
 
     var needsGymDays: Bool {
         modules[.strength]?.variants.contains(.gym) == true || modules[.martialCross]?.martialCrossMode == .solo
+    }
+
+    /// Une séance demande la salle mais aucun jour à la salle n'est choisi (affiché aussi à l'étape Matériel).
+    var missingGymDay: Bool {
+        issues().contains { if case .gymNeededWithoutGymDay = $0 { return true } else { return false } }
     }
 
     var usesStairs: Bool { modules[.run]?.variants.contains(.stairs) == true }

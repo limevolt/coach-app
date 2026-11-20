@@ -21,6 +21,24 @@ final class DoneStateTests: XCTestCase {
                    title: "Démo", kind: kind, archivedAt: archivedAt)
     }
 
+    // MARK: #45 — un autre plan ne reprend pas les séances faites
+
+    func testANewPlanWithTheSameSessionIdsStartsWithNothingDone() {
+        var old = plan(["w01-1", "w01-2"])
+        old.planId = "coach-2030-01-07-1"
+        var new = plan(["w01-1", "w01-2"])
+        new.planId = "coach-2030-03-01-2"
+        XCTAssertTrue(DoneState.isDifferentPlan(current: old, new: new))
+        XCTAssertTrue(DoneState.isDifferentPlan(current: nil, new: new))
+
+        let logs = DoneState.archiving([log("w01-1"), log("w01-2")], at: now)
+        XCTAssertEqual(DoneState.doneIds(plan: new, logs: logs), [], "aucune séance faite dans le nouveau plan")
+
+        var update = old
+        update.version = 2
+        XCTAssertFalse(DoneState.isDifferentPlan(current: old, new: update), "nouvelle version du même plan : on garde")
+    }
+
     // MARK: #14 — réinitialiser le plan
 
     func testResetDetachesLogsFromReimportedPlanWithSameIds() {
