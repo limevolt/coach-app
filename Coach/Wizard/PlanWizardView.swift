@@ -101,8 +101,7 @@ private struct WizardStepView: View {
                     if creating { ProgressView().tint(Theme.accentDark) }
                     Text(step == .summary ? (creating ? "Création…" : "Créer le plan") : "Continuer")
                 }
-                .primaryActionStyle()
-                .opacity(issue == nil ? 1 : 0.4)
+                .primaryActionStyle(enabled: issue == nil)
             }
             .buttonStyle(.plain)
             .disabled(issue != nil || creating)
@@ -328,16 +327,19 @@ private struct AvailabilityStep: View {
                 }
                 .pickerStyle(.segmented)
                 if draft.isActive(.run) {
-                    Picker(selection: longRun) {
-                        Text("Automatique").tag(0)
-                        ForEach(PlanSettings.longRunMinuteChoices.filter { $0 >= draft.sessionMinutes }, id: \.self) {
-                            Text(Self.label($0)).tag($0)
-                        }
-                    } label: {
+                    HStack {
                         Text("Sortie longue jusqu'à").font(.text).foregroundStyle(Theme.text)
+                        Spacer()
+                        Picker("Sortie longue jusqu'à", selection: longRun) {
+                            Text("Automatique").tag(0)
+                            ForEach(PlanSettings.longRunMinuteChoices.filter { $0 >= draft.sessionMinutes }, id: \.self) {
+                                Text(Self.label($0)).tag($0)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .labelsHidden()
+                        .tint(Theme.muted)
                     }
-                    .pickerStyle(.menu)
-                    .tint(Theme.muted)
                     .frame(minHeight: Theme.rowHeight)
                 }
             }

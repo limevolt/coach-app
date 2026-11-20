@@ -106,7 +106,6 @@ final class CoachCaptures: XCTestCase {
             shot("21-assistant-disciplines-vide")
             _ = tap("Course à pied", in: app)
             _ = tap("Renfo", in: app)
-            _ = tap("Escaliers", in: app)
             shot("22-assistant-disciplines")
             audit("Assistant — disciplines", app)
             next(app)
@@ -118,17 +117,8 @@ final class CoachCaptures: XCTestCase {
             next(app)
             shot("25-assistant-materiel")
             audit("Assistant — matériel", app)
-            if tap("Ajouter un escalier", in: app) {
-                shot("26-assistant-escalier")
-                let cancel = app.buttons["Annuler"].firstMatch
-                if cancel.waitForExistence(timeout: 5) { cancel.tap() }
-            }
-            // Pas d'escalier encodé en démo : retour aux disciplines pour retirer la variante.
-            back(app)
-            back(app)
-            _ = tap("Escaliers", in: app)
-            next(app)
-            next(app)
+            app.swipeUp()
+            shot("26-assistant-materiel-bas")
             next(app)
             shot("27-assistant-niveau")
             audit("Assistant — niveau", app)

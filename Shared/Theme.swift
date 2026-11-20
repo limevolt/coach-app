@@ -149,13 +149,14 @@ extension Font {
 }
 
 extension View {
-    /// Bouton principal plein (citron vert), pleine largeur.
-    func primaryActionStyle(compact: Bool = false, large: Bool = false) -> some View {
+    /// Bouton principal plein (citron vert), pleine largeur. Indisponible : fond gris, texte gris lisible (#45).
+    func primaryActionStyle(compact: Bool = false, large: Bool = false, enabled: Bool = true) -> some View {
         self.font(.coach(large ? .title3 : .body, weight: .bold))
-            .foregroundStyle(Theme.accentDark)
+            .foregroundStyle(enabled ? Theme.accentDark : Theme.muted)
             .frame(maxWidth: .infinity,
                    minHeight: compact ? Theme.minTap : (large ? Theme.largeButtonHeight : Theme.primaryButtonHeight))
-            .background(Theme.accent, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+            .background(enabled ? Theme.accent : Theme.card2,
+                        in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
             .contentShape(Rectangle())
     }
 
