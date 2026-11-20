@@ -32,6 +32,7 @@
 		34D490917ADCECB31226691D /* StrengthRunView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06DC198093FF72A80A0765C0 /* StrengthRunView.swift */; };
 		3B1B88D7CB6ABAC1DFAD6330 /* HomeWeek.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F7A31251C7C102888E383FC /* HomeWeek.swift */; };
 		3BBEDC71D00F1CD8C1951D6D /* PlanModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E1EC1613EDFBF0429687AC5 /* PlanModels.swift */; };
+		3D523E36DA2D768BBD257055 /* SegmentedChoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = E56466260B3F81B7EF2535F3 /* SegmentedChoice.swift */; };
 		3F6CC9E499FC5CAF6599E731 /* PlanDraftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9945A4A769C10E083F4822CB /* PlanDraftTests.swift */; };
 		409A0307919FCEEA9C15A517 /* WatchButtons.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFB32011DD22151450EEEB28 /* WatchButtons.swift */; };
 		411B948974297B5F628405D6 /* CoachStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = E56D00CF919BDFFFD3935AD2 /* CoachStorage.swift */; };
@@ -231,6 +232,7 @@
 		E2ED3110F4831A88C21CB891 /* Outfit-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Outfit-SemiBold.ttf"; sourceTree = "<group>"; };
 		E43E9868B60F306D446C6E70 /* DayPlacer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayPlacer.swift; sourceTree = "<group>"; };
 		E5087627E360F0D4D6FD9FC7 /* CoachCaptures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachCaptures.swift; sourceTree = "<group>"; };
+		E56466260B3F81B7EF2535F3 /* SegmentedChoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentedChoice.swift; sourceTree = "<group>"; };
 		E56D00CF919BDFFFD3935AD2 /* CoachStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachStorage.swift; sourceTree = "<group>"; };
 		EA085961E84987A69F4FA339 /* WatchStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchStore.swift; sourceTree = "<group>"; };
 		EAEAC8B7EFE1AEA3EEB3B30A /* DestructiveButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DestructiveButton.swift; sourceTree = "<group>"; };
@@ -327,6 +329,7 @@
 				C7C5AC3C28E8EA2634D01ED6 /* ReportBuilder.swift */,
 				2C04562FDD60BBDCDCA176C6 /* ReportView.swift */,
 				99BD1ECD404DB2315F4CB7D8 /* RunScheduler.swift */,
+				E56466260B3F81B7EF2535F3 /* SegmentedChoice.swift */,
 				13CE692C78AF6FE152D49881 /* SessionAdjust.swift */,
 				8BCEB04270CDBFAB907B3042 /* SessionDetailView.swift */,
 				276E7638F419A5D3A0590E11 /* SettingsView.swift */,
@@ -678,6 +681,7 @@
 				903BE79B6C2E36905672C09E /* ReportView.swift in Sources */,
 				801C62B7D0E42C0843D23D1C /* RunScheduler.swift in Sources */,
 				5122F34F87AEE73CA3FE20B0 /* RunWorkoutFactory.swift in Sources */,
+				3D523E36DA2D768BBD257055 /* SegmentedChoice.swift in Sources */,
 				5CD4CDD782D9C2E84E5FB1BF /* SessionAdjust.swift in Sources */,
 				14A24395149617D03AB9F64A /* SessionBuilder.swift in Sources */,
 				E03F482288B9F4D4923EF730 /* SessionDetailView.swift in Sources */,
