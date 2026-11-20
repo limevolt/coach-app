@@ -28,7 +28,7 @@ final class PlanStore {
         if DemoMode.isOn {
             // Captures automatiques : plan de démo en mémoire, rien d'autre.
             plan = DemoMode.plan
-            logs = DemoMode.doneIds.map { SessionLog(id: UUID(), sessionId: $0, completedAt: .now) }
+            logs = DemoMode.doneIds.map { SessionLog(id: UUID(), sessionId: $0, completedAt: .now, rpe: 6) }
             templates = IntervalTemplate.defaults
             return
         }

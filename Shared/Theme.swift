@@ -1,22 +1,37 @@
 // Theme.swift — identité visuelle de Coach (iPhone + montre)
 // ⚠️ Ce fichier doit appartenir AUX DEUX cibles.
+// Nouvelle ambiance (#40) : plus calme, un seul héros par écran, cartes sans bordure.
 
 import SwiftUI
 
 enum Theme {
-    static let bg = Color(hex: 0x0B0F14)
-    static let card = Color(hex: 0x141A22)
-    static let card2 = Color(hex: 0x1B2330)
-    static let line = Color(hex: 0x263042)
+    /// Fond : presque noir.
+    static let bg = Color(hex: 0x06080B)
+    /// Carte pleine : l'action du moment (une seule par écran), boutons ronds.
+    static let card = Color(hex: 0x11151B)
+    /// Fond un cran plus clair (tuile dans une carte, bouton sélectionné).
+    static let card2 = Color(hex: 0x1A2029)
+    /// Contours discrets : bouton secondaire, pastille de repos.
+    static let line = Color(hex: 0x2A313C)
+    /// Séparateur entre deux lignes d'une liste.
+    static let separator = Color(hex: 0x141920)
+    /// Chevron de fin de ligne (décoratif).
+    static let chevron = Color(hex: 0x4A5462)
     static let text = Color(hex: 0xEEF2F7)
     static let muted = Color(hex: 0x8B97A8)
     static let accent = Color(hex: 0xC6F432)      // citron vert
-    static let accentDark = Color(hex: 0x24330A)  // texte sur fond citron vert
+    static let accentDark = Color(hex: 0x1B260A)  // texte sur fond citron vert
     static let teal = Color(hex: 0x2DD4BF)
     static let warm = Color(hex: 0xFF7A45)        // muscles, intensité
     static let danger = Color(hex: 0xFF9D7A)
     static let dangerBg = Color(hex: 0x1F1514)
     static let successBg = Color(hex: 0x18210F)
+
+    /// Héros : dégradé citron vert → turquoise, réservé à la progression (accueil, Suivi).
+    static let heroGradient = LinearGradient(colors: [accent, teal], startPoint: .leading, endPoint: .trailing)
+
+    /// Texte posé sur une pastille pleine (couleur du type de séance).
+    static let onTint = bg
 
     static func color(for type: SessionType) -> Color {
         switch type {
@@ -58,12 +73,37 @@ enum Theme {
     // Boutons et cartes de l'iPhone
     static let buttonRadius: CGFloat = 16
     static let smallButtonRadius: CGFloat = 14
-    static let heroCardRadius: CGFloat = 22
+    static let heroCardRadius: CGFloat = 24
     /// Hauteur du bouton principal d'un écran ; `minTap` = cible tactile minimale (44 pt).
-    static let primaryButtonHeight: CGFloat = 56
-    /// Bouton principal d'une séance (« Démarrer l'entraînement »).
+    static let primaryButtonHeight: CGFloat = 52
+    /// Bouton principal d'une séance (« Démarrer »).
     static let largeButtonHeight: CGFloat = 64
     static let minTap: CGFloat = 44
+    /// Hauteur d'une ligne de liste simple (titre + valeur + chevron).
+    static let rowHeight: CGFloat = 52
+
+    // Espacements iPhone (multiples de 4/8)
+    /// Marge latérale de l'écran.
+    static let screenMargin: CGFloat = 20
+    /// Espace entre deux blocs d'un écran.
+    static let blockSpacing: CGFloat = 28
+    /// Pastille d'un jour de la semaine (accueil).
+    static let dayDot: CGFloat = 40
+    /// Petit badge sur une pastille (séance manquée, deux séances le même jour).
+    static let dotBadge: CGFloat = 16
+
+    // Icônes SF Symbols (taille fixe, graisse commune)
+    /// Icône d'un bouton rond ou d'un état (•••, ✓ d'une ligne).
+    static let iconFont = Font.system(size: 17, weight: .semibold)
+    /// Icône du type dans une pastille ou en début de ligne.
+    static let smallIconFont = Font.system(size: 15, weight: .semibold)
+    /// Icône sur une pastille pleine (plus grasse pour rester lisible).
+    static let tintedIconFont = Font.system(size: 15, weight: .bold)
+    /// Chevron de fin de ligne, coche d'une étiquette.
+    static let chevronFont = Font.system(size: 12, weight: .bold)
+    /// Badge sur une pastille : icône « ! » et chiffre (taille fixe, le badge ne grandit pas).
+    static let badgeFont = Font.system(size: 9, weight: .heavy)
+    static let badgeTextFont = Font.custom(Outfit.name(for: .bold), fixedSize: 10)
 
     static func icon(for type: SessionType) -> String {
         switch type {
@@ -85,16 +125,33 @@ extension Color {
 }
 
 extension Font {
-    /// Titres : arrondis et très gras, esprit sportif.
+    /// Ancien style de titre (très gras). Les écrans passés à la nouvelle ambiance utilisent
+    /// l'échelle ci-dessous ; à retirer quand tous les écrans auront migré (#40).
     static func display(_ size: CGFloat, _ weight: Font.Weight = .heavy) -> Font {
         .coach(size: size, weight: weight)
     }
+
+    // MARK: Échelle de la nouvelle ambiance (#40) : 5 tailles, plus le texte secondaire.
+    /// Héros : le seul gros chiffre de l'écran (taille fixe, en dégradé pour la progression).
+    static let hero = Font.coach(size: 76, weight: .semibold)
+    /// Titre d'écran : 30, semi-gras.
+    static let screenTitle = Font.coach(size: 30, weight: .semibold)
+    /// Chiffre ou titre de carte : 22, semi-gras.
+    static let number = Font.coach(size: 22, weight: .semibold)
+    /// Texte courant : 17, moyen.
+    static let text = Font.coach(.body, weight: .medium)
+    /// Étiquette : 12, semi-gras, en capitales grises (`Eyebrow`).
+    static let label = Font.coach(size: 12, weight: .semibold)
+    /// Texte secondaire gris sous un titre (15).
+    static let detail = Font.coach(.subheadline)
+    /// Unité à côté d'un chiffre (« min », « /10 »).
+    static let unit = Font.coach(size: 14, weight: .medium)
 }
 
 extension View {
     /// Bouton principal plein (citron vert), pleine largeur.
     func primaryActionStyle(compact: Bool = false, large: Bool = false) -> some View {
-        self.font(.coach(compact ? .body : (large ? .title2 : .title3), weight: .heavy))
+        self.font(.coach(large ? .title3 : .body, weight: .bold))
             .foregroundStyle(Theme.accentDark)
             .frame(maxWidth: .infinity,
                    minHeight: compact ? Theme.minTap : (large ? Theme.largeButtonHeight : Theme.primaryButtonHeight))
@@ -102,9 +159,19 @@ extension View {
             .contentShape(Rectangle())
     }
 
+    /// Bouton discret (contour gris, texte blanc), pleine largeur : « Voir le détail », « Séance libre ».
+    func quietActionStyle() -> some View {
+        self.font(.coach(.callout, weight: .semibold))
+            .foregroundStyle(Theme.text)
+            .frame(maxWidth: .infinity, minHeight: Theme.minTap)
+            .overlay(RoundedRectangle(cornerRadius: Theme.smallButtonRadius, style: .continuous)
+                .stroke(Theme.line, lineWidth: 1))
+            .contentShape(Rectangle())
+    }
+
     /// Bouton secondaire (contour citron vert), pleine largeur.
     func secondaryActionStyle(compact: Bool = true) -> some View {
-        self.font(.coach(compact ? .body : .title3, weight: .bold))
+        self.font(.coach(compact ? .body : .title3, weight: .semibold))
             .foregroundStyle(Theme.accent)
             .frame(maxWidth: .infinity, minHeight: compact ? Theme.minTap : Theme.primaryButtonHeight)
             .overlay(RoundedRectangle(cornerRadius: compact ? Theme.smallButtonRadius : Theme.buttonRadius, style: .continuous)
@@ -113,11 +180,13 @@ extension View {
     }
 }
 
+/// Carte pleine, sans bordure par défaut (#40). Une bordure colorée reste possible pour un
+/// avertissement (`stroke: Theme.warm.opacity(0.5)`).
 struct CardModifier: ViewModifier {
     var padding: CGFloat = 14
     var radius: CGFloat = 20
     var fill: Color = Theme.card
-    var stroke: Color = Theme.line
+    var stroke: Color = .clear
 
     func body(content: Content) -> some View {
         content
@@ -128,21 +197,41 @@ struct CardModifier: ViewModifier {
 }
 
 extension View {
-    func card(padding: CGFloat = 14, radius: CGFloat = 20, fill: Color = Theme.card, stroke: Color = Theme.line) -> some View {
+    func card(padding: CGFloat = 14, radius: CGFloat = 20, fill: Color = Theme.card, stroke: Color = .clear) -> some View {
         modifier(CardModifier(padding: padding, radius: radius, fill: fill, stroke: stroke))
     }
 }
 
-/// Petit titre en capitales, couleur d'accent.
+/// Petit titre en capitales, gris par défaut (#40). Une couleur seulement quand elle dit
+/// le type de séance ou l'état (« FAIT »).
 struct Eyebrow: View {
     let text: String
-    var color: Color = Theme.accent
+    var color: Color = Theme.muted
 
     var body: some View {
         Text(text.uppercased())
-            .font(.coach(size: 12, weight: .semibold))
-            .tracking(1.6)
+            .font(.label)
+            .tracking(1.3)
             .foregroundStyle(color)
+    }
+}
+
+/// Chiffre + unité grise (« 42 min », « 6 /10 ») avec son libellé dessous.
+struct StatValue: View {
+    let value: String
+    var unit: String? = nil
+    let label: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(value).font(.number).foregroundStyle(Theme.text)
+                if let unit { Text(unit).font(.unit).foregroundStyle(Theme.muted) }
+            }
+            Text(label).font(.coach(.footnote)).foregroundStyle(Theme.muted)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
     }
 }
 

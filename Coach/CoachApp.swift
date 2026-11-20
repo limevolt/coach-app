@@ -30,29 +30,36 @@ struct CoachApp: App {
 
 struct ContentView: View {
     @Environment(PlanStore.self) private var store
+    @State private var tab = AppTab.plan
+
+    enum AppTab: Hashable { case plan, timers, report, settings }
 
     init() {
         // Barres natives (Liquid Glass sous iOS 26, DESIGN.md) : seuls les titres passent en Outfit,
         // à une taille qui suit Dynamic Type.
         let bar = UINavigationBar.appearance()
-        if let large = UIFont(name: Outfit.name(for: .heavy), size: 34) {
+        if let large = UIFont(name: Outfit.name(for: .semibold), size: 34) {
             bar.largeTitleTextAttributes = [.font: UIFontMetrics(forTextStyle: .largeTitle).scaledFont(for: large)]
         }
-        if let title = UIFont(name: Outfit.name(for: .bold), size: 17) {
+        if let title = UIFont(name: Outfit.name(for: .semibold), size: 17) {
             bar.titleTextAttributes = [.font: UIFontMetrics(forTextStyle: .headline).scaledFont(for: title)]
         }
     }
 
     var body: some View {
-        TabView {
-            PlanView()
+        TabView(selection: $tab) {
+            PlanView(openTimers: { tab = .timers })
                 .tabItem { Label("Plan", systemImage: "calendar") }
+                .tag(AppTab.plan)
             TimersView()
                 .tabItem { Label("Libre", systemImage: "timer") }
+                .tag(AppTab.timers)
             ReportView()
                 .tabItem { Label("Suivi", systemImage: "chart.line.uptrend.xyaxis") }
+                .tag(AppTab.report)
             SettingsView()
                 .tabItem { Label("Réglages", systemImage: "gearshape") }
+                .tag(AppTab.settings)
         }
         .alert("Coach",
                isPresented: Binding(get: { store.alertMessage != nil },

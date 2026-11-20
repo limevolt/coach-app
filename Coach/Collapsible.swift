@@ -5,7 +5,10 @@ import SwiftUI
 /// Carte repliée par défaut : un titre, un court aperçu, et le contenu complet au tap.
 struct CollapsibleCard<Summary: View, Content: View>: View {
     let title: String
-    var color: Color = Theme.accent
+    /// Petit titre gris par défaut (#40).
+    var color: Color = Theme.muted
+    /// `true` : ligne repliable sans fond, avec un séparateur (accueil, une seule carte pleine par écran).
+    var plain = false
     @ViewBuilder let summary: () -> Summary
     @ViewBuilder let content: () -> Content
     @State private var expanded = false
@@ -38,7 +41,22 @@ struct CollapsibleCard<Summary: View, Content: View>: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .card(padding: 14, radius: 18)
+        .modifier(CollapsibleBackground(plain: plain))
+    }
+}
+
+/// Fond d'une carte repliable : carte pleine, ou ligne simple avec un séparateur dessous.
+private struct CollapsibleBackground: ViewModifier {
+    let plain: Bool
+
+    @ViewBuilder func body(content: Content) -> some View {
+        if plain {
+            content
+                .padding(.vertical, 14)
+                .overlay(alignment: .bottom) { Rectangle().fill(Theme.separator).frame(height: 1) }
+        } else {
+            content.card(padding: 14, radius: 18)
+        }
     }
 }
 
