@@ -36,8 +36,8 @@ final class CoachCaptures: XCTestCase {
             app.swipeUp()
             shot("06-seance-renfo-bas")
             app.swipeDown()
-            // « Démarrer l'entraînement » → « En cours sur ta montre » (#5)
-            if tap("Démarrer l'entraînement", in: app) {
+            // « Démarrer » → « En cours sur ta montre » (#5)
+            if tap("Démarrer", in: app) {
                 shot("06b-seance-en-cours-montre")
             }
             back(app)
@@ -54,6 +54,11 @@ final class CoachCaptures: XCTestCase {
             shot("0\(7 + index)-onglet-\(tab.lowercased().folding(options: .diacriticInsensitive, locale: nil))")
             audit("Onglet \(tab)", app)
         }
+
+        // 4a. Accueil : séance du jour faite (#40, carte « Fait aujourd'hui »)
+        app = launchDemo(plan: DemoPlan.json(), done: [DemoPlan.sessionIds[0]])
+        _ = app.tabBars.firstMatch.waitForExistence(timeout: 30)
+        shot("10b-accueil-fait")
 
         // 4. Accueil un jour de repos, avec des séances faites
         app = launchDemo(plan: DemoPlan.json(firstOffset: -2), done: Array(DemoPlan.sessionIds.prefix(2)))

@@ -6,6 +6,12 @@ import SwiftUI
 /// Gros bouton de la séance ; puis « En cours sur ta montre », ou la raison de l'échec + « Réessayer ».
 /// Pendant l'envoi, le bouton affiche un indicateur, sans que la mise en page bouge (#20).
 struct StartOnWatchButton: View {
+    enum Size { case regular, large }
+
+    /// Un seul libellé partout : « Démarrer » (#40).
+    var title = "Démarrer"
+    /// `.regular` dans la carte du jour de l'accueil, `.large` sur l'écran d'une séance.
+    var size: Size = .large
     let start: () async -> WatchStartResult
 
     @State private var sending = false
@@ -16,27 +22,29 @@ struct StartOnWatchButton: View {
             switch result {
             case .sent:
                 Label("En cours sur ta montre", systemImage: "applewatch")
-                    .font(.coach(.title3, weight: .heavy))
+                    .font(.coach(size == .large ? .title3 : .body, weight: .bold))
                     .foregroundStyle(Theme.accent)
-                    .frame(maxWidth: .infinity, minHeight: Theme.largeButtonHeight)
+                    .frame(maxWidth: .infinity,
+                           minHeight: size == .large ? Theme.largeButtonHeight : Theme.primaryButtonHeight)
                     .background(Theme.accent.opacity(0.15),
                                 in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
                     .transition(.opacity)
             case .failed(let reason):
                 VStack(alignment: .leading, spacing: 10) {
                     Label("Montre injoignable", systemImage: "exclamationmark.circle")
-                        .font(.coach(.title3, weight: .heavy))
+                        .font(.coach(.title3, weight: .semibold))
                         .foregroundStyle(Theme.text)
                     Text(reason)
                         .font(.coach(.subheadline))
                         .foregroundStyle(Theme.muted)
                         .fixedSize(horizontal: false, vertical: true)
-                    sendButton(title: "Réessayer", large: false)
+                    sendButton(title: "Réessayer", compact: true)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .card(radius: Theme.heroCardRadius, stroke: Theme.warm.opacity(0.5))
+                .card(radius: Theme.heroCardRadius, fill: size == .large ? Theme.card : Theme.card2,
+                      stroke: Theme.warm.opacity(0.5))
             case nil:
-                sendButton(title: "Démarrer l'entraînement", large: true)
+                sendButton(title: title, compact: false)
             }
         }
         .sensoryFeedback(.success, trigger: result) { _, new in new == .sent }
@@ -44,7 +52,7 @@ struct StartOnWatchButton: View {
     }
 
     /// Bouton principal : pendant l'envoi, un indicateur remplace l'icône, à taille identique.
-    private func sendButton(title: String, large: Bool) -> some View {
+    private func sendButton(title: String, compact: Bool) -> some View {
         Button(action: send) {
             HStack(spacing: 10) {
                 ZStack {
@@ -53,7 +61,7 @@ struct StartOnWatchButton: View {
                 }
                 Text(sending ? "Envoi à la montre…" : title)
             }
-            .primaryActionStyle(compact: !large, large: large)
+            .primaryActionStyle(compact: compact, large: !compact && size == .large)
         }
         .buttonStyle(PressableButtonStyle())
         .disabled(sending)

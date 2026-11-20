@@ -47,35 +47,71 @@
    devient une règle dans ce fichier, pour ne pas refaire la même erreur.
 7. Si un choix va contre ce fichier, le dire et le justifier.
 
-## Identité visuelle (thème sportif, à affiner)
+## Identité visuelle : « nouvelle ambiance » (validée le 20/11/2026, #40)
 
-Direction : **sportif, énergique, lisible en plein effort**. Le thème actuel de
-`Shared/Theme.swift` sert de base tant qu'on n'a pas validé une nouvelle version.
+Direction : **sportif, mais calme**. Inspirée des apps de suivi de données : un gros chiffre qui
+se lit en une seconde, quelques petits chiffres, presque plus de bordures. Référence visuelle :
+le canevas « Coach — nouvelle ambiance ». Valeurs dans `Shared/Theme.swift`.
 
-### Base actuelle
-- Fond sombre `Theme.bg` #0B0F14, cartes `Theme.card` / `Theme.card2`, bordures `Theme.line`.
-- Texte : `Theme.text` pour l'essentiel, `Theme.muted` pour le secondaire.
-- Accents, chacun avec **un sens fixe** :
-  - citron vert `Theme.accent` #C6F432 : circuits, action principale, progression ;
+### Un seul héros par écran
+- Un seul élément gros sur l'écran : le **héros** (76 pt, semi-gras, `Font.hero`). Tout le reste
+  est plus petit et plus discret.
+- **Dégradé citron vert → turquoise (`Theme.heroGradient`) réservé à la progression** : accueil
+  (séances faites de la semaine) et Suivi. Sur une séance, le héros (la durée) est en blanc.
+
+### Couleurs
+- Fond presque noir `Theme.bg` #06080B.
+- **Une seule carte pleine** par écran (`Theme.card` #11151B, rayon 24, **sans bordure**) : l'action
+  du moment. Le reste en **lignes simples** séparées par `Theme.separator`, avec un chevron `Theme.chevron`.
+- `Theme.card2` #1A2029 : tuile dans une carte, bouton sélectionné. `Theme.line` #2A313C : contour
+  d'un bouton discret, tiret d'un jour de repos.
+- Texte : `Theme.text` pour l'essentiel, `Theme.muted` pour le secondaire et les petits titres.
+- Accents, chacun avec **un sens fixe**, utilisés **pour les données** (pastilles, barres, points,
+  étiquette du type de séance) plutôt que pour la décoration :
+  - citron vert `Theme.accent` #C6F432 : action principale, aujourd'hui, progression, circuits ;
   - turquoise `Theme.teal` #2DD4BF : renforcement ;
-  - orange `Theme.warm` #FF7A45 : course, muscles sollicités, intensité.
-- Typo **Outfit** (géométrique, choisie le 18/11/2026) partout, via `Font.coach(...)`
-  (`Shared/Typography.swift`) : titres très gras avec `Font.display`, petits titres avec
-  `Eyebrow`. Cartes arrondies avec `.card()`.
+  - orange `Theme.warm` #FF7A45 : course, intensité.
+- Texte sur fond citron vert : `Theme.accentDark`. Icône sur une pastille pleine : `Theme.onTint`.
+
+### Typographie : 5 tailles, pas une de plus
+Police **Outfit** partout, via `Font.coach(...)` (`Shared/Typography.swift`). Le très gras disparaît.
+
+| Rôle | Taille | Graisse | Dans le code |
+|---|---|---|---|
+| Héros | 76 (montre : 44) | semi-gras | `Font.hero` |
+| Titre d'écran | 30 | semi-gras | `Font.screenTitle` |
+| Chiffre, titre de carte | 22 | semi-gras | `Font.number` (+ unité grise `Font.unit`) |
+| Texte | 17 | moyen | `Font.text` |
+| Étiquette | 12, capitales, gris | semi-gras | `Eyebrow` (`Font.label`) |
+
+Le texte secondaire gris sous un titre utilise `Font.detail` (15, normal). Boutons : 17 gras.
+Toutes ces tailles suivent Dynamic Type, sauf le héros (taille fixe, comme les chronos de la montre).
+
+### Formes et espaces
+- Marges latérales 20 (`Theme.screenMargin`), 24 à 28 entre les blocs (`Theme.blockSpacing`).
+- Bouton principal : plein citron vert, 52 de haut, rayon 16 (`primaryActionStyle`).
+- Bouton discret : contour gris, texte blanc, 44 de haut (`quietActionStyle`).
+- Lignes de liste : 52 de haut (`Theme.rowHeight`).
 
 ### Règles du thème
 - Jamais de couleur en dur dans une vue : l'ajouter à `Theme` si elle manque.
-- Sur un même écran : un accent dominant, deux au maximum.
+- Sur un même écran : un accent dominant, deux au maximum (hors couleurs des types de séance
+  dans les données).
 - La couleur s'accompagne toujours d'une icône (`Theme.icon(for:)`) ou d'un mot.
-- Tailles de texte via `Font.coach(.title)`, `Font.coach(.body)`… : la police Outfit **et**
-  Dynamic Type. Jamais de `.system(...)` pour du texte (les icônes SF Symbols, si). Seuls les
-  très grands chiffres de la montre (40 pt et plus) ont une taille fixe.
+- Tailles de texte via l'échelle ci-dessus. Jamais de `.system(...)` pour du texte (les icônes
+  SF Symbols, si). Seuls le héros et les très grands chiffres de la montre (40 pt et plus) ont
+  une taille fixe. `Font.display` (ancien style très gras) disparaît au fil de la migration.
 - Vérifier le contraste de chaque couleur de texte sur son fond (4,5:1 minimum).
 - Icônes : SF Symbols, même graisse sur un écran.
+- Pas de graphique hors du Suivi.
 
-### À décider
-- Sombre uniquement (actuel) ou aussi un mode clair ?
-- Garder les trois accents ou les resserrer ?
+### Montre
+La montre garde ses tailles de chronos (`Theme.watch…`) jusqu'à son lot : même ambiance, un
+chiffre géant ; pendant l'effort, fond teinté et chiffre de la couleur du type ; pendant le
+repos et « Prêt ? », chiffre blanc sur fond carte.
+
+### Encore ouvert
+- Sombre uniquement, ou aussi un mode clair ?
 
 ## Principes généraux
 
@@ -111,15 +147,20 @@ Direction : **sportif, énergique, lisible en plein effort**. Le thème actuel d
 - **Commandes sur une page à part** (pause, passer, +30 s, terminer, FC, durée) : on y arrive en
   glissant vers la droite, comme dans l'app Exercice. Les écrans d'effort et de repos n'ont pas
   d'autre bouton que l'action de l'étape (« Série faite »).
-- **Lancer depuis l'iPhone** : « Démarrer l'entraînement » (un seul gros bouton, sans texte autour)
+- **Lancer depuis l'iPhone** : « Démarrer » (un seul gros bouton, sans texte autour ; même libellé sur l'accueil et sur la séance)
   ouvre Coach sur la montre et la séance y démarre aussitôt, sans second « Commencer » (choix du
   propriétaire, 18/11/2026). Exception : une course s'ouvre prête, l'app Exercice demande son départ.
 - Doit rester utilisable en courant, en sueur, avec des doigts mouillés.
 
 ## iPhone
 
-- Accueil : la séance du jour en haut, dans une grande carte, avec l'action principale.
-- Ensuite : la semaine, puis les objectifs. Pas de mur d'informations.
+- **Accueil (version pastilles, #40)** : de haut en bas, « Semaine x sur y · dates » et le titre
+  « Cette semaine » avec le bouton ••• ; le héros « séances faites / prévues » ; la semaine en
+  **7 pastilles** (pleine = faite, contour = prévue, tiret = repos, anneau citron vert = aujourd'hui,
+  icône du type dans la pastille ; toucher une pastille ouvre la séance) ; **la carte du jour**,
+  qui change selon le jour (à faire → « Démarrer » ; faite → ses chiffres et « Voir le détail » ;
+  repos → la prochaine séance et « Séance libre ») ; puis « À venir » en lignes simples. Objectifs,
+  consignes et autres semaines viennent ensuite, repliés. Pas de graphique sur l'accueil.
 - Action principale en bas de l'écran ou dans la carte, à portée de pouce.
 - Le contenu principal se voit sans zoom ni défilement horizontal.
 - Espacements en multiples de 8 pt, réguliers d'un écran à l'autre ; marges latérales 16 à 20 pt.
