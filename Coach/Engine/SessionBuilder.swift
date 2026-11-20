@@ -96,8 +96,20 @@ struct SessionBuilder {
             return hillsOrStairs(main: main, warm: warm, cool: cool)
         case .stairsEndurance:
             let name = stairs.map { " (\($0.name))" } ?? ""
-            return (RunWorkout(location: nil, warmup: warm, blocks: [RunBlock(iterations: 1, steps: [step(main, zone: 3, purpose: "work")])], cooldown: cool),
-                    "Escaliers en continu\(name) : montées et descentes enchaînées, à ton rythme. Descends en marchant si les genoux tirent.")
+            var blocks: [RunBlock] = []
+            var work = main
+            var note = ""
+            if isTimedClimbWeek, let stairs {
+                let t = timedClimb(stairs)
+                if t.seconds < main * 30 {
+                    blocks.append(t.block)
+                    work = max(5, ((main * 60 - t.seconds) / 60).rounded(.down))
+                    note = timedNote
+                }
+            }
+            blocks.append(RunBlock(iterations: 1, steps: [step(work, zone: 3, purpose: "work")]))
+            return (RunWorkout(location: nil, warmup: warm, blocks: blocks, cooldown: cool),
+                    "Escaliers en continu\(name) : montées et descentes enchaînées, à ton rythme. Descends en marchant si les genoux tirent.\(note)")
         default:
             return (RunWorkout(location: nil, warmup: nil, blocks: [RunBlock(iterations: 1, steps: [step(m, zone: 2, purpose: "work")])], cooldown: nil), nil)
         }
@@ -111,38 +123,76 @@ struct SessionBuilder {
             ?? profile.staircases.first(where: \.isValid)
     }
 
-    /// Montée complète chronométrée, test de progrès (#47) : toutes les 5 semaines.
-    var isTimedClimbWeek: Bool { week.index % 5 == 4 && week.phase != .taper }
+    /// Montée complète chronométrée, test de progrès (#47) : toutes les 5 semaines, jamais en semaine allégée
+    /// ni en affûtage. Elle s'ajoute à la séance d'escaliers de la semaine, quelle qu'elle soit.
+    var isTimedClimbWeek: Bool { week.index % 5 == 4 && week.phase != .taper && !week.isDeload && stairs != nil }
+
+    /// Temps passé en zone haute, plafonné (#47) : 10 min en phase de base, 18 min ensuite.
+    var hardTimeCapSec: Double { week.phase == .base ? 600 : 1080 }
+
+    private func reps(available: Double, cycle: Double, hard: Double) -> Int {
+        guard cycle > 0, hard > 0 else { return 1 }
+        return max(1, min(10, Int(min(available / cycle, hardTimeCapSec / hard).rounded(.down))))
+    }
+
+    /// Montée chronométrée : une montée complète à fond (≈ 80 % du temps tranquille), retour en marchant.
+    private func timedClimb(_ stairs: Staircase) -> (block: RunBlock, seconds: Double) {
+        let climb = Double(stairs.estimatedClimbSec ?? 60)
+        return (RunBlock(iterations: 1, steps: [openStep("work"), step(climb, zone: nil, purpose: "recovery", unit: "s")]),
+                climb * 0.8 + climb)
+    }
+
+    private var timedNote: String {
+        week.phase == .base
+            ? " Commence par une montée complète chronométrée, régulière et sans te mettre dans le rouge : c'est ton repère de progrès."
+            : " Commence par une montée complète chronométrée, vite mais régulière : c'est ton test de progrès."
+    }
 
     private func hillsOrStairs(main: Double, warm: RunStep, cool: RunStep) -> (RunWorkout, String?) {
-        let reps = max(2, min(10, Int((main / 3).rounded(.down))))
         let base = week.phase == .base
+        var available = main * 60
         guard let stairs else {
             let effort = base ? 30.0 : 45.0
-            return (RunWorkout(location: nil, warmup: warm, blocks: [RunBlock(iterations: reps, steps: [
-                step(effort, zone: base ? 4 : 5, purpose: "work", unit: "s"), openStep("recovery")])], cooldown: cool),
-                    "Côtes : \(reps) × \(Int(effort)) s en montée, retour en descendant en marchant.")
+            let n = reps(available: available, cycle: effort * 3, hard: effort)
+            return (RunWorkout(location: nil, warmup: warm, blocks: [RunBlock(iterations: n, steps: [
+                step(effort, zone: base ? 4 : 5, purpose: "work", unit: "s"),
+                step(effort * 2, zone: nil, purpose: "recovery", unit: "s")])], cooldown: cool),
+                    "Côtes : \(n) × \(Int(effort)) s en montée, retour en descendant en marchant.")
         }
-        let timed = isTimedClimbWeek
-            ? " Commence par une montée complète chronométrée, à fond mais régulière : c'est ton test de progrès."
-            : ""
-        var blocks: [RunBlock] = timed.isEmpty ? [] : [RunBlock(iterations: 1, steps: [openStep("work"), openStep("recovery")])]
+        var blocks: [RunBlock] = []
+        var note = ""
+        if isTimedClimbWeek {
+            let t = timedClimb(stairs)
+            if t.seconds < available * 0.5 {
+                blocks.append(t.block)
+                available -= t.seconds
+                note = timedNote
+            }
+        }
+        let climb = Double(stairs.estimatedClimbSec ?? 60)
         if stairs.isLong {
-            // Escalier long : consigne en minutes de montée rapide, retour au départ en récupération (#47).
+            // Escalier long : consigne en secondes de montée rapide, retour au départ en marchant (#47).
             // En phase de base : zone 4 au plus.
             let effort = base ? 60.0 : 90.0
-            blocks.append(RunBlock(iterations: reps, steps: [
-                step(effort, zone: base ? 4 : 5, purpose: "work", unit: "s"), openStep("recovery")]))
+            let n = reps(available: available, cycle: effort * 2.5, hard: effort)
+            blocks.append(RunBlock(iterations: n, steps: [
+                step(effort, zone: base ? 4 : 5, purpose: "work", unit: "s"),
+                step(effort * 1.5, zone: nil, purpose: "recovery", unit: "s")]))
             return (RunWorkout(location: nil, warmup: warm, blocks: blocks, cooldown: cool),
-                    "\(stairs.name) : \(reps) × \(Int(effort)) s de montée rapide, puis redescends en marchant au départ.\(timed)")
+                    "\(stairs.name) : \(n) × \(Int(effort)) s de montée rapide, puis redescends en marchant.\(note)")
         }
-        blocks.append(RunBlock(iterations: reps, steps: [openStep("work"), openStep("recovery")]))
+        // Montées complètes (3 enchaînées par répétition sur un escalier très court).
+        let per = stairs.isVeryShort ? 3.0 : 1.0
+        let up = climb * 0.7 * per
+        let down = climb * per
+        let n = reps(available: available, cycle: up + down, hard: up)
+        blocks.append(RunBlock(iterations: n, steps: [openStep("work"), step(down.rounded(), zone: nil, purpose: "recovery", unit: "s")]))
         if stairs.isVeryShort {
             return (RunWorkout(location: nil, warmup: warm, blocks: blocks, cooldown: cool),
-                    "\(stairs.name) : \(reps) répétitions de 3 montées enchaînées, redescends en marchant entre deux.\(timed)")
+                    "\(stairs.name) : \(n) répétitions de 3 montées enchaînées, redescends en marchant entre deux.\(note)")
         }
         return (RunWorkout(location: nil, warmup: warm, blocks: blocks, cooldown: cool),
-                "\(stairs.name) : \(reps) montées rapides, redescends en marchant. Appuie en haut pour passer à la récupération.\(timed)")
+                "\(stairs.name) : \(n) montées rapides, redescends en marchant. Appuie en haut pour passer à la récupération.\(note)")
     }
 
     // MARK: Renfo
@@ -188,7 +238,7 @@ struct SessionBuilder {
             workout = StrengthWorkout(exercises: [
                 ex("Pompes", sets: sets, reps: max(reps, 8), rest: rest),
                 bar ? ex("Tractions", sets: sets, reps: max(3, reps - 2), rest: rest) : ex(row, sets: sets, reps: reps, rest: rest),
-                ex(weights ? "Développé haltères au-dessus de la tête" : "Pompes piquées", sets: 3, reps: 10, rest: 60),
+                ex(weights ? "Développé au-dessus de la tête" : "Pompes piquées", sets: 3, reps: 10, rest: 60),
                 ex("Gainage planche", sets: 3, sec: 40, rest: 45)
             ])
         default:
@@ -204,7 +254,7 @@ struct SessionBuilder {
         var removed: Set<String> = []
         if zones.contains(.hamstring) { removed.insert("Nordic curl") }
         if zones.contains(.knee) { removed.insert("Fentes alternées") }
-        if zones.contains(.shoulder) { removed.insert("Développé haltères au-dessus de la tête") }
+        if zones.contains(.shoulder) { removed.insert("Développé au-dessus de la tête") }
         return StrengthWorkout(exercises: workout.exercises.filter { !removed.contains($0.name) })
     }
 

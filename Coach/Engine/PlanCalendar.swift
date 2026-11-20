@@ -64,10 +64,10 @@ enum PlanCalendar {
         return String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
     }
 
-    /// Semaines du plan, du premier jour à la veille de l'événement (ou l'horizon sans date).
-    /// L'affûtage est compté à rebours depuis l'événement, en jours : une semaine est d'affûtage si au moins
-    /// 3 de ses jours tombent dans les 7 derniers jours (14 pour un plan de 16 semaines ou plus), ou si
-    /// c'est la dernière. Une semaine sans aucun jour avant l'événement (événement un lundi) n'existe pas.
+    /// Semaines du plan, du premier jour au dernier jour d'entraînement (l'avant-veille de l'événement :
+    /// la veille est un jour de repos), ou l'horizon sans date.
+    /// Affûtage = les dernières semaines, compté à rebours depuis l'événement : 1 semaine (2 à partir de 16),
+    /// plus la précédente si la dernière n'a que 1 ou 2 jours.
     static func weeks(firstDay: Date, eventDate: Date?) -> [PlanWeek] {
         let cal = calendar
         let firstMonday = monday(of: firstDay)
@@ -78,35 +78,25 @@ enum PlanCalendar {
                          phase: phases[i], isDeload: isDeload(index: i, phases: phases))
             }
         }
-        let lastDay = cal.date(byAdding: .day, value: -1, to: cal.startOfDay(for: eventDate)) ?? eventDate
+        let lastDay = lastTrainingDay(before: eventDate)
         let lastMonday = monday(of: lastDay)
         let days = cal.dateComponents([.day], from: firstMonday, to: lastMonday).day ?? 0
         let count = max(1, days / 7 + 1)
-        let window = count >= 16 ? 14 : 7
-        let windowStart = cal.date(byAdding: .day, value: -window, to: cal.startOfDay(for: eventDate)) ?? eventDate
-        let firstDayStart = cal.startOfDay(for: firstDay)
         let mondays = (0..<count).map { cal.date(byAdding: .day, value: 7 * $0, to: firstMonday) ?? firstMonday }
-        let taper = mondays.indices.map { i -> Bool in
-            if i == count - 1 { return true }
-            let inWindow = (1...7).filter { iso in
-                let d = day(iso, of: mondays[i])
-                return d >= windowStart && d <= lastDay && d >= firstDayStart
-            }.count
-            return inWindow >= 3
-        }
-        let taperCount = taper.filter { $0 }.count
-        let rest = split(nonTaper: count - taperCount, total: count)
-        let phases = rest + Array(repeating: TrainingPhase.taper, count: taperCount)
+        var taperCount = count >= 16 ? 2 : 1
+        let daysInLastWeek = TrainingDays.isoWeekday(lastDay)
+        if daysInLastWeek < 3 && count > taperCount + 1 { taperCount += 1 }
+        taperCount = min(taperCount, count)
+        let phases = split(nonTaper: count - taperCount, total: count) + Array(repeating: TrainingPhase.taper, count: taperCount)
         return (0..<count).map { i in
             PlanWeek(index: i, monday: mondays[i], phase: phases[i], isDeload: isDeload(index: i, phases: phases))
         }
     }
 
-    /// Phases d'un plan daté de `count` semaines, affûtage = dernière semaine (2 à partir de 16 semaines).
-    static func eventPhases(_ count: Int) -> [TrainingPhase] {
-        guard count > 1 else { return [.taper] }
-        let taper = count >= 16 ? 2 : 1
-        return split(nonTaper: count - taper, total: count) + Array(repeating: .taper, count: taper)
+    /// Dernier jour d'entraînement : l'avant-veille de l'événement (la veille est un jour de repos).
+    static func lastTrainingDay(before eventDate: Date) -> Date {
+        let cal = calendar
+        return cal.date(byAdding: .day, value: -2, to: cal.startOfDay(for: eventDate)) ?? eventDate
     }
 
     /// Semaines avant l'affûtage (#43) : plan < 4 semaines → entretien ; < 8 → pas de base ;

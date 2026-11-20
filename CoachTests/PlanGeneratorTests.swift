@@ -104,6 +104,18 @@ final class PlanGeneratorTests: XCTestCase {
         XCTAssertEqual(PlanCalendar.eventPhases(3), [.maintenance, .maintenance, .taper])
     }
 
+    func testEventOnEveryDayOfTheWeek() {
+        // Lundi 7 janvier 2030 : événement du lundi 18 mars au dimanche 24 mars.
+        for day in 18...24 {
+            let event = StrictDate.date(String(format: "2030-03-%02d", day))!
+            let weeks = PlanCalendar.weeks(firstDay: today, eventDate: event)
+            let lastDay = PlanCalendar.lastTrainingDay(before: event)
+            XCTAssertEqual(PlanCalendar.monday(of: lastDay), weeks.last!.monday, "dernière semaine = celle du dernier jour d'entraînement (\(day))")
+            let tapers = weeks.filter { $0.phase == .taper }.count
+            XCTAssertTrue((1...2).contains(tapers), "\(day) : \(tapers) semaines d'affûtage")
+        }
+    }
+
     func testDeloadWeeks() {
         let event = StrictDate.date("2030-05-26")!
         let weeks = PlanCalendar.weeks(firstDay: today, eventDate: event)
@@ -154,6 +166,7 @@ final class PlanGeneratorTests: XCTestCase {
             XCTAssertLessThanOrEqual(hard.count, 1, "au plus une séance d'intensité par semaine")
         }
         XCTAssertTrue(g.weeks[0].sessions.contains(where: \.isTest), "séance test la première semaine")
+        XCTAssertTrue(g.weeks[0].sessions.allSatisfy { $0.minutes <= 30 }, "niveau inconnu : rien de plus long qu'une séance au départ")
         XCTAssertEqual(g.weeks.flatMap(\.sessions).filter(\.isTest).count, 1)
         XCTAssertNil(g.plan.goals)
     }
@@ -273,8 +286,29 @@ final class PlanGeneratorTests: XCTestCase {
     func testUnknownLevelStartsCarefully() throws {
         let s = settings(days: [1, 2, 4, 6, 7], minutes: 90)
         let g = try generate(s, start: StartingPoint(runMinutesPerWeek: 5000))
-        XCTAssertLessThanOrEqual(g.weeks[0].runMinutes, 150, "départ prudent quand la donnée Santé est invraisemblable")
+        XCTAssertLessThanOrEqual(g.weeks[0].runMinutes, 99, "départ prudent : 90 min + 10 % au plus")
         XCTAssertTrue(g.weeks[0].sessions.contains(where: \.isTest), "séance test si Santé ne donne rien d'utilisable")
+    }
+
+    func testKnownSmallVolumeDoesNotJump() throws {
+        let g = try generate(settings(days: [1, 2, 4, 6, 7]), start: StartingPoint(runMinutesPerWeek: 60))
+        XCTAssertLessThanOrEqual(g.weeks[0].runMinutes, 66, "+10 % au plus par rapport au départ connu")
+        XCTAssertFalse(g.weeks.flatMap(\.sessions).contains(where: \.isTest))
+    }
+
+    func testStairsSessionsAreSizedToTheStaircase() throws {
+        var profile = AthleteProfile()
+        profile.staircases = [Staircase(id: "s1", name: "Grand escalier", steps: 0, climbSec: 140)]
+        let s = settings(objective: .event(name: "Trail des Crêtes", date: "2030-05-26"),
+                         modules: [ModuleChoice(module: .run, variants: [.urban, .stairs])], days: [2, 4, 7])
+        let g = try generate(s, profile: profile, start: StartingPoint(runMinutesPerWeek: 120))
+        let stairs = g.plan.sessions.filter { ($0.notes ?? "").contains("Grand escalier") }
+        XCTAssertFalse(stairs.isEmpty)
+        for session in stairs {
+            let blocks = session.run?.blocks ?? []
+            XCTAssertLessThanOrEqual(blocks.map(\.iterations).max() ?? 0, 10)
+        }
+        XCTAssertTrue(g.plan.sessions.contains { ($0.notes ?? "").contains("chronométrée") }, "montée chronométrée de temps en temps")
     }
 
     func testGroupClassOnMondayWithAMidWeekStart() throws {
@@ -298,6 +332,28 @@ final class PlanGeneratorTests: XCTestCase {
         XCTAssertFalse(names.contains("Nordic curl"), "ischios à ménager : pas de Nordic curl")
         XCTAssertFalse(names.contains("Rowing haltères"), "sans haltères à la maison")
         XCTAssertTrue(g.report.adjustments.contains { $0.hasPrefix("Ischios à ménager") })
+    }
+
+    func testEventMidWeek() throws {
+        let s = settings(objective: .event(name: "Course du mardi", date: "2030-03-19"), days: [2, 4, 6, 7])
+        let g = try generate(s, start: StartingPoint(runMinutesPerWeek: 100))
+        XCTAssertFalse(g.weeks.last!.sessions.isEmpty, "la dernière semaine du plan a des séances")
+        XCTAssertFalse(g.weeks.last!.sessions.contains { $0.kind == .longRunEasy || $0.kind == .longRunProgressive })
+    }
+
+    func testShortSessionsWithSparedZoneStayWithinTheirDuration() throws {
+        var profile = AthleteProfile()
+        profile.sparedZones = [.calf, .hamstring]
+        _ = try generate(settings(days: [2, 4, 7], minutes: 30, startLevel: .test), profile: profile)
+    }
+
+    func testSingleRunPerWeekExplainsTheLevel() throws {
+        let s = settings(modules: [ModuleChoice(module: .strength, variants: [.home]), ModuleChoice(module: .run)],
+                         principal: .strength, days: [2, 6])
+        let g = try generate(s)
+        XCTAssertFalse(g.weeks.flatMap(\.sessions).contains(where: \.isTest))
+        XCTAssertTrue(g.report.adjustments.contains("Une seule course par semaine : ton niveau sera estimé au fil des séances."))
+        XCTAssertFalse(g.report.adjustments.contains("Séance test reportée à la semaine suivante."))
     }
 
     func testInvalidSettingsAreRefused() {
