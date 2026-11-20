@@ -1,0 +1,48 @@
+commit: dc2e4efb23af24529a22b24cf47c3a7dabce06cc
+branche: design/40-accueil-pastilles
+ios: success
+watch: success
+tests: success
+
+===== ERREURS / AVERTISSEMENTS iOS =====
+
+===== ERREURS / AVERTISSEMENTS MONTRE =====
+
+===== TESTS UNITAIRES =====
+Test Case '-[CoachTests.DoneStateTests testDoneIdsOnlyForSessionsOfThePlan]' passed (0.003 seconds).
+Test Case '-[CoachTests.DoneStateTests testLogArrivingAfterResetIsArchivedIfDoneBefore]' passed (0.001 seconds).
+Test Case '-[CoachTests.DoneStateTests testMarkNotDoneRemovesOnlyThatSessionsActiveLogs]' passed (0.005 seconds).
+Test Case '-[CoachTests.DoneStateTests testNewLogAfterResetCountsAgain]' passed (0.001 seconds).
+Test Case '-[CoachTests.DoneStateTests testOldLogsWithoutArchiveFieldStillDecode]' passed (0.007 seconds).
+Test Case '-[CoachTests.DoneStateTests testResetDetachesLogsFromReimportedPlanWithSameIds]' passed (0.001 seconds).
+Test Case '-[CoachTests.DoneStateTests testResetKeepsFreeTimerLogsAndOldArchiveDates]' passed (0.001 seconds).
+Test Case '-[CoachTests.DoneStateTests testStartRequestFreshness]' passed (0.000 seconds).
+Test Case '-[CoachTests.DoneStateTests testStartRequestRoundTrip]' passed (0.002 seconds).
+Test Case '-[CoachTests.DoneStateTests testWatchDropsPendingFinishedBeforeReset]' passed (0.001 seconds).
+Test Case '-[CoachTests.DoneStateTests testWatchKeepsSessionFinishedHereUntilPhoneConfirms]' passed (0.001 seconds).
+Test Case '-[CoachTests.DoneStateTests testWatchPendingExpires]' passed (0.001 seconds).
+Test Case '-[CoachTests.DoneStateTests testWatchReplacesItsListWithThePhoneOne]' passed (0.116 seconds).
+	 Executed 13 tests, with 0 failures (0 unexpected) in 0.139 (0.201) seconds
+Test Case '-[CoachTests.PlanFormatTests testAppendingAddsFormatOnce]' passed (0.002 seconds).
+Test Case '-[CoachTests.PlanFormatTests testCompletePlanDecodes]' passed (0.012 seconds).
+Test Case '-[CoachTests.PlanFormatTests testFormatIsBundled]' passed (0.001 seconds).
+Test Case '-[CoachTests.PlanFormatTests testInstructionsAreSelfContained]' passed (0.001 seconds).
+Test Case '-[CoachTests.PlanFormatTests testInstructionsStartAtFirstSection]' passed (0.001 seconds).
+Test Case '-[CoachTests.PlanFormatTests testMissingTitleIsNamed]' passed (0.006 seconds).
+Test Case '-[CoachTests.PlanFormatTests testOtherErrorsHaveNoRepair]' passed (0.116 seconds).
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.138 (0.141) seconds
+Test Case '-[CoachTests.ReportPreviewTests testPreviewKeepsOnlyFirstLines]' passed (0.001 seconds).
+Test Case '-[CoachTests.ReportPreviewTests testReportInputsChangeWithNewLogOrComment]' passed (0.002 seconds).
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.003 (0.004) seconds
+Test Case '-[CoachTests.WeekOverviewTests testPlannedMinutes]' passed (0.057 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testRestDayShowsNextSessionAndUpcoming]' passed (0.003 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testTodayToDoThenDone]' passed (0.002 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testUpcomingSkipsDoneSessions]' passed (0.001 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testWeekHasSevenDaysWithStatuses]' passed (0.001 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testWeekOutsidePlanHasNoNumber]' passed (0.001 seconds).
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.064 (0.093) seconds
+	 Executed 28 tests, with 0 failures (0 unexpected) in 0.344 (0.440) seconds
+	 Executed 28 tests, with 0 failures (0 unexpected) in 0.344 (0.441) seconds
+
+===== FIN DU JOURNAL iOS =====
+** BUILD SUCCEEDED **
