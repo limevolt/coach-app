@@ -99,6 +99,13 @@ enum PlanCalendar {
         return cal.date(byAdding: .day, value: -2, to: cal.startOfDay(for: eventDate)) ?? eventDate
     }
 
+    /// Phases d'un plan daté de `count` semaines, affûtage = dernière semaine (2 à partir de 16 semaines).
+    static func eventPhases(_ count: Int) -> [TrainingPhase] {
+        guard count > 1 else { return [.taper] }
+        let taper = count >= 16 ? 2 : 1
+        return split(nonTaper: count - taper, total: count) + Array(repeating: .taper, count: taper)
+    }
+
     /// Semaines avant l'affûtage (#43) : plan < 4 semaines → entretien ; < 8 → pas de base ;
     /// sinon base / développement / spécifique (35 / 35 / 30 %).
     static func split(nonTaper: Int, total: Int) -> [TrainingPhase] {
