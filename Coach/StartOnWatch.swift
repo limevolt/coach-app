@@ -1,4 +1,4 @@
-// StartOnWatch.swift — « Démarrer l'entraînement » (#5) : Coach s'ouvre sur la montre et la séance
+// StartOnWatch.swift — « Démarrer » (#5, #40) : Coach s'ouvre sur la montre et la séance
 // y démarre (5 s « Prêt ? »). Une course s'ouvre prête dans l'app Exercice, qui demande son départ.
 
 import SwiftUI
@@ -32,7 +32,7 @@ struct StartOnWatchButton: View {
             case .failed(let reason):
                 VStack(alignment: .leading, spacing: 10) {
                     Label("Montre injoignable", systemImage: "exclamationmark.circle")
-                        .font(.coach(.title3, weight: .semibold))
+                        .font(size == .large ? .coach(.title3, weight: .semibold) : .text)
                         .foregroundStyle(Theme.text)
                     Text(reason)
                         .font(.coach(.subheadline))

@@ -2,6 +2,7 @@
 
 import SwiftUI
 import UniformTypeIdentifiers
+import Combine
 
 struct PlanView: View {
     @Environment(PlanStore.self) private var store
@@ -17,6 +18,9 @@ struct PlanView: View {
     @State private var exportFile: SharedFile?
     /// Appui long › « Marquer comme non faite » : séance à confirmer (#13).
     @State private var notDone: PlannedSession?
+    /// « Aujourd'hui » de l'accueil : mis à jour au retour dans l'app et au changement de jour.
+    @State private var now = Date.now
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         NavigationStack {
@@ -30,6 +34,14 @@ struct PlanView: View {
             .background(Theme.bg.ignoresSafeArea())
             .navigationDestination(for: PlannedSession.self) { SessionDetailView(session: $0) }
             .toolbar(.hidden, for: .navigationBar)
+            // Barre masquée : un fond sous l'heure, pour que la liste ne défile pas sous le texte.
+            .safeAreaInset(edge: .top, spacing: 0) {
+                Color.clear.frame(height: 0).background(Theme.bg)
+            }
+            .onChange(of: scenePhase) { _, phase in if phase == .active { now = .now } }
+            .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged).receive(on: RunLoop.main)) { _ in
+                now = .now
+            }
             .fileImporter(isPresented: $showImporter, allowedContentTypes: [.json, .plainText]) { result in
                 switch result {
                 case .success(let url): importFile(url)
@@ -73,7 +85,7 @@ struct PlanView: View {
     // MARK: Contenu
 
     private func content(_ plan: TrainingPlan) -> some View {
-        let week = WeekOverview.make(plan: plan, isDone: { store.log(for: $0) != nil })
+        let week = WeekOverview.make(plan: plan, isDone: { store.log(for: $0) != nil }, now: now)
         let others = weeks(plan).filter { $0.start != week.start }
         let later = others.filter { $0.start > week.start }
         let earlier = others.filter { $0.start < week.start }.reversed()
@@ -82,12 +94,12 @@ struct PlanView: View {
 
             if week.plannedCount > 0 {
                 WeekHero(done: week.doneCount, planned: week.plannedCount)
-                    .padding(.top, 8)
             }
 
             WeekDots(days: week.days) { sessionMenu($0) }
 
-            TodayCard(today: week.today, openTimers: openTimers)
+            TodayCard(today: week.today, planEnded: week.planEnded,
+                      openTimers: openTimers, newPlan: { showNewPlan = true })
 
             OffDaysBanner()
 
@@ -100,7 +112,9 @@ struct PlanView: View {
 
             if !week.upcoming.isEmpty {
                 VStack(alignment: .leading, spacing: 0) {
-                    Eyebrow(text: "À venir").padding(.bottom, 4)
+                    Eyebrow(text: "À venir")
+                        .accessibilityAddTraits(.isHeader)
+                        .padding(.bottom, 4)
                     ForEach(Array(week.upcoming.enumerated()), id: \.element.id) { i, session in
                         NavigationLink(value: session) {
                             PlanLine(session: session.effective, trailing: session.upcomingLabel(),
@@ -114,7 +128,7 @@ struct PlanView: View {
 
             // Objectifs et consignes, repliés
             if let goals = plan.goals, !goals.isEmpty {
-                CollapsibleCard(title: goals.count > 1 ? "Objectifs" : "Objectif") {
+                CollapsibleCard(title: goals.count > 1 ? "Objectifs" : "Objectif", plain: true) {
                     VStack(alignment: .leading, spacing: 4) {
                         ForEach(goals) { goal in
                             HStack {
@@ -144,7 +158,7 @@ struct PlanView: View {
             }
 
             if let notes = plan.notes, !notes.isEmpty {
-                CollapsibleCard(title: "Consignes du coach") {
+                CollapsibleCard(title: "Consignes du coach", plain: true) {
                     Text(notes.firstSentence)
                         .font(.detail)
                         .foregroundStyle(Theme.muted)
@@ -163,6 +177,7 @@ struct PlanView: View {
                     }
                 } label: {
                     Eyebrow(text: "Tout le plan")
+                        .accessibilityAddTraits(.isHeader)
                 }
                 .tint(Theme.muted)
             }
@@ -189,9 +204,14 @@ struct PlanView: View {
         }
     }
 
-    static func weekLine(_ week: WeekOverview) -> String {
-        let range = week.start.formatted(.dateTime.day()) + "–"
-            + week.end.formatted(.dateTime.day().month(.abbreviated))
+    /// « Semaine 3 sur 20 · 17–23 nov. » ; « 29 déc.–4 janv. » quand le mois change.
+    static func weekLine(_ week: WeekOverview, calendar: Calendar = .current) -> String {
+        let sameMonth = calendar.isDate(week.start, equalTo: week.end, toGranularity: .month)
+        let first = sameMonth ? week.start.formatted(.dateTime.day())
+                              : week.start.formatted(.dateTime.day().month(.abbreviated))
+        // Plage insécable : en très grand texte, elle passe entière à la ligne (« 16–22 nov. »).
+        let range = (first + "\u{2060}–\u{2060}" + week.end.formatted(.dateTime.day().month(.abbreviated)))
+            .replacingOccurrences(of: " ", with: "\u{00A0}")
         guard let number = week.weekNumber else { return range }
         return "Semaine \(number) sur \(week.totalWeeks) · \(range)"
     }
@@ -215,7 +235,7 @@ struct PlanView: View {
             }
         } label: {
             Image(systemName: "ellipsis")
-                .font(.system(size: 17, weight: .semibold))
+                .font(Theme.iconFont)
                 .foregroundStyle(Theme.text)
                 .frame(width: Theme.minTap, height: Theme.minTap)
                 .background(Theme.card, in: Circle())
@@ -356,11 +376,10 @@ struct PlanView: View {
     }
 
     private func weeks(_ plan: TrainingPlan) -> [Week] {
-        var cal = Calendar(identifier: .iso8601)
-        cal.timeZone = .current
+        let cal = PlanWeeks.calendar()
         let sorted = plan.sessions.sorted { ($0.startDate ?? .distantPast) < ($1.startDate ?? .distantPast) }
         let groups = Dictionary(grouping: sorted) { s in
-            cal.dateInterval(of: .weekOfYear, for: s.startDate ?? .distantPast)?.start ?? .distantPast
+            PlanWeeks.start(of: s.startDate ?? .distantPast, calendar: cal)
         }
         return groups.keys.sorted().map { start in
             Week(start: start,
@@ -393,7 +412,7 @@ struct SessionRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: Theme.icon(for: session.type))
-                .font(.system(size: 15, weight: .semibold))
+                .font(Theme.smallIconFont)
                 .foregroundStyle(Theme.color(for: session.type))
                 .frame(width: 24)
                 .accessibilityHidden(true)
@@ -409,7 +428,7 @@ struct SessionRow: View {
             }
             Spacer(minLength: 4)
             Image(systemName: done ? "checkmark.circle.fill" : (missed ? "exclamationmark.circle" : "chevron.right"))
-                .font(.system(size: done || missed ? 20 : 13, weight: .semibold))
+                .font(done || missed ? Theme.iconFont : Theme.chevronFont)
                 .foregroundStyle(done ? Theme.accent : (missed ? Theme.warm : Theme.chevron))
                 .accessibilityHidden(true)
         }

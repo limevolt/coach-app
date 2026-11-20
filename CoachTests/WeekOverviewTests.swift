@@ -89,4 +89,70 @@ final class WeekOverviewTests: XCTestCase {
         distance.blocks[0].steps[0].goal = StepGoal(type: "distance", value: 400, unit: "m")
         XCTAssertNil(session("b", "2030-01-09", run: distance).plannedMinutes, "durée inconnue")
     }
+
+    // MARK: Relecture de code
+
+    func testSeveralSessionsSameDay() {
+        let both = plan([session("mer-a", "2030-01-09", .run), session("mer-b", "2030-01-09", .strength)])
+        let half = WeekOverview.make(plan: both, isDone: { $0 == "mer-a" }, now: now)
+        XCTAssertEqual(half.days[2].sessions.count, 2)
+        XCTAssertEqual(half.days[2].main?.id, "mer-b", "la pastille ouvre celle qui reste à faire")
+        XCTAssertEqual(half.days[2].status, .planned)
+        guard case .toDo(let s) = half.today else { return XCTFail("séance à faire attendue") }
+        XCTAssertEqual(s.id, "mer-b")
+
+        let all = WeekOverview.make(plan: both, isDone: { _ in true }, now: now)
+        guard case .done(let d) = all.today else { return XCTFail("séances faites attendues") }
+        XCTAssertEqual(d.id, "mer-b", "la dernière du jour")
+    }
+
+    func testWeekStartsOnMondayWhateverTheRegion() {
+        // Dimanche 13 janvier 2030 : la semaine du plan commence le lundi 7, même aux États-Unis.
+        let sunday = Calendar.current.date(from: DateComponents(year: 2030, month: 1, day: 13, hour: 9))!
+        var us = Calendar(identifier: .gregorian)
+        us.locale = Locale(identifier: "en_US")
+        let week = WeekOverview.make(plan: demoPlan(), isDone: { _ in false }, now: sunday, calendar: us)
+        let monday = Calendar.current.date(from: DateComponents(year: 2030, month: 1, day: 7))!
+        XCTAssertEqual(week.start, monday)
+        XCTAssertTrue(week.days[6].isToday)
+        XCTAssertEqual(week.weekNumber, 1)
+    }
+
+    func testWeekBeforePlanStarts() {
+        let before = Calendar.current.date(byAdding: .day, value: -7, to: now)!
+        let week = WeekOverview.make(plan: demoPlan(), isDone: { _ in false }, now: before)
+        XCTAssertNil(week.weekNumber)
+        XCTAssertFalse(week.planEnded)
+        guard case .rest(let next) = week.today else { return XCTFail("repos attendu") }
+        XCTAssertEqual(next?.id, "lun")
+    }
+
+    func testPlanEnded() {
+        let later = Calendar.current.date(byAdding: .day, value: 21, to: now)!
+        XCTAssertTrue(WeekOverview.make(plan: demoPlan(), isDone: { _ in false }, now: later).planEnded)
+        XCTAssertFalse(WeekOverview.make(plan: demoPlan(), isDone: { _ in false }, now: now).planEnded)
+    }
+
+    func testWeekLineAcrossMonths() {
+        // Lundi 30 décembre 2030 → dimanche 5 janvier 2031.
+        let day = Calendar.current.date(from: DateComponents(year: 2031, month: 1, day: 2, hour: 12))!
+        let week = WeekOverview.make(plan: demoPlan(), isDone: { _ in false }, now: day)
+        let line = PlanView.weekLine(week)
+        XCTAssertTrue(line.contains("–"), line)
+        XCTAssertEqual(line.components(separatedBy: "–").count, 2)
+        XCTAssertNotEqual(line.components(separatedBy: "–")[0].trimmingCharacters(in: .whitespaces),
+                          week.start.formatted(.dateTime.day()), "le mois est écrit des deux côtés : \(line)")
+    }
+
+    func testPlannedMinutesUnits() {
+        let hour = RunWorkout(location: nil, warmup: nil,
+                              blocks: [RunBlock(iterations: 1, steps: [
+                                  RunStep(purpose: "work", goal: StepGoal(type: "time", value: 1, unit: "h"), alert: nil)
+                              ])], cooldown: nil)
+        XCTAssertEqual(session("h", "2030-01-09", run: hour).plannedMinutes, 60)
+
+        var odd = hour
+        odd.blocks[0].steps[0].goal = StepGoal(type: "time", value: 3, unit: "jours")
+        XCTAssertNil(session("x", "2030-01-09", run: odd).plannedMinutes, "unité inconnue : pas de durée")
+    }
 }

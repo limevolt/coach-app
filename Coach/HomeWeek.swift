@@ -60,10 +60,11 @@ struct DayDot: View {
     var body: some View {
         VStack(spacing: 8) {
             Text(day.date.formatted(.dateTime.weekday(.narrow)))
-                .font(.coach(size: 12, weight: day.isToday ? .bold : .medium))
+                .font(.label)
                 .foregroundStyle(day.isToday ? Theme.accent : Theme.muted)
             dot
                 .frame(width: Theme.dayDot, height: Theme.dayDot)
+                .overlay(alignment: .topTrailing) { badge }
         }
         .frame(maxWidth: .infinity, minHeight: Theme.minTap)
         .contentShape(Rectangle())
@@ -78,31 +79,52 @@ struct DayDot: View {
                 if day.isToday { Circle().strokeBorder(Theme.accent, lineWidth: 2) }
                 Capsule()
                     .fill(day.isToday ? Theme.accent : Theme.line)
-                    .frame(width: 12, height: 3)
+                    .frame(width: Theme.dayDot * 0.3, height: 3)
             }
         case .done:
             if day.isToday {
                 Circle().strokeBorder(Theme.accent, lineWidth: 2)
-                    .overlay(filled(iconSize: 13).padding(5))
+                    .overlay(filled.padding(5))
             } else {
-                filled(iconSize: 15)
+                filled
             }
         case .planned, .missed:
             Circle()
                 .strokeBorder(day.isToday ? Theme.accent : tint.opacity(day.status == .missed ? 0.3 : 0.5),
                               lineWidth: day.isToday ? 2 : 1.5)
-                .overlay(icon(size: 15).foregroundStyle(tint).opacity(day.status == .missed ? 0.6 : 1))
+                .overlay(icon.font(Theme.smallIconFont).foregroundStyle(tint)
+                    .opacity(day.status == .missed ? 0.6 : 1))
         }
     }
 
-    private func filled(iconSize: CGFloat) -> some View {
+    private var filled: some View {
         Circle().fill(tint)
-            .overlay(icon(size: iconSize, weight: .bold).foregroundStyle(Theme.onTint))
+            .overlay(icon.font(Theme.tintedIconFont).foregroundStyle(Theme.onTint))
     }
 
-    private func icon(size: CGFloat, weight: Font.Weight = .semibold) -> some View {
+    private var icon: Image {
         Image(systemName: day.main.map { Theme.icon(for: $0.type) } ?? "minus")
-            .font(.system(size: size, weight: weight))
+    }
+
+    /// « ! » orange : séance passée pas faite. Sinon « 2 » quand le jour a plusieurs séances.
+    @ViewBuilder private var badge: some View {
+        if day.status == .missed {
+            Image(systemName: "exclamationmark")
+                .font(Theme.badgeFont)
+                .foregroundStyle(Theme.onTint)
+                .frame(width: Theme.dotBadge, height: Theme.dotBadge)
+                .background(Theme.warm, in: Circle())
+                .overlay(Circle().stroke(Theme.bg, lineWidth: 2))
+                .offset(x: 3, y: -3)
+        } else if day.sessions.count > 1 {
+            Text("\(day.sessions.count)")
+                .font(Theme.badgeTextFont)
+                .foregroundStyle(Theme.bg)
+                .frame(width: Theme.dotBadge, height: Theme.dotBadge)
+                .background(Theme.text, in: Circle())
+                .overlay(Circle().stroke(Theme.bg, lineWidth: 2))
+                .offset(x: 3, y: -3)
+        }
     }
 
     private var accessibilityText: String {
@@ -128,8 +150,11 @@ struct DayDot: View {
 struct TodayCard: View {
     @Environment(PlanStore.self) private var store
     let today: WeekOverview.Today
+    var planEnded = false
     /// « Séance libre » : ouvre l'onglet Libre.
     let openTimers: () -> Void
+    /// Plan terminé : « Créer un nouveau plan ».
+    var newPlan: () -> Void = {}
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -162,6 +187,15 @@ struct TodayCard: View {
                 }
                 NavigationLink(value: stored) {
                     Text("Voir le détail").quietActionStyle()
+                }
+                .buttonStyle(PressableButtonStyle())
+
+            case .rest where planEnded:
+                heading(eyebrow: "Plan terminé", color: Theme.accent,
+                        title: "Bravo, le plan est bouclé",
+                        detail: "Crée le suivant avec ton IA, à partir de ce que tu as fait.")
+                Button(action: newPlan) {
+                    Label("Créer un nouveau plan", systemImage: "sparkles").primaryActionStyle()
                 }
                 .buttonStyle(PressableButtonStyle())
 
@@ -237,7 +271,7 @@ struct EyebrowLabelStyle: LabelStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         HStack(spacing: 6) {
-            configuration.icon.font(.system(size: 12, weight: .bold))
+            configuration.icon.font(Theme.chevronFont)
             configuration.title
         }
         .font(.label)
@@ -266,7 +300,7 @@ struct PlanLine: View {
                 .font(.coach(.subheadline))
                 .foregroundStyle(Theme.muted)
             Image(systemName: "chevron.right")
-                .font(.system(size: 13, weight: .semibold))
+                .font(Theme.chevronFont)
                 .foregroundStyle(Theme.chevron)
                 .accessibilityHidden(true)
         }

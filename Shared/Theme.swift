@@ -89,6 +89,21 @@ enum Theme {
     static let blockSpacing: CGFloat = 28
     /// Pastille d'un jour de la semaine (accueil).
     static let dayDot: CGFloat = 40
+    /// Petit badge sur une pastille (séance manquée, deux séances le même jour).
+    static let dotBadge: CGFloat = 16
+
+    // Icônes SF Symbols (taille fixe, graisse commune)
+    /// Icône d'un bouton rond ou d'un état (•••, ✓ d'une ligne).
+    static let iconFont = Font.system(size: 17, weight: .semibold)
+    /// Icône du type dans une pastille ou en début de ligne.
+    static let smallIconFont = Font.system(size: 15, weight: .semibold)
+    /// Icône sur une pastille pleine (plus grasse pour rester lisible).
+    static let tintedIconFont = Font.system(size: 15, weight: .bold)
+    /// Chevron de fin de ligne, coche d'une étiquette.
+    static let chevronFont = Font.system(size: 12, weight: .bold)
+    /// Badge sur une pastille : icône « ! » et chiffre (taille fixe, le badge ne grandit pas).
+    static let badgeFont = Font.system(size: 9, weight: .heavy)
+    static let badgeTextFont = Font.custom(Outfit.name(for: .bold), fixedSize: 10)
 
     static func icon(for type: SessionType) -> String {
         switch type {

@@ -4,6 +4,23 @@
 
 import Foundation
 
+/// Calendrier des semaines du plan : lundi → dimanche, numérotation ISO, quel que soit le
+/// réglage de langue ou de région du téléphone (#40). Seul le fuseau horaire vient du téléphone.
+enum PlanWeeks {
+    static func calendar(timeZone: TimeZone = .current) -> Calendar {
+        var cal = Calendar(identifier: .iso8601)
+        cal.timeZone = timeZone
+        cal.firstWeekday = 2
+        cal.minimumDaysInFirstWeek = 4
+        return cal
+    }
+
+    /// Lundi de la semaine qui contient `date`.
+    static func start(of date: Date, calendar cal: Calendar = calendar()) -> Date {
+        cal.dateInterval(of: .weekOfYear, for: date)?.start ?? cal.startOfDay(for: date)
+    }
+}
+
 struct WeekOverview {
     /// Un jour de la semaine (lundi → dimanche).
     struct Day: Identifiable {
@@ -46,14 +63,14 @@ struct WeekOverview {
     let today: Today
     /// Prochaines séances pas faites, après aujourd'hui.
     let upcoming: [PlannedSession]
+    /// Plus aucune séance à venir et la dernière est passée : le plan est terminé.
+    let planEnded: Bool
 
     static func make(plan: TrainingPlan, isDone: (String) -> Bool, now: Date = .now,
                      calendar: Calendar = .current, upcomingLimit: Int = 3) -> WeekOverview {
-        var cal = Calendar(identifier: .iso8601)
-        cal.timeZone = calendar.timeZone
-        cal.locale = calendar.locale
+        let cal = PlanWeeks.calendar(timeZone: calendar.timeZone)
         let today = cal.startOfDay(for: now)
-        let weekStart = cal.dateInterval(of: .weekOfYear, for: today)?.start ?? today
+        let weekStart = PlanWeeks.start(of: today, calendar: cal)
         let dates = (0..<7).compactMap { cal.date(byAdding: .day, value: $0, to: weekStart) }
 
         func day(of s: PlannedSession) -> Date? { s.startDate.map { cal.startOfDay(for: $0) } }
@@ -77,13 +94,13 @@ struct WeekOverview {
         let doneCount = weekSessions.filter { isDone($0.id) }.count
 
         // Numéro de semaine dans le plan, de la 1re à la dernière séance.
-        let starts = sorted.compactMap { s in day(of: s).flatMap { cal.dateInterval(of: .weekOfYear, for: $0)?.start } }
+        let starts = sorted.compactMap { s in day(of: s).map { PlanWeeks.start(of: $0, calendar: cal) } }
         var weekNumber: Int?
         var totalWeeks = 0
         if let first = starts.first, let last = starts.last {
             totalWeeks = (cal.dateComponents([.weekOfYear], from: first, to: last).weekOfYear ?? 0) + 1
             let index = (cal.dateComponents([.weekOfYear], from: first, to: weekStart).weekOfYear ?? -1) + 1
-            if weekStart >= first, (1...totalWeeks).contains(index) { weekNumber = index }
+            if (1...totalWeeks).contains(index) { weekNumber = index }
         }
 
         let later = sorted.filter { s in
@@ -108,7 +125,8 @@ struct WeekOverview {
                             weekNumber: weekNumber,
                             totalWeeks: totalWeeks,
                             today: todayState,
-                            upcoming: Array(later.prefix(upcomingLimit)))
+                            upcoming: Array(later.prefix(upcomingLimit)),
+                            planEnded: !sorted.isEmpty && sorted.allSatisfy { (day(of: $0) ?? .distantPast) < today })
     }
 }
 
@@ -152,6 +170,11 @@ extension StepGoal {
     /// Durée de l'étape en secondes, si elle est au temps.
     var seconds: Double? {
         guard type == "time", let value else { return nil }
-        return unit == "min" ? value * 60 : value
+        switch unit {
+        case "min": return value * 60
+        case "h": return value * 3600
+        case "s", nil: return value
+        default: return nil
+        }
     }
 }
