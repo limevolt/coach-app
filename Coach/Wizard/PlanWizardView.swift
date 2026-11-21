@@ -601,7 +601,7 @@ private struct LevelStep: View {
 
     private var healthDetail: String {
         switch draft.healthState {
-        case .notAsked: return "Le coach lit tes courses des 8 dernières semaines. Tes données restent sur ton iPhone."
+        case .notAsked: return "Le coach lit tes séances des 8 dernières semaines. Tes données restent sur ton iPhone."
         case .reading: return "Lecture de Santé…"
         case .found:
             return "\(Int((draft.healthRunMinutes ?? 0).rounded())) min de course par semaine en moyenne sur 8 semaines."
@@ -617,8 +617,11 @@ private struct LevelStep: View {
         Task {
             let reader = HealthReader()
             try? await reader.requestAuthorization()
-            let minutes = await reader.averageRunMinutesPerWeek()
-            draft.healthSessions = await reader.averageSessionsPerWeek()
+            // Les deux lectures avant de les afficher : le niveau conseillé ne bouge pas sous les yeux.
+            async let runMinutes = reader.averageRunMinutesPerWeek()
+            async let sessions = reader.averageSessionsPerWeek()
+            let (minutes, perWeek) = await (runMinutes, sessions)
+            draft.healthSessions = perWeek
             draft.healthRunMinutes = minutes
             draft.healthState = minutes == nil ? .nothing : .found
         }
@@ -648,6 +651,8 @@ private struct IntensityStep: View {
                 .font(.detail).foregroundStyle(Theme.muted)
         }
         .sensoryFeedback(.selection, trigger: draft.intensity)
+        // Le choix affiché est figé à l'arrivée sur l'étape (le conseil peut encore changer d'étiquette).
+        .onAppear { if draft.chosenIntensity == nil { draft.chosenIntensity = draft.recommendedIntensity } }
     }
 }
 

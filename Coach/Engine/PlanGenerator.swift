@@ -103,6 +103,8 @@ struct PlanGenerator {
         let chosen = settings.intensity
         let history = settings.startLevel == .health ? start.plausibleSessionsPerWeek : nil
         let ceiling = PlanIntensity.startCeiling(sessionsPerWeek: history)
+        // Sans historique, la montée s'arrête à « Soutenu » tant que les retours de séance ne sont pas lus (#44).
+        let target = PlanIntensity.target(chosen: chosen, history: history)
         let increase = min(memory.weeklyIncreaseLimit, chosen.maxWeeklyIncrease)
         let weeks = PlanCalendar.weeks(firstDay: firstDay, eventDate: eventDate, deloadEvery: chosen.deloadEvery)
         let days = WeekComposer.usableDays(settings)
@@ -113,13 +115,7 @@ struct PlanGenerator {
         for module in settings.activeModules where (counts[module] ?? 0) == 0 {
             note("\(module.label) : pas assez de jours pour une séance par semaine.")
         }
-        if chosen > ceiling {
-            let reached = PlanIntensity.weekReached(chosen: chosen, ceiling: ceiling)
-            let why = history == nil ? "Sans historique de séances" : "Avec ton historique actuel"
-            note(reached < weeks.count
-                 ? "\(why), le coach commence en \(ceiling.label) et passe en \(chosen.label) à partir de la semaine \(reached + 1)."
-                 : "\(why), le coach reste en \(ceiling.label) et monte d'un cran toutes les \(PlanIntensity.weeksPerStep) semaines.")
-        }
+        if let message = PlanIntensity.rampNote(chosen: chosen, history: history, weekCount: weeks.count) { note(message) }
         for zone in profile.sparedZones.sorted(by: { $0.rawValue < $1.rawValue }) {
             note("\(zone.label) à ménager : les séances qui sollicitent cette zone sont remplacées ou raccourcies. Si la gêne persiste, consulte.")
         }
@@ -141,6 +137,7 @@ struct PlanGenerator {
 
         var generated: [GeneratedWeek] = []
         var previousSunday = DayLoad.rest
+        var previousSaturday = DayLoad.rest
         var sessions: [PlannedSession] = []
         var lastBuildRun: Int?
         var lastBuildLong: Int?
@@ -149,7 +146,9 @@ struct PlanGenerator {
 
         for (i, week) in weeks.enumerated() {
             let isEventWeek = eventDate != nil && i == weeks.count - 1
-            let intensity = PlanIntensity.effective(chosen: chosen, ceiling: ceiling, weekIndex: i)
+            // Semaine allégée et affûtage : au plus les règles de « Modéré » (aucune paire de jours durs).
+            var intensity = PlanIntensity.effective(chosen: target, ceiling: ceiling, weekIndex: i)
+            if week.isDeload || week.phase == .taper { intensity = min(intensity, .moderate) }
             let weekDays = days.filter { iso in
                 let date = PlanCalendar.day(iso, of: week.monday)
                 if date < firstDayStart { return false }
@@ -165,7 +164,10 @@ struct PlanGenerator {
             // Sortie longue : la durée d'une séance au départ si le niveau est inconnu, puis +10 % (ou +5 min) au plus.
             var maxLong = Int(longCap)
             if let lastBuildLong {
-                maxLong = min(maxLong, max(lastBuildLong + 5, Int(Double(lastBuildLong) * (1 + increase) / 5) * 5))
+                // Doux : le plancher de +5 min une semaine sur deux, pour rester près de +5 %.
+                let floorStep = (chosen == .gentle && week.index % 2 == 1) ? 0 : 5
+                maxLong = min(maxLong, max(lastBuildLong + floorStep,
+                                           Int(Double(lastBuildLong) * (1 + chosen.maxWeeklyIncrease) / 5) * 5))
             } else if known == nil {
                 maxLong = min(maxLong, settings.sessionMinutes)
             }
@@ -186,7 +188,8 @@ struct PlanGenerator {
             let placer = DayPlacer(usableDays: weekDays, gymDays: settings.gymDays.intersection(Set(weekDays)),
                                    allowTwoSessionsPerDay: settings.allowTwoSessionsPerDay,
                                    hardPairs: intensity.hardPairsPerWeek, legsPairAllowed: intensity.legsPairAllowed,
-                                   previousSunday: previousSunday, nextMonday: nextMonday,
+                                   previousSunday: previousSunday, previousSaturday: previousSaturday,
+                                   nextMonday: nextMonday,
                                    allowed: { kind, iso in
                                        guard let eventDate else { return true }
                                        let date = PlanCalendar.day(iso, of: monday)
@@ -247,6 +250,7 @@ struct PlanGenerator {
                 }
             }
             previousSunday = DayLoad((placed[7] ?? []).map(\.kind))
+            previousSaturday = DayLoad((placed[6] ?? []).map(\.kind))
         }
 
         var phases: [(phase: TrainingPhase, weeks: Int)] = []
@@ -340,8 +344,11 @@ struct PlanGenerator {
                 s.remove(at: i)
             }
         }
-        let cap = Self.intensityCap(sessions: s.count, intensity: intensity)
-        let keep = intensity == .gentle ? 0 : 1
+        var cap = Self.intensityCap(sessions: s.count, intensity: intensity)
+        // Soutenu / Intense : toujours au moins une séance facile dans la semaine.
+        if intensity > .moderate { cap = min(cap, max(1, s.count - 1)) }
+        // Doux : une qualité de course reste si la course est la discipline principale.
+        let keep = intensity == .gentle && settings.principal != .run ? 0 : 1
         if hardCount() > cap, let i = s.firstIndex(where: { $0.kind == .longRunProgressive }) {
             s[i].kind = .longRunEasy
         }

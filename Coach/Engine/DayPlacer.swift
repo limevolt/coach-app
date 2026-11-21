@@ -39,11 +39,14 @@ enum PlanRules {
     /// Vérifie une suite de jours consécutifs (index 0 = premier jour). `loads[i]` = charge du jour i.
     /// `hardPairs` : paires de jours durs consécutifs permises (#57) ; jamais trois jours durs de suite,
     /// et deux jours « jambes » de suite seulement si `legsPairAllowed`.
-    static func violations(_ loads: [DayLoad], hardPairs: Int = 0, legsPairAllowed: Bool = false) -> [Violation] {
+    /// `countFrom` : les jours avant cet index ne servent qu'à repérer trois jours durs de suite
+    /// (fin de la semaine d'avant, déjà vérifiée).
+    static func violations(_ loads: [DayLoad], hardPairs: Int = 0, legsPairAllowed: Bool = false,
+                           countFrom: Int = 0) -> [Violation] {
         var out: [Violation] = []
         guard loads.count > 1 else { return out }
         var pairsUsed = 0
-        for i in 0..<(loads.count - 1) {
+        for i in countFrom..<(loads.count - 1) {
             if loads[i].hard && loads[i + 1].hard {
                 let third = i > 0 && loads[i - 1].hard
                 let bothLegs = loads[i].legs && loads[i + 1].legs
@@ -68,6 +71,8 @@ struct DayPlacer {
     var legsPairAllowed = false
     /// Charge du dimanche précédent (fin de la semaine d'avant).
     var previousSunday: DayLoad
+    /// Charge du samedi précédent : jamais trois jours durs de suite d'une semaine à l'autre (#57).
+    var previousSaturday: DayLoad = .rest
     /// Charge déjà connue du lundi suivant (cours collectif le lundi), sinon repos.
     var nextMonday: DayLoad = .rest
     /// Séance permise ce jour-là (ex. rien de dur dans les 3 derniers jours avant l'événement).
@@ -124,7 +129,7 @@ struct DayPlacer {
     }
 
     private func loads(_ plan: [Int: [ComposedSession]]) -> [DayLoad] {
-        [previousSunday] + (1...7).map { DayLoad((plan[$0] ?? []).map(\.kind)) } + [nextMonday]
+        [previousSaturday, previousSunday] + (1...7).map { DayLoad((plan[$0] ?? []).map(\.kind)) } + [nextMonday]
     }
 
     private func partialOK(_ plan: [Int: [ComposedSession]]) -> Bool {
@@ -133,7 +138,7 @@ struct DayPlacer {
     }
 
     func isValid(_ plan: [Int: [ComposedSession]]) -> Bool {
-        PlanRules.violations(loads(plan), hardPairs: hardPairs, legsPairAllowed: legsPairAllowed).isEmpty
+        PlanRules.violations(loads(plan), hardPairs: hardPairs, legsPairAllowed: legsPairAllowed, countFrom: 1).isEmpty
     }
 
     /// Préférences : sortie longue le week-end, renfo en salle les jours à la salle, séances dures espacées.
@@ -149,10 +154,11 @@ struct DayPlacer {
             if sessions.count > 1 { s -= 1 }
         }
         // Deux jours durs séparés d'un seul jour : un peu moins bien que mieux espacés.
+        // (l[0] = samedi d'avant : seulement pour la règle des trois jours, hors score.)
         let l = loads(plan)
-        for i in 0..<(l.count - 2) where l[i].hard && l[i + 2].hard { s -= 1 }
+        for i in 1..<(l.count - 2) where l[i].hard && l[i + 2].hard { s -= 1 }
         // Deux jours durs de suite (permis en Soutenu / Intense) : seulement si rien de mieux n'existe.
-        for i in 0..<(l.count - 1) where l[i].hard && l[i + 1].hard { s -= 10 }
+        for i in 1..<(l.count - 1) where l[i].hard && l[i + 1].hard { s -= 10 }
         return s
     }
 }

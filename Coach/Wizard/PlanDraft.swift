@@ -229,14 +229,15 @@ final class PlanDraft {
     }
 
     /// Phrase sous le niveau choisi quand le coach doit commencer plus bas (garde-fou).
-    func intensityNote(for level: PlanIntensity) -> String? {
-        let ceiling = PlanIntensity.startCeiling(sessionsPerWeek: historySessions)
-        guard level > ceiling else { return nil }
-        let week = PlanIntensity.weekReached(chosen: level, ceiling: ceiling) + 1
-        guard let sessions = historySessions else {
-            return "Pas encore de séances connues : le coach commence en \(ceiling.label) et passe en \(level.label) à partir de la semaine \(week)."
+    func intensityNote(for level: PlanIntensity, today: Date = .now) -> String? {
+        let s = settings(today: today)
+        var weekCount = PlanCalendar.fitnessHorizonWeeks
+        if let first = s.firstDay(today: today), let event = s.objective.eventDate, first < event {
+            weekCount = PlanCalendar.weeks(firstDay: first, eventDate: event).count
         }
+        guard let ramp = PlanIntensity.rampNote(chosen: level, history: historySessions, weekCount: weekCount) else { return nil }
+        guard let sessions = historySessions else { return ramp }
         let n = sessions.formatted(.number.precision(.fractionLength(0...1)))
-        return "Dans Santé : \(n) séances par semaine ces 8 dernières semaines. Le coach commence en \(ceiling.label) et passe en \(level.label) à partir de la semaine \(week)."
+        return "Dans Santé : \(n) séances par semaine ces 8 dernières semaines. " + ramp
     }
 }

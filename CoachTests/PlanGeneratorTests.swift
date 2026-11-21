@@ -315,6 +315,23 @@ final class PlanGeneratorTests: XCTestCase {
         XCTAssertTrue(g.weeks.allSatisfy { $0.sessions.contains { $0.kind == .martialCrossClass } })
     }
 
+    /// Soutenu et Intense (#57) passent aussi par toutes les règles (paires de jours durs, jambes, séances clés).
+    func testFirmAndIntensePlansFollowAllRules() throws {
+        let event = PlanObjective.event(name: "Course fictive", date: "2030-05-26")
+        let regular = StartingPoint(runMinutesPerWeek: 200, sessionsPerWeek: 5)
+        for level in [PlanIntensity.firm, .intense] {
+            var runOnly = settings(objective: event, days: [6, 7, 1, 2])
+            runOnly.intensity = level
+            _ = try generate(runOnly, start: regular)
+            var mixed = settings(objective: event,
+                                 modules: [ModuleChoice(module: .run), ModuleChoice(module: .strength, variants: [.home]),
+                                           ModuleChoice(module: .martialCross, variants: [.group], classDay: 4, classTime: "19:00")],
+                                 days: [1, 2, 3, 5, 6, 7])
+            mixed.intensity = level
+            _ = try generate(mixed, start: regular)
+        }
+    }
+
     func testSevenDaysKeepsARestDay() throws {
         let s = settings(modules: [ModuleChoice(module: .run), ModuleChoice(module: .strength, variants: [.home])],
                          days: Set(1...7))

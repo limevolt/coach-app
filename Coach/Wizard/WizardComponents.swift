@@ -100,7 +100,7 @@ struct DayGrid: View {
     }
 }
 
-// MARK: - Progression (6 segments)
+// MARK: - Progression (un segment par étape)
 
 struct WizardProgress: View {
     let step: WizardStep
@@ -150,7 +150,18 @@ struct RadioRow: View {
     var note: String? = nil
     let action: () -> Void
 
-    @Environment(\.dynamicTypeSize) var typeSize
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    init(title: String, detail: String, isOn: Bool, tag: String? = nil, bars: Int? = nil, note: String? = nil,
+         action: @escaping () -> Void) {
+        self.title = title
+        self.detail = detail
+        self.isOn = isOn
+        self.tag = tag
+        self.bars = bars
+        self.note = note
+        self.action = action
+    }
 
     var body: some View {
         Button(action: action) {
@@ -178,7 +189,7 @@ struct RadioRow: View {
                             Text(note).font(.detail).foregroundStyle(Theme.text)
                                 .fixedSize(horizontal: false, vertical: true)
                         } icon: {
-                            Image(systemName: "info.circle").foregroundStyle(Theme.muted)
+                            Image(systemName: "info.circle").font(.detail).foregroundStyle(Theme.muted)
                         }
                         .padding(.top, 4)
                     }

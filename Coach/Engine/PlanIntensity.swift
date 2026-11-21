@@ -1,6 +1,6 @@
 // PlanIntensity.swift — coach local (#57) : l'intensité du plan, choisie dans l'assistant.
 // Chaque niveau règle les limites du moteur ; les règles de fin de plan (affûtage, semaine de l'épreuve)
-// et la hausse de volume de +10 % au plus restent les mêmes pour tous.
+// restent celles de « Modéré », et la hausse de volume ne dépasse jamais +10 % (+5 % en « Doux »).
 
 import Foundation
 
@@ -18,7 +18,7 @@ enum PlanIntensity: String, Codable, CaseIterable, Comparable, Hashable {
 
     var summary: String {
         switch self {
-        case .gentle: return "1 séance dure par semaine, progression lente. Pour reprendre ou garder la forme."
+        case .gentle: return "1 séance de course dure au plus, progression lente. Pour reprendre ou garder la forme."
         case .moderate: return "2 séances dures par semaine, jamais deux jours durs de suite."
         case .firm: return "3 séances dures, parfois deux jours durs de suite. Si tu t'entraînes déjà régulièrement."
         case .intense: return "3 à 4 séances dures, deux jours durs de suite si besoin. Pour un sportif confirmé."
@@ -55,7 +55,8 @@ enum PlanIntensity: String, Codable, CaseIterable, Comparable, Hashable {
     }
 
     /// Une paire de jours durs peut-elle charger les jambes les deux jours ?
-    var legsPairAllowed: Bool { self == .intense }
+    /// Jamais pour l'instant (relecture entraîneur #57) : à rouvrir dans l'issue si besoin.
+    var legsPairAllowed: Bool { false }
 
     /// Hausse de volume de course par semaine, au plus (jamais au-dessus de `CoachMemory.maxWeeklyIncrease`).
     var maxWeeklyIncrease: Double { self == .gentle ? 0.05 : CoachMemory.maxWeeklyIncrease }
@@ -97,6 +98,27 @@ enum PlanIntensity: String, Codable, CaseIterable, Comparable, Hashable {
 
     /// Le coach monte d'un cran toutes les `weeksPerStep` semaines, jusqu'au niveau choisi.
     static let weeksPerStep = 3
+
+    /// Niveau visé : sans historique, la montée s'arrête à « Soutenu » tant que les retours de séance
+    /// ne sont pas lus par le coach (#44).
+    static func target(chosen: PlanIntensity, history: Double?) -> PlanIntensity {
+        history == nil ? min(chosen, .firm) : chosen
+    }
+
+    /// Phrase d'explication quand le coach commence plus bas que le niveau choisi (nil sinon).
+    static func rampNote(chosen: PlanIntensity, history: Double?, weekCount: Int) -> String? {
+        let ceiling = startCeiling(sessionsPerWeek: history)
+        let goal = target(chosen: chosen, history: history)
+        guard chosen > ceiling else { return nil }
+        let why = history == nil ? "Sans historique de séances" : "Avec ton historique actuel"
+        var text = "\(why), le coach commence en \(ceiling.label)"
+        if goal > ceiling {
+            let week = weekReached(chosen: goal, ceiling: ceiling) + 1
+            text += week <= weekCount ? " et passe en \(goal.label) à partir de la semaine \(week)" : " et monte d'un cran toutes les \(weeksPerStep) semaines"
+        }
+        if goal < chosen { text += " ; \(chosen.label) viendra quand le coach lira tes retours de séance" }
+        return text + "."
+    }
 
     /// Intensité réellement appliquée à la semaine `weekIndex` (0 = première semaine).
     static func effective(chosen: PlanIntensity, ceiling: PlanIntensity, weekIndex: Int) -> PlanIntensity {
