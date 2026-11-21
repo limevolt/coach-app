@@ -112,6 +112,7 @@ final class CoachCaptures: XCTestCase {
             if tap("Martial cross", in: app) {
                 _ = tap("En cours", in: app)
                 app.swipeUp()
+                Thread.sleep(forTimeInterval: 0.6) // fin de l'accordéon avant capture et audit
                 shot("22b-assistant-disciplines-martial")
                 audit("Assistant — martial cross", app)
             }
@@ -120,6 +121,13 @@ final class CoachCaptures: XCTestCase {
             shot("23-assistant-disponibilites")
             audit("Assistant — disponibilités", app)
             app.swipeUp()
+            // Jour à la salle (2e « Mardi » : grille du bas), demandé par la séance seule de martial cross.
+            let gymDay = app.buttons.matching(NSPredicate(format: "label == %@", "Mardi")).element(boundBy: 1)
+            if gymDay.waitForExistence(timeout: 3) { gymDay.tap() } else { note("Jour à la salle introuvable") }
+            // Interrupteur Coach activé (option A validée).
+            let twoPerDay = app.switches.firstMatch
+            if twoPerDay.waitForExistence(timeout: 3) { twoPerDay.tap() } else { note("Interrupteur introuvable") }
+            Thread.sleep(forTimeInterval: 0.4)
             shot("24-assistant-disponibilites-bas")
             next(app)
             shot("25-assistant-materiel")
