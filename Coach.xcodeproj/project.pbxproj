@@ -94,6 +94,7 @@
 		DD164B74B9D4B53CA1728B62 /* ExerciseAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AD7181E658FD44CEBD338B0 /* ExerciseAnimation.swift */; };
 		DD3F4BAB78B17B131A286CC5 /* DayPlacer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E43E9868B60F306D446C6E70 /* DayPlacer.swift */; };
 		DEF840ACDE27552F96B25523 /* Outfit-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = EFCD52B3FF61A80EF853190A /* Outfit-Bold.ttf */; };
+		DF0318C29903F6EB4EED560B /* CoachControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE78CB53888BAF0BF09DB385 /* CoachControls.swift */; };
 		E03F482288B9F4D4923EF730 /* SessionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BCEB04270CDBFAB907B3042 /* SessionDetailView.swift */; };
 		E1DF8F935A11ECB154242625 /* Outfit-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9065AE64029D887414A302BC /* Outfit-Medium.ttf */; };
 		E40098F7E50B53627A343BEE /* ExerciseAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AD7181E658FD44CEBD338B0 /* ExerciseAnimation.swift */; };
@@ -239,6 +240,7 @@
 		EEE5665EC92A631AFA09DBCE /* Collapsible.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Collapsible.swift; sourceTree = "<group>"; };
 		EFB32011DD22151450EEEB28 /* WatchButtons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchButtons.swift; sourceTree = "<group>"; };
 		EFCD52B3FF61A80EF853190A /* Outfit-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Outfit-Bold.ttf"; sourceTree = "<group>"; };
+		FE78CB53888BAF0BF09DB385 /* CoachControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachControls.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -313,6 +315,7 @@
 				4415AD572B9C9CA1090038DD /* BusyButton.swift */,
 				55CC634D74040B9A1862DFB4 /* Coach.entitlements */,
 				912D6F261042F3CACC531D2D /* CoachApp.swift */,
+				FE78CB53888BAF0BF09DB385 /* CoachControls.swift */,
 				EEE5665EC92A631AFA09DBCE /* Collapsible.swift */,
 				EAEAC8B7EFE1AEA3EEB3B30A /* DestructiveButton.swift */,
 				3819F510E1AE826C638EB6F3 /* ExerciseGuideView.swift */,
@@ -651,6 +654,7 @@
 				7A8243231ABA8AE95DE5175B /* AdaptSessionView.swift in Sources */,
 				00E274653B36D3C1E04B0861 /* BusyButton.swift in Sources */,
 				87993750DF9FB3D9A8CD62CB /* CoachApp.swift in Sources */,
+				DF0318C29903F6EB4EED560B /* CoachControls.swift in Sources */,
 				43F18FB2DCD8D19787D3F09F /* CoachMemory.swift in Sources */,
 				8F148A94BA426F56B6317A92 /* CoachModules.swift in Sources */,
 				411B948974297B5F628405D6 /* CoachStorage.swift in Sources */,
