@@ -1,4 +1,4 @@
-commit: af26c067da6fd5ee2d57ee12772d9ab59517d068
+commit: 24e8aece0edeac7ff1dff090080188b8047295b0
 branche: coach/45-assistant
 ios: success
 watch: success
@@ -9,66 +9,66 @@ tests: success
 ===== ERREURS / AVERTISSEMENTS MONTRE =====
 
 ===== TESTS UNITAIRES =====
-Test Case '-[CoachTests.PlanGeneratorTests testMartialCrossSoloOnlyOnGymDay]' passed (0.004 seconds).
-Test Case '-[CoachTests.PlanGeneratorTests testMartialCrossSoloSkippedForSparedZone]' passed (0.003 seconds).
-Test Case '-[CoachTests.PlanGeneratorTests testPhasesOfAnEventPlan]' passed (0.001 seconds).
-Test Case '-[CoachTests.PlanGeneratorTests testPlanStartsOnTheStartDateAndCarriesTheNote]' passed (0.011 seconds).
-Test Case '-[CoachTests.PlanGeneratorTests testRunVolumeRules]' passed (0.738 seconds).
-Test Case '-[CoachTests.PlanGeneratorTests testSevenDaysKeepsARestDay]' passed (0.067 seconds).
-Test Case '-[CoachTests.PlanGeneratorTests testShortSessionsWithSparedZoneStayWithinTheirDuration]' passed (0.007 seconds).
+Test Case '-[CoachTests.PlanGeneratorTests testMartialCrossSoloOnlyOnGymDay]' passed (0.003 seconds).
+Test Case '-[CoachTests.PlanGeneratorTests testMartialCrossSoloSkippedForSparedZone]' passed (0.002 seconds).
+Test Case '-[CoachTests.PlanGeneratorTests testPhasesOfAnEventPlan]' passed (0.048 seconds).
+Test Case '-[CoachTests.PlanGeneratorTests testPlanStartsOnTheStartDateAndCarriesTheNote]' passed (0.008 seconds).
+Test Case '-[CoachTests.PlanGeneratorTests testRunVolumeRules]' passed (0.001 seconds).
+Test Case '-[CoachTests.PlanGeneratorTests testSevenDaysKeepsARestDay]' passed (0.050 seconds).
+Test Case '-[CoachTests.PlanGeneratorTests testShortSessionsWithSparedZoneStayWithinTheirDuration]' passed (0.009 seconds).
 Test Case '-[CoachTests.PlanGeneratorTests testSingleRunPerWeekExplainsTheLevel]' passed (0.006 seconds).
-Test Case '-[CoachTests.PlanGeneratorTests testSparedKneeAvoidsStairsAndHills]' passed (0.018 seconds).
-Test Case '-[CoachTests.PlanGeneratorTests testSparedZonesAdaptExercises]' passed (0.016 seconds).
-Test Case '-[CoachTests.PlanGeneratorTests testStairsSessionsAreSizedToTheStaircase]' passed (0.017 seconds).
-2026-11-21 06:49:18.997941+0000 Coach[16452:52010] [WC] -[WCSession onqueue_handTest Case '-[CoachTests.PlanGeneratorTests testTwoSessionsPerDayOnlyWhenAllowed]' passed (0.032 seconds).
-Test Case '-[CoachTests.PlanGeneratorTests testUnknownLevelStartsCarefully]' passed (0.019 seconds).
-Test Case '-[CoachTests.PlanGeneratorTests testVeryShortPlanIsMaintenanceOnly]' passed (0.003 seconds).
-	 Executed 26 tests, with 0 failures (0 unexpected) in 1.450 (2.408) seconds
-Test Case '-[CoachTests.PlanSettingsTests testAvailableSessionsFollowVariants]' passed (0.003 seconds).
+Test Case '-[CoachTests.PlanGeneratorTests testSparedKneeAvoidsStairsAndHills]' passed (0.019 seconds).
+Test Case '-[CoachTests.PlanGeneratorTests testSparedZonesAdaptExercises]' passed (0.012 seconds).
+Test Case '-[CoachTests.PlanGeneratorTests testStairsSessionsAreSizedToTheStaircase]' passed (0.014 seconds).
+Test Case '-[CoachTests.PlanGeneratorTests testTwoSessionsPerDayOnlyWhenAllowed]' passed (0.067 seconds).
+Test Case '-[CoachTests.PlanGeneratorTests testUnknownLevelStartsCarefully]' passed (0.013 seconds).
+Test Case '-[CoachTests.PlanGeneratorTests testVeryShortPlanIsMaintenanceOnly]' passed (0.004 seconds).
+	 Executed 26 tests, with 0 failures (0 unexpected) in 0.440 (0.543) seconds
+Test Case '-[CoachTests.PlanSettingsTests testAvailableSessionsFollowVariants]' passed (0.011 seconds).
 Test Case '-[CoachTests.PlanSettingsTests testChoiceDropsVariantsOfOtherModules]' passed (0.001 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testCoachMemoryNeverSpeedsUpPastTheRule]' passed (0.009 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testEventIsCountedFromThePlanStart]' passed (0.003 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testEventTooCloseOrMissingDate]' passed (0.002 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testEverySessionDeclaresItsZones]' passed (0.001 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testGroupClassNeedsDayAndTime]' passed (0.001 seconds).
+Test Case '-[CoachTests.PlanSettingsTests testCoachMemoryNeverSpeedsUpPastTheRule]' passed (0.003 seconds).
+Test Case '-[CoachTests.PlanSettingsTests testEventIsCountedFromThePlanStart]' passed (0.001 seconds).
+Test Case '-[CoachTests.PlanSettingsTests testEventTooCloseOrMissingDate]' passed (0.000 seconds).
+Test Case '-[CoachTests.PlanSettingsTests testEverySessionDeclaresItsZones]' passed (0.002 seconds).
+Test Case '-[CoachTests.PlanSettingsTests testGroupClassNeedsDayAndTime]' passed (0.002 seconds).
 Test Case '-[CoachTests.PlanSettingsTests testGymOnlyModulesNeedAGymDay]' passed (0.001 seconds).
 Test Case '-[CoachTests.PlanSettingsTests testHardSessionsAndLegLoad]' passed (0.001 seconds).
 Test Case '-[CoachTests.PlanSettingsTests testKeySessionsAreProtected]' passed (0.001 seconds).
 Test Case '-[CoachTests.PlanSettingsTests testLongRunAndTwoSessionsAreSettings]' passed (0.010 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testMartialCrossModeChoosesSessionKind]' passed (0.800 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testMissingModuleAndDay]' passed (0.002 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testModulesWithoutVariantOrTwice]' passed (0.001 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testOldOrUnknownDataIsReadWithoutLoss]' passed (0.003 seconds).
+Test Case '-[CoachTests.PlanSettingsTests testMartialCrossModeChoosesSessionKind]' passed (0.003 seconds).
+Test Case '-[CoachTests.PlanSettingsTests testMissingModuleAndDay]' passed (0.001 seconds).
+Test Case '-[CoachTests.PlanSettingsTests testModulesWithoutVariantOrTwice]' passed (0.000 seconds).
+Test Case '-[CoachTests.PlanSettingsTests testOldOrUnknownDataIsReadWithoutLoss]' passed (0.038 seconds).
 Test Case '-[CoachTests.PlanSettingsTests testPrincipalMustBeActive]' passed (0.001 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testPunchingBagAtHomeAllowsMartialCrossWithoutGym]' passed (1.060 seconds).
+Test Case '-[CoachTests.PlanSettingsTests testPunchingBagAtHomeAllowsMartialCrossWithoutGym]' passed (0.001 seconds).
 Test Case '-[CoachTests.PlanSettingsTests testRepeatedMarkedPainInTheSameZone]' passed (0.001 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testSessionMinutesMustBeAChoice]' passed (0.002 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testSettingsAndProfileRoundTripThroughJSON]' passed (0.007 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testStaircaseEstimatesClimbFromSteps]' passed (0.279 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testStairsVariantNeedsAStaircase]' passed (0.002 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testSuggestedName]' passed (0.002 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testValidSettingsHaveNoIssue]' passed (0.001 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testVariantsBelongToTheirModule]' passed (0.002 seconds).
-Test Case '-[CoachTests.PlanSettingsTests testWarnings]' passed (1.106 seconds).
-	 Executed 26 tests, with 0 failures (0 unexpected) in 3.299 (4.019) seconds
-Test Case '-[CoachTests.ReportPreviewTests testPreviewKeepsOnlyFirstLines]' passed (0.002 seconds).
+Test Case '-[CoachTests.PlanSettingsTests testSessionMinutesMustBeAChoice]' passed (0.001 seconds).
+Test Case '-[CoachTests.PlanSettingsTests testSettingsAndProfileRoundTripThroughJSON]' passed (0.004 seconds).
+Test Case '-[CoachTests.PlanSettingsTests testStaircaseEstimatesClimbFromSteps]' passed (0.001 seconds).
+Test Case '-[CoachTests.PlanSettingsTests testStairsVariantNeedsAStaircase]' passed (0.001 seconds).
+Test Case '-[CoachTests.PlanSettingsTests testSuggestedName]' passed (0.000 seconds).
+Test Case '-[CoachTests.PlanSettingsTests testValidSettingsHaveNoIssue]' passed (0.000 seconds).
+Test Case '-[CoachTests.PlanSettingsTests testVariantsBelongToTheirModule]' passed (0.144 seconds).
+Test Case '-[CoachTests.PlanSettingsTests testWarnings]' passed (0.001 seconds).
+	 Executed 26 tests, with 0 failures (0 unexpected) in 0.229 (1.494) seconds
+Test Case '-[CoachTests.ReportPreviewTests testPreviewKeepsOnlyFirstLines]' passed (0.001 seconds).
 Test Case '-[CoachTests.ReportPreviewTests testReportInputsChangeWithNewLogOrComment]' passed (0.001 seconds).
-	 Executed 2 tests, with 0 failures (0 unexpected) in 0.003 (0.004) seconds
-Test Case '-[CoachTests.WeekOverviewTests testPlanEnded]' passed (0.006 seconds).
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.002 (0.042) seconds
+Test Case '-[CoachTests.WeekOverviewTests testPlanEnded]' passed (0.004 seconds).
 Test Case '-[CoachTests.WeekOverviewTests testPlannedMinutes]' passed (0.001 seconds).
 Test Case '-[CoachTests.WeekOverviewTests testPlannedMinutesUnits]' passed (0.001 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testRestDayShowsNextSessionAndUpcoming]' passed (0.001 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testSeveralSessionsSameDay]' passed (0.901 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testTodayToDoThenDone]' passed (0.001 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testUpcomingSkipsDoneSessions]' passed (0.001 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testWeekBeforePlanStarts]' passed (0.001 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testWeekHasSevenDaysWithStatuses]' passed (0.002 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testWeekLineAcrossMonths]' passed (1.641 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testRestDayShowsNextSessionAndUpcoming]' passed (0.106 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testSeveralSessionsSameDay]' passed (0.001 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testTodayToDoThenDone]' passed (0.003 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testUpcomingSkipsDoneSessions]' passed (0.003 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testWeekBeforePlanStarts]' passed (0.002 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testWeekHasSevenDaysWithStatuses]' passed (0.035 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testWeekLineAcrossMonths]' passed (0.007 seconds).
 Test Case '-[CoachTests.WeekOverviewTests testWeekOutsidePlanHasNoNumber]' passed (0.001 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testWeekStartsOnMondayWhateverTheRegion]' passed (0.001 seconds).
-	 Executed 12 tests, with 0 failures (0 unexpected) in 2.558 (2.565) seconds
-	 Executed 95 tests, with 0 failures (0 unexpected) in 12.174 (16.376) seconds
-	 Executed 95 tests, with 0 failures (0 unexpected) in 12.174 (16.381) seconds
+Test Case '-[CoachTests.WeekOverviewTests testWeekStartsOnMondayWhateverTheRegion]' passed (0.002 seconds).
+	 Executed 12 tests, with 0 failures (0 unexpected) in 0.167 (0.173) seconds
+	 Executed 95 tests, with 0 failures (0 unexpected) in 12.387 (15.097) seconds
+	 Executed 95 tests, with 0 failures (0 unexpected) in 12.387 (15.099) seconds
 
 ===== FIN DU JOURNAL iOS =====
 ** BUILD SUCCEEDED **
