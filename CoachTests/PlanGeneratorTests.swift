@@ -255,6 +255,51 @@ final class PlanGeneratorTests: XCTestCase {
         XCTAssertTrue(g.plan.sessions.filter { $0.type == .circuit }.allSatisfy { $0.time == "19:00" })
     }
 
+    /// Seul + en cours, martial cross principal : 1 cours + 1 séance seule au plus, jamais plus de 2 séances dures.
+    func testMartialCrossSoloAndClassTogether() throws {
+        let s = settings(modules: [ModuleChoice(module: .martialCross, variants: [.solo, .group], classDay: 4, classTime: "19:00"),
+                                   ModuleChoice(module: .run)],
+                         principal: .martialCross, days: [1, 6], gymDays: [1])
+        let g = try generate(s)
+        XCTAssertTrue(g.weeks.contains { $0.week.isDeload || $0.week.phase == .taper }, "le plan contient une semaine allégée")
+        for week in g.weeks {
+            XCTAssertTrue(week.sessions.contains { $0.kind == .martialCrossClass && $0.isoDay == 4 }, "le cours chaque jeudi")
+            XCTAssertLessThanOrEqual(week.sessions.filter { $0.kind.module == .martialCross }.count, 2,
+                                     "cours + une séance seule au plus")
+            XCTAssertLessThanOrEqual(week.sessions.filter { $0.kind.countsAsHard }.count, 2, "au plus 2 séances dures")
+            if week.week.isDeload || week.week.phase == .taper {
+                XCTAssertFalse(week.sessions.contains { $0.kind == .martialCrossSolo }, "semaine allégée : le cours suffit")
+            }
+        }
+        let solos = g.weeks.flatMap(\.sessions).filter { $0.kind == .martialCrossSolo }
+        XCTAssertFalse(solos.isEmpty, "seul + en cours : une séance seule en plus du cours")
+        XCTAssertTrue(solos.allSatisfy { $0.isoDay == 1 }, "séance seule : jour de salle (sac de frappe)")
+    }
+
+    /// Course principale avec qualité : la séance seule (bonus) saute avant de dépasser 2 séances dures.
+    func testMartialCrossSoloIsDroppedBeforeHardCap() throws {
+        let s = settings(modules: [ModuleChoice(module: .run),
+                                   ModuleChoice(module: .martialCross, variants: [.solo, .group], classDay: 4, classTime: "19:00")],
+                         days: [1, 3, 6], gymDays: [1])
+        let g = try generate(s)
+        for week in g.weeks {
+            XCTAssertLessThanOrEqual(week.sessions.filter { $0.kind.countsAsHard }.count, 2, "au plus 2 séances dures")
+            XCTAssertTrue(week.sessions.contains { $0.kind == .martialCrossClass }, "le cours reste")
+        }
+    }
+
+    /// Genou à ménager : le cours reste, pas de séance seule en plus.
+    func testMartialCrossSoloSkippedForSparedZone() throws {
+        var profile = AthleteProfile()
+        profile.sparedZones = [.knee]
+        let s = settings(modules: [ModuleChoice(module: .martialCross, variants: [.solo, .group], classDay: 4, classTime: "19:00"),
+                                   ModuleChoice(module: .run)],
+                         principal: .martialCross, days: [1, 6], gymDays: [1])
+        let g = try generate(s, profile: profile)
+        XCTAssertFalse(g.weeks.flatMap(\.sessions).contains { $0.kind == .martialCrossSolo })
+        XCTAssertTrue(g.weeks.allSatisfy { $0.sessions.contains { $0.kind == .martialCrossClass } })
+    }
+
     func testSevenDaysKeepsARestDay() throws {
         let s = settings(modules: [ModuleChoice(module: .run), ModuleChoice(module: .strength, variants: [.home])],
                          days: Set(1...7))

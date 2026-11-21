@@ -20,12 +20,12 @@ enum CoachModuleID: String, Codable, CaseIterable, Hashable {
         }
     }
 
-    /// Variantes proposées dans l'assistant (aucune pour le martial cross, qui a des modes).
+    /// Variantes proposées dans l'assistant (cochables, plusieurs à la fois).
     var variants: [ModuleVariant] {
         switch self {
         case .run: return [.urban, .stairs, .trail]
         case .strength: return [.gym, .home]
-        case .martialCross: return []
+        case .martialCross: return [.solo, .group]
         }
     }
 
@@ -34,7 +34,7 @@ enum CoachModuleID: String, Codable, CaseIterable, Hashable {
         switch self {
         case .run: return [.urban]
         case .strength: return [.gym, .home]
-        case .martialCross: return []
+        case .martialCross: return [.solo]
         }
     }
 
@@ -56,6 +56,9 @@ enum ModuleVariant: String, Codable, CaseIterable, Hashable {
     // Renfo
     case gym
     case home
+    // Martial cross : seul (séances écrites par le moteur) et/ou en cours collectif (jour et heure fixes).
+    case solo
+    case group
 
     var label: String {
         switch self {
@@ -64,6 +67,8 @@ enum ModuleVariant: String, Codable, CaseIterable, Hashable {
         case .trail: return "Trail"
         case .gym: return "Salle"
         case .home: return "Maison"
+        case .solo: return "Seul"
+        case .group: return "En cours"
         }
     }
 
@@ -71,11 +76,13 @@ enum ModuleVariant: String, Codable, CaseIterable, Hashable {
         switch self {
         case .urban, .stairs, .trail: return .run
         case .gym, .home: return .strength
+        case .solo, .group: return .martialCross
         }
     }
 }
 
-/// Martial cross : cours collectif (placé à heure fixe) ou séance seul (contenu écrit par le moteur).
+/// Ancien réglage du martial cross (un seul mode) : relu pour la compatibilité, remplacé par les variantes
+/// `.solo` / `.group`, cochables toutes les deux.
 enum MartialCrossMode: String, Codable, Hashable {
     case solo
     case group
@@ -240,8 +247,8 @@ enum SessionKind: String, Codable, CaseIterable, Hashable {
             guard kind.module == choice.module else { return false }
             if let required = kind.requiredVariant, !choice.variants.contains(required) { return false }
             switch kind {
-            case .martialCrossSolo: return (choice.martialCrossMode ?? .solo) == .solo
-            case .martialCrossClass: return choice.martialCrossMode == .group
+            case .martialCrossSolo: return choice.hasSolo
+            case .martialCrossClass: return choice.hasClass
             default: return true
             }
         }

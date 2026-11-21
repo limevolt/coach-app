@@ -123,7 +123,7 @@ struct PlanGenerator {
         var lastBuildRun: Int?
         var lastBuildLong: Int?
         var afterDeload = false
-        let classDay = settings.choice(for: .martialCross).flatMap { $0.martialCrossMode == .group ? $0.classDay : nil }
+        let classDay = settings.choice(for: .martialCross).flatMap { $0.hasClass ? $0.classDay : nil }
 
         for (i, week) in weeks.enumerated() {
             let isEventWeek = eventDate != nil && i == weeks.count - 1
@@ -279,12 +279,17 @@ struct PlanGenerator {
             }
         }
         if let mc = settings.choice(for: .martialCross), let n = counts[.martialCross], n > 0 {
-            if mc.martialCrossMode == .group {
+            if mc.hasClass {
                 slots.append(ComposedSession(kind: .martialCrossClass, minutes: SessionBuilder.groupClassMinutes,
                                              fixedDay: mc.classDay, time: mc.classTime))
-            } else {
-                let count = (week.isDeload || week.phase == .taper) ? 1 : n
-                for _ in 0..<count {
+            }
+            if mc.hasSolo {
+                var solo = n - (mc.hasClass ? 1 : 0)
+                // Semaine allégée ou affûtage : une séance seul au plus, aucune si le cours a lieu.
+                if week.isDeload || week.phase == .taper { solo = min(solo, mc.hasClass ? 0 : 1) }
+                // Zone à ménager sollicitée par le martial cross : le cours suffit, pas de séance seule en plus.
+                if mc.hasClass && !zones.isDisjoint(with: SessionKind.martialCrossSolo.stressedZones) { solo = 0 }
+                for _ in 0..<max(0, solo) {
                     slots.append(ComposedSession(kind: .martialCrossSolo, minutes: settings.sessionMinutes))
                 }
             }
@@ -295,12 +300,19 @@ struct PlanGenerator {
     /// Part d'intensité (#43) : au plus 2 séances dures (modérées comprises) ou 40 % des séances.
     static func intensityCap(sessions: Int) -> Int { max(2, Int(Double(sessions) * 0.4)) }
 
-    /// On rend d'abord facile la sortie longue dynamique, puis les séances de qualité de course en trop
-    /// (en gardant au moins une). Les séances de renfo et de martial cross ne deviennent pas faciles.
+    /// On retire d'abord la séance seule de martial cross ajoutée au cours (un bonus), puis on rend facile
+    /// la sortie longue dynamique, puis les séances de qualité de course en trop (en gardant au moins une).
+    /// Les séances de renfo et le cours de martial cross ne deviennent pas faciles.
     func capIntensity(_ slots: [ComposedSession]) -> [ComposedSession] {
         var s = slots
-        let cap = Self.intensityCap(sessions: s.count)
         func hardCount() -> Int { s.filter { $0.kind.countsAsHard }.count }
+        if s.contains(where: { $0.kind == .martialCrossClass }) {
+            while hardCount() > Self.intensityCap(sessions: s.count),
+                  let i = s.lastIndex(where: { $0.kind == .martialCrossSolo }) {
+                s.remove(at: i)
+            }
+        }
+        let cap = Self.intensityCap(sessions: s.count)
         if hardCount() > cap, let i = s.firstIndex(where: { $0.kind == .longRunProgressive }) {
             s[i].kind = .longRunEasy
         }

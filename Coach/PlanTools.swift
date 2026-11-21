@@ -64,7 +64,7 @@ struct NewPlanView: View {
                 }
 
                 Section {
-                    Toggle("Inclure mon dernier mois de sport", isOn: $includeHistory)
+                    Toggle("Inclure mon dernier mois de sport", isOn: $includeHistory).toggleStyle(.coach)
                 } footer: {
                     Text("Séances, allures, fréquence cardiaque, effort perçu, charges, FC au repos et VFC des \(Self.historyDays) derniers jours : le coach part de ta forme actuelle.")
                 }

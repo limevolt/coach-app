@@ -54,6 +54,8 @@ final class PlanSettingsTests: XCTestCase {
         let group = SessionKind.available(for: ModuleChoice(module: .martialCross, martialCrossMode: .group))
         XCTAssertEqual(solo, [.martialCrossSolo])
         XCTAssertEqual(group, [.martialCrossClass])
+        let both = SessionKind.available(for: ModuleChoice(module: .martialCross, variants: [.solo, .group]))
+        XCTAssertEqual(Set(both), [.martialCrossSolo, .martialCrossClass])
         XCTAssertEqual(SessionKind.martialCrossSolo.requiredEquipment, [.punchingBag])
     }
 
@@ -291,6 +293,22 @@ final class PlanSettingsTests: XCTestCase {
         XCTAssertEqual(choice.variants, [.urban])
         XCTAssertNil(choice.martialCrossMode)
         XCTAssertNil(choice.classDay)
+
+        // Ancien martial cross : `variants` vide + mode unique → variante équivalente.
+        let oldGroup = try Coding.decoder.decode(ModuleChoice.self, from: Data(
+            #"{"module":"martialCross","variants":[],"martialCrossMode":"group","classDay":2,"classTime":"18:30"}"#.utf8))
+        XCTAssertEqual(oldGroup.variants, [.group])
+        XCTAssertEqual(oldGroup.classDay, 2)
+        XCTAssertEqual(oldGroup.classTime, "18:30")
+        let oldSolo = try Coding.decoder.decode(ModuleChoice.self, from: Data(
+            #"{"module":"martialCross","martialCrossMode":"solo"}"#.utf8))
+        XCTAssertEqual(oldSolo.variants, [.solo])
+
+        // Seul + en cours : relu à l'identique.
+        let both = ModuleChoice(module: .martialCross, variants: [.solo, .group], classDay: 4, classTime: "19:00")
+        let again = try Coding.decoder.decode(ModuleChoice.self, from: Coding.encoder.encode(both))
+        XCTAssertEqual(again, both)
+        XCTAssertTrue(again.hasSolo && again.hasClass)
 
         let settingsJSON = #"{"id":"old","modules":[{"module":"run"}],"trainingDays":[1,3]}"#
         let old = try Coding.decoder.decode(PlanSettings.self, from: Data(settingsJSON.utf8))

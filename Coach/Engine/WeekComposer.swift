@@ -29,7 +29,7 @@ enum WeekComposer {
         var days = settings.effectiveTrainingDays.sorted()
         if days.count == 7 {
             // On retire un jour qui n'est ni un cours, ni un jour à la salle si possible (lundi d'abord).
-            let fixed = Set(settings.modules.compactMap { $0.martialCrossMode == .group ? $0.classDay : nil })
+            let fixed = Set(settings.modules.compactMap { $0.hasClass ? $0.classDay : nil })
             let removable = days.first { !fixed.contains($0) && !settings.gymDays.contains($0) }
                 ?? days.first { !fixed.contains($0) } ?? days[0]
             days.removeAll { $0 == removable }
@@ -43,18 +43,24 @@ enum WeekComposer {
         var counts: [CoachModuleID: Int] = [:]
         let order = [settings.principal] + settings.activeModules.filter { $0 != settings.principal }
         var left = dayCount
-        if let mc = settings.choice(for: .martialCross), mc.martialCrossMode == .group, left > 0 {
+        let mc = settings.choice(for: .martialCross)
+        let hasClass = mc?.hasClass == true
+        let hasSolo = mc?.hasSolo == true
+        if hasClass, left > 0 {
             counts[.martialCross] = 1
             left -= 1
         }
+        // Une séance par discipline (le cours compte comme celle du martial cross).
         for module in order where left > 0 && counts[module] == nil {
             counts[module] = 1
             left -= 1
         }
-        let isGroup = settings.choice(for: .martialCross)?.martialCrossMode == .group
         func canAdd(_ m: CoachModuleID) -> Bool {
             guard let c = counts[m] else { return false }
-            if m == .martialCross && isGroup { return false }
+            if m == .martialCross {
+                // Seul + cours : la séance seule est un bonus, 2 séances au total, cours compris (#45).
+                return hasSolo && c < (hasClass ? 2 : maxSessions(m))
+            }
             return c < maxSessions(m)
         }
         // La principale prend environ la moitié des jours.

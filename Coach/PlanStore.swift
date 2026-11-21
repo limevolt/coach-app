@@ -90,6 +90,13 @@ final class PlanStore {
 
     /// Remplace le plan actuel (l'ancien est archivé) et synchronise la montre.
     func apply(_ newPlan: TrainingPlan) async throws {
+        if DoneState.isDifferentPlan(current: plan, new: newPlan) {
+            // Autre plan : les séances faites restent dans l'historique mais ne passent pas au nouveau (#45).
+            let now = Date.now
+            logs = DoneState.archiving(logs, at: now)
+            persistLogs()
+            UserDefaults.standard.set(now.timeIntervalSince1970, forKey: "lastReset")
+        }
         archiveCurrentPlan()
         try Coding.encoder.encode(newPlan).write(to: planURL, options: .atomic)
         plan = newPlan

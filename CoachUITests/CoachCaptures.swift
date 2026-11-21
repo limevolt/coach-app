@@ -98,6 +98,54 @@ final class CoachCaptures: XCTestCase {
         shot("13-accueil-vide")
         audit("Accueil vide", app)
 
+        // 7. Assistant de création d'un plan (#45)
+        if tap("Créer mon plan", in: app) {
+            shot("20-assistant-objectif")
+            audit("Assistant — objectif", app)
+            next(app)
+            shot("21-assistant-disciplines-vide")
+            _ = tap("Course à pied", in: app)
+            _ = tap("Renfo", in: app)
+            shot("22-assistant-disciplines")
+            audit("Assistant — disciplines", app)
+            // Martial cross seul + en cours : pastilles, jour et heure du cours dépliés (accordéon).
+            if tap("Martial cross", in: app) {
+                _ = tap("En cours", in: app)
+                app.swipeUp()
+                Thread.sleep(forTimeInterval: 0.6) // fin de l'accordéon avant capture et audit
+                shot("22b-assistant-disciplines-martial")
+                audit("Assistant — martial cross", app)
+            }
+            next(app)
+            for day in ["Mardi", "Jeudi", "Dimanche"] { _ = tap(day, in: app) }
+            shot("23-assistant-disponibilites")
+            audit("Assistant — disponibilités", app)
+            app.swipeUp()
+            // Jour à la salle (2e « Mardi » : grille du bas), demandé par la séance seule de martial cross.
+            let gymDay = app.buttons.matching(NSPredicate(format: "label == %@", "Mardi")).element(boundBy: 1)
+            if gymDay.waitForExistence(timeout: 3) { gymDay.tap() } else { note("Jour à la salle introuvable") }
+            // Interrupteur Coach activé (option A validée).
+            let twoPerDay = app.switches.firstMatch
+            if twoPerDay.waitForExistence(timeout: 3) { twoPerDay.tap() } else { note("Interrupteur introuvable") }
+            Thread.sleep(forTimeInterval: 0.4)
+            shot("24-assistant-disponibilites-bas")
+            next(app)
+            shot("25-assistant-materiel")
+            audit("Assistant — matériel", app)
+            app.swipeUp()
+            shot("26-assistant-materiel-bas")
+            next(app)
+            shot("27-assistant-niveau")
+            audit("Assistant — niveau", app)
+            next(app)
+            shot("28-assistant-recap")
+            audit("Assistant — récapitulatif", app)
+            app.swipeUp()
+            shot("29-assistant-recap-bas")
+        } else {
+            note("Bouton « Créer mon plan » introuvable")
+        }
+
         let report = XCTAttachment(string: auditLines.isEmpty
             ? "Aucun problème signalé par l'audit d'accessibilité."
             : auditLines.joined(separator: "\n"))
@@ -107,6 +155,18 @@ final class CoachCaptures: XCTestCase {
     }
 
     // MARK: Outils
+
+    /// Assistant : « Continuer » en bas de l'écran.
+    @MainActor
+    private func next(_ app: XCUIApplication) {
+        let button = app.buttons["Continuer"].firstMatch
+        if button.waitForExistence(timeout: 5), button.isEnabled {
+            button.tap()
+            Thread.sleep(forTimeInterval: 0.6)
+        } else {
+            note("« Continuer » indisponible")
+        }
+    }
 
     @MainActor
     private func back(_ app: XCUIApplication) {

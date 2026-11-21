@@ -77,18 +77,13 @@ struct AdaptSessionView: View {
         let unchanged = isSame && (choice != .strength || noEquipment == slot.withoutEquipment)
 
         Section {
-            Picker("Activité", selection: $choice) {
-                ForEach(ActivityChoice.allCases) { Text($0.label).tag($0) }
-            }
-            .pickerStyle(.segmented)
+            SegmentedChoice("Activité", selection: $choice,
+                            options: ActivityChoice.allCases.map { (value: $0, label: $0.label) })
 
             switch choice {
             case .strength:
-                Picker("Matériel", selection: $noEquipment) {
-                    Text("Avec matériel").tag(false)
-                    Text("Sans matériel").tag(true)
-                }
-                .pickerStyle(.segmented)
+                SegmentedChoice("Matériel", selection: $noEquipment,
+                                options: [(false, "Avec matériel"), (true, "Sans matériel")])
             case .martial:
                 Label("Avec matériel : il faut un sac de frappe.", systemImage: "info.circle")
                     .font(.coach(.footnote))
@@ -110,6 +105,7 @@ struct AdaptSessionView: View {
                                 .foregroundStyle(Theme.muted)
                         }
                     }
+                    .toggleStyle(.coach)
                 }
             } else if source == nil {
                 Text("Aucune séance de ce type dans ton plan : l'app te propose une séance type (\(DefaultSessions.make(choice, id: "", date: slot.date, time: nil).title)).")

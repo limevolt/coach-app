@@ -260,7 +260,7 @@ struct OwnCoachSettingsView: View {
     var body: some View {
         Form {
             Section {
-                Toggle("Utiliser mon propre coach", isOn: $enabled)
+                Toggle("Utiliser mon propre coach", isOn: $enabled).toggleStyle(.coach)
             } footer: {
                 Text("Ton suivi est envoyé à ton propre serveur (par exemple Ollama sur ton Mac) au lieu de passer par Claude. Rien ne transite par un service extérieur.")
             }

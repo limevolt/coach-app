@@ -160,11 +160,8 @@ private struct SegmentEditor: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Picker("Type", selection: $segment.kind) {
-                Text("Travail").tag("work")
-                Text("Repos").tag("rest")
-            }
-            .pickerStyle(.segmented)
+            SegmentedChoice("Type", selection: $segment.kind,
+                            options: [("work", "Travail"), ("rest", "Repos")])
             TextField(segment.kind == "work" ? "Libellé (ex. Squat, Côte…)" : "Libellé (facultatif)",
                       text: Binding(get: { segment.label ?? "" },
                                     set: { segment.label = $0.isEmpty ? nil : $0 }))
