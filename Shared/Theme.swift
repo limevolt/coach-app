@@ -101,6 +101,8 @@ enum Theme {
     static let switchHeight: CGFloat = 32
     static let switchThumb: CGFloat = 24
     static let controlMarkFont = Font.system(size: 14, weight: .heavy)
+    /// Fondu au-dessus d'une barre d'action fixée en bas : le contenu qui défile dessous n'est pas tranché.
+    static let bottomFadeHeight: CGFloat = 32
     /// Étiquette discrète à côté d'un choix (« Conseillé », #57).
     static let tagRadius: CGFloat = 8
     /// Barres d'intensité (1 à 4) d'un niveau du plan (#57) : largeur, espace, hauteur de la 1re et pas.

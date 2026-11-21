@@ -139,6 +139,14 @@ private struct WizardStepView: View {
         .padding(.top, 12)
         .padding(.bottom, 8)
         .background(Theme.bg)
+        // Fondu au-dessus du bouton (maquette #45 / #57) : la dernière ligne n'est pas coupée net.
+        .background(alignment: .top) {
+            LinearGradient(colors: [Theme.bg.opacity(0), Theme.bg], startPoint: .top, endPoint: .bottom)
+                .frame(height: Theme.bottomFadeHeight)
+                .offset(y: -Theme.bottomFadeHeight)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
     }
 
     @ViewBuilder private var content: some View {
@@ -632,8 +640,10 @@ private struct LevelStep: View {
 
 private struct IntensityStep: View {
     @Bindable var draft: PlanDraft
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
+        ScrollViewReader { proxy in
         VStack(alignment: .leading, spacing: Theme.blockSpacing) {
             VStack(spacing: 0) {
                 ForEach(PlanIntensity.allCases, id: \.self) { level in
@@ -644,6 +654,7 @@ private struct IntensityStep: View {
                              note: draft.intensity == level ? draft.intensityNote(for: level) : nil) {
                         draft.intensity = level
                     }
+                    .id(level)
                 }
             }
             .overlay(alignment: .top) { Rectangle().fill(Theme.separator).frame(height: Theme.quietStroke) }
@@ -653,6 +664,12 @@ private struct IntensityStep: View {
         .sensoryFeedback(.selection, trigger: draft.intensity)
         // Le choix affiché est figé à l'arrivée sur l'étape (le conseil peut encore changer d'étiquette).
         .onAppear { if draft.chosenIntensity == nil { draft.chosenIntensity = draft.recommendedIntensity } }
+        // Garde-fou affiché sous le choix : on le fait remonter au-dessus de « Continuer » (petit écran).
+        .onChange(of: draft.intensity) { _, level in
+            guard draft.intensityNote(for: level) != nil else { return }
+            withAnimation(reduceMotion ? nil : .snappy(duration: 0.3)) { proxy.scrollTo(level, anchor: .bottom) }
+        }
+        }
     }
 }
 
