@@ -1,0 +1,45 @@
+** TEST EXECUTE SUCCEEDED **
+2026-11-20 07:29:16.636921+0000 CoachUITests-Runner[17415:57551] [General] Failed to send CA Event for app launch measurements for ca_event_type: 0 event_name: com.apple.app_launch_measurement.FirstFramePresentationMetric
+2026-11-20 07:29:16.681839+0000 CoachUITests-Runner[17415:57555] [General] Failed to send CA Event for app launch measurements for ca_event_type: 1 event_name: com.apple.app_launch_measurement.ExtendedLaunchMetrics
+Test Case '-[CoachUITests.CoachCaptures testCaptures]' passed (176.461 seconds).
+-----
+    t =   159.48s         Checking existence of `TabBar (First Match)`
+    t =   160.83s Added attachment named '11-accueil-grand-texte'
+    t =   160.83s Swipe up Target Application 'com.limevolt.coach'
+    t =   160.83s     Wait for com.limevolt.coach to idle
+    t =   160.83s     Find the Target Application 'com.limevolt.coach'
+    t =   160.91s     Check for interrupting elements affecting "Coach" Application
+    t =   160.96s     Synthesize event
+    t =   161.39s     Wait for com.limevolt.coach to idle
+    t =   164.82s Added attachment named '12-accueil-grand-texte-bas'
+    t =   164.82s Terminate com.limevolt.coach:23603
+    t =   165.89s Open com.limevolt.coach
+    t =   165.89s     Launch com.limevolt.coach
+2026-11-20 07:32:21.480 xcodebuild[15933:51095] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-20 07:32:21.480 xcodebuild[15933:51095] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =   166.14s         Setting up automation session
+    t =   167.73s         Wait for com.limevolt.coach to idle
+    t =   169.45s Wait for com.limevolt.coach to become Running Foreground
+    t =   169.46s Waiting 30.0s for TabBar (First Match) to exist
+    t =   170.52s     Checking `Expect predicate `existsNoRetry == 1` for object TabBar (First Match)`
+    t =   170.52s         Checking existence of `TabBar (First Match)`
+    t =   171.67s Added attachment named '13-accueil-vide'
+    t =   175.74s Added attachment named 'audit'
+    t =   175.77s Tear Down
+Test Case '-[CoachUITests.CoachCaptures testCaptures]' passed (176.461 seconds).
+Test Suite 'CoachCaptures' passed at 2026-11-20 07:32:32.054.
+	 Executed 1 test, with 0 failures (0 unexpected) in 176.461 (176.465) seconds
+Test Suite 'CoachUITests.xctest' passed at 2026-11-20 07:32:32.054.
+	 Executed 1 test, with 0 failures (0 unexpected) in 176.461 (176.465) seconds
+Test Suite 'All tests' passed at 2026-11-20 07:32:32.054.
+	 Executed 1 test, with 0 failures (0 unexpected) in 176.461 (176.468) seconds
+2026-11-20 07:32:33.649 xcodebuild[15933:51095] [MT] IDETestOperationsObserverDebug: 336.248 elapsed -- Testing started completed.
+2026-11-20 07:32:33.649 xcodebuild[15933:51095] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-20 07:32:33.649 xcodebuild[15933:51095] [MT] IDETestOperationsObserverDebug: 336.248 sec, +336.248 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/coach-app/coach-app/results/ios-small.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started

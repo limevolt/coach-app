@@ -1,0 +1,43 @@
+** TEST EXECUTE SUCCEEDED **
+Test Case '-[CoachUITests.CoachCaptures testCaptures]' passed (256.849 seconds).
+-----
+    t =   243.51s Added attachment named '12-accueil-grand-texte-bas'
+    t =   243.51s Terminate com.limevolt.coach:15277
+    t =   244.53s Open com.limevolt.coach
+    t =   244.53s     Launch com.limevolt.coach
+2026-11-18 12:56:49.777 xcodebuild[7226:31023] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-18 12:56:49.777 xcodebuild[7226:31023] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =   245.08s         Setting up automation session
+    t =   247.30s         Wait for com.limevolt.coach to idle
+    t =   249.51s Wait for com.limevolt.coach to become Running Foreground
+    t =   249.51s Waiting 30.0s for TabBar (First Match) to exist
+    t =   250.52s     Checking `Expect predicate `existsNoRetry == 1` for object TabBar (First Match)`
+    t =   250.52s         Checking existence of `TabBar (First Match)`
+    t =   251.69s Added attachment named '13-accueil-vide'
+    t =   254.28s Find the Any (Descendant with identity binding to AX element pid: 15551, elementOrHash.elementID: 4387122112.19)
+    t =   254.80s Checking existence of `"Prépare ta demande (avec ton dernier mois de sport), envoie-la à Claude, puis colle ici le plan JSON reçu." StaticText`
+    t =   254.91s Find the "Prépare ta demande (avec ton dernier mois de sport), envoie-la à Claude, puis colle ici le plan JSON reçu." StaticText
+    t =   255.00s Find the "Prépare ta demande (avec ton dernier mois de sport), envoie-la à Claude, puis colle ici le plan JSON reçu." StaticText
+    t =   255.06s Find the Any (Descendant with identity binding to AX element pid: 15551, elementOrHash.elementID: 4387121664.18)
+    t =   255.18s Checking existence of `"Aucun plan" StaticText`
+    t =   255.24s Find the "Aucun plan" StaticText
+    t =   255.67s Find the "Aucun plan" StaticText
+    t =   255.92s Added attachment named 'audit'
+    t =   255.95s Tear Down
+Test Case '-[CoachUITests.CoachCaptures testCaptures]' passed (256.849 seconds).
+Test Suite 'CoachCaptures' passed at 2026-11-18 12:57:02.073.
+	 Executed 1 test, with 0 failures (0 unexpected) in 256.849 (256.852) seconds
+Test Suite 'CoachUITests.xctest' passed at 2026-11-18 12:57:02.074.
+	 Executed 1 test, with 0 failures (0 unexpected) in 256.849 (256.854) seconds
+Test Suite 'All tests' passed at 2026-11-18 12:57:02.075.
+	 Executed 1 test, with 0 failures (0 unexpected) in 256.849 (256.856) seconds
+2026-11-18 12:57:05.977 xcodebuild[7226:31023] [MT] IDETestOperationsObserverDebug: 448.375 elapsed -- Testing started completed.
+2026-11-18 12:57:05.977 xcodebuild[7226:31023] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-18 12:57:05.977 xcodebuild[7226:31023] [MT] IDETestOperationsObserverDebug: 448.375 sec, +448.375 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/coach-app/coach-app/results/ios-small.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started

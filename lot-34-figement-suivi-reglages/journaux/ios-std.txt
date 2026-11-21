@@ -1,0 +1,46 @@
+** TEST EXECUTE FAILED **
+/Users/runner/work/coach-app/coach-app/CapturesSupport/DemoPlan.swift:75: error: -[CoachUITests.CoachCaptures testCaptures] : Failed to get screenshot: Timed out while requesting screenshot.
+2026-11-19 18:56:41.979861+0000 CoachUITests-Runner[4651:22364] [General] Failed to send CA Event for app launch measurements for ca_event_type: 0 event_name: com.apple.app_launch_measurement.FirstFramePresentationMetric
+2026-11-19 18:56:42.023983+0000 CoachUITests-Runner[4651:22364] [General] Failed to send CA Event for app launch measurements for ca_event_type: 1 event_name: com.apple.app_launch_measurement.ExtendedLaunchMetrics
+Test Case '-[CoachUITests.CoachCaptures testCaptures]' failed (109.041 seconds).
+-----
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'All tests' started at 2026-11-19 18:57:28.895.
+Test Suite 'CoachUITests.xctest' started at 2026-11-19 18:57:28.896.
+Test Suite 'CoachCaptures' started at 2026-11-19 18:57:28.897.
+Test Case '-[CoachUITests.CoachCaptures testCaptures]' started.
+    t =     0.00s Start Test at 2026-11-19 18:57:28.898
+    t =     2.53s Set Up
+    t =     2.84s Terminate com.limevolt.coach:0
+    t =     2.85s Open com.limevolt.coach
+    t =     2.85s     Launch com.limevolt.coach
+2026-11-19 18:57:37.478 xcodebuild[2935:12283] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-19 18:57:37.479 xcodebuild[2935:12283] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =    50.80s         Setting up automation session
+    t =    51.84s         Wait for com.limevolt.coach to idle
+    t =    52.96s Wait for com.limevolt.coach to become Running Foreground
+    t =    52.96s Waiting 30.0s for TabBar (First Match) to exist
+    t =    54.04s     Checking `Expect predicate `existsNoRetry == 1` for object TabBar (First Match)`
+    t =    54.05s         Checking existence of `TabBar (First Match)`
+/Users/runner/work/coach-app/coach-app/CapturesSupport/DemoPlan.swift:75: error: -[CoachUITests.CoachCaptures testCaptures] : Failed to get screenshot: Timed out while requesting screenshot.
+    t =   106.38s Tear Down
+Test Case '-[CoachUITests.CoachCaptures testCaptures]' failed (109.041 seconds).
+Test Suite 'CoachCaptures' failed at 2026-11-19 18:59:17.941.
+	 Executed 1 test, with 1 failure (0 unexpected) in 109.041 (109.044) seconds
+Test Suite 'CoachUITests.xctest' failed at 2026-11-19 18:59:17.941.
+	 Executed 1 test, with 1 failure (0 unexpected) in 109.041 (109.045) seconds
+Test Suite 'All tests' failed at 2026-11-19 18:59:17.942.
+	 Executed 1 test, with 1 failure (0 unexpected) in 109.041 (109.046) seconds
+2026-11-19 19:00:27.635 xcodebuild[2935:12283] [MT] IDETestOperationsObserverDebug: 463.379 elapsed -- Testing started completed.
+2026-11-19 19:00:27.635 xcodebuild[2935:12283] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-19 19:00:27.635 xcodebuild[2935:12283] [MT] IDETestOperationsObserverDebug: 463.379 sec, +463.379 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/coach-app/coach-app/results/ios-std.xcresult
+
+Failing tests:
+	CoachCaptures.testCaptures()
+
+** TEST EXECUTE FAILED **
+
+Testing started
