@@ -126,7 +126,8 @@ struct ModuleChoice: Codable, Hashable {
         }
         self.variants = (chosen ?? module.defaultVariants).filter { $0.module == module }
         let group = module == .martialCross && self.variants.contains(.group)
-        self.classDay = group ? classDay : nil
+        // Jour hors 1…7 (fichier abîmé) : oublié, la validation demandera de le choisir.
+        self.classDay = group ? classDay.flatMap { (1...7).contains($0) ? $0 : nil } : nil
         self.classTime = group ? classTime : nil
     }
 
@@ -159,6 +160,8 @@ struct ModuleChoice: Codable, Hashable {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(module, forKey: .module)
         try c.encode(variants.map(\.rawValue).sorted(), forKey: .variants)
+        // Gardé pour qu'une version plus ancienne de l'app relise encore le mode (seul ou en cours).
+        try c.encodeIfPresent(martialCrossMode, forKey: .martialCrossMode)
         try c.encodeIfPresent(classDay, forKey: .classDay)
         try c.encodeIfPresent(classTime, forKey: .classTime)
     }

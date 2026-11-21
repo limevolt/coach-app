@@ -18,7 +18,7 @@ enum Theme {
     /// Chevron de fin de ligne (décoratif).
     static let chevron = Color(hex: 0x4A5462)
     /// Contour d'un interrupteur ou d'une case non cochés (au moins 3:1 sur le fond, #45).
-    static let controlStroke = Color(hex: 0x5A6474)
+    static let controlStroke = Color(hex: 0x707A8A)
     static let text = Color(hex: 0xEEF2F7)
     static let muted = Color(hex: 0x8B97A8)
     static let accent = Color(hex: 0xC6F432)      // citron vert
@@ -95,7 +95,6 @@ enum Theme {
     static let segmentRadius: CGFloat = 10
     static let segmentSpacing: CGFloat = 4
     /// Rond coché d'une discipline (assistant).
-    static let checkCircle: CGFloat = 26
     /// Case à cocher (choix multiple) et interrupteur Coach (#45).
     static let checkboxSize: CGFloat = 26
     static let checkboxRadius: CGFloat = 8

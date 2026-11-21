@@ -334,7 +334,8 @@ private struct DisciplinesStep: View {
                 HStack {
                     Text("Jour du cours").font(.text).foregroundStyle(Theme.text)
                     Spacer()
-                    Text(TrainingDays.names[day.wrappedValue - 1].capitalized).font(.text).foregroundStyle(Theme.muted)
+                    Text(TrainingDays.names[min(max(day.wrappedValue, 1), 7) - 1].capitalized)
+                        .font(.text).foregroundStyle(Theme.muted)
                     Image(systemName: "chevron.up.chevron.down").font(Theme.chevronFont).foregroundStyle(Theme.chevron)
                         .accessibilityHidden(true)
                 }

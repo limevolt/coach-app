@@ -50,21 +50,16 @@ enum WeekComposer {
             counts[.martialCross] = 1
             left -= 1
         }
-        // Une séance par discipline ; avec cours + seul, le martial cross reçoit aussi une séance seul.
-        for module in order where left > 0 {
-            if counts[module] == nil {
-                counts[module] = 1
-                left -= 1
-            } else if module == .martialCross && hasClass && hasSolo && counts[module] == 1 {
-                counts[module] = 2
-                left -= 1
-            }
+        // Une séance par discipline (le cours compte comme celle du martial cross).
+        for module in order where left > 0 && counts[module] == nil {
+            counts[module] = 1
+            left -= 1
         }
         func canAdd(_ m: CoachModuleID) -> Bool {
             guard let c = counts[m] else { return false }
             if m == .martialCross {
-                // Le cours compte une fois ; les séances seul s'ajoutent jusqu'au maximum.
-                return hasSolo && c < maxSessions(m) + (hasClass ? 1 : 0)
+                // Seul + cours : la séance seule est un bonus, 2 séances au total, cours compris (#45).
+                return hasSolo && c < (hasClass ? 2 : maxSessions(m))
             }
             return c < maxSessions(m)
         }

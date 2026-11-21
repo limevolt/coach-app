@@ -21,10 +21,12 @@ private struct CoachToggleRow: View {
     let configuration: ToggleStyleConfiguration
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.isEnabled) private var isEnabled
+    @State private var taps = 0
 
     var body: some View {
         Button {
             withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) { configuration.isOn.toggle() }
+            taps += 1
         } label: {
             HStack(alignment: .center, spacing: 12) {
                 configuration.label
@@ -36,9 +38,10 @@ private struct CoachToggleRow: View {
         }
         .buttonStyle(.plain)
         .opacity(isEnabled ? 1 : 0.5)
-        .sensoryFeedback(.selection, trigger: configuration.isOn)
+        .sensoryFeedback(.selection, trigger: taps)
         .accessibilityRepresentation {
-            Toggle(isOn: configuration.$isOn) { configuration.label }
+            // Style système ici, sinon ce Toggle reprendrait `.coach` et se redessinerait sans fin.
+            Toggle(isOn: configuration.$isOn) { configuration.label }.toggleStyle(.switch)
         }
     }
 }

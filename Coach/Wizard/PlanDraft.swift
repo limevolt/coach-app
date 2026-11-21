@@ -176,7 +176,11 @@ final class PlanDraft {
                              name: override ?? (nameEdited && !name.isEmpty ? name : ""),
                              description: notes.isEmpty ? nil : notes,
                              objective: objective,
-                             modules: activeModules.compactMap { modules[$0] },
+                             // Repasse par ModuleChoice.init : jour/heure d'un cours décoché oubliés.
+                             modules: activeModules.compactMap { modules[$0] }.map {
+                                 ModuleChoice(module: $0.module, variants: $0.variants,
+                                              classDay: $0.classDay, classTime: $0.classTime)
+                             },
                              principal: principal ?? activeModules.first ?? .run,
                              trainingDays: trainingDays,
                              sessionMinutes: sessionMinutes,

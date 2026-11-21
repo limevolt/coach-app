@@ -25,6 +25,23 @@ final class PlanDraftTests: XCTestCase {
         }
     }
 
+    func testGroupClassGetsDefaultScheduleAndIsForgottenWhenUnchecked() {
+        let d = draft()
+        d.toggle(.martialCross)
+        XCTAssertEqual(d.modules[.martialCross]?.variants, [.solo])
+        d.toggle(.group)
+        XCTAssertEqual(d.modules[.martialCross]?.classDay, 4)
+        XCTAssertEqual(d.modules[.martialCross]?.classTime, "19:00")
+        XCTAssertTrue(d.needsGymDays, "« Seul » demande un jour de salle (sac de frappe)")
+        d.toggle(.solo)
+        XCTAssertFalse(d.needsGymDays, "cours seul : pas besoin de salle")
+        d.toggle(.solo)
+        d.toggle(.group)
+        let choice = d.settings(today: today).modules.first { $0.module == .martialCross }
+        XCTAssertNil(choice?.classDay, "cours décoché : jour oublié dans les réglages")
+        XCTAssertNil(choice?.classTime)
+    }
+
     func testStepsBlockUntilTheirChoicesAreMade() {
         let d = draft()
         XCTAssertNil(d.blockingIssue(at: .objective, today: today), "date par défaut valide")
