@@ -245,6 +245,7 @@ private struct ObjectiveStep: View {
 
 private struct DisciplinesStep: View {
     @Bindable var draft: PlanDraft
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.blockSpacing) {
@@ -269,7 +270,12 @@ private struct DisciplinesStep: View {
     @ViewBuilder private func moduleRow(_ module: CoachModuleID) -> some View {
         let on = draft.isActive(module)
         VStack(alignment: .leading, spacing: 12) {
-            Button { draft.toggle(module) } label: {
+            Button {
+                // Accordéon : les variantes se déplient en douceur (simple fondu si « Réduire les animations »).
+                withAnimation(reduceMotion ? .easeInOut(duration: 0.15) : .snappy(duration: 0.25)) {
+                    draft.toggle(module)
+                }
+            } label: {
                 HStack(spacing: 12) {
                     Image(systemName: Theme.icon(for: module.sessionType))
                         .font(Theme.tintedIconFont)
@@ -279,75 +285,71 @@ private struct DisciplinesStep: View {
                         .accessibilityHidden(true)
                     Text(module.label).font(.coach(.body, weight: .semibold)).foregroundStyle(Theme.text)
                     Spacer()
-                    // Maquette : rond gris à contour citron vert et coche citron vert quand coché, contour gris sinon.
-                    ZStack {
-                        Circle()
-                            .fill(on ? Theme.card2 : Color.clear)
-                        Circle()
-                            .stroke(on ? Theme.accent : Theme.line, lineWidth: on ? Theme.selectionStroke : 2)
-                        if on {
-                            Image(systemName: "checkmark")
-                                .font(Theme.chevronFont)
-                                .foregroundStyle(Theme.accent)
-                        }
-                    }
-                    .frame(width: Theme.checkCircle, height: Theme.checkCircle)
-                    .accessibilityHidden(true)
+                    CoachCheckbox(isOn: on)
                 }
                 .frame(minHeight: Theme.rowHeight)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .sensoryFeedback(.selection, trigger: on)
             .accessibilityAddTraits(on ? .isSelected : [])
+            .accessibilityHint(on ? "Décocher replie les choix" : "Cocher affiche les choix")
 
             if on {
                 VStack(alignment: .leading, spacing: 12) {
-                    if !module.variants.isEmpty {
-                        ChipFlow {
-                            ForEach(module.variants, id: \.self) { variant in
-                                SelectChip(title: variant.label, isOn: draft.modules[module]?.variants.contains(variant) == true) {
-                                    draft.toggle(variant)
-                                }
+                    ChipFlow {
+                        ForEach(module.variants, id: \.self) { variant in
+                            SelectChip(title: variant.label, isOn: draft.modules[module]?.variants.contains(variant) == true) {
+                                withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) { draft.toggle(variant) }
                             }
                         }
                     }
-                    if module == .martialCross { martialMode }
+                    if module == .martialCross && draft.modules[.martialCross]?.hasClass == true { classRows }
                 }
                 .padding(.leading, Theme.dayDot + 8)
                 .padding(.bottom, 16)
+                .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)))
             }
         }
+        .clipped()
     }
 
-    @ViewBuilder private var martialMode: some View {
-        let mode = Binding<MartialCrossMode>(
-            get: { draft.modules[.martialCross]?.martialCrossMode ?? .solo },
-            set: { draft.modules[.martialCross]?.martialCrossMode = $0 })
-        SegmentedChoice("Martial cross", selection: mode,
-                        options: [(MartialCrossMode.solo, "Seul"), (MartialCrossMode.group, "En cours")])
-        if mode.wrappedValue == .group {
-            let day = Binding<Int>(
-                get: { draft.modules[.martialCross]?.classDay ?? 4 },
-                set: { draft.modules[.martialCross]?.classDay = $0 })
-            let time = Binding<Date>(
-                get: { Self.date(from: draft.modules[.martialCross]?.classTime) },
-                set: {
-                    let c = Calendar.current.dateComponents([.hour, .minute], from: $0)
-                    draft.modules[.martialCross]?.classTime = String(format: "%02d:%02d", c.hour ?? 19, c.minute ?? 0)
-                })
-            Picker("Jour du cours", selection: day) {
-                ForEach(1...7, id: \.self) { Text(TrainingDays.names[$0 - 1].capitalized).tag($0) }
+    /// Cours collectif : jour et heure (maquette : deux lignes sous les pastilles).
+    @ViewBuilder private var classRows: some View {
+        let day = Binding<Int>(
+            get: { draft.modules[.martialCross]?.classDay ?? 4 },
+            set: { draft.modules[.martialCross]?.classDay = $0 })
+        let time = Binding<Date>(
+            get: { Self.date(from: draft.modules[.martialCross]?.classTime) },
+            set: {
+                let c = Calendar.current.dateComponents([.hour, .minute], from: $0)
+                draft.modules[.martialCross]?.classTime = String(format: "%02d:%02d", c.hour ?? 19, c.minute ?? 0)
+            })
+        VStack(spacing: 0) {
+            Menu {
+                Picker("Jour du cours", selection: day) {
+                    ForEach(1...7, id: \.self) { Text(TrainingDays.names[$0 - 1].capitalized).tag($0) }
+                }
+            } label: {
+                HStack {
+                    Text("Jour du cours").font(.text).foregroundStyle(Theme.text)
+                    Spacer()
+                    Text(TrainingDays.names[day.wrappedValue - 1].capitalized).font(.text).foregroundStyle(Theme.muted)
+                    Image(systemName: "chevron.up.chevron.down").font(Theme.chevronFont).foregroundStyle(Theme.chevron)
+                        .accessibilityHidden(true)
+                }
+                .frame(minHeight: Theme.rowHeight)
+                .contentShape(Rectangle())
             }
-            .pickerStyle(.menu)
-            .tint(Theme.text)
-            .onAppear {
-                if draft.modules[.martialCross]?.classDay == nil { draft.modules[.martialCross]?.classDay = 4 }
-                if draft.modules[.martialCross]?.classTime == nil { draft.modules[.martialCross]?.classTime = "19:00" }
+            .buttonStyle(.plain)
+            Rectangle().fill(Theme.separator).frame(height: Theme.quietStroke)
+            DatePicker(selection: time, displayedComponents: .hourAndMinute) {
+                Text("Heure du cours").font(.text).foregroundStyle(Theme.text)
             }
-            DatePicker("Heure du cours", selection: time, displayedComponents: .hourAndMinute)
-                .font(.text)
-                .tint(Theme.accent)
+            .tint(Theme.accent)
+            .frame(minHeight: Theme.rowHeight)
         }
+        .overlay(alignment: .top) { Rectangle().fill(Theme.separator).frame(height: Theme.quietStroke) }
     }
 
     static func date(from time: String?) -> Date {
@@ -410,7 +412,7 @@ private struct AvailabilityStep: View {
                             .font(.detail).foregroundStyle(Theme.muted)
                     }
                 }
-                .tint(Theme.accent)
+                .toggleStyle(.coach)
             }
         }
         .onChange(of: draft.sessionMinutes) { _, minutes in

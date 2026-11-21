@@ -108,6 +108,13 @@ final class CoachCaptures: XCTestCase {
             _ = tap("Renfo", in: app)
             shot("22-assistant-disciplines")
             audit("Assistant — disciplines", app)
+            // Martial cross seul + en cours : pastilles, jour et heure du cours dépliés (accordéon).
+            if tap("Martial cross", in: app) {
+                _ = tap("En cours", in: app)
+                app.swipeUp()
+                shot("22b-assistant-disciplines-martial")
+                audit("Assistant — martial cross", app)
+            }
             next(app)
             for day in ["Mardi", "Jeudi", "Dimanche"] { _ = tap(day, in: app) }
             shot("23-assistant-disponibilites")

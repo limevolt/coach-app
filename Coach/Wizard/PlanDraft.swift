@@ -143,13 +143,18 @@ final class PlanDraft {
     func toggle(_ variant: ModuleVariant) {
         guard var choice = modules[variant.module] else { return }
         if choice.variants.contains(variant) { choice.variants.remove(variant) } else { choice.variants.insert(variant) }
+        // Cours collectif coché : jour et heure proposés par défaut (modifiables juste en dessous).
+        if variant == .group && choice.variants.contains(.group) {
+            if choice.classDay == nil { choice.classDay = 4 }
+            if choice.classTime == nil { choice.classTime = "19:00" }
+        }
         modules[variant.module] = choice
     }
 
     var activeModules: [CoachModuleID] { CoachModuleID.allCases.filter { modules[$0] != nil } }
 
     var needsGymDays: Bool {
-        modules[.strength]?.variants.contains(.gym) == true || modules[.martialCross]?.martialCrossMode == .solo
+        modules[.strength]?.variants.contains(.gym) == true || modules[.martialCross]?.hasSolo == true
     }
 
     /// Une séance demande la salle mais aucun jour à la salle n'est choisi (affiché aussi à l'étape Matériel).

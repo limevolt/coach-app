@@ -105,6 +105,7 @@ struct AdaptSessionView: View {
                                 .foregroundStyle(Theme.muted)
                         }
                     }
+                    .toggleStyle(.coach)
                 }
             } else if source == nil {
                 Text("Aucune séance de ce type dans ton plan : l'app te propose une séance type (\(DefaultSessions.make(choice, id: "", date: slot.date, time: nil).title)).")

@@ -123,7 +123,7 @@ struct PlanGenerator {
         var lastBuildRun: Int?
         var lastBuildLong: Int?
         var afterDeload = false
-        let classDay = settings.choice(for: .martialCross).flatMap { $0.martialCrossMode == .group ? $0.classDay : nil }
+        let classDay = settings.choice(for: .martialCross).flatMap { $0.hasClass ? $0.classDay : nil }
 
         for (i, week) in weeks.enumerated() {
             let isEventWeek = eventDate != nil && i == weeks.count - 1
@@ -279,12 +279,15 @@ struct PlanGenerator {
             }
         }
         if let mc = settings.choice(for: .martialCross), let n = counts[.martialCross], n > 0 {
-            if mc.martialCrossMode == .group {
+            if mc.hasClass {
                 slots.append(ComposedSession(kind: .martialCrossClass, minutes: SessionBuilder.groupClassMinutes,
                                              fixedDay: mc.classDay, time: mc.classTime))
-            } else {
-                let count = (week.isDeload || week.phase == .taper) ? 1 : n
-                for _ in 0..<count {
+            }
+            if mc.hasSolo {
+                var solo = n - (mc.hasClass ? 1 : 0)
+                // Semaine allégée ou affûtage : une séance seul au plus, aucune si le cours a lieu.
+                if week.isDeload || week.phase == .taper { solo = min(solo, mc.hasClass ? 0 : 1) }
+                for _ in 0..<max(0, solo) {
                     slots.append(ComposedSession(kind: .martialCrossSolo, minutes: settings.sessionMinutes))
                 }
             }

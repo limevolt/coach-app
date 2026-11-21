@@ -255,6 +255,22 @@ final class PlanGeneratorTests: XCTestCase {
         XCTAssertTrue(g.plan.sessions.filter { $0.type == .circuit }.allSatisfy { $0.time == "19:00" })
     }
 
+    func testMartialCrossSoloAndClassTogether() throws {
+        let s = settings(modules: [ModuleChoice(module: .run),
+                                   ModuleChoice(module: .martialCross, variants: [.solo, .group], classDay: 4, classTime: "19:00")],
+                         days: [1, 3, 6], gymDays: [3])
+        let g = try generate(s)
+        for week in g.weeks {
+            XCTAssertTrue(week.sessions.contains { $0.kind == .martialCrossClass && $0.isoDay == 4 }, "le cours chaque jeudi")
+        }
+        let solos = g.weeks.flatMap(\.sessions).filter { $0.kind == .martialCrossSolo }
+        XCTAssertFalse(solos.isEmpty, "seul + en cours : des séances seul en plus du cours")
+        XCTAssertTrue(solos.allSatisfy { $0.isoDay == 3 }, "séance seule : jour de salle (sac de frappe)")
+        for week in g.weeks where week.week.isDeload || week.week.phase == .taper {
+            XCTAssertFalse(week.sessions.contains { $0.kind == .martialCrossSolo }, "semaine allégée : le cours suffit")
+        }
+    }
+
     func testSevenDaysKeepsARestDay() throws {
         let s = settings(modules: [ModuleChoice(module: .run), ModuleChoice(module: .strength, variants: [.home])],
                          days: Set(1...7))

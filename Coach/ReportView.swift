@@ -34,7 +34,7 @@ struct ReportView: View {
                 Section {
                     SegmentedChoice("Période", selection: $days,
                                     options: [(7, "7 jours"), (14, "14 jours"), (28, "28 jours")])
-                    Toggle("Joindre le plan actuel", isOn: $includePlan)
+                    Toggle("Joindre le plan actuel", isOn: $includePlan).toggleStyle(.coach)
                 } header: {
                     Text("Période")
                 } footer: {

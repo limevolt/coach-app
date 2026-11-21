@@ -17,6 +17,8 @@ enum Theme {
     static let separator = Color(hex: 0x141920)
     /// Chevron de fin de ligne (décoratif).
     static let chevron = Color(hex: 0x4A5462)
+    /// Contour d'un interrupteur ou d'une case non cochés (au moins 3:1 sur le fond, #45).
+    static let controlStroke = Color(hex: 0x5A6474)
     static let text = Color(hex: 0xEEF2F7)
     static let muted = Color(hex: 0x8B97A8)
     static let accent = Color(hex: 0xC6F432)      // citron vert
@@ -94,6 +96,13 @@ enum Theme {
     static let segmentSpacing: CGFloat = 4
     /// Rond coché d'une discipline (assistant).
     static let checkCircle: CGFloat = 26
+    /// Case à cocher (choix multiple) et interrupteur Coach (#45).
+    static let checkboxSize: CGFloat = 26
+    static let checkboxRadius: CGFloat = 8
+    static let switchWidth: CGFloat = 52
+    static let switchHeight: CGFloat = 32
+    static let switchThumb: CGFloat = 24
+    static let controlMarkFont = Font.system(size: 14, weight: .heavy)
 
     // Espacements iPhone (multiples de 4/8)
     /// Marge latérale de l'écran.

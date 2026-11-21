@@ -50,7 +50,7 @@ struct PlanSettings: Codable, Equatable {
     /// pour que le moteur compte sa fatigue (#49).
     var effectiveTrainingDays: Set<Int> {
         var days = trainingDays.filter { (1...7).contains($0) }
-        for choice in modules where choice.martialCrossMode == .group {
+        for choice in modules where choice.hasClass {
             if let day = choice.classDay, (1...7).contains(day) { days.insert(day) }
         }
         return days
@@ -111,24 +111,40 @@ enum PlanObjective: Codable, Equatable {
 struct ModuleChoice: Codable, Hashable {
     var module: CoachModuleID
     var variants: Set<ModuleVariant>
-    /// Martial cross seulement.
-    var martialCrossMode: MartialCrossMode?
     /// Cours collectif : jour ISO et heure ("HH:mm").
     var classDay: Int?
     var classTime: String?
 
+    /// `martialCrossMode` : ancien réglage à un seul mode, traduit en variante si `variants` n'est pas donné.
     init(module: CoachModuleID, variants: Set<ModuleVariant>? = nil, martialCrossMode: MartialCrossMode? = nil,
          classDay: Int? = nil, classTime: String? = nil) {
         self.module = module
-        self.variants = (variants ?? module.defaultVariants).filter { $0.module == module }
-        let isMartial = module == .martialCross
-        self.martialCrossMode = isMartial ? (martialCrossMode ?? .solo) : nil
-        let isGroup = self.martialCrossMode == .group
-        self.classDay = isGroup ? classDay : nil
-        self.classTime = isGroup ? classTime : nil
+        var chosen = variants
+        // Anciens réglages : `variants` absent ou vide (le martial cross n'en avait pas) + un mode unique.
+        if chosen?.isEmpty ?? true, module == .martialCross, let martialCrossMode {
+            chosen = [martialCrossMode == .group ? .group : .solo]
+        }
+        self.variants = (chosen ?? module.defaultVariants).filter { $0.module == module }
+        let group = module == .martialCross && self.variants.contains(.group)
+        self.classDay = group ? classDay : nil
+        self.classTime = group ? classTime : nil
     }
 
-    /// Même nettoyage qu'à la création : variantes d'un autre module retirées, mode réservé au martial cross.
+    /// Martial cross : séances seul et/ou cours collectif.
+    var hasSolo: Bool { module == .martialCross && variants.contains(.solo) }
+    var hasClass: Bool { module == .martialCross && variants.contains(.group) }
+
+    /// Ancien mode unique (compatibilité) : « en cours » seulement si le cours est la seule variante.
+    var martialCrossMode: MartialCrossMode? {
+        guard module == .martialCross else { return nil }
+        return hasClass && !hasSolo ? .group : .solo
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case module, variants, martialCrossMode, classDay, classTime
+    }
+
+    /// Même nettoyage qu'à la création ; un ancien `martialCrossMode` devient une variante.
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         let variants = LossyDecoding.set(ModuleVariant.self, in: c, forKey: .variants)
@@ -137,6 +153,14 @@ struct ModuleChoice: Codable, Hashable {
                   martialCrossMode: try? c.decodeIfPresent(MartialCrossMode.self, forKey: .martialCrossMode),
                   classDay: try c.decodeIfPresent(Int.self, forKey: .classDay),
                   classTime: try c.decodeIfPresent(String.self, forKey: .classTime))
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(module, forKey: .module)
+        try c.encode(variants.map(\.rawValue).sorted(), forKey: .variants)
+        try c.encodeIfPresent(classDay, forKey: .classDay)
+        try c.encodeIfPresent(classTime, forKey: .classTime)
     }
 
     /// Heure "HH:mm" valide.
@@ -421,7 +445,7 @@ extension PlanSettings {
             issues.append(.stairsWithoutStaircase)
         }
 
-        if let mc = choice(for: .martialCross), mc.martialCrossMode == .group, !mc.hasValidClassSchedule {
+        if let mc = choice(for: .martialCross), mc.hasClass, !mc.hasValidClassSchedule {
             issues.append(.invalidClassSchedule)
         }
         return issues
@@ -436,7 +460,7 @@ extension PlanSettings {
             else if weeks < Self.shortPlanWeeks { warnings.append(.shortPlan) }
         }
         if effectiveTrainingDays.count == 7 { warnings.append(.noRestDay) }
-        if let mc = choice(for: .martialCross), mc.martialCrossMode == .solo, sessionMinutes < 45 {
+        if let mc = choice(for: .martialCross), mc.hasSolo, sessionMinutes < 45 {
             warnings.append(.shortMartialCross)
         }
         return warnings

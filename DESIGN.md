@@ -168,6 +168,14 @@ repos et « Prêt ? », chiffre blanc sur fond carte.
   propriétaire, #45).
 - **Jours de la semaine en 2 lettres** (Lu, Ma, Me…) dans les grilles de 7 : pas de coche ni d'abréviation
   de 3 lettres, qui ne tiennent pas. Jour choisi = fond `Theme.card2`, contour citron vert, texte gras (#45).
+- **Interrupteurs : style `.toggleStyle(.coach)`** (`Coach/CoachControls.swift`), jamais le `Toggle` natif
+  vert : capsule `Theme.card2`, contour gris (`Theme.controlStroke`) à l'arrêt, contour et pastille citron
+  vert avec une coche quand c'est activé — l'état se lit sans la couleur (option A, retour du propriétaire, #45).
+- **Plusieurs choix possibles : case à cocher `CoachCheckbox`** (carré arrondi, coche citron vert), pas un
+  rond (le rond = choix unique, `RadioRow`). Exemple : les disciplines de l'assistant.
+- **Accordéon** : les options d'une ligne cochée (pastilles de variantes, jour et heure du cours) se déplient
+  sous la ligne (fondu + glissement vers le bas) et se replient quand on décoche ; simple fondu si
+  « Réduire les animations » est activé.
 - Action principale en bas de l'écran ou dans la carte, à portée de pouce.
 - Le contenu principal se voit sans zoom ni défilement horizontal.
 - Espacements en multiples de 8 pt, réguliers d'un écran à l'autre ; marges latérales 16 à 20 pt.
