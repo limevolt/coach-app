@@ -8,8 +8,18 @@ import Foundation
 struct StartingPoint: Equatable {
     /// Minutes de course par semaine, en moyenne sur les dernières semaines.
     var runMinutesPerWeek: Double?
+    /// Séances par semaine, toutes disciplines (sans marche ni étirements), en moyenne : règle l'intensité (#57).
+    var sessionsPerWeek: Double? = nil
 
     static let unknown = StartingPoint(runMinutesPerWeek: nil)
+
+    /// Au-delà de 3 séances par jour en moyenne, la donnée est ignorée.
+    static let maxPlausibleSessions = 21.0
+
+    var plausibleSessionsPerWeek: Double? {
+        guard let v = sessionsPerWeek, v >= 0, v <= Self.maxPlausibleSessions else { return nil }
+        return v
+    }
 
     /// Au-delà, la donnée est ignorée (doublons, marche comptée comme course…).
     static let maxPlausibleRunMinutes = 600.0
@@ -89,7 +99,12 @@ struct PlanGenerator {
         let eventDate = settings.objective.eventDate.map { cal.startOfDay(for: $0) }
         let firstDayStart = cal.startOfDay(for: firstDay)
 
-        let weeks = PlanCalendar.weeks(firstDay: firstDay, eventDate: eventDate)
+        // Intensité (#57) : celle choisie, atteinte progressivement si l'historique ne suffit pas encore.
+        let chosen = settings.intensity
+        let history = settings.startLevel == .health ? start.plausibleSessionsPerWeek : nil
+        let ceiling = PlanIntensity.startCeiling(sessionsPerWeek: history)
+        let increase = min(memory.weeklyIncreaseLimit, chosen.maxWeeklyIncrease)
+        let weeks = PlanCalendar.weeks(firstDay: firstDay, eventDate: eventDate, deloadEvery: chosen.deloadEvery)
         let days = WeekComposer.usableDays(settings)
         let counts = WeekComposer.counts(settings: settings, dayCount: days.count)
         var adjustments: [String] = []
@@ -97,6 +112,13 @@ struct PlanGenerator {
         if settings.effectiveTrainingDays.count == 7 { note("Un jour de repos complet est gardé chaque semaine.") }
         for module in settings.activeModules where (counts[module] ?? 0) == 0 {
             note("\(module.label) : pas assez de jours pour une séance par semaine.")
+        }
+        if chosen > ceiling {
+            let reached = PlanIntensity.weekReached(chosen: chosen, ceiling: ceiling)
+            let why = history == nil ? "Sans historique de séances" : "Avec ton historique actuel"
+            note(reached < weeks.count
+                 ? "\(why), le coach commence en \(ceiling.label) et passe en \(chosen.label) à partir de la semaine \(reached + 1)."
+                 : "\(why), le coach reste en \(ceiling.label) et monte d'un cran toutes les \(PlanIntensity.weeksPerStep) semaines.")
         }
         for zone in profile.sparedZones.sorted(by: { $0.rawValue < $1.rawValue }) {
             note("\(zone.label) à ménager : les séances qui sollicitent cette zone sont remplacées ou raccourcies. Si la gêne persiste, consulte.")
@@ -110,7 +132,7 @@ struct PlanGenerator {
         let known = start.plausibleRunMinutes
         let startVolume = min(capacity, known ?? min(Self.unknownStartMinutes, sessionCap * Double(runCount)))
         let volumes = PlanCalendar.runMinutes(weeks: weeks, start: startVolume,
-                                              weeklyIncrease: memory.weeklyIncreaseLimit, capacity: capacity)
+                                              weeklyIncrease: increase, capacity: capacity)
         // Séance test : niveau choisi « séance test », ou Santé sans donnée utilisable. Reportée si impossible.
         let wantsTest = runCount > 0 && (settings.startLevel == .test || known == nil)
         // Une seule course par semaine : c'est la sortie longue, pas de séance test.
@@ -127,6 +149,7 @@ struct PlanGenerator {
 
         for (i, week) in weeks.enumerated() {
             let isEventWeek = eventDate != nil && i == weeks.count - 1
+            let intensity = PlanIntensity.effective(chosen: chosen, ceiling: ceiling, weekIndex: i)
             let weekDays = days.filter { iso in
                 let date = PlanCalendar.day(iso, of: week.monday)
                 if date < firstDayStart { return false }
@@ -142,26 +165,27 @@ struct PlanGenerator {
             // Sortie longue : la durée d'une séance au départ si le niveau est inconnu, puis +10 % (ou +5 min) au plus.
             var maxLong = Int(longCap)
             if let lastBuildLong {
-                maxLong = min(maxLong, max(lastBuildLong + 5, Int(Double(lastBuildLong) * 1.1 / 5) * 5))
+                maxLong = min(maxLong, max(lastBuildLong + 5, Int(Double(lastBuildLong) * (1 + increase) / 5) * 5))
             } else if known == nil {
                 maxLong = min(maxLong, settings.sessionMinutes)
             }
             var composed = compose(week: week, counts: counts, runVolume: volumes[i], withTest: testPending,
-                                   isEventWeek: isEventWeek, maxLong: maxLong)
+                                   isEventWeek: isEventWeek, maxLong: maxLong, intensity: intensity)
             // Cours collectif dont le jour n'existe pas cette semaine (début ou fin du plan) : retiré.
             composed.removeAll { $0.fixedDay.map { !weekDays.contains($0) } ?? false }
-            composed = capIntensity(composed)
+            composed = capIntensity(composed, intensity: intensity)
             composed = trim(composed, toDays: weekDays.count)
             // Hausse réelle : comparée à la dernière semaine complète de progression, ou au point de départ.
             if !week.isDeload && week.phase != .taper && !isPartial {
                 composed = capRunIncrease(composed, last: lastBuildRun ?? Int(startVolume.rounded()),
-                                          noIncrease: afterDeload)
+                                          noIncrease: afterDeload, increase: increase)
             }
 
             let nextMonday: DayLoad = (classDay == 1 && i + 1 < weeks.count) ? DayLoad([.martialCrossClass]) : .rest
             let monday = week.monday
             let placer = DayPlacer(usableDays: weekDays, gymDays: settings.gymDays.intersection(Set(weekDays)),
                                    allowTwoSessionsPerDay: settings.allowTwoSessionsPerDay,
+                                   hardPairs: intensity.hardPairsPerWeek, legsPairAllowed: intensity.legsPairAllowed,
                                    previousSunday: previousSunday, nextMonday: nextMonday,
                                    allowed: { kind, iso in
                                        guard let eventDate else { return true }
@@ -245,13 +269,13 @@ struct PlanGenerator {
     // MARK: Composition
 
     func compose(week: PlanWeek, counts: [CoachModuleID: Int], runVolume: Double, withTest: Bool,
-                 isEventWeek: Bool, maxLong: Int? = nil) -> [ComposedSession] {
+                 isEventWeek: Bool, maxLong: Int? = nil, intensity: PlanIntensity = .moderate) -> [ComposedSession] {
         var slots: [ComposedSession] = []
         let zones = profile.sparedZones
         if let run = settings.choice(for: .run), let planned = counts[.run], planned > 0 {
             // Petit volume : moins de courses plutôt que des courses gonflées par les durées minimales.
             let n = max(1, min(planned, Int(runVolume / Self.minVolumePerRun)))
-            var kinds = WeekComposer.runKinds(count: n, week: week, choice: run, profile: profile)
+            var kinds = WeekComposer.runKinds(count: n, week: week, choice: run, profile: profile, intensity: intensity)
             // Semaine de l'événement : pas de sortie longue.
             if isEventWeek { kinds = kinds.map { ($0 == .longRunEasy || $0 == .longRunProgressive) ? .easyRun : $0 } }
             let spared = kinds.map { WeekComposer.spared($0, zones: zones) }
@@ -297,29 +321,34 @@ struct PlanGenerator {
         return slots
     }
 
-    /// Part d'intensité (#43) : au plus 2 séances dures (modérées comprises) ou 40 % des séances.
-    static func intensityCap(sessions: Int) -> Int { max(2, Int(Double(sessions) * 0.4)) }
+    /// Part d'intensité (#43, #57) : « Modéré » = au plus 2 séances dures (modérées comprises) ou 40 % des séances ;
+    /// les autres niveaux : voir `PlanIntensity.hardCap`.
+    static func intensityCap(sessions: Int, intensity: PlanIntensity = .moderate) -> Int {
+        intensity.hardCap(sessions: sessions)
+    }
 
     /// On retire d'abord la séance seule de martial cross ajoutée au cours (un bonus), puis on rend facile
     /// la sortie longue dynamique, puis les séances de qualité de course en trop (en gardant au moins une).
     /// Les séances de renfo et le cours de martial cross ne deviennent pas faciles.
-    func capIntensity(_ slots: [ComposedSession]) -> [ComposedSession] {
+    /// En « Doux », toutes les qualités peuvent devenir faciles si d'autres séances dures remplissent la semaine.
+    func capIntensity(_ slots: [ComposedSession], intensity: PlanIntensity = .moderate) -> [ComposedSession] {
         var s = slots
         func hardCount() -> Int { s.filter { $0.kind.countsAsHard }.count }
         if s.contains(where: { $0.kind == .martialCrossClass }) {
-            while hardCount() > Self.intensityCap(sessions: s.count),
+            while hardCount() > Self.intensityCap(sessions: s.count, intensity: intensity),
                   let i = s.lastIndex(where: { $0.kind == .martialCrossSolo }) {
                 s.remove(at: i)
             }
         }
-        let cap = Self.intensityCap(sessions: s.count)
+        let cap = Self.intensityCap(sessions: s.count, intensity: intensity)
+        let keep = intensity == .gentle ? 0 : 1
         if hardCount() > cap, let i = s.firstIndex(where: { $0.kind == .longRunProgressive }) {
             s[i].kind = .longRunEasy
         }
         while hardCount() > cap {
             let qualities = s.indices.filter { s[$0].kind.module == .run && s[$0].kind.countsAsHard && !s[$0].isTest }
             let tests = s.filter(\.isTest).count
-            guard qualities.count + tests > 1, let i = qualities.last else { break }
+            guard qualities.count + tests > keep, let i = qualities.last else { break }
             s[i].kind = .easyRun
         }
         return s
@@ -327,8 +356,9 @@ struct PlanGenerator {
 
     /// Hausse de volume réelle (#47) : au plus +10 % par rapport à la dernière semaine de progression complète,
     /// et aucune hausse juste après une semaine allégée. On raccourcit d'abord les footings, puis le reste.
-    func capRunIncrease(_ slots: [ComposedSession], last: Int, noIncrease: Bool) -> [ComposedSession] {
-        let increase = noIncrease ? 0 : min(CoachMemory.maxWeeklyIncrease, memory.weeklyIncreaseLimit)
+    func capRunIncrease(_ slots: [ComposedSession], last: Int, noIncrease: Bool,
+                        increase allowed: Double? = nil) -> [ComposedSession] {
+        let increase = noIncrease ? 0 : min(CoachMemory.maxWeeklyIncrease, allowed ?? memory.weeklyIncreaseLimit)
         let limit = Int((Double(last) * (1 + increase)).rounded(.down))
         var s = slots
         func total() -> Int { s.filter { $0.kind.module == .run }.reduce(0) { $0 + $1.minutes } }

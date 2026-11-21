@@ -148,6 +148,7 @@ private struct WizardStepView: View {
         case .availability: AvailabilityStep(draft: draft)
         case .equipment: EquipmentStep(draft: draft)
         case .level: LevelStep(draft: draft)
+        case .intensity: IntensityStep(draft: draft)
         case .summary: SummaryStep(draft: draft, path: $path)
         }
     }
@@ -617,13 +618,40 @@ private struct LevelStep: View {
             let reader = HealthReader()
             try? await reader.requestAuthorization()
             let minutes = await reader.averageRunMinutesPerWeek()
+            draft.healthSessions = await reader.averageSessionsPerWeek()
             draft.healthRunMinutes = minutes
             draft.healthState = minutes == nil ? .nothing : .found
         }
     }
 }
 
-// MARK: - Étape 6 : récapitulatif
+// MARK: - Étape 6 : intensité (#57)
+
+private struct IntensityStep: View {
+    @Bindable var draft: PlanDraft
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.blockSpacing) {
+            VStack(spacing: 0) {
+                ForEach(PlanIntensity.allCases, id: \.self) { level in
+                    if level != PlanIntensity.allCases.first { Divider().overlay(Theme.separator) }
+                    RadioRow(title: level.label, detail: level.summary, isOn: draft.intensity == level,
+                             tag: level == draft.recommendedIntensity ? "Conseillé" : nil,
+                             bars: level.level,
+                             note: draft.intensity == level ? draft.intensityNote(for: level) : nil) {
+                        draft.intensity = level
+                    }
+                }
+            }
+            .overlay(alignment: .top) { Rectangle().fill(Theme.separator).frame(height: Theme.quietStroke) }
+            Text("Tu pourras la changer en cours de plan.")
+                .font(.detail).foregroundStyle(Theme.muted)
+        }
+        .sensoryFeedback(.selection, trigger: draft.intensity)
+    }
+}
+
+// MARK: - Étape 7 : récapitulatif
 
 private struct SummaryStep: View {
     @Bindable var draft: PlanDraft
@@ -662,6 +690,7 @@ private struct SummaryStep: View {
                 row("Jours", value: "\(s.trainingDays.count) par semaine · \(AvailabilityStep.label(s.sessionMinutes))", step: .availability)
                 row("Matériel", value: equipmentLabel, step: .equipment)
                 row("Niveau de départ", value: levelLabel, step: .level)
+                row("Intensité", value: intensityLabel, step: .intensity)
             }
         }
     }
@@ -691,6 +720,13 @@ private struct SummaryStep: View {
             return name.isEmpty ? (s.objective.eventDate?.formatted(.dateTime.day().month(.abbreviated).year()) ?? "Une date") : name
         }
         return "Être en forme"
+    }
+
+    /// « Intense (début en Soutenu) » quand le garde-fou s'applique (#57).
+    private var intensityLabel: String {
+        let ceiling = PlanIntensity.startCeiling(sessionsPerWeek: draft.historySessions)
+        let level = draft.intensity
+        return level > ceiling ? "\(level.label) (début en \(ceiling.label))" : level.label
     }
 
     private var levelLabel: String {

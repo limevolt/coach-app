@@ -94,7 +94,6 @@ enum Theme {
     /// Choix en onglets (SegmentedChoice) : rayon d'une option et espace autour.
     static let segmentRadius: CGFloat = 10
     static let segmentSpacing: CGFloat = 4
-    /// Rond coché d'une discipline (assistant).
     /// Case à cocher (choix multiple) et interrupteur Coach (#45).
     static let checkboxSize: CGFloat = 26
     static let checkboxRadius: CGFloat = 8
@@ -102,6 +101,13 @@ enum Theme {
     static let switchHeight: CGFloat = 32
     static let switchThumb: CGFloat = 24
     static let controlMarkFont = Font.system(size: 14, weight: .heavy)
+    /// Étiquette discrète à côté d'un choix (« Conseillé », #57).
+    static let tagRadius: CGFloat = 8
+    /// Barres d'intensité (1 à 4) d'un niveau du plan (#57) : largeur, espace, hauteur de la 1re et pas.
+    static let intensityBarWidth: CGFloat = 5
+    static let intensityBarSpacing: CGFloat = 3
+    static let intensityBarBase: CGFloat = 6
+    static let intensityBarStep: CGFloat = 4
 
     // Espacements iPhone (multiples de 4/8)
     /// Marge latérale de l'écran.

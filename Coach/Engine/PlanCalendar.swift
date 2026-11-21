@@ -68,14 +68,14 @@ enum PlanCalendar {
     /// la veille est un jour de repos), ou l'horizon sans date.
     /// Affûtage = les dernières semaines, compté à rebours depuis l'événement : 1 semaine (2 à partir de 16),
     /// plus la précédente si la dernière n'a que 1 ou 2 jours.
-    static func weeks(firstDay: Date, eventDate: Date?) -> [PlanWeek] {
+    static func weeks(firstDay: Date, eventDate: Date?, deloadEvery: Int = cycleLength) -> [PlanWeek] {
         let cal = calendar
         let firstMonday = monday(of: firstDay)
         guard let eventDate else {
             let phases = fitnessPhases(fitnessHorizonWeeks)
             return (0..<fitnessHorizonWeeks).map { i in
                 PlanWeek(index: i, monday: cal.date(byAdding: .day, value: 7 * i, to: firstMonday) ?? firstMonday,
-                         phase: phases[i], isDeload: isDeload(index: i, phases: phases))
+                         phase: phases[i], isDeload: isDeload(index: i, phases: phases, every: deloadEvery))
             }
         }
         let lastDay = lastTrainingDay(before: eventDate)
@@ -89,7 +89,7 @@ enum PlanCalendar {
         taperCount = min(taperCount, count)
         let phases = split(nonTaper: count - taperCount, total: count) + Array(repeating: TrainingPhase.taper, count: taperCount)
         return (0..<count).map { i in
-            PlanWeek(index: i, monday: mondays[i], phase: phases[i], isDeload: isDeload(index: i, phases: phases))
+            PlanWeek(index: i, monday: mondays[i], phase: phases[i], isDeload: isDeload(index: i, phases: phases, every: deloadEvery))
         }
     }
 
@@ -128,12 +128,13 @@ enum PlanCalendar {
         (0..<count).map { $0 < cycleLength ? .base : .development }
     }
 
-    /// Semaine allégée : la 4e de chaque cycle, jamais en affûtage ni en entretien,
-    /// ni juste avant l'affûtage (qui allège déjà).
-    static func isDeload(index: Int, phases: [TrainingPhase]) -> Bool {
+    /// Semaine allégée : la dernière de chaque cycle (4 semaines, 3 en intensité « Doux », #57),
+    /// jamais en affûtage ni en entretien, ni juste avant l'affûtage (qui allège déjà).
+    static func isDeload(index: Int, phases: [TrainingPhase], every: Int = cycleLength) -> Bool {
         let phase = phases[index]
+        let every = max(2, every)
         guard phase != .taper, phase != .maintenance else { return false }
-        guard index % cycleLength == cycleLength - 1 else { return false }
+        guard index % every == every - 1 else { return false }
         if index + 1 < phases.count, phases[index + 1] == .taper { return false }
         return true
     }

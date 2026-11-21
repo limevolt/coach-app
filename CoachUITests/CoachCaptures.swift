@@ -138,6 +138,14 @@ final class CoachCaptures: XCTestCase {
             shot("27-assistant-niveau")
             audit("Assistant — niveau", app)
             next(app)
+            // Intensité (#57) : « Modéré » conseillé, puis « Intense » avec le garde-fou (sans historique en démo).
+            shot("27b-assistant-intensite")
+            if tap("Intense", in: app) {
+                Thread.sleep(forTimeInterval: 0.4)
+                shot("27c-assistant-intensite-garde-fou")
+            }
+            audit("Assistant — intensité", app)
+            next(app)
             shot("28-assistant-recap")
             audit("Assistant — récapitulatif", app)
             app.swipeUp()

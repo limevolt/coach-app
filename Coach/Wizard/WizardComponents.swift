@@ -142,7 +142,15 @@ struct RadioRow: View {
     let title: String
     let detail: String
     let isOn: Bool
+    /// Étiquette discrète à côté du titre (« Conseillé »).
+    var tag: String? = nil
+    /// Barres 1 à 4 à droite du titre (intensité du plan, #57).
+    var bars: Int? = nil
+    /// Phrase en plus sous le choix (garde-fou, #57), annoncée par VoiceOver.
+    var note: String? = nil
     let action: () -> Void
+
+    @Environment(\.dynamicTypeSize) var typeSize
 
     var body: some View {
         Button(action: action) {
@@ -152,9 +160,28 @@ struct RadioRow: View {
                     .foregroundStyle(isOn ? Theme.accent : Theme.muted)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(title).font(.coach(.body, weight: .semibold)).foregroundStyle(Theme.text)
+                    // Très grand texte : les barres passent sous le titre (maquette #57).
+                    if typeSize.isAccessibilitySize {
+                        titleLine
+                        if let bars { IntensityBars(level: bars) }
+                    } else {
+                        HStack(spacing: 10) {
+                            titleLine
+                            Spacer(minLength: 8)
+                            if let bars { IntensityBars(level: bars) }
+                        }
+                    }
                     Text(detail).font(.detail).foregroundStyle(Theme.muted)
                         .fixedSize(horizontal: false, vertical: true)
+                    if let note {
+                        Label {
+                            Text(note).font(.detail).foregroundStyle(Theme.text)
+                                .fixedSize(horizontal: false, vertical: true)
+                        } icon: {
+                            Image(systemName: "info.circle").foregroundStyle(Theme.muted)
+                        }
+                        .padding(.top, 4)
+                    }
                 }
                 Spacer(minLength: 0)
             }
@@ -163,5 +190,34 @@ struct RadioRow: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isOn ? [.isSelected] : [])
+    }
+
+    private var titleLine: some View {
+        HStack(spacing: 8) {
+            Text(title).font(.coach(.body, weight: .semibold)).foregroundStyle(Theme.text)
+            if let tag {
+                Text(tag).font(.label).foregroundStyle(Theme.text)
+                    .padding(.horizontal, 7).padding(.vertical, 2)
+                    .overlay(RoundedRectangle(cornerRadius: Theme.tagRadius).strokeBorder(Theme.line, lineWidth: Theme.quietStroke))
+            }
+        }
+    }
+}
+
+/// Barres d'intensité 1 à 4 (#57) : pleines en couleur du texte, vides en gris ; lues « Intensité x sur 4 ».
+struct IntensityBars: View {
+    let level: Int
+
+    var body: some View {
+        HStack(alignment: .bottom, spacing: Theme.intensityBarSpacing) {
+            ForEach(0..<4, id: \.self) { i in
+                RoundedRectangle(cornerRadius: Theme.intensityBarWidth / 2)
+                    .fill(i < level ? Theme.text : Theme.line)
+                    .frame(width: Theme.intensityBarWidth,
+                           height: Theme.intensityBarBase + CGFloat(i) * Theme.intensityBarStep)
+            }
+        }
+        .accessibilityElement()
+        .accessibilityLabel("Intensité \(level) sur 4")
     }
 }

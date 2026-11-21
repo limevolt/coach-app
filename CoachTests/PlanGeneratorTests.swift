@@ -68,8 +68,23 @@ final class PlanGeneratorTests: XCTestCase {
                 }
             }
         }
-        XCTAssertEqual(PlanRules.violations(loads), [], "jamais deux jours durs d'affilée, rien pour les jambes la veille d'une séance clé",
-                       file: file, line: line)
+        let intensity = s.intensity
+        if intensity.hardPairsPerWeek == 0 {
+            XCTAssertEqual(PlanRules.violations(loads), [], "jamais deux jours durs d'affilée, rien pour les jambes la veille d'une séance clé",
+                           file: file, line: line)
+        } else {
+            // Soutenu / Intense (#57) : paires de jours durs comptées semaine par semaine (avec le dimanche d'avant).
+            for w in 0..<g.weeks.count {
+                let window = (w == 0 ? [DayLoad.rest] : [loads[w * 7 - 1]]) + Array(loads[(w * 7)..<(w * 7 + 7)])
+                XCTAssertEqual(PlanRules.violations(window, hardPairs: intensity.hardPairsPerWeek,
+                                                    legsPairAllowed: intensity.legsPairAllowed), [],
+                               "semaine \(w + 1) : paires de jours durs permises seulement", file: file, line: line)
+            }
+        }
+        for i in 0..<max(0, loads.count - 2) {
+            XCTAssertFalse(loads[i].hard && loads[i + 1].hard && loads[i + 2].hard, "jamais trois jours durs de suite",
+                           file: file, line: line)
+        }
 
         // Le contenu tient dans la durée prévue (parties chronométrées).
         let minutesById = Dictionary(uniqueKeysWithValues: zip(g.plan.sessions.map(\.id),

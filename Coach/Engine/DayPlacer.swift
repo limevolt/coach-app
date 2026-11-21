@@ -1,6 +1,7 @@
 // DayPlacer.swift — coach local (#43) : placer les séances d'une semaine dans les jours, en respectant les règles.
 // Règles (#43, #47, #48, #49) :
-// - jamais deux jours durs d'affilée, toutes disciplines confondues (une séance modérée compte comme dure) ;
+// - jamais deux jours durs d'affilée, toutes disciplines confondues (une séance modérée compte comme dure),
+//   sauf en intensité « Soutenu » ou « Intense » (#57) : une ou deux paires permises, jamais trois jours durs de suite ;
 // - rien qui fatigue les jambes la veille d'une séance clé (qualité, escaliers, sortie longue) ;
 // - séances qui demandent la salle seulement les jours à la salle ; cours collectif à son jour ;
 // - une séance par jour, sauf si « deux séances le même jour » est activé : un renfo peut alors suivre
@@ -36,11 +37,22 @@ enum PlanRules {
     }
 
     /// Vérifie une suite de jours consécutifs (index 0 = premier jour). `loads[i]` = charge du jour i.
-    static func violations(_ loads: [DayLoad]) -> [Violation] {
+    /// `hardPairs` : paires de jours durs consécutifs permises (#57) ; jamais trois jours durs de suite,
+    /// et deux jours « jambes » de suite seulement si `legsPairAllowed`.
+    static func violations(_ loads: [DayLoad], hardPairs: Int = 0, legsPairAllowed: Bool = false) -> [Violation] {
         var out: [Violation] = []
         guard loads.count > 1 else { return out }
+        var pairsUsed = 0
         for i in 0..<(loads.count - 1) {
-            if loads[i].hard && loads[i + 1].hard { out.append(.consecutiveHard(day: i + 1)) }
+            if loads[i].hard && loads[i + 1].hard {
+                let third = i > 0 && loads[i - 1].hard
+                let bothLegs = loads[i].legs && loads[i + 1].legs
+                if third || (bothLegs && !legsPairAllowed) || pairsUsed >= hardPairs {
+                    out.append(.consecutiveHard(day: i + 1))
+                } else {
+                    pairsUsed += 1
+                }
+            }
             if loads[i].legs && loads[i + 1].key { out.append(.legsBeforeKey(day: i + 1)) }
         }
         return out
@@ -51,6 +63,9 @@ struct DayPlacer {
     var usableDays: [Int]
     var gymDays: Set<Int>
     var allowTwoSessionsPerDay: Bool
+    /// Paires de jours durs consécutifs permises (intensité du plan, #57).
+    var hardPairs = 0
+    var legsPairAllowed = false
     /// Charge du dimanche précédent (fin de la semaine d'avant).
     var previousSunday: DayLoad
     /// Charge déjà connue du lundi suivant (cours collectif le lundi), sinon repos.
@@ -114,11 +129,11 @@ struct DayPlacer {
 
     private func partialOK(_ plan: [Int: [ComposedSession]]) -> Bool {
         // Ajouter une séance ne retire jamais une erreur : on coupe dès qu'il y en a une.
-        PlanRules.violations(loads(plan)).isEmpty
+        isValid(plan)
     }
 
     func isValid(_ plan: [Int: [ComposedSession]]) -> Bool {
-        PlanRules.violations(loads(plan)).isEmpty
+        PlanRules.violations(loads(plan), hardPairs: hardPairs, legsPairAllowed: legsPairAllowed).isEmpty
     }
 
     /// Préférences : sortie longue le week-end, renfo en salle les jours à la salle, séances dures espacées.
@@ -136,6 +151,8 @@ struct DayPlacer {
         // Deux jours durs séparés d'un seul jour : un peu moins bien que mieux espacés.
         let l = loads(plan)
         for i in 0..<(l.count - 2) where l[i].hard && l[i + 2].hard { s -= 1 }
+        // Deux jours durs de suite (permis en Soutenu / Intense) : seulement si rien de mieux n'existe.
+        for i in 0..<(l.count - 1) where l[i].hard && l[i + 1].hard { s -= 10 }
         return s
     }
 }
