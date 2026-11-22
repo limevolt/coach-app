@@ -179,18 +179,7 @@ struct ActivityDetailView: View {
     }
 
     private func bar<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 12) { content() }
-            .padding(.horizontal, Theme.screenMargin)
-            .padding(.top, 12)
-            .padding(.bottom, 8)
-            .background(Theme.bg)
-            .background(alignment: .top) {
-                LinearGradient(colors: [Theme.bg.opacity(0), Theme.bg], startPoint: .top, endPoint: .bottom)
-                    .frame(height: Theme.bottomFadeHeight)
-                    .offset(y: -Theme.bottomFadeHeight)
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
-            }
+        BottomBar(content: content)
     }
 }
 

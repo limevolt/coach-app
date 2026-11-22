@@ -294,6 +294,12 @@ enum ReplacementPlanner {
     }
 
     /// « demain », « samedi »
+    /// « Mardi », « Aujourd'hui », « Mardi 1 déc. » (seule la première lettre en capitale).
+    static func dayTitle(_ date: String) -> String {
+        let label = dayLabel(date)
+        return label.prefix(1).uppercased() + label.dropFirst()
+    }
+
     static func dayLabel(_ date: String) -> String {
         guard let d = PlanDate.date(date) else { return date }
         if Calendar.current.isDateInTomorrow(d) { return "demain" }

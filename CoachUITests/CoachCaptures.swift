@@ -134,11 +134,11 @@ final class CoachCaptures: XCTestCase {
                     app.swipeUp()
                     shot("55-retour-fatigue-bas")
                 }
-                // Retour avec douleur au genou enregistré : « Ce que le coach a changé » sur le détail.
+                // Retour avec douleur marquée au genou enregistré : « Ce que le coach a changé » sur le détail.
+                // (`tap` fait défiler la feuille : pas de glissement vers le bas, qui la fermerait.)
                 _ = tap("Séance raccourcie", in: app)
                 _ = tap("Très fatigué", in: app)
-                app.swipeDown()
-                if tap("Douleur", in: app) { _ = tap("Genou", in: app) }
+                _ = tap("Douleur", in: app)
                 if tap("Enregistrer", in: app) {
                     Thread.sleep(forTimeInterval: 1.0)
                     app.swipeUp()

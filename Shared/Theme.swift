@@ -199,7 +199,7 @@ extension View {
             .contentShape(Rectangle())
     }
 
-    /// Bouton discret (contour gris, texte blanc), pleine largeur : « Voir le détail », « Séance libre ».
+    /// Bouton discret (contour gris, texte blanc par défaut), pleine largeur : « Voir le détail », « Séance libre ».
     func quietActionStyle(color: Color = Theme.text) -> some View {
         self.font(.coach(.callout, weight: .semibold))
             .foregroundStyle(color)
@@ -292,6 +292,28 @@ struct StatValue: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// Barre fixée en bas de l'écran (bouton principal, phrase d'explication), avec un fondu au-dessus
+/// pour le contenu qui défile dessous. `fill` : fond de l'écran ou de la feuille.
+struct BottomBar<Content: View>: View {
+    var fill: Color = Theme.bg
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) { content() }
+            .padding(.horizontal, Theme.screenMargin)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
+            .background(fill)
+            .background(alignment: .top) {
+                LinearGradient(colors: [fill.opacity(0), fill], startPoint: .top, endPoint: .bottom)
+                    .frame(height: Theme.bottomFadeHeight)
+                    .offset(y: -Theme.bottomFadeHeight)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
     }
 }
 

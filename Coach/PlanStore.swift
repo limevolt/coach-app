@@ -731,9 +731,13 @@ final class PlanStore {
         if let existing = log(for: session.id), let a = activityChoices.byFeedback[existing.id.uuidString] {
             current = ReplacementPlanner.undo(a, in: current, isDone: isDone)
         }
+        let declined = Set(activityChoices.feedbackDeclined.compactMap { pair -> String? in
+            let parts = pair.split(separator: "|", maxSplits: 1)
+            return parts.count == 2 && parts[0] == draft.id.uuidString ? String(parts[1]) : nil
+        })
         return FeedbackPlanner.decide(session: session, log: draft,
                                       history: feedbackHistory(excluding: draft.id, before: draft.completedAt),
-                                      sessions: current.sessions, isDone: isDone)
+                                      sessions: current.sessions, isDone: isDone, declined: declined)
     }
 
     private func readaptFeedback(_ logId: UUID) async {
@@ -817,10 +821,10 @@ final class PlanStore {
     /// « Ménager le genou » : la zone est ménagée dans les prochains plans créés par le coach.
     func spareZone(_ zone: String, advice logId: String) {
         dismissAdvice(logId)
-        guard let z = BodyZone(rawValue: zone), let settings = CoachStorage.loadSettings() else { return }
+        guard let z = BodyZone(rawValue: zone) else { return }
         var profile = CoachStorage.loadProfile()
         profile.sparedZones.insert(z)
-        try? CoachStorage.save(settings: settings, profile: profile)
+        try? CoachStorage.save(profile: profile)
     }
 
     func upsert(_ log: SessionLog) {

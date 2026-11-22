@@ -118,7 +118,8 @@ enum FeedbackPlanner {
     /// Ce que le coach change après le retour `log` sur `session`.
     /// `history` : séances faites avec leur retour, la plus récente en dernier (sans celle-ci).
     static func decide(session: PlannedSession, log: SessionLog, history: [FeedbackEntry],
-                       sessions: [PlannedSession], isDone: (String) -> Bool, now: Date = .now) -> FeedbackDecision {
+                       sessions: [PlannedSession], isDone: (String) -> Bool, now: Date = .now,
+                       declined: Set<String> = []) -> FeedbackDecision {
         let cal = PlanWeeks.calendar(timeZone: Calendar.current.timeZone)
         let sessionDay = cal.startOfDay(for: session.startDate ?? log.completedAt)
         // Retour saisi en retard : les fenêtres partent d'aujourd'hui, les séances passées ne bougent pas.
@@ -135,7 +136,9 @@ enum FeedbackPlanner {
         var d = FeedbackDecision()
 
         func change(_ s: PlannedSession, _ new: PlannedSession) {
-            guard d.changed[s.id] == nil else { return }
+            // Déjà changée par le coach (autre retour, sport à la place) : pas d'allègement par-dessus.
+            // Changement annulé à la main : pas refait.
+            guard d.changed[s.id] == nil, s.coachNote == nil, !declined.contains(s.id) else { return }
             d.changed[s.id] = new
         }
         func within(_ s: PlannedSession, days: Int) -> Bool {
@@ -150,7 +153,7 @@ enum FeedbackPlanner {
                 change(hard, hard.painLight(note: "Allégée par le coach (douleur signalée)"))
             }
         } else if let pain = log.pain {
-            let zone = BodyZone(rawValue: pain.zone)?.label.localizedLowercase ?? "zone signalée"
+            let zone = FeedbackText.zoneLabel(pain.zone).localizedLowercase
             let loading = future.filter { $0.stressedZones.contains(pain.zone) }
             func protect(_ s: PlannedSession) {
                 change(s, pain.marked ? s.noImpact(note: "Sans impact (douleur : \(zone))", sparing: pain.zone)
@@ -224,14 +227,14 @@ enum FeedbackPlanner {
         }
 
         if let fraction = log.doneFraction, fraction < 1 {
-            d.lines.append("\(ReplacementPlanner.dayLabel(session.date).capitalized) · \(session.title) : "
+            d.lines.append("\(ReplacementPlanner.dayTitle(session.date)) · \(session.title) : "
                            + "comptée faite \(fractionLabel(fraction))")
         }
         d.lines += sessions.filter { d.changed[$0.id] != nil }
             .sorted { ($0.startDate ?? .distantPast) < ($1.startDate ?? .distantPast) }
             .map { s in
                 let new = d.changed[s.id]!
-                return "\(ReplacementPlanner.dayLabel(s.date).capitalized) · \(s.title) : \(Self.what(new))"
+                return "\(ReplacementPlanner.dayTitle(s.date)) · \(s.title) : \(Self.what(new))"
             }
         return d
     }

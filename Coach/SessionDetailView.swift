@@ -370,7 +370,7 @@ struct SessionDetailView: View {
                     NavigationLink(value: s) {
                         HStack(spacing: 8) {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("\(ReplacementPlanner.dayLabel(s.date).capitalized) · \(s.title)")
+                                Text("\(ReplacementPlanner.dayTitle(s.date)) · \(s.title)")
                                     .font(.coach(.body, weight: .semibold)).foregroundStyle(Theme.text)
                                 if let note = s.coachNote {
                                     Text(note).font(.detail).foregroundStyle(Theme.muted)
@@ -480,6 +480,13 @@ struct FeedbackSheet: View {
     @State private var tired = false
     @State private var saving = false
 
+    private var missingZone: Bool { hasPain && zone == nil }
+
+    /// Quelque chose a été saisi : la feuille ne se ferme pas d'un glissement (« Plus tard » reste possible).
+    private var touched: Bool {
+        rpe != store.log(for: session.id)?.rpe || hasPain || shortened || tired || !note.isEmpty
+    }
+
     private var pain: SessionPain? {
         guard hasPain, let zone else { return nil }
         return SessionPain(zone: zone, marked: marked)
@@ -543,20 +550,22 @@ struct FeedbackSheet: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .scrollDismissesKeyboard(.interactively)
-            .safeAreaInset(edge: .bottom) {
-                Button {
-                    save()
-                } label: {
-                    Text("Enregistrer").primaryActionStyle()
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                BottomBar(fill: Theme.card) {
+                    if missingZone {
+                        Text("Choisis où tu as mal pour enregistrer.")
+                            .font(.detail).foregroundStyle(Theme.muted)
+                    }
+                    Button {
+                        save()
+                    } label: {
+                        Text("Enregistrer").primaryActionStyle(enabled: !missingZone)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(saving || missingZone)
                 }
-                .buttonStyle(.plain)
-                .disabled(saving)
-                .padding(.horizontal, Theme.screenMargin)
-                .padding(.top, Theme.bottomFadeHeight)
-                .padding(.bottom, 8)
-                .background(LinearGradient(colors: [Theme.card.opacity(0), Theme.card],
-                                           startPoint: .top, endPoint: .init(x: 0.5, y: 0.35)))
             }
+            .interactiveDismissDisabled(touched)
             .background(Theme.card.ignoresSafeArea())
             .navigationTitle("Ton retour")
             .navigationBarTitleDisplayMode(.inline)
@@ -572,7 +581,7 @@ struct FeedbackSheet: View {
     }
 
     private var subtitle: String {
-        let day = ReplacementPlanner.dayLabel(session.date).capitalized
+        let day = ReplacementPlanner.dayTitle(session.date)
         return session.plannedMinutes.map { "\(day) · \($0) min" } ?? day
     }
 

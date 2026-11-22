@@ -104,13 +104,13 @@ final class FeedbackPlannerTests: XCTestCase {
     func testSecondPainSameZoneLightensQualitiesUntilEndOfNextWeek() {
         let first = easy("s0", 4)
         let q = quality("s1", 8)
-        let week = [first, q, easy("s2", 9), quality("s3", 13), quality("s4", 15), quality("s5", 19)]
+        let week = [first, q, easy("s2", 9), quality("s3", 13), quality("s4", 17), quality("s5", 18)]
         let history = [FeedbackEntry(session: first, log: log(first, pain: SessionPain(zone: "knee", marked: false)))]
         let d = decide(q, log(q, pain: SessionPain(zone: "knee", marked: false)), history: history, week)
         XCTAssertEqual(d.repeatedPainZone, "knee")
         XCTAssertNotNil(d.changed["s3"])
         XCTAssertNotNil(d.changed["s4"], "dimanche 17 : fin de la semaine suivante")
-        XCTAssertNil(d.changed["s5"], "la semaine d'après")
+        XCTAssertNil(d.changed["s5"], "lundi 18 : la semaine d'après")
     }
 
     func testPainInAnotherZoneIsNotARepeat() {
@@ -280,6 +280,23 @@ final class FeedbackPlannerTests: XCTestCase {
         let f = easy("s1", 6)
         let history = [FeedbackEntry(session: e, log: log(e, fraction: nil))]
         let d = decide(f, log(f), history: history, [e, f, quality("s2", 8)])
+        XCTAssertTrue(d.changed.isEmpty)
+    }
+
+    func testAlreadyChangedSessionIsNotLightenedTwice() {
+        let q = quality("s1", 5)
+        var l = long("s2", 7)
+        l.coachNote = "Allégée par le coach (gêne : genou)"
+        let d = decide(q, log(q, pain: SessionPain(zone: "knee", marked: false)), [q, l])
+        XCTAssertNil(d.changed["s2"])
+    }
+
+    func testDeclinedChangeIsNotRedone() {
+        let q = quality("s1", 5)
+        let week = [q, long("s2", 7)]
+        let d = FeedbackPlanner.decide(session: q, log: log(q, pain: SessionPain(zone: "knee", marked: false)),
+                                       history: [], sessions: week, isDone: { _ in false }, now: at(5),
+                                       declined: ["s2"])
         XCTAssertTrue(d.changed.isEmpty)
     }
 
