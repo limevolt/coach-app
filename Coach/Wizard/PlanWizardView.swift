@@ -53,8 +53,10 @@ private struct WizardStepView: View {
     @State private var creating = false
     @State private var createError: String?
     @State private var confirmReplace = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
+        ScrollViewReader { proxy in
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.blockSpacing) {
                 VStack(alignment: .leading, spacing: 8) {
@@ -74,6 +76,15 @@ private struct WizardStepView: View {
             .padding(.bottom, Theme.blockSpacing)
         }
         .scrollDismissesKeyboard(.interactively)
+        // Intensité (#57) : le garde-fou sous le choix remonte au-dessus de « Continuer » (petit écran).
+        .onChange(of: draft.intensity) { _, level in
+            guard step == .intensity, draft.intensityNote(for: level) != nil else { return }
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(100)) // après l'affichage du message
+                withAnimation(reduceMotion ? nil : .snappy(duration: 0.3)) { proxy.scrollTo(level, anchor: .bottom) }
+            }
+        }
+        }
         .background(Theme.bg.ignoresSafeArea())
         // Barre de progression fixe ; le contenu qui défile ne passe jamais sous les boutons du haut.
         .safeAreaInset(edge: .top, spacing: 0) {
@@ -139,6 +150,14 @@ private struct WizardStepView: View {
         .padding(.top, 12)
         .padding(.bottom, 8)
         .background(Theme.bg)
+        // Fondu au-dessus du bouton (maquette #45 / #57) : la dernière ligne n'est pas coupée net.
+        .background(alignment: .top) {
+            LinearGradient(colors: [Theme.bg.opacity(0), Theme.bg], startPoint: .top, endPoint: .bottom)
+                .frame(height: Theme.bottomFadeHeight)
+                .offset(y: -Theme.bottomFadeHeight)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
     }
 
     @ViewBuilder private var content: some View {
@@ -148,6 +167,7 @@ private struct WizardStepView: View {
         case .availability: AvailabilityStep(draft: draft)
         case .equipment: EquipmentStep(draft: draft)
         case .level: LevelStep(draft: draft)
+        case .intensity: IntensityStep(draft: draft)
         case .summary: SummaryStep(draft: draft, path: $path)
         }
     }
@@ -600,7 +620,7 @@ private struct LevelStep: View {
 
     private var healthDetail: String {
         switch draft.healthState {
-        case .notAsked: return "Le coach lit tes courses des 8 dernières semaines. Tes données restent sur ton iPhone."
+        case .notAsked: return "Le coach lit tes séances des 8 dernières semaines. Tes données restent sur ton iPhone."
         case .reading: return "Lecture de Santé…"
         case .found:
             return "\(Int((draft.healthRunMinutes ?? 0).rounded())) min de course par semaine en moyenne sur 8 semaines."
@@ -616,14 +636,47 @@ private struct LevelStep: View {
         Task {
             let reader = HealthReader()
             try? await reader.requestAuthorization()
-            let minutes = await reader.averageRunMinutesPerWeek()
+            // Les deux lectures avant de les afficher : le niveau conseillé ne bouge pas sous les yeux.
+            async let runMinutes = reader.averageRunMinutesPerWeek()
+            async let sessions = reader.averageSessionsPerWeek()
+            let (minutes, perWeek) = await (runMinutes, sessions)
+            draft.healthSessions = perWeek
             draft.healthRunMinutes = minutes
             draft.healthState = minutes == nil ? .nothing : .found
         }
     }
 }
 
-// MARK: - Étape 6 : récapitulatif
+// MARK: - Étape 6 : intensité (#57)
+
+private struct IntensityStep: View {
+    @Bindable var draft: PlanDraft
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.blockSpacing) {
+            VStack(spacing: 0) {
+                ForEach(PlanIntensity.allCases, id: \.self) { level in
+                    if level != PlanIntensity.allCases.first { Divider().overlay(Theme.separator) }
+                    RadioRow(title: level.label, detail: level.summary, isOn: draft.intensity == level,
+                             tag: level == draft.recommendedIntensity ? "Conseillé" : nil,
+                             bars: level.level,
+                             note: draft.intensity == level ? draft.intensityNote(for: level) : nil) {
+                        draft.intensity = level
+                    }
+                    .id(level)
+                }
+            }
+            .overlay(alignment: .top) { Rectangle().fill(Theme.separator).frame(height: Theme.quietStroke) }
+            Text("Tu pourras la changer en cours de plan.")
+                .font(.detail).foregroundStyle(Theme.muted)
+        }
+        .sensoryFeedback(.selection, trigger: draft.intensity)
+        // Le choix affiché est figé à l'arrivée sur l'étape (le conseil peut encore changer d'étiquette).
+        .onAppear { if draft.chosenIntensity == nil { draft.chosenIntensity = draft.recommendedIntensity } }
+    }
+}
+
+// MARK: - Étape 7 : récapitulatif
 
 private struct SummaryStep: View {
     @Bindable var draft: PlanDraft
@@ -662,6 +715,7 @@ private struct SummaryStep: View {
                 row("Jours", value: "\(s.trainingDays.count) par semaine · \(AvailabilityStep.label(s.sessionMinutes))", step: .availability)
                 row("Matériel", value: equipmentLabel, step: .equipment)
                 row("Niveau de départ", value: levelLabel, step: .level)
+                row("Intensité", value: intensityLabel, step: .intensity)
             }
         }
     }
@@ -691,6 +745,13 @@ private struct SummaryStep: View {
             return name.isEmpty ? (s.objective.eventDate?.formatted(.dateTime.day().month(.abbreviated).year()) ?? "Une date") : name
         }
         return "Être en forme"
+    }
+
+    /// « Intense (début en Soutenu) » quand le garde-fou s'applique (#57).
+    private var intensityLabel: String {
+        let ceiling = PlanIntensity.startCeiling(sessionsPerWeek: draft.historySessions)
+        let level = draft.intensity
+        return level > ceiling ? "\(level.label) (début en \(ceiling.label))" : level.label
     }
 
     private var levelLabel: String {

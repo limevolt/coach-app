@@ -34,6 +34,8 @@ struct PlanSettings: Codable, Equatable {
     var gymDays: Set<Int>
     /// Choix unique dans l'assistant validé (#45) ; s'applique à chaque module.
     var startLevel: StartLevelSource
+    /// Intensité choisie dans l'assistant (#57) ; « Modéré » = les règles d'avant ce réglage.
+    var intensity: PlanIntensity = .moderate
     /// Date de début du plan ("AAAA-MM-JJ").
     var startDate: String
 
@@ -92,6 +94,7 @@ extension PlanSettings {
         allowTwoSessionsPerDay = try c.decodeIfPresent(Bool.self, forKey: .allowTwoSessionsPerDay) ?? false
         gymDays = Set(try c.decodeIfPresent([Int].self, forKey: .gymDays) ?? [])
         startLevel = (try? c.decodeIfPresent(StartLevelSource.self, forKey: .startLevel)) ?? .test
+        intensity = (try? c.decodeIfPresent(PlanIntensity.self, forKey: .intensity)) ?? .moderate
         startDate = try c.decodeIfPresent(String.self, forKey: .startDate) ?? ""
     }
 }

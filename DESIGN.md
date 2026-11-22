@@ -173,6 +173,10 @@ repos et « Prêt ? », chiffre blanc sur fond carte.
   vert avec une coche quand c'est activé — l'état se lit sans la couleur (option A, retour du propriétaire, #45).
 - **Plusieurs choix possibles : case à cocher `CoachCheckbox`** (carré arrondi, coche citron vert), pas un
   rond (le rond = choix unique, `RadioRow`). Exemple : les disciplines de l'assistant.
+- **Niveaux (intensité du plan, #57)** : `RadioRow` avec `bars` (barres 1 à 4 `IntensityBars`, couleur du texte
+  et gris, jamais citron vert : il reste pour le choix et « Continuer »), `tag` (« Conseillé », étiquette au
+  contour gris) et `note` (garde-fou sous le choix, icône grise). En très grand texte, les barres passent
+  sous le titre.
 - **Accordéon** : les options d'une ligne cochée (pastilles de variantes, jour et heure du cours) se déplient
   sous la ligne (fondu + glissement vers le bas) et se replient quand on décoche ; simple fondu si
   « Réduire les animations » est activé.

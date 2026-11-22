@@ -83,7 +83,8 @@ enum WeekComposer {
 
     // MARK: - Séances types de la semaine
 
-    static func runKinds(count n: Int, week: PlanWeek, choice: ModuleChoice, profile: AthleteProfile) -> [SessionKind] {
+    static func runKinds(count n: Int, week: PlanWeek, choice: ModuleChoice, profile: AthleteProfile,
+                         intensity: PlanIntensity = .moderate) -> [SessionKind] {
         guard n > 0 else { return [] }
         let stairs = choice.variants.contains(.stairs) && profile.staircases.contains { $0.isValid && !$0.isVeryShort }
         let trail = choice.variants.contains(.trail)
@@ -104,8 +105,8 @@ enum WeekComposer {
         // #47 : 2 séances = 1 qualité + sortie longue ; 3 = 1 qualité + footing + sortie longue ; 4 et plus = 2 qualités
         // (plafonné ensuite par la part d'intensité, voir PlanGenerator.capIntensity) ; en base, une seule qualité.
         // Prudence (relecture entraîneur, à valider dans #47) : 2 qualités seulement à partir de 4 courses.
-        var qualityCount = n >= 4 ? 2 : 1
-        if week.phase == .base { qualityCount = 1 }
+        // #57 : le nombre de qualités dépend de l'intensité du plan (« Modéré » = règle ci-dessus).
+        var qualityCount = intensity.qualityRuns(count: n, phase: week.phase)
         if week.phase == .taper || week.phase == .maintenance { qualityCount = 1 }
         if week.isDeload { qualityCount -= 1 }
         qualityCount = max(0, min(qualityCount, quality.count, n - 1))

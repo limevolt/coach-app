@@ -58,6 +58,20 @@ final class HealthReader {
         return runs.reduce(0) { $0 + $1.duration } / 60 / Double(weeks)
     }
 
+    /// Séances par semaine, toutes disciplines sauf la marche et les activités calmes (yoga, étirements…),
+    /// en moyenne sur `weeks` semaines : sert à conseiller l'intensité du plan (#57). Nil si rien n'est trouvé.
+    func averageSessionsPerWeek(weeks: Int = 8) async -> Double? {
+        guard HKHealthStore.isHealthDataAvailable() else { return nil }
+        let end = Date.now
+        guard let start = Calendar.current.date(byAdding: .day, value: -7 * weeks, to: end),
+              let list = try? await workouts(from: start, to: end) else { return nil }
+        let calm: Set<HKWorkoutActivityType> = [.walking, .yoga, .mindAndBody, .flexibility, .cooldown,
+                                                 .preparationAndRecovery, .taiChi]
+        let sessions = list.filter { !calm.contains($0.activity) }
+        guard !sessions.isEmpty else { return nil }
+        return Double(sessions.count) / Double(weeks)
+    }
+
     /// Empreinte des entraînements Santé de la période (nombre + dernière fin) : change dès qu'un
     /// entraînement est ajouté. Sert à savoir si le suivi déjà généré est encore à jour (#35).
     func workoutStamp(days: Int) async -> String? {

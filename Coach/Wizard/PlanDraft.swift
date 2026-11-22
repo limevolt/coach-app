@@ -5,7 +5,7 @@ import Foundation
 import Observation
 
 enum WizardStep: Int, CaseIterable, Hashable {
-    case objective = 1, disciplines, availability, equipment, level, summary
+    case objective = 1, disciplines, availability, equipment, level, intensity, summary
 
     static let count = allCases.count
 
@@ -16,6 +16,7 @@ enum WizardStep: Int, CaseIterable, Hashable {
         case .availability: return "Tes disponibilités"
         case .equipment: return "Ton matériel"
         case .level: return "Ton niveau"
+        case .intensity: return "Ton intensité"
         case .summary: return "Ton plan"
         }
     }
@@ -27,6 +28,7 @@ enum WizardStep: Int, CaseIterable, Hashable {
         case .availability: return "Quand peux-tu t'entraîner ?"
         case .equipment: return "Le coach ne propose que des exercices faisables."
         case .level: return "D'où pars-tu ? Pour doser les premières semaines."
+        case .intensity: return "Jusqu'où veux-tu pousser ? Séances dures : fractionné, côtes, escaliers, circuits intenses."
         case .summary: return nil
         }
     }
@@ -70,6 +72,10 @@ final class PlanDraft {
     var startLevel: StartLevelSource = .test
     /// Minutes de course par semaine lues dans Santé (niveau « Santé »).
     var healthRunMinutes: Double?
+    /// Séances par semaine lues dans Santé (toutes disciplines) : intensité conseillée (#57).
+    var healthSessions: Double?
+    /// Intensité choisie ; tant que l'utilisateur n'a rien touché, c'est celle conseillée (`intensity`).
+    var chosenIntensity: PlanIntensity?
     var healthState: HealthState = .notAsked
     var name = ""
     var nameEdited = false
@@ -117,6 +123,7 @@ final class PlanDraft {
         gymDays = s.gymDays
         allowTwoSessionsPerDay = s.allowTwoSessionsPerDay
         startLevel = s.startLevel
+        chosenIntensity = s.intensity
         name = s.name
         nameEdited = true
         notes = s.description ?? ""
@@ -186,6 +193,7 @@ final class PlanDraft {
                              sessionMinutes: sessionMinutes,
                              gymDays: gymDays.intersection(trainingDays),
                              startLevel: startLevel,
+                             intensity: intensity,
                              startDate: PlanCalendar.string(today))
         s.longRunMinutes = modules[.run] == nil ? nil : longRunMinutes
         s.allowTwoSessionsPerDay = allowTwoSessionsPerDay
@@ -203,6 +211,33 @@ final class PlanDraft {
     }
 
     var startingPoint: StartingPoint {
-        startLevel == .health ? StartingPoint(runMinutesPerWeek: healthRunMinutes) : .unknown
+        startLevel == .health ? StartingPoint(runMinutesPerWeek: healthRunMinutes, sessionsPerWeek: healthSessions) : .unknown
+    }
+
+    // MARK: Intensité (#57)
+
+    /// Séances par semaine connues (niveau « Santé » seulement).
+    var historySessions: Double? { startingPoint.plausibleSessionsPerWeek }
+
+    /// Niveau marqué « Conseillé » : suit l'historique Santé.
+    var recommendedIntensity: PlanIntensity { PlanIntensity.recommended(sessionsPerWeek: historySessions) }
+
+    /// Intensité du plan : le choix de l'utilisateur, sinon celle conseillée.
+    var intensity: PlanIntensity {
+        get { chosenIntensity ?? recommendedIntensity }
+        set { chosenIntensity = newValue }
+    }
+
+    /// Phrase sous le niveau choisi quand le coach doit commencer plus bas (garde-fou).
+    func intensityNote(for level: PlanIntensity, today: Date = .now) -> String? {
+        let s = settings(today: today)
+        var weekCount = PlanCalendar.fitnessHorizonWeeks
+        if let first = s.firstDay(today: today), let event = s.objective.eventDate, first < event {
+            weekCount = PlanCalendar.weeks(firstDay: first, eventDate: event).count
+        }
+        guard let ramp = PlanIntensity.rampNote(chosen: level, history: historySessions, weekCount: weekCount) else { return nil }
+        guard let sessions = historySessions else { return ramp }
+        let n = sessions.formatted(.number.precision(.fractionLength(0...1)))
+        return "Dans Santé : \(n) séances par semaine ces 8 dernières semaines. " + ramp
     }
 }
