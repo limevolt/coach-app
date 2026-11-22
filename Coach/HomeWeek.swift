@@ -39,6 +39,7 @@ struct WeekDots<MenuItems: View>: View {
     /// Menu contextuel d'une séance (marquer non faite, reprogrammer).
     @ViewBuilder let menu: (PlannedSession) -> MenuItems
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var taps = 0
 
     var body: some View {
         HStack(alignment: .top, spacing: 0) {
@@ -46,16 +47,18 @@ struct WeekDots<MenuItems: View>: View {
                 let isSelected = Calendar.current.isDate(day.date, inSameDayAs: selected)
                 Button {
                     withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) { selected = day.date }
+                    taps += 1
                 } label: {
                     DayDot(day: day, isSelected: isSelected)
                 }
                 .buttonStyle(PressableButtonStyle())
                 .contextMenu { if let session = day.main { menu(session) } }
                 .accessibilityAddTraits(isSelected ? .isSelected : [])
-                .accessibilityHint("Affiche ce jour")
+                .accessibilityHint(isSelected ? "Jour affiché" : "Affiche ce jour")
             }
         }
-        .sensoryFeedback(.selection, trigger: selected)
+        // Vibration au toucher seulement (pas au retour dans l'app).
+        .sensoryFeedback(.selection, trigger: taps)
     }
 }
 
@@ -180,18 +183,35 @@ struct SelectedDayCard: View {
     @Environment(PlanStore.self) private var store
     let day: WeekOverview.Day
     let backToToday: () -> Void
+    @State private var effortFor: HealthActivity?
 
-    private var title: String {
+    /// « mardi 18 nov. · repos », « jeudi 20 nov. · course et renfo »
+    static func title(for day: WeekOverview.Day) -> String {
         let date = day.date.formatted(.dateTime.weekday(.wide).day().month(.abbreviated))
         let what = day.sessions.isEmpty ? "repos"
             : day.sessions.map(\.typeLabel.localizedLowercase).joined(separator: " et ")
         return "\(date) · \(what)"
     }
 
+    /// État d'une séance du jour touché, à droite de la ligne.
+    private func trailing(_ session: PlannedSession) -> String {
+        if let link = store.healthLink(for: session.id), link.kind == .main {
+            return "remplacée : \(link.activity.info.label.localizedLowercase)"
+        }
+        if store.isDone(session.id) { return "faite" }
+        return store.isMissed(session) ? "pas faite" : "prévue"
+    }
+
+    /// Séances du jour faites avec une autre app sans ressenti noté.
+    private var effortToNote: HealthActivity? {
+        day.sessions.lazy.compactMap { store.healthLink(for: $0.id)?.activity }
+            .first { store.activityChoices.efforts[$0.id] == nil }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .center) {
-                Eyebrow(text: title)
+                Eyebrow(text: Self.title(for: day))
                     .accessibilityAddTraits(.isHeader)
                 Spacer(minLength: 8)
                 Button("Aujourd'hui", action: backToToday)
@@ -200,28 +220,24 @@ struct SelectedDayCard: View {
                     .frame(minHeight: Theme.minTap)
                     .accessibilityHint("Revient à la séance du jour")
             }
-            if day.sessions.isEmpty && day.extras.isEmpty {
-                Text("Pas de séance du plan ce jour-là.").font(.text).foregroundStyle(Theme.muted)
-            }
-            if day.sessions.isEmpty && !day.extras.isEmpty {
+            if day.sessions.isEmpty {
                 Text("Pas de séance du plan ce jour-là.").font(.detail).foregroundStyle(Theme.muted)
             }
             VStack(spacing: 0) {
                 ForEach(Array(day.sessions.enumerated()), id: \.element.id) { i, session in
-                    if let link = store.healthLink(for: session.id), link.kind == .main {
-                        NavigationLink(value: link.activity) {
-                            SessionRow(session: session, done: true, replacedBy: link.activity.info.label)
+                    let last = i == day.sessions.count - 1 && day.extras.isEmpty
+                    Group {
+                        if let link = store.healthLink(for: session.id), link.kind == .main {
+                            NavigationLink(value: link.activity) {
+                                PlanLine(session: session.effective, trailing: trailing(session), showsSeparator: !last)
+                            }
+                        } else {
+                            NavigationLink(value: session) {
+                                PlanLine(session: session.effective, trailing: trailing(session), showsSeparator: !last)
+                            }
                         }
-                        .buttonStyle(.plain)
-                    } else {
-                        NavigationLink(value: session) {
-                            SessionRow(session: session, done: store.isDone(session.id))
-                        }
-                        .buttonStyle(.plain)
                     }
-                    if i < day.sessions.count - 1 || !day.extras.isEmpty {
-                        Rectangle().fill(Theme.separator).frame(height: 1)
-                    }
+                    .buttonStyle(.plain)
                 }
                 ForEach(Array(day.extras.enumerated()), id: \.element.id) { i, activity in
                     NavigationLink(value: activity) {
@@ -230,8 +246,18 @@ struct SelectedDayCard: View {
                     .buttonStyle(.plain)
                 }
             }
+            if let activity = effortToNote {
+                Button { effortFor = activity } label: { Text("Noter mon effort").quietActionStyle() }
+                    .buttonStyle(PressableButtonStyle())
+            }
         }
-        .card()
+        // Même forme que la carte du jour : la carte ne saute pas quand on change de jour.
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 16)
+        .padding(.top, 18)
+        .padding(.bottom, 16)
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: Theme.heroCardRadius, style: .continuous))
+        .sheet(item: $effortFor) { EffortSheet(activity: $0) }
     }
 }
 
@@ -247,7 +273,7 @@ struct TodayCard: View {
     /// Plan terminé : « Créer un nouveau plan ».
     var newPlan: () -> Void = {}
     /// Séance d'une autre app dont on note le ressenti (#54).
-    @State var effortFor: HealthActivity? = nil
+    @State private var effortFor: HealthActivity?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {

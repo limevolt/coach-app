@@ -22,14 +22,14 @@ struct ActivityDetailView: View {
                 header
                 HStack(alignment: .top, spacing: 8) {
                     StatValue(value: "\(activity.minutes)", unit: "min", label: "Durée")
-                    if let distance, let pace {
-                        // Course : distance et allure (#54).
-                        StatValue(value: distance, unit: "km", label: "Distance")
+                    StatValue(value: activity.avgHR.map { "\(Int($0.rounded()))" } ?? "—",
+                              unit: activity.avgHR == nil ? nil : "bpm", label: "FC moy.")
+                    StatValue(value: distance ?? "—", unit: distance == nil ? nil : "km", label: "Distance")
+                }
+                if let pace = activity.pace {
+                    // Course : allure en plus (#54).
+                    HStack(alignment: .top, spacing: 8) {
                         StatValue(value: pace, unit: "/km", label: "Allure")
-                    } else {
-                        StatValue(value: activity.avgHR.map { "\(Int($0.rounded()))" } ?? "—",
-                                  unit: activity.avgHR == nil ? nil : "bpm", label: "FC moy.")
-                        StatValue(value: distance ?? "—", unit: distance == nil ? nil : "km", label: "Distance")
                     }
                 }
                 VStack(alignment: .leading, spacing: 10) {
@@ -72,12 +72,6 @@ struct ActivityDetailView: View {
 
     private var isMain: Bool { link?.kind == .main }
 
-    /// Allure moyenne d'une course (« 5:42 »), si la distance est connue.
-    private var pace: String? {
-        guard activity.info.family == .run, let km = activity.distanceKm, km > 0.2 else { return nil }
-        let secPerKm = Int((activity.durationSec / km).rounded())
-        return "\(secPerKm / 60):" + String(format: "%02d", secPerKm % 60)
-    }
 
     // MARK: En-tête
 
@@ -257,7 +251,10 @@ struct EffortSheet: View {
     @Environment(PlanStore.self) private var store
     @Environment(\.dismiss) private var dismiss
 
+    @Environment(\.dynamicTypeSize) private var typeSize
+
     var body: some View {
+        ScrollView {
         VStack(alignment: .leading, spacing: 16) {
             Text("Ton ressenti").font(.coach(.title3, weight: .semibold)).foregroundStyle(Theme.text)
                 .accessibilityAddTraits(.isHeader)
@@ -268,7 +265,9 @@ struct EffortSheet: View {
         }
         .padding(Theme.screenMargin)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .presentationDetents([.height(Theme.effortSheetHeight), .medium])
+        }
+        // Très grand texte : les 5 boutons passent en colonne, la feuille s'ouvre en grand.
+        .presentationDetents(typeSize.isAccessibilitySize ? [.large] : [.height(Theme.effortSheetHeight), .medium])
         .presentationBackground(Theme.card)
     }
 }

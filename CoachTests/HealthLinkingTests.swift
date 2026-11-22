@@ -138,6 +138,19 @@ final class HealthLinkingTests: XCTestCase {
         XCTAssertEqual(ActivityCatalog.entry("squash").symbol, "figure.squash")
     }
 
+    func testPace() {
+        var run = activity("r1", "2030-03-04", "running", minutes: 30)
+        run.distanceKm = 5
+        XCTAssertEqual(run.pace, "6:00", "arrondi : jamais « 5:60 »")
+        run.durationSec = 1799.8
+        XCTAssertEqual(run.pace, "6:00")
+        run.distanceKm = 0.1
+        XCTAssertNil(run.pace, "distance trop courte")
+        var bike = activity("b1", "2030-03-04", "cycling", minutes: 30)
+        bike.distanceKm = 12
+        XCTAssertNil(bike.pace, "allure seulement pour la course")
+    }
+
     func testEffortNearestLevel() {
         XCTAssertEqual(EffortPicker.nearest(7), 6)
         XCTAssertEqual(EffortPicker.nearest(9), 8)

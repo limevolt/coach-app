@@ -78,7 +78,8 @@ final class CoachCaptures: XCTestCase {
                 app.swipeDown()
                 shot("43-accueil-seance-du-jour")
                 // Toucher un autre jour : l'anneau suit, la carte montre ce jour (#54).
-                if tap("En plus : randonnée", in: app) {
+                // (Le lundi, la randonnée tombe aujourd'hui : capture sautée.)
+                if hikeOffset != 0, tap("En plus : randonnée", in: app) {
                     Thread.sleep(forTimeInterval: 0.4)
                     shot("44-accueil-autre-jour")
                     audit("Accueil — autre jour", app)
