@@ -51,7 +51,7 @@ struct ActivityDetailView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Button("Ce n'était pas cette séance", systemImage: "xmark.circle") {
-                            withAnimation(animation) { store.unlink(activity) }
+                            Task { await store.unlink(activity) }
                         }
                     } label: {
                         Image(systemName: "ellipsis").accessibilityLabel("Actions")
@@ -138,11 +138,13 @@ struct ActivityDetailView: View {
     @ViewBuilder private var bottomBar: some View {
         if isMain, let session = linkedSession {
             bar {
-                Text("« \(session.title) » redevient à faire.")
+                Text(store.activityChoices.adaptations[activity.id] == nil
+                     ? "« \(session.title) » redevient à faire."
+                     : "« \(session.title) » redevient à faire et le planning redevient comme avant.")
                     .font(.detail).foregroundStyle(Theme.muted)
                     .fixedSize(horizontal: false, vertical: true)
                 Button {
-                    withAnimation(animation) { store.unlink(activity) }
+                    Task { await store.unlink(activity) }
                 } label: {
                     Text("Ce n'est plus la séance du jour").quietActionStyle()
                 }
@@ -157,11 +159,11 @@ struct ActivityDetailView: View {
                 }
                 .font(.detail).foregroundStyle(Theme.muted)
                 .fixedSize(horizontal: false, vertical: true)
-                Text("Si cette activité devient ta séance du jour, « \(session.title) » comptera comme faite.")
+                Text(store.replacementSentence(for: activity, replacing: session))
                     .font(.detail).foregroundStyle(Theme.text)
                     .fixedSize(horizontal: false, vertical: true)
                 Button {
-                    withAnimation(animation) { store.markMain(activity, replacing: session.id) }
+                    Task { await store.markMain(activity, replacing: session.id) }
                 } label: {
                     Text("Séance principale du jour").primaryActionStyle()
                 }

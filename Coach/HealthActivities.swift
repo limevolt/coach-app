@@ -167,6 +167,15 @@ struct ActivityChoices: Codable, Hashable {
     var detached: Set<String> = []
     /// Ressenti noté (2, 4, 6, 8 ou 10).
     var efforts: [String: Int] = [:]
+    /// Ce que le coach a changé pour une « Séance principale du jour » (#44, B1), pour pouvoir l'annuler.
+    var adaptations: [String: Adaptation] = [:]
+
+    struct Adaptation: Codable, Hashable {
+        /// Séances ajoutées (séance refaite un autre jour).
+        var created: [String] = []
+        /// Version d'avant des séances allégées.
+        var originals: [PlannedSession] = []
+    }
 }
 
 // MARK: - Liaison

@@ -480,7 +480,7 @@ final class PlanStore {
     func markNotDone(_ sessionId: String) {
         // Faite avec une autre app (#54) : la séance Santé redevient une activité en plus.
         if log(for: sessionId) == nil, let link = healthLinks.bySession[sessionId] {
-            unlink(link.activity)
+            Task { await unlink(link.activity) }
             return
         }
         logs = DoneState.removingActive(sessionId, from: logs)
@@ -549,22 +549,85 @@ final class PlanStore {
         HealthLinking.replaceable(for: activity, sessions: plan?.sessions ?? [], isDone: isDone)
     }
 
-    func markMain(_ activity: HealthActivity, replacing sessionId: String) {
+    func markMain(_ activity: HealthActivity, replacing sessionId: String) async {
         activityChoices.mainFor[activity.id] = sessionId
         activityChoices.detached.remove(activity.id)
         persistActivityChoices()
+        await adaptWeek(for: activity)
     }
 
-    /// « Ce n'est plus la séance du jour » / « Ce n'était pas cette séance » : redevient une activité en plus.
-    func unlink(_ activity: HealthActivity) {
+    /// « Ce n'est plus la séance du jour » / « Ce n'était pas cette séance » : redevient une activité en plus,
+    /// et ce que le coach avait changé revient comme avant.
+    func unlink(_ activity: HealthActivity) async {
         activityChoices.mainFor[activity.id] = nil
         activityChoices.detached.insert(activity.id)
         persistActivityChoices()
+        await undoAdaptation(for: activity)
     }
 
     func setEffort(_ rpe: Int, for activity: HealthActivity) {
         activityChoices.efforts[activity.id] = rpe
         persistActivityFile()
+        // Séance du jour : le plan s'ajuste au ressenti noté (#44).
+        if activityChoices.mainFor[activity.id] != nil {
+            Task { await adaptWeek(for: activity) }
+        }
+    }
+
+    // MARK: Coach adaptatif, lot B1 (#44)
+
+    /// Ce que le coach fera si `activity` devient la séance du jour (phrase au-dessus du bouton).
+    func replacementSentence(for activity: HealthActivity, replacing session: PlannedSession) -> String {
+        let d = ReplacementPlanner.decide(activity: activity, effort: activityChoices.efforts[activity.id],
+                                          replaced: session, sessions: plan?.sessions ?? [], isDone: isDone,
+                                          trainingDays: TrainingDays.current)
+        return ReplacementPlanner.sentence(d, replaced: session, sessions: plan?.sessions ?? [])
+    }
+
+    /// Applique (ou réapplique après un nouveau ressenti) les changements de la semaine.
+    private func adaptWeek(for activity: HealthActivity) async {
+        await undoAdaptation(for: activity)
+        guard var newPlan = plan, let sessionId = activityChoices.mainFor[activity.id],
+              let replaced = newPlan.sessions.first(where: { $0.id == sessionId }) else { return }
+        let d = ReplacementPlanner.decide(activity: activity, effort: activityChoices.efforts[activity.id],
+                                          replaced: replaced, sessions: newPlan.sessions, isDone: isDone,
+                                          trainingDays: TrainingDays.current)
+        var adaptation = ActivityChoices.Adaptation()
+        if case .redoneOn(let date) = d.fate {
+            var copy = replaced
+            var id = replaced.id + "-r"
+            while newPlan.sessions.contains(where: { $0.id == id }) { id += "r" }
+            copy.id = id
+            copy.date = date
+            copy.originalDate = nil
+            copy.replaces = nil
+            copy.coachNote = "Déplacée par le coach (\(activity.info.label.localizedLowercase) "
+                + activity.start.formatted(.dateTime.weekday(.wide)) + ")"
+            newPlan.sessions.append(copy)
+            newPlan.sessions.sort { ($0.date, $0.time ?? "") < ($1.date, $1.time ?? "") }
+            adaptation.created.append(id)
+        }
+        for (id, light) in d.lightened {
+            guard let i = newPlan.sessions.firstIndex(where: { $0.id == id }) else { continue }
+            adaptation.originals.append(newPlan.sessions[i])
+            newPlan.sessions[i] = light
+        }
+        guard !adaptation.created.isEmpty || !adaptation.originals.isEmpty else { return }
+        activityChoices.adaptations[activity.id] = adaptation
+        persistActivityFile()
+        await saveEdits(newPlan)
+    }
+
+    /// Remet le plan comme avant, sauf ce qui a déjà été fait entre-temps.
+    private func undoAdaptation(for activity: HealthActivity) async {
+        guard let adaptation = activityChoices.adaptations[activity.id], var newPlan = plan else { return }
+        activityChoices.adaptations[activity.id] = nil
+        persistActivityFile()
+        newPlan.sessions.removeAll { adaptation.created.contains($0.id) && !isDone($0.id) }
+        for original in adaptation.originals where !isDone(original.id) {
+            if let i = newPlan.sessions.firstIndex(where: { $0.id == original.id }) { newPlan.sessions[i] = original }
+        }
+        await saveEdits(newPlan)
     }
 
     /// Les séances faites ont peut-être changé : fichier et montre à jour.
