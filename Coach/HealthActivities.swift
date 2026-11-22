@@ -144,7 +144,8 @@ enum ActivityCatalog {
     static func isCompatible(_ family: Family, with type: SessionType) -> Bool {
         switch type {
         case .run: return family == .run
-        case .strength, .circuit: return family == .strength || family == .combat
+        // Sports de combat : pas d'eux-mêmes (« un autre sport ne remplace jamais tout seul », #54).
+        case .strength, .circuit: return family == .strength
         }
     }
 }

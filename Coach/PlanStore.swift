@@ -7,8 +7,8 @@ import Observation
 @Observable
 @MainActor
 final class PlanStore {
-    var plan: TrainingPlan?
-    var logs: [SessionLog] = []
+    var plan: TrainingPlan? { didSet { linksCache = nil } }
+    var logs: [SessionLog] = [] { didSet { linksCache = nil } }
     var templates: [IntervalTemplate] = []
     var status: String?
     var isSyncing = false
@@ -26,8 +26,10 @@ final class PlanStore {
     private var activitiesURL: URL { URL.documentsDirectory.appending(path: "activities.json") }
 
     /// Séances Santé de la semaine affichée (#54), et les choix de l'utilisateur à leur sujet.
-    private(set) var healthActivities: [HealthActivity] = []
-    private(set) var activityChoices = ActivityChoices()
+    /// Gardées sur l'iPhone (`activities.json`) : une séance faite avec une autre app reste faite,
+    /// même quand elle sort de la période relue dans Santé.
+    private(set) var healthActivities: [HealthActivity] = [] { didSet { linksCache = nil } }
+    private(set) var activityChoices = ActivityChoices() { didSet { linksCache = nil } }
 
     init() {
         if DemoMode.isOn {
@@ -50,8 +52,9 @@ final class PlanStore {
             logs = (try? Coding.decoder.decode([SessionLog].self, from: data)) ?? []
         }
         if let data = try? Data(contentsOf: activitiesURL),
-           let decoded = try? Coding.decoder.decode(ActivityChoices.self, from: data) {
-            activityChoices = decoded
+           let decoded = try? Coding.decoder.decode(ActivityFile.self, from: data) {
+            activityChoices = decoded.choices
+            healthActivities = decoded.activities
         }
         if let data = try? Data(contentsOf: templatesURL),
            let decoded = try? Coding.decoder.decode([IntervalTemplate].self, from: data) {
@@ -106,6 +109,7 @@ final class PlanStore {
             logs = DoneState.archiving(logs, at: now)
             persistLogs()
             UserDefaults.standard.set(now.timeIntervalSince1970, forKey: "lastReset")
+            forgetActivityChoices()
         }
         archiveCurrentPlan()
         try Coding.encoder.encode(newPlan).write(to: planURL, options: .atomic)
@@ -133,6 +137,7 @@ final class PlanStore {
         logs = DoneState.archiving(logs, at: now)
         persistLogs()
         UserDefaults.standard.set(now.timeIntervalSince1970, forKey: "lastReset")
+        forgetActivityChoices()
         try? FileManager.default.removeItem(at: planURL)
         plan = nil
         originals = [:]
@@ -165,7 +170,7 @@ final class PlanStore {
     /// Séance à venir et pas encore faite : peut changer de date.
     func isAvailable(_ s: PlannedSession) -> Bool {
         let today = Calendar.current.startOfDay(for: .now)
-        return (s.dayStart ?? .distantPast) >= today && log(for: s.id) == nil
+        return (s.dayStart ?? .distantPast) >= today && !isDone(s.id)
     }
 
     /// Fait une autre activité à la place de `slotId`.
@@ -492,22 +497,18 @@ final class PlanStore {
 
     /// Liaison des séances Santé aux séances du plan (recalculée à chaque lecture : rien n'est figé).
     var healthLinks: HealthLinks {
+        // Mémo, vidé à chaque changement du plan, des journaux ou des séances Santé (`didSet`).
+        if let linksCache { return linksCache }
         let sessions = plan?.sessions ?? []
-        let doneByLog = Set(sessions.map(\.id).filter { log(for: $0) != nil })
-        // Mémo : `isDone` est appelé pour chaque séance de chaque liste.
-        var hasher = Hasher()
-        for s in sessions { hasher.combine(s.id); hasher.combine(s.date); hasher.combine(s.type) }
-        hasher.combine(healthActivities)
-        hasher.combine(activityChoices)
-        hasher.combine(doneByLog)
-        let key = hasher.finalize()
-        if let cached = linksCache, cached.key == key { return cached.links }
-        let links = HealthLinking.resolve(sessions: sessions, activities: healthActivities, doneByLog: doneByLog,
+        let doneByLog = Set(DoneState.doneIds(plan: plan, logs: logs))
+        // Rien d'avant la dernière réinitialisation : un nouveau plan n'hérite pas des anciennes séances.
+        let recent = healthActivities.filter { a in lastReset.map { a.start >= $0 } ?? true }
+        let links = HealthLinking.resolve(sessions: sessions, activities: recent, doneByLog: doneByLog,
                                           choices: activityChoices, ownBundlePrefix: Bundle.main.bundleIdentifier)
-        linksCache = (key, links)
+        linksCache = links
         return links
     }
-    @ObservationIgnored private var linksCache: (key: Int, links: HealthLinks)?
+    @ObservationIgnored private var linksCache: HealthLinks?
 
     /// Faite dans Coach (journal) ou avec une autre app (Santé).
     func isDone(_ sessionId: String) -> Bool {
@@ -526,10 +527,21 @@ final class PlanStore {
         let monday = PlanWeeks.start(of: now)
         let from = Calendar.current.date(byAdding: .day, value: -7, to: monday) ?? monday
         let list = await reader.activities(from: from, to: now)
-        if list != healthActivities {
-            healthActivities = list
+        // La période relue remplace ce qu'on avait (séances supprimées de Santé comprises) ; le reste est gardé.
+        let merged = (healthActivities.filter { $0.start < from } + list).sorted { $0.start < $1.start }
+        if merged != healthActivities {
+            healthActivities = merged
+            persistActivityFile()
             pushToWatch()
         }
+    }
+
+    /// Autre plan ou plan réinitialisé : les choix (« Séance principale du jour »…) ne passent pas au suivant.
+    private func forgetActivityChoices() {
+        let efforts = activityChoices.efforts
+        activityChoices = ActivityChoices()
+        activityChoices.efforts = efforts
+        persistActivityFile()
     }
 
     /// Séance du plan que cette activité peut remplacer (« Séance principale du jour »).
@@ -552,13 +564,24 @@ final class PlanStore {
 
     func setEffort(_ rpe: Int, for activity: HealthActivity) {
         activityChoices.efforts[activity.id] = rpe
-        persistActivityChoices()
+        persistActivityFile()
     }
 
+    /// Les séances faites ont peut-être changé : fichier et montre à jour.
     private func persistActivityChoices() {
+        persistActivityFile()
         pushToWatch()
+    }
+
+    private struct ActivityFile: Codable {
+        var choices: ActivityChoices
+        var activities: [HealthActivity]
+    }
+
+    private func persistActivityFile() {
         if DemoMode.isOn { return }
-        if let data = try? Coding.encoder.encode(activityChoices) {
+        let file = ActivityFile(choices: activityChoices, activities: healthActivities)
+        if let data = try? Coding.encoder.encode(file) {
             try? data.write(to: activitiesURL, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
         }
     }

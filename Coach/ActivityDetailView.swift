@@ -44,7 +44,7 @@ struct ActivityDetailView: View {
             if let link, link.kind == .auto {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
-                        Button("Ce n'était pas cette séance", systemImage: "link.badge.plus") {
+                        Button("Ce n'était pas cette séance", systemImage: "xmark.circle") {
                             withAnimation(animation) { store.unlink(activity) }
                         }
                     } label: {
@@ -54,6 +54,7 @@ struct ActivityDetailView: View {
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) { bottomBar }
+        .sensoryFeedback(.success, trigger: isMain) { _, now in now }
     }
 
     private var animation: Animation? { reduceMotion ? nil : .snappy(duration: 0.25) }
@@ -82,7 +83,7 @@ struct ActivityDetailView: View {
             Label {
                 Text("Enregistrée avec \(activity.sourceName) (Santé) · \(dayLabel)")
             } icon: {
-                Image(systemName: "applewatch")
+                Image(systemName: "heart.text.square")
             }
             .font(.detail)
             .foregroundStyle(Theme.muted)
@@ -157,7 +158,6 @@ struct ActivityDetailView: View {
                     Text("Séance principale du jour").primaryActionStyle()
                 }
                 .buttonStyle(PressableButtonStyle())
-                .sensoryFeedback(.success, trigger: isMain)
             }
         }
     }

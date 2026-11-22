@@ -38,9 +38,33 @@ final class HealthLinkingTests: XCTestCase {
         XCTAssertEqual(links.extras.map(\.id), ["a1"])
     }
 
-    func testCombatAndHIITCountForCircuit() {
-        let links = resolve([session("s1", "2030-03-04", .circuit)], [activity("a1", "2030-03-04", "boxing", minutes: 45)])
+    func testHIITCountsForCircuitButNotCombat() {
+        let links = resolve([session("s1", "2030-03-04", .circuit)], [activity("a1", "2030-03-04", "hiit", minutes: 45)])
         XCTAssertEqual(links.bySession["s1"]?.activity.id, "a1")
+        let boxing = resolve([session("s1", "2030-03-04", .circuit)], [activity("b1", "2030-03-04", "boxing", minutes: 45)])
+        XCTAssertNil(boxing.bySession["s1"], "boxe : seulement si choisie comme séance du jour")
+    }
+
+    func testDecoratedShowsReplacementAndExtras() {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: .now)
+        let key = PlanStore.key(today)
+        let plan = TrainingPlan(schemaVersion: 1, planId: "demo", version: 1, title: "Démo", sessions: [session("s1", key, .run)])
+        let start = cal.date(byAdding: .hour, value: 1, to: today)!
+        let squash = HealthActivity(id: "a1", start: start, end: start.addingTimeInterval(3300), kind: "squash",
+                                    durationSec: 3300, distanceKm: nil, avgHR: 150, sourceName: "Exercice",
+                                    sourceBundleId: "com.example.autre")
+        var choices = ActivityChoices()
+        choices.mainFor["a1"] = "s1"
+        let links = HealthLinking.resolve(sessions: plan.sessions, activities: [squash], doneByLog: [],
+                                          choices: choices, ownBundlePrefix: nil)
+        let week = WeekOverview.make(plan: plan, isDone: { links.bySession[$0] != nil }, now: start.addingTimeInterval(4000))
+            .decorated(with: links, now: start.addingTimeInterval(4000))
+        let day = week.days.first { $0.isToday }
+        XCTAssertEqual(day?.status, .done, "la séance compte comme faite")
+        XCTAssertEqual(day?.replacement?.id, "a1", "pastille : icône du squash")
+        XCTAssertEqual(week.doneCount, 1)
+        XCTAssertTrue(week.extras.isEmpty)
     }
 
     func testTwoSameDayLongestWins() {

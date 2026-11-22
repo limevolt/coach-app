@@ -61,7 +61,9 @@ final class CoachCaptures: XCTestCase {
         shot("10b-accueil-fait")
 
         // 4b. Séances Santé d'une autre app (#54) : squash aujourd'hui (course prévue), randonnée hier.
-        app = launchDemo(plan: DemoPlan.json(), activities: ["0:squash:55:152", "-1:hiking:100:112"])
+        // La randonnée reste dans la semaine affichée, même un lundi.
+        let hikeOffset = Calendar.current.component(.weekday, from: .now) == 2 ? 0 : -1
+        app = launchDemo(plan: DemoPlan.json(), activities: ["0:squash:55:152", "\(hikeOffset):hiking:100:112"])
         _ = app.tabBars.firstMatch.waitForExistence(timeout: 30)
         app.swipeUp()
         shot("40-accueil-en-plus")

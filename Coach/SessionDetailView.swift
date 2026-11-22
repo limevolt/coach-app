@@ -443,7 +443,8 @@ struct FeedbackSheet: View {
             }
             .onAppear {
                 if let log = store.log(for: session.id) {
-                    rpe = log.rpe.map(EffortPicker.nearest) ?? 6
+                    // Valeur gardée telle quelle (ancienne note 7/10 comprise) tant qu'aucun bouton n'est touché.
+                    rpe = log.rpe ?? 6
                     note = log.note ?? ""
                 }
             }

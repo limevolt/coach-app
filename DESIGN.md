@@ -173,6 +173,10 @@ repos et « Prêt ? », chiffre blanc sur fond carte.
   vert avec une coche quand c'est activé — l'état se lit sans la couleur (option A, retour du propriétaire, #45).
 - **Plusieurs choix possibles : case à cocher `CoachCheckbox`** (carré arrondi, coche citron vert), pas un
   rond (le rond = choix unique, `RadioRow`). Exemple : les disciplines de l'assistant.
+- **Séances d'une autre app (#54)** : activité en plus = pastille `Theme.extraFill` + contour `Theme.muted` + icône
+  du sport (`ActivityCatalog`, SF Symbol `figure.*`, silhouette générique sinon) ; ligne `ExtraActivityLine` toute
+  en gris. Autre sport choisi comme « Séance principale du jour » = pastille pleine comme une séance faite, avec
+  l'icône du sport. Ressenti : `EffortPicker` (5 gros boutons, 2 Facile → 10 Max) partout.
 - **Niveaux (intensité du plan, #57)** : `RadioRow` avec `bars` (barres 1 à 4 `IntensityBars`, couleur du texte
   et gris, jamais citron vert : il reste pour le choix et « Continuer »), `tag` (« Conseillé », étiquette au
   contour gris) et `note` (garde-fou sous le choix, icône grise). En très grand texte, les barres passent
