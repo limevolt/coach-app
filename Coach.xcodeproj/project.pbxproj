@@ -11,6 +11,7 @@
 		018934F7908934CD5C6F0E0F /* TimersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 618410EA6899CC3F7508C627 /* TimersView.swift */; };
 		0235F4B638E3293941501F80 /* DemoPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A605DA9E42746D6AAD11D4 /* DemoPlan.swift */; };
 		0BFD62670971DC88E1836D4D /* Outfit-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3A94A8554D3534DDA5A5B299 /* Outfit-Regular.ttf */; };
+		10A31A001DA57AE1B0B5AB33 /* ActivityDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D190944DFF559848C7487069 /* ActivityDetailView.swift */; };
 		1446A63A9BBC4E9DA57186A7 /* PlanGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62A1A0756297FC10211EEB95 /* PlanGenerator.swift */; };
 		14A24395149617D03AB9F64A /* SessionBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27D8F44A98303FEE3588914E /* SessionBuilder.swift */; };
 		15D36AEE6B62C1339AED0189 /* PlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D9DF1F858DC7BA1C579113 /* PlanView.swift */; };
@@ -100,6 +101,7 @@
 		E03F482288B9F4D4923EF730 /* SessionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BCEB04270CDBFAB907B3042 /* SessionDetailView.swift */; };
 		E1DF8F935A11ECB154242625 /* Outfit-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9065AE64029D887414A302BC /* Outfit-Medium.ttf */; };
 		E40098F7E50B53627A343BEE /* ExerciseAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AD7181E658FD44CEBD338B0 /* ExerciseAnimation.swift */; };
+		EBB1A3D5F4A480FF807A67FF /* HealthActivities.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC05BD771777D8DD2D41A190 /* HealthActivities.swift */; };
 		ECFB996FDF42F74172BEB5B5 /* PlanFormatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0C41F2C2A11F70869772F1C /* PlanFormatTests.swift */; };
 		EDAA025B818798B406B38923 /* Outfit-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 115586EA3063303368467DC1 /* Outfit-ExtraBold.ttf */; };
 		EEA60429663CA54E818171BE /* MailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6BCAB4F5CBE08EEAD7F59B9 /* MailView.swift */; };
@@ -107,6 +109,7 @@
 		F5A2AE37FD052F65299898C6 /* WatchStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA085961E84987A69F4FA339 /* WatchStore.swift */; };
 		FB0D2D64C67351495CB834FF /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE446A4EDFE26F62C24A7DEF /* Haptics.swift */; };
 		FCC04B15F68D6F665D314BE2 /* exemple-plan.json in Resources */ = {isa = PBXBuildFile; fileRef = C4C696570245BF16A3413FEB /* exemple-plan.json */; };
+		FDE3D875C107FD568B80F574 /* HealthLinkingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04294D002204A3F5456A6755 /* HealthLinkingTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -155,6 +158,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		04294D002204A3F5456A6755 /* HealthLinkingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthLinkingTests.swift; sourceTree = "<group>"; };
 		05EED4368A1C5978F355FC97 /* CoachWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachWatchApp.swift; sourceTree = "<group>"; };
 		06DC198093FF72A80A0765C0 /* StrengthRunView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthRunView.swift; sourceTree = "<group>"; };
 		0AB28854C9073EAF6FBA2CB9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -228,6 +232,7 @@
 		C6BCAB4F5CBE08EEAD7F59B9 /* MailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MailView.swift; sourceTree = "<group>"; };
 		C7C5AC3C28E8EA2634D01ED6 /* ReportBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportBuilder.swift; sourceTree = "<group>"; };
 		C8267B20E1E74B1EB1864AF5 /* WatchCaptures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchCaptures.swift; sourceTree = "<group>"; };
+		D190944DFF559848C7487069 /* ActivityDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityDetailView.swift; sourceTree = "<group>"; };
 		D1AC925D4774AE0F09DEF41D /* CoachWatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CoachWatch.entitlements; sourceTree = "<group>"; };
 		D2FFC5675FEFBC94118CE135 /* PlanIntensity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanIntensity.swift; sourceTree = "<group>"; };
 		D3AB0BC8DBCF21542FEDF213 /* ReportPreviewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportPreviewTests.swift; sourceTree = "<group>"; };
@@ -244,6 +249,7 @@
 		EEE5665EC92A631AFA09DBCE /* Collapsible.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Collapsible.swift; sourceTree = "<group>"; };
 		EFB32011DD22151450EEEB28 /* WatchButtons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchButtons.swift; sourceTree = "<group>"; };
 		EFCD52B3FF61A80EF853190A /* Outfit-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Outfit-Bold.ttf"; sourceTree = "<group>"; };
+		FC05BD771777D8DD2D41A190 /* HealthActivities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthActivities.swift; sourceTree = "<group>"; };
 		FE78CB53888BAF0BF09DB385 /* CoachControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachControls.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -293,6 +299,7 @@
 			isa = PBXGroup;
 			children = (
 				734F29FDA42962E3833F9726 /* DoneStateTests.swift */,
+				04294D002204A3F5456A6755 /* HealthLinkingTests.swift */,
 				9945A4A769C10E083F4822CB /* PlanDraftTests.swift */,
 				A0C41F2C2A11F70869772F1C /* PlanFormatTests.swift */,
 				91216996909C0C840A8EA989 /* PlanGeneratorTests.swift */,
@@ -315,6 +322,7 @@
 		92C5F2E2D63F8F8105897567 /* Coach */ = {
 			isa = PBXGroup;
 			children = (
+				D190944DFF559848C7487069 /* ActivityDetailView.swift */,
 				65672ED6E3738AAB9E7493A0 /* AdaptSessionView.swift */,
 				0AB28854C9073EAF6FBA2CB9 /* Assets.xcassets */,
 				4415AD572B9C9CA1090038DD /* BusyButton.swift */,
@@ -324,6 +332,7 @@
 				EEE5665EC92A631AFA09DBCE /* Collapsible.swift */,
 				EAEAC8B7EFE1AEA3EEB3B30A /* DestructiveButton.swift */,
 				3819F510E1AE826C638EB6F3 /* ExerciseGuideView.swift */,
+				FC05BD771777D8DD2D41A190 /* HealthActivities.swift */,
 				5BC2FE5D6D5989A6C962A7D0 /* HealthReader.swift */,
 				7F7A31251C7C102888E383FC /* HomeWeek.swift */,
 				4E6C06F91F59B047799297AF /* Info.plist */,
@@ -657,6 +666,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				10A31A001DA57AE1B0B5AB33 /* ActivityDetailView.swift in Sources */,
 				7A8243231ABA8AE95DE5175B /* AdaptSessionView.swift in Sources */,
 				00E274653B36D3C1E04B0861 /* BusyButton.swift in Sources */,
 				87993750DF9FB3D9A8CD62CB /* CoachApp.swift in Sources */,
@@ -672,6 +682,7 @@
 				DD164B74B9D4B53CA1728B62 /* ExerciseAnimation.swift in Sources */,
 				1E20496EC9E94FA4A73CAD8F /* ExerciseGuideView.swift in Sources */,
 				4BB5B6D42C271A74F444F734 /* ExerciseLibrary.swift in Sources */,
+				EBB1A3D5F4A480FF807A67FF /* HealthActivities.swift in Sources */,
 				9DE8E796EC1E88D558090CEF /* HealthReader.swift in Sources */,
 				3B1B88D7CB6ABAC1DFAD6330 /* HomeWeek.swift in Sources */,
 				EEA60429663CA54E818171BE /* MailView.swift in Sources */,
@@ -749,6 +760,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C41EB81B2413AEF3EC2FF805 /* DoneStateTests.swift in Sources */,
+				FDE3D875C107FD568B80F574 /* HealthLinkingTests.swift in Sources */,
 				3F6CC9E499FC5CAF6599E731 /* PlanDraftTests.swift in Sources */,
 				ECFB996FDF42F74172BEB5B5 /* PlanFormatTests.swift in Sources */,
 				BC5EF199242F3CD6B4BC4119 /* PlanGeneratorTests.swift in Sources */,
