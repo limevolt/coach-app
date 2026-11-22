@@ -1,0 +1,38 @@
+commit: e3ad5290e24fc08a41e13d1197354918736793b2
+branche: coach/44-b2-retour
+ios: failure
+watch: success
+tests: skipped
+
+===== ERREURS / AVERTISSEMENTS iOS =====
+/Users/runner/work/coach-app/coach-app/Coach/Engine/CoachMemory.swift:30:23: error: 'PainReport' is ambiguous for type lookup in this context
+/Users/runner/work/coach-app/coach-app/Coach/Engine/CoachMemory.swift:7:8: error: type 'CoachMemory' does not conform to protocol 'Encodable'
+/Users/runner/work/coach-app/coach-app/Coach/Engine/CoachMemory.swift:7:8: error: type 'CoachMemory' does not conform to protocol 'Equatable'
+/Users/runner/work/coach-app/coach-app/Coach/Engine/CoachMemory.swift:74:8: error: invalid redeclaration of 'PainReport'
+/Users/runner/work/coach-app/coach-app/Coach/Engine/CoachMemory.swift:89:16: error: 'PainReport' is ambiguous for type lookup in this context
+/Users/runner/work/coach-app/coach-app/Coach/PlanStore.swift:694:82: error: 'PainReport' is ambiguous for type lookup in this context
+/Users/runner/work/coach-app/coach-app/Coach/SessionDetailView.swift:482:23: error: 'PainReport' is ambiguous for type lookup in this context
+/Users/runner/work/coach-app/coach-app/Shared/PlanModels.swift:223:8: error: type 'SessionLog' does not conform to protocol 'Decodable'
+/Users/runner/work/coach-app/coach-app/Shared/PlanModels.swift:223:8: error: type 'SessionLog' does not conform to protocol 'Encodable'
+/Users/runner/work/coach-app/coach-app/Shared/PlanModels.swift:223:8: error: type 'SessionLog' does not conform to protocol 'Equatable'
+/Users/runner/work/coach-app/coach-app/Shared/PlanModels.swift:223:8: error: type 'SessionLog' does not conform to protocol 'Hashable'
+/Users/runner/work/coach-app/coach-app/Shared/PlanModels.swift:235:15: error: 'PainReport' is ambiguous for type lookup in this context
+
+===== ERREURS / AVERTISSEMENTS MONTRE =====
+
+===== TESTS UNITAIRES =====
+
+===== FIN DU JOURNAL iOS =====
+/Users/runner/work/coach-app/coach-app/Coach/Engine/CoachMemory.swift:30:23: error: 'PainReport' is ambiguous for type lookup in this context
+/Users/runner/work/coach-app/coach-app/Coach/Engine/CoachMemory.swift:7:8: error: type 'CoachMemory' does not conform to protocol 'Encodable'
+/Users/runner/work/coach-app/coach-app/Coach/Engine/CoachMemory.swift:7:8: error: type 'CoachMemory' does not conform to protocol 'Equatable'
+/Users/runner/work/coach-app/coach-app/Coach/Engine/CoachMemory.swift:74:8: error: invalid redeclaration of 'PainReport'
+/Users/runner/work/coach-app/coach-app/Coach/Engine/CoachMemory.swift:89:16: error: 'PainReport' is ambiguous for type lookup in this context
+/Users/runner/work/coach-app/coach-app/Shared/PlanModels.swift:235:15: error: 'PainReport' is ambiguous for type lookup in this context
+/Users/runner/work/coach-app/coach-app/Shared/PlanModels.swift:223:8: error: type 'SessionLog' does not conform to protocol 'Decodable'
+/Users/runner/work/coach-app/coach-app/Shared/PlanModels.swift:223:8: error: type 'SessionLog' does not conform to protocol 'Encodable'
+/Users/runner/work/coach-app/coach-app/Shared/PlanModels.swift:223:8: error: type 'SessionLog' does not conform to protocol 'Hashable'
+/Users/runner/work/coach-app/coach-app/Shared/PlanModels.swift:223:8: error: type 'SessionLog' does not conform to protocol 'Equatable'
+/Users/runner/work/coach-app/coach-app/Coach/PlanStore.swift:694:82: error: 'PainReport' is ambiguous for type lookup in this context
+/Users/runner/work/coach-app/coach-app/Coach/SessionDetailView.swift:482:23: error: 'PainReport' is ambiguous for type lookup in this context
+** BUILD FAILED **
