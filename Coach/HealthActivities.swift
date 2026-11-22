@@ -167,6 +167,45 @@ struct ActivityChoices: Codable, Hashable {
     var detached: Set<String> = []
     /// Ressenti noté (2, 4, 6, 8 ou 10).
     var efforts: [String: Int] = [:]
+    /// Ce que le coach a changé pour une « Séance principale du jour » (#44, B1), pour pouvoir l'annuler.
+    var adaptations: [String: Adaptation] = [:]
+    /// Séances du jour dont le plan a été remplacé depuis (import) : plus réadaptées.
+    var frozen: Set<String> = []
+
+    struct Adaptation: Codable, Hashable {
+        /// Séances ajoutées (séance refaite un autre jour).
+        var created: [String] = []
+        /// Jour où la séance est refaite.
+        var redoneOn: String?
+        /// Version d'avant des séances allégées.
+        var originals: [PlannedSession] = []
+        /// Note du coach posée sur chaque séance allégée : on ne remet comme avant que si elle y est encore.
+        var lightNotes: [String: String] = [:]
+
+        var isEmpty: Bool { created.isEmpty && originals.isEmpty }
+
+        init() {}
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            created = try c.decodeIfPresent([String].self, forKey: .created) ?? []
+            redoneOn = try c.decodeIfPresent(String.self, forKey: .redoneOn)
+            originals = try c.decodeIfPresent([PlannedSession].self, forKey: .originals) ?? []
+            lightNotes = try c.decodeIfPresent([String: String].self, forKey: .lightNotes) ?? [:]
+        }
+    }
+
+    init() {}
+
+    /// Champs absents (fichier d'une version précédente) : valeurs par défaut, rien n'est perdu.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        mainFor = try c.decodeIfPresent([String: String].self, forKey: .mainFor) ?? [:]
+        detached = try c.decodeIfPresent(Set<String>.self, forKey: .detached) ?? []
+        efforts = try c.decodeIfPresent([String: Int].self, forKey: .efforts) ?? [:]
+        adaptations = (try? c.decodeIfPresent([String: Adaptation].self, forKey: .adaptations)) ?? [:]
+        frozen = try c.decodeIfPresent(Set<String>.self, forKey: .frozen) ?? []
+    }
 }
 
 // MARK: - Liaison
@@ -252,7 +291,8 @@ enum HealthLinking {
                             calendar: Calendar = .current) -> PlannedSession? {
         sessions
             .filter { s in
-                guard let d = s.startDate else { return false }
+                // Une séance refaite par le coach ne se remplace pas à son tour.
+                guard let d = s.startDate, !s.isCoachCopy else { return false }
                 return calendar.isDate(activity.start, inSameDayAs: d) && !isDone(s.id)
             }
             .sorted { ($0.startDate ?? .distantPast) < ($1.startDate ?? .distantPast) }

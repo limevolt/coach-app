@@ -6,7 +6,6 @@ import SwiftUI
 struct ActivityDetailView: View {
     let activity: HealthActivity
     @Environment(PlanStore.self) private var store
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var link: HealthLinks.Link? {
         store.healthLinks.session(for: activity.id).flatMap { store.healthLinks.bySession[$0] }
@@ -51,7 +50,7 @@ struct ActivityDetailView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Button("Ce n'était pas cette séance", systemImage: "xmark.circle") {
-                            withAnimation(animation) { store.unlink(activity) }
+                            Task { await store.unlink(activity) }
                         }
                     } label: {
                         Image(systemName: "ellipsis").accessibilityLabel("Actions")
@@ -63,7 +62,16 @@ struct ActivityDetailView: View {
         .sensoryFeedback(.success, trigger: isMain) { _, now in now }
     }
 
-    private var animation: Animation? { reduceMotion ? nil : .snappy(duration: 0.25) }
+    /// Phrase au-dessus de « Ce n'est plus la séance du jour ».
+    private func undoSentence(_ session: PlannedSession) -> String {
+        if let copy = store.doneCoachCopy(for: activity) {
+            return "« \(copy.title) » a déjà été refaite \(ReplacementPlanner.dayLabel(copy.date)) : elle reste faite. Le reste redevient comme avant."
+        }
+        if store.activityChoices.adaptations[activity.id] != nil {
+            return "« \(session.title) » redevient à faire et le planning redevient comme avant."
+        }
+        return "« \(session.title) » redevient à faire."
+    }
 
     private var distance: String? {
         guard let km = activity.distanceKm, km > 0.2 else { return nil }
@@ -138,11 +146,11 @@ struct ActivityDetailView: View {
     @ViewBuilder private var bottomBar: some View {
         if isMain, let session = linkedSession {
             bar {
-                Text("« \(session.title) » redevient à faire.")
+                Text(undoSentence(session))
                     .font(.detail).foregroundStyle(Theme.muted)
                     .fixedSize(horizontal: false, vertical: true)
                 Button {
-                    withAnimation(animation) { store.unlink(activity) }
+                    Task { await store.unlink(activity) }
                 } label: {
                     Text("Ce n'est plus la séance du jour").quietActionStyle()
                 }
@@ -157,11 +165,11 @@ struct ActivityDetailView: View {
                 }
                 .font(.detail).foregroundStyle(Theme.muted)
                 .fixedSize(horizontal: false, vertical: true)
-                Text("Si cette activité devient ta séance du jour, « \(session.title) » comptera comme faite.")
+                Text(store.replacementSentence(for: activity, replacing: session))
                     .font(.detail).foregroundStyle(Theme.text)
                     .fixedSize(horizontal: false, vertical: true)
                 Button {
-                    withAnimation(animation) { store.markMain(activity, replacing: session.id) }
+                    Task { await store.markMain(activity, replacing: session.id) }
                 } label: {
                     Text("Séance principale du jour").primaryActionStyle()
                 }

@@ -47,6 +47,8 @@ struct PlannedSession: Codable, Identifiable, Hashable {
     var originalDate: String?
     /// Rempli par l'app quand la séance en remplace une autre : titre de la séance remplacée.
     var replaces: String?
+    /// Rempli par le coach adaptatif (#44) : pourquoi la séance a changé (« Allégée par le coach (squash la veille) »).
+    var coachNote: String?
 }
 
 // MARK: Course
@@ -316,7 +318,7 @@ extension PlannedSession {
 
     /// Ce qui a été modifié dans l'app (déplacement, remplacement), sinon nil.
     var changeLabel: String? {
-        var parts: [String] = []
+        var parts: [String] = coachNote.map { [$0] } ?? []
         if let replaces { parts.append("Remplace « \(replaces) »") }
         if let originalDate, originalDate != date { parts.append("Déplacée (prévue \(PlanDate.label(originalDate)))") }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")

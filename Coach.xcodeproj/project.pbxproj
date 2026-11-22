@@ -25,6 +25,7 @@
 		29F5E25112DCAEDF6319B32F /* DoneState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1918A0774BE3786CD7BA18EA /* DoneState.swift */; };
 		2AC214B24E8F9170F7397EE8 /* WorkoutKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1321A0C4A4FA8CAB6096AC8D /* WorkoutKind.swift */; };
 		2AEAC769B82B18D9D833027F /* Outfit-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 115586EA3063303368467DC1 /* Outfit-ExtraBold.ttf */; };
+		2B35347C6181C3779F801319 /* ReplacementPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBB48E70F03A457B66D6E38F /* ReplacementPlanner.swift */; };
 		2E0BB307FBC1F0B713414A52 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FE9B13CEEDBF92FBEAEC23A /* Typography.swift */; };
 		2E1144022454E7717EB8AE43 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276E7638F419A5D3A0590E11 /* SettingsView.swift */; };
 		2E2F80F454BE69994307A352 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 469890DB7F1BA9D23EB804D4 /* Theme.swift */; };
@@ -91,6 +92,7 @@
 		C747F3F670FB8E742B9EFA45 /* PlanFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5C68541DC7A6C6D335CADFF /* PlanFormat.swift */; };
 		C78B50FEB9B9AC274A641ADE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0AB28854C9073EAF6FBA2CB9 /* Assets.xcassets */; };
 		CF888617DC2B3D50A255430A /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FE9B13CEEDBF92FBEAEC23A /* Typography.swift */; };
+		D0A89CAF948B13E4DDCA9020 /* ReplacementPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6A4697715F38F491E76EB29 /* ReplacementPlannerTests.swift */; };
 		D5A7F2B738731E74D199738F /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 469890DB7F1BA9D23EB804D4 /* Theme.swift */; };
 		DA461C2AC9A24A5958F3D3E6 /* CoachWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05EED4368A1C5978F355FC97 /* CoachWatchApp.swift */; };
 		DC1A7431F21498BDEDE51F96 /* PlanWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7036F3629CF7F334C43828FE /* PlanWizardView.swift */; };
@@ -244,11 +246,13 @@
 		E5087627E360F0D4D6FD9FC7 /* CoachCaptures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachCaptures.swift; sourceTree = "<group>"; };
 		E56466260B3F81B7EF2535F3 /* SegmentedChoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentedChoice.swift; sourceTree = "<group>"; };
 		E56D00CF919BDFFFD3935AD2 /* CoachStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachStorage.swift; sourceTree = "<group>"; };
+		E6A4697715F38F491E76EB29 /* ReplacementPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReplacementPlannerTests.swift; sourceTree = "<group>"; };
 		EA085961E84987A69F4FA339 /* WatchStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchStore.swift; sourceTree = "<group>"; };
 		EAEAC8B7EFE1AEA3EEB3B30A /* DestructiveButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DestructiveButton.swift; sourceTree = "<group>"; };
 		EEE5665EC92A631AFA09DBCE /* Collapsible.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Collapsible.swift; sourceTree = "<group>"; };
 		EFB32011DD22151450EEEB28 /* WatchButtons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchButtons.swift; sourceTree = "<group>"; };
 		EFCD52B3FF61A80EF853190A /* Outfit-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Outfit-Bold.ttf"; sourceTree = "<group>"; };
+		FBB48E70F03A457B66D6E38F /* ReplacementPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReplacementPlanner.swift; sourceTree = "<group>"; };
 		FC05BD771777D8DD2D41A190 /* HealthActivities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthActivities.swift; sourceTree = "<group>"; };
 		FE78CB53888BAF0BF09DB385 /* CoachControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachControls.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -305,6 +309,7 @@
 				91216996909C0C840A8EA989 /* PlanGeneratorTests.swift */,
 				1C2AF906766BFC74E40B5658 /* PlanIntensityTests.swift */,
 				73F64AF60B5707465F757F75 /* PlanSettingsTests.swift */,
+				E6A4697715F38F491E76EB29 /* ReplacementPlannerTests.swift */,
 				D3AB0BC8DBCF21542FEDF213 /* ReportPreviewTests.swift */,
 				A301BB9FE8C56AB22A4AD2BC /* WeekOverviewTests.swift */,
 			);
@@ -407,6 +412,7 @@
 				62A1A0756297FC10211EEB95 /* PlanGenerator.swift */,
 				D2FFC5675FEFBC94118CE135 /* PlanIntensity.swift */,
 				AED266CE1CDFB0249DAA6BB1 /* PlanSettings.swift */,
+				FBB48E70F03A457B66D6E38F /* ReplacementPlanner.swift */,
 				27D8F44A98303FEE3588914E /* SessionBuilder.swift */,
 				6662F31E20824D39EED8074E /* WeekComposer.swift */,
 			);
@@ -699,6 +705,7 @@
 				323273B63571A108DFB0959B /* PlanTools.swift in Sources */,
 				15D36AEE6B62C1339AED0189 /* PlanView.swift in Sources */,
 				DC1A7431F21498BDEDE51F96 /* PlanWizardView.swift in Sources */,
+				2B35347C6181C3779F801319 /* ReplacementPlanner.swift in Sources */,
 				4F3C8CB0DC6FEF8BAD788917 /* ReportBuilder.swift in Sources */,
 				903BE79B6C2E36905672C09E /* ReportView.swift in Sources */,
 				801C62B7D0E42C0843D23D1C /* RunScheduler.swift in Sources */,
@@ -766,6 +773,7 @@
 				BC5EF199242F3CD6B4BC4119 /* PlanGeneratorTests.swift in Sources */,
 				8FC240EDCFC733F308904E55 /* PlanIntensityTests.swift in Sources */,
 				4F7F79FEF1450AA7D96D4FBD /* PlanSettingsTests.swift in Sources */,
+				D0A89CAF948B13E4DDCA9020 /* ReplacementPlannerTests.swift in Sources */,
 				B20C149DF8DF491979E4B855 /* ReportPreviewTests.swift in Sources */,
 				8DE874F8DCB8B0E239EAC707 /* WeekOverviewTests.swift in Sources */,
 			);

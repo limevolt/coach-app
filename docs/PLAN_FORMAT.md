@@ -117,9 +117,10 @@ Pour chaque exercice avec charge ou matériel (haltères, barre, machine…), aj
 
 L'utilisateur peut adapter une séance depuis l'iPhone (autre activité, sans matériel, échange de jours). L'app note alors dans la séance :
 - `originalDate` : date prévue à l'origine (séance déplacée) ;
-- `replaces` : titre de la séance remplacée.
+- `replaces` : titre de la séance remplacée ;
+- `coachNote` : ce que le coach de l'app a changé (« Déplacée par le coach (squash jeudi) », « Allégée par le coach (squash la veille) »).
 
-Le suivi les signale. Dans le plan mis à jour, **supprime `originalDate` et `replaces`** (tiens-en compte pour la suite).
+Le suivi les signale. Dans le plan mis à jour, **supprime `originalDate`, `replaces` et `coachNote`** (tiens-en compte pour la suite).
 
 ### Consignes et vidéos (tous les exercices)
 
