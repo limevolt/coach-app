@@ -24,6 +24,13 @@ struct HealthActivity: Codable, Hashable, Identifiable {
     var sourceBundleId: String
 
     var info: ActivityCatalog.Entry { ActivityCatalog.entry(kind) }
+
+    /// Allure moyenne d'une course (« 5:42 » par km), si la distance est connue.
+    var pace: String? {
+        guard info.family == .run, let km = distanceKm, km > 0.2 else { return nil }
+        let secPerKm = Int((durationSec / km).rounded())
+        return "\(secPerKm / 60):" + String(format: "%02d", secPerKm % 60)
+    }
     var minutes: Int { Int((durationSec / 60).rounded()) }
 }
 

@@ -26,6 +26,12 @@ struct ActivityDetailView: View {
                               unit: activity.avgHR == nil ? nil : "bpm", label: "FC moy.")
                     StatValue(value: distance ?? "—", unit: distance == nil ? nil : "km", label: "Distance")
                 }
+                if let pace = activity.pace {
+                    // Course : allure en plus (#54).
+                    HStack(alignment: .top, spacing: 8) {
+                        StatValue(value: pace, unit: "/km", label: "Allure")
+                    }
+                }
                 VStack(alignment: .leading, spacing: 10) {
                     Eyebrow(text: "Ton ressenti").accessibilityAddTraits(.isHeader)
                     EffortPicker(value: Binding(
@@ -65,6 +71,7 @@ struct ActivityDetailView: View {
     }
 
     private var isMain: Bool { link?.kind == .main }
+
 
     // MARK: En-tête
 
@@ -197,6 +204,8 @@ struct TintedIconLabelStyle: LabelStyle {
 struct ExtraActivityLine: View {
     let activity: HealthActivity
     var showsSeparator = true
+    /// Dans la carte d'un jour, le jour est déjà dit : durée et distance seulement.
+    var showsDay = true
 
     var body: some View {
         HStack(spacing: 12) {
@@ -232,11 +241,42 @@ struct ExtraActivityLine: View {
             : activity.start.formatted(.dateTime.weekday(.abbreviated))
         let m = activity.minutes
         let duration = m >= 60 ? "\(m / 60) h \(String(format: "%02d", m % 60))" : "\(m) min"
-        return "\(day) · \(duration)"
+        guard !showsDay else { return "\(day) · \(duration)" }
+        if let km = activity.distanceKm, km > 0.2 {
+            return "\(duration) · " + km.formatted(.number.precision(.fractionLength(1))) + " km"
+        }
+        return duration
     }
 }
 
 // MARK: - Ressenti
+
+/// Feuille « Noter mon effort » d'une séance faite avec une autre app : un appui enregistre (#54).
+struct EffortSheet: View {
+    let activity: HealthActivity
+    @Environment(PlanStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
+
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    var body: some View {
+        ScrollView {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Ton ressenti").font(.coach(.title3, weight: .semibold)).foregroundStyle(Theme.text)
+                .accessibilityAddTraits(.isHeader)
+            Text("\(activity.info.label) · \(activity.minutes) min").font(.detail).foregroundStyle(Theme.muted)
+            EffortPicker(value: Binding(
+                get: { store.activityChoices.efforts[activity.id] },
+                set: { if let v = $0 { store.setEffort(v, for: activity); dismiss() } }))
+        }
+        .padding(Theme.screenMargin)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        // Très grand texte : les 5 boutons passent en colonne, la feuille s'ouvre en grand.
+        .presentationDetents(typeSize.isAccessibilitySize ? [.large] : [.height(Theme.effortSheetHeight), .medium])
+        .presentationBackground(Theme.card)
+    }
+}
 
 /// Ressenti en 5 gros boutons (2 Facile → 10 Max), un appui suffit (#54).
 /// Le choix se voit sans la couleur : fond, contour et texte gras.

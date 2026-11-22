@@ -23,14 +23,14 @@ final class CoachCaptures: XCTestCase {
         app.swipeDown()
 
         // 2. Détail d'une course, puis d'un renfo
-        if tap("Footing", in: app) {
+        if openSession("Footing", in: app) {
             shot("03-seance-course")
             audit("Séance course", app)
             app.swipeUp()
             shot("04-seance-course-bas")
             back(app)
         }
-        if tap("Renfo A", in: app) {
+        if openSession("Renfo A", in: app) {
             shot("05-seance-renfo")
             audit("Séance renfo", app)
             app.swipeUp()
@@ -77,6 +77,13 @@ final class CoachCaptures: XCTestCase {
                 back(app)
                 app.swipeDown()
                 shot("43-accueil-seance-du-jour")
+                // Toucher un autre jour : l'anneau suit, la carte montre ce jour (#54).
+                // (Le lundi, la randonnée tombe aujourd'hui : capture sautée.)
+                if hikeOffset != 0, tap("En plus : randonnée", in: app) {
+                    Thread.sleep(forTimeInterval: 0.4)
+                    shot("44-accueil-autre-jour")
+                    audit("Accueil — autre jour", app)
+                }
             }
         }
 
@@ -85,7 +92,7 @@ final class CoachCaptures: XCTestCase {
         _ = app.tabBars.firstMatch.waitForExistence(timeout: 30)
         shot("10-accueil-repos")
         // Séance faite : ressenti + menu « Marquer comme non faite » (#13)
-        if tap("Footing", in: app) {
+        if openSession("Footing", in: app) {
             app.swipeUp()
             shot("14-seance-faite")
             let more = app.buttons["Plus d'options"]
@@ -100,7 +107,7 @@ final class CoachCaptures: XCTestCase {
         // Séance passée non faite : « Pas encore faite » avec « Adapter » (#21)
         app = launchDemo(plan: DemoPlan.json(firstOffset: -3))
         _ = app.tabBars.firstMatch.waitForExistence(timeout: 30)
-        if tap("Footing", in: app) {
+        if openSession("Footing", in: app) {
             shot("16-seance-manquee")
         }
 
@@ -237,5 +244,20 @@ final class CoachCaptures: XCTestCase {
         case .trait: return "Rôle VoiceOver"
         default: return "Autre"
         }
+    }
+
+    /// Ouvre une séance depuis l'accueil (#54) : la pastille affiche le jour, puis la ligne de la carte ouvre la séance.
+    @MainActor
+    func openSession(_ text: String, in app: XCUIApplication) -> Bool {
+        guard tap(text, in: app) else { return false }
+        let matches = app.buttons.containing(NSPredicate(format: "label CONTAINS[c] %@", text))
+        guard matches.count > 1 else { return true }
+        let row = matches.element(boundBy: 1)
+        guard row.waitForExistence(timeout: 3), row.isHittable else {
+            note("Ligne de séance introuvable : « \(text) »")
+            return false
+        }
+        row.tap()
+        return true
     }
 }
