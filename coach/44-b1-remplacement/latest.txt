@@ -1,0 +1,18 @@
+commit: 38940453703fc48ef702fad0913a2e4bb0926996
+branche: coach/44-b1-remplacement
+ios: failure
+watch: success
+tests: skipped
+
+===== ERREURS / AVERTISSEMENTS iOS =====
+/Users/runner/work/coach-app/coach-app/Coach/ReplacementPlanner.swift:141:31: error: value of type '(Date) -> [PlannedSession]' has no member 'filter'
+/Users/runner/work/coach-app/coach-app/Coach/ReplacementPlanner.swift:195:35: error: the compiler is unable to type-check this expression in reasonable time; try breaking up the expression into distinct sub-expressions
+
+===== ERREURS / AVERTISSEMENTS MONTRE =====
+
+===== TESTS UNITAIRES =====
+
+===== FIN DU JOURNAL iOS =====
+/Users/runner/work/coach-app/coach-app/Coach/ReplacementPlanner.swift:141:31: error: value of type '(Date) -> [PlannedSession]' has no member 'filter'
+/Users/runner/work/coach-app/coach-app/Coach/ReplacementPlanner.swift:195:35: error: the compiler is unable to type-check this expression in reasonable time; try breaking up the expression into distinct sub-expressions
+** BUILD FAILED **
