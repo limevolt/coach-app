@@ -104,11 +104,48 @@ final class CoachCaptures: XCTestCase {
             }
         }
 
+        // Deuxième douleur au même endroit : conseil du coach sur l'accueil (#44, B2)
+        app = launchDemo(plan: DemoPlan.json(firstOffset: -2), done: Array(DemoPlan.sessionIds.prefix(2)), pain: "knee")
+        _ = app.tabBars.firstMatch.waitForExistence(timeout: 30)
+        app.swipeUp()
+        shot("50-accueil-conseil-douleur")
+        audit("Accueil — conseil douleur", app)
+
         // Séance passée non faite : « Pas encore faite » avec « Adapter » (#21)
         app = launchDemo(plan: DemoPlan.json(firstOffset: -3))
         _ = app.tabBars.firstMatch.waitForExistence(timeout: 30)
         if openSession("Footing", in: app) {
             shot("16-seance-manquee")
+            // « Je l'ai faite » → feuille « Ton retour » (#44, B2)
+            if tap("Je l'ai faite", in: app) {
+                shot("51-retour")
+                audit("Ton retour", app)
+                if tap("Douleur", in: app) {
+                    _ = tap("Genou", in: app)
+                    shot("52-retour-douleur")
+                    _ = tap("Douleur marquée", in: app)
+                    shot("53-retour-douleur-marquee")
+                    _ = tap("Douleur", in: app)
+                }
+                if tap("Séance raccourcie", in: app) {
+                    shot("54-retour-raccourcie")
+                }
+                if tap("Très fatigué", in: app) {
+                    app.swipeUp()
+                    shot("55-retour-fatigue-bas")
+                }
+                // Retour avec douleur au genou enregistré : « Ce que le coach a changé » sur le détail.
+                _ = tap("Séance raccourcie", in: app)
+                _ = tap("Très fatigué", in: app)
+                app.swipeDown()
+                if tap("Douleur", in: app) { _ = tap("Genou", in: app) }
+                if tap("Enregistrer", in: app) {
+                    Thread.sleep(forTimeInterval: 1.0)
+                    app.swipeUp()
+                    shot("56-seance-apres-retour")
+                    audit("Séance après le retour", app)
+                }
+            }
         }
 
         // 5. Accueil en très grande taille de texte
@@ -118,6 +155,13 @@ final class CoachCaptures: XCTestCase {
         shot("11-accueil-grand-texte")
         app.swipeUp()
         shot("12-accueil-grand-texte-bas")
+        app.swipeDown()
+        if openSession("Footing", in: app), tap("Je l'ai faite", in: app) {
+            _ = tap("Douleur", in: app)
+            shot("57-retour-grand-texte")
+            app.swipeUp()
+            shot("58-retour-grand-texte-bas")
+        }
 
         // 6. Aucun plan
         app = launchDemo(plan: nil)

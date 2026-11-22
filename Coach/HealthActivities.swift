@@ -171,6 +171,12 @@ struct ActivityChoices: Codable, Hashable {
     var adaptations: [String: Adaptation] = [:]
     /// Séances du jour dont le plan a été remplacé depuis (import) : plus réadaptées.
     var frozen: Set<String> = []
+    /// Ce que le coach a changé après un retour de séance (#44, B2), par journal.
+    var byFeedback: [String: Adaptation] = [:]
+    /// Conseils déjà vus (« Pas maintenant ») : identifiant du journal qui les a déclenchés.
+    var dismissedAdvice: Set<String> = []
+    /// Changements annulés à la main (« journal|séance ») : le coach ne les refait pas.
+    var feedbackDeclined: Set<String> = []
 
     struct Adaptation: Codable, Hashable {
         /// Séances ajoutées (séance refaite un autre jour).
@@ -205,6 +211,9 @@ struct ActivityChoices: Codable, Hashable {
         efforts = try c.decodeIfPresent([String: Int].self, forKey: .efforts) ?? [:]
         adaptations = (try? c.decodeIfPresent([String: Adaptation].self, forKey: .adaptations)) ?? [:]
         frozen = try c.decodeIfPresent(Set<String>.self, forKey: .frozen) ?? []
+        byFeedback = (try? c.decodeIfPresent([String: Adaptation].self, forKey: .byFeedback)) ?? [:]
+        dismissedAdvice = try c.decodeIfPresent(Set<String>.self, forKey: .dismissedAdvice) ?? []
+        feedbackDeclined = try c.decodeIfPresent(Set<String>.self, forKey: .feedbackDeclined) ?? []
     }
 }
 

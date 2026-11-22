@@ -296,6 +296,9 @@ enum ReplacementPlanner {
         guard let d = PlanDate.date(date) else { return date }
         if Calendar.current.isDateInTomorrow(d) { return "demain" }
         if Calendar.current.isDateInToday(d) { return "aujourd'hui" }
+        // Au-delà d'une semaine, le jour seul serait ambigu : « mardi 1 déc. ».
+        let days = Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: .now), to: d).day ?? 0
+        if days >= 7 { return d.formatted(.dateTime.weekday(.wide).day().month(.abbreviated)) }
         return d.formatted(.dateTime.weekday(.wide))
     }
 
@@ -341,6 +344,7 @@ enum ReplacementPlanner {
             guard let i = newPlan.sessions.firstIndex(where: { $0.id == original.id }),
                   newPlan.sessions[i].coachNote == adaptation.lightNotes[original.id] else { continue }
             var restored = newPlan.sessions[i]
+            restored.type = original.type
             restored.title = original.title
             restored.run = original.run
             restored.strength = original.strength

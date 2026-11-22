@@ -200,9 +200,9 @@ extension View {
     }
 
     /// Bouton discret (contour gris, texte blanc), pleine largeur : « Voir le détail », « Séance libre ».
-    func quietActionStyle() -> some View {
+    func quietActionStyle(color: Color = Theme.text) -> some View {
         self.font(.coach(.callout, weight: .semibold))
-            .foregroundStyle(Theme.text)
+            .foregroundStyle(color)
             .frame(maxWidth: .infinity, minHeight: Theme.minTap)
             .overlay(RoundedRectangle(cornerRadius: Theme.smallButtonRadius, style: .continuous)
                 .stroke(Theme.line, lineWidth: 1))

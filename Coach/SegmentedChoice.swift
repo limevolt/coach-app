@@ -16,8 +16,13 @@ struct SegmentedChoice<Value: Hashable>: View {
         self.options = options
     }
 
+    @Environment(\.dynamicTypeSize) private var typeSize
+
     var body: some View {
-        HStack(spacing: Theme.segmentSpacing) {
+        // Très grand texte : options empilées, pour garder des libellés entiers (#44).
+        let layout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(spacing: Theme.segmentSpacing)) : AnyLayout(HStackLayout(spacing: Theme.segmentSpacing))
+        layout {
             ForEach(options.indices, id: \.self) { index in
                 let option = options[index]
                 let on = option.value == selection
@@ -27,7 +32,7 @@ struct SegmentedChoice<Value: Hashable>: View {
                     Text(option.label)
                         .font(.coach(.subheadline, weight: on ? .semibold : .medium))
                         .foregroundStyle(on ? Theme.text : Theme.muted)
-                        .lineLimit(1)
+                        .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
                         .minimumScaleFactor(0.8)
                         .frame(maxWidth: .infinity, minHeight: Theme.minTap)
                         .background(on ? Theme.card2 : Color.clear,

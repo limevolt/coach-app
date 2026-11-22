@@ -487,3 +487,59 @@ struct PlanLine: View {
         .accessibilityElement(children: .combine)
     }
 }
+
+// MARK: - Conseil du coach (#44, B2)
+
+/// Deuxième douleur au même endroit en 14 jours : ce que le coach a fait, conseil de consulter,
+/// et proposition de ménager la zone dans les prochains plans.
+struct PainAdviceCard: View {
+    @Environment(PlanStore.self) private var store
+
+    /// « le genou », « la cheville », « l'arrière de la cuisse ».
+    static func withArticle(_ zone: String) -> String {
+        let label = FeedbackText.zoneLabel(zone).localizedLowercase
+        switch zone {
+        case "ankle", "hip": return "la \(label)"
+        case "hamstring": return "l'\(label)"
+        default: return "le \(label)"
+        }
+    }
+
+    var body: some View {
+        if let advice = store.painAdvice {
+            let spareable = BodyZone(rawValue: advice.zone) != nil
+            VStack(alignment: .leading, spacing: 10) {
+                Label("Le coach te conseille", systemImage: "sparkles")
+                    .labelStyle(EyebrowLabelStyle())
+                    .accessibilityAddTraits(.isHeader)
+                Text("\(FeedbackText.zoneLabel(advice.zone)) : deuxième alerte en 14 jours")
+                    .font(.coach(.body, weight: .semibold)).foregroundStyle(Theme.text)
+                Text("Escaliers et intervalles allégés jusqu'à la fin de la semaine prochaine. Tu peux annuler depuis chaque séance.")
+                    .font(.detail).foregroundStyle(Theme.muted)
+                Label("Consulte un professionnel si la douleur persiste.", systemImage: "info.circle")
+                    .font(.detail).foregroundStyle(Theme.text)
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 10) { buttons(advice, spareable: spareable) }
+                    VStack(spacing: 10) { buttons(advice, spareable: spareable) }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    @ViewBuilder private func buttons(_ advice: (zone: String, logId: String), spareable: Bool) -> some View {
+        if spareable {
+            Button { store.spareZone(advice.zone, advice: advice.logId) } label: {
+                Text("Ménager \(Self.withArticle(advice.zone))").lineLimit(1)
+                    .quietActionStyle(color: Theme.accent)
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Les prochains plans créés par le coach éviteront de la charger")
+        }
+        Button { store.dismissAdvice(advice.logId) } label: {
+            Text(spareable ? "Pas maintenant" : "Compris").lineLimit(1).quietActionStyle()
+        }
+        .buttonStyle(.plain)
+    }
+}
