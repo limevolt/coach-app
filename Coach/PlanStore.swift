@@ -593,7 +593,9 @@ final class PlanStore {
             let p = spec.split(separator: ":").map(String.init)
             guard p.count >= 3, let offset = Int(p[0]), let minutes = Double(p[2]),
                   let day = cal.date(byAdding: .day, value: offset, to: cal.startOfDay(for: now)),
-                  let start = cal.date(bySettingHour: 12, minute: 0, second: 0, of: day) else { return nil }
+                  let noon = cal.date(bySettingHour: 12, minute: 0, second: 0, of: day) else { return nil }
+            // Aujourd'hui : déjà terminée au moment de la capture, quelle que soit l'heure.
+            let start = offset == 0 ? max(cal.startOfDay(for: now), now.addingTimeInterval(-(minutes + 10) * 60)) : noon
             return HealthActivity(id: "demo-activity-\(i)", start: start, end: start.addingTimeInterval(minutes * 60),
                                   kind: p[1], durationSec: minutes * 60, distanceKm: nil,
                                   avgHR: p.count > 3 ? Double(p[3]) : nil,
