@@ -318,8 +318,7 @@ extension PlannedSession {
 
     /// Ce qui a été modifié dans l'app (déplacement, remplacement), sinon nil.
     var changeLabel: String? {
-        if let coachNote { return coachNote }
-        var parts: [String] = []
+        var parts: [String] = coachNote.map { [$0] } ?? []
         if let replaces { parts.append("Remplace « \(replaces) »") }
         if let originalDate, originalDate != date { parts.append("Déplacée (prévue \(PlanDate.label(originalDate)))") }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")

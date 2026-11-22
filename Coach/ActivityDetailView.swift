@@ -6,7 +6,6 @@ import SwiftUI
 struct ActivityDetailView: View {
     let activity: HealthActivity
     @Environment(PlanStore.self) private var store
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var link: HealthLinks.Link? {
         store.healthLinks.session(for: activity.id).flatMap { store.healthLinks.bySession[$0] }
@@ -63,7 +62,16 @@ struct ActivityDetailView: View {
         .sensoryFeedback(.success, trigger: isMain) { _, now in now }
     }
 
-    private var animation: Animation? { reduceMotion ? nil : .snappy(duration: 0.25) }
+    /// Phrase au-dessus de « Ce n'est plus la séance du jour ».
+    private func undoSentence(_ session: PlannedSession) -> String {
+        if let copy = store.doneCoachCopy(for: activity) {
+            return "« \(copy.title) » a déjà été refaite \(ReplacementPlanner.dayLabel(copy.date)) : elle reste faite. Le reste redevient comme avant."
+        }
+        if store.activityChoices.adaptations[activity.id] != nil {
+            return "« \(session.title) » redevient à faire et le planning redevient comme avant."
+        }
+        return "« \(session.title) » redevient à faire."
+    }
 
     private var distance: String? {
         guard let km = activity.distanceKm, km > 0.2 else { return nil }
@@ -138,9 +146,7 @@ struct ActivityDetailView: View {
     @ViewBuilder private var bottomBar: some View {
         if isMain, let session = linkedSession {
             bar {
-                Text(store.activityChoices.adaptations[activity.id] == nil
-                     ? "« \(session.title) » redevient à faire."
-                     : "« \(session.title) » redevient à faire et le planning redevient comme avant.")
+                Text(undoSentence(session))
                     .font(.detail).foregroundStyle(Theme.muted)
                     .fixedSize(horizontal: false, vertical: true)
                 Button {

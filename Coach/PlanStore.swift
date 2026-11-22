@@ -114,6 +114,13 @@ final class PlanStore {
         archiveCurrentPlan()
         try Coding.encoder.encode(newPlan).write(to: planURL, options: .atomic)
         plan = newPlan
+        // Nouveau plan (ou nouvelle version) : il tient déjà compte des séances du jour remplacées ;
+        // le coach ne le réadapte pas et n'y remet pas d'anciennes séances en annulant (#44).
+        if !activityChoices.adaptations.isEmpty || !activityChoices.mainFor.isEmpty {
+            activityChoices.frozen.formUnion(activityChoices.mainFor.keys)
+            activityChoices.adaptations = [:]
+            persistActivityFile()
+        }
         originals = [:]
         persistOriginals()
         await sync()
@@ -552,8 +559,9 @@ final class PlanStore {
     func markMain(_ activity: HealthActivity, replacing sessionId: String) async {
         activityChoices.mainFor[activity.id] = sessionId
         activityChoices.detached.remove(activity.id)
+        activityChoices.frozen.remove(activity.id)
         persistActivityChoices()
-        await adaptWeek(for: activity)
+        await enqueueAdaptation { await self.readapt(activity) }
     }
 
     /// « Ce n'est plus la séance du jour » / « Ce n'était pas cette séance » : redevient une activité en plus,
@@ -562,7 +570,7 @@ final class PlanStore {
         activityChoices.mainFor[activity.id] = nil
         activityChoices.detached.insert(activity.id)
         persistActivityChoices()
-        await undoAdaptation(for: activity)
+        await enqueueAdaptation { await self.readapt(activity) }
     }
 
     func setEffort(_ rpe: Int, for activity: HealthActivity) {
@@ -570,11 +578,24 @@ final class PlanStore {
         persistActivityFile()
         // Séance du jour : le plan s'ajuste au ressenti noté (#44).
         if activityChoices.mainFor[activity.id] != nil {
-            Task { await adaptWeek(for: activity) }
+            Task { await enqueueAdaptation { await self.readapt(activity) } }
         }
     }
 
     // MARK: Coach adaptatif, lot B1 (#44)
+
+    /// Une adaptation à la fois : chaque demande attend la précédente (pas de séances en double).
+    @ObservationIgnored private var adaptationChain: Task<Void, Never>?
+
+    private func enqueueAdaptation(_ work: @escaping @MainActor () async -> Void) async {
+        let previous = adaptationChain
+        let task = Task { @MainActor in
+            await previous?.value
+            await work()
+        }
+        adaptationChain = task
+        await task.value
+    }
 
     /// Ce que le coach fera si `activity` devient la séance du jour (phrase au-dessus du bouton).
     func replacementSentence(for activity: HealthActivity, replacing session: PlannedSession) -> String {
@@ -584,50 +605,42 @@ final class PlanStore {
         return ReplacementPlanner.sentence(d, replaced: session, sessions: plan?.sessions ?? [])
     }
 
-    /// Applique (ou réapplique après un nouveau ressenti) les changements de la semaine.
-    private func adaptWeek(for activity: HealthActivity) async {
-        await undoAdaptation(for: activity)
-        guard var newPlan = plan, let sessionId = activityChoices.mainFor[activity.id],
-              let replaced = newPlan.sessions.first(where: { $0.id == sessionId }) else { return }
-        let d = ReplacementPlanner.decide(activity: activity, effort: activityChoices.efforts[activity.id],
-                                          replaced: replaced, sessions: newPlan.sessions, isDone: isDone,
-                                          trainingDays: TrainingDays.current)
-        var adaptation = ActivityChoices.Adaptation()
-        if case .redoneOn(let date) = d.fate {
-            var copy = replaced
-            var id = replaced.id + "-r"
-            while newPlan.sessions.contains(where: { $0.id == id }) { id += "r" }
-            copy.id = id
-            copy.date = date
-            copy.originalDate = nil
-            copy.replaces = nil
-            copy.coachNote = "Déplacée par le coach (\(activity.info.label.localizedLowercase) "
-                + activity.start.formatted(.dateTime.weekday(.wide)) + ")"
-            newPlan.sessions.append(copy)
-            newPlan.sessions.sort { ($0.date, $0.time ?? "") < ($1.date, $1.time ?? "") }
-            adaptation.created.append(id)
-        }
-        for (id, light) in d.lightened {
-            guard let i = newPlan.sessions.firstIndex(where: { $0.id == id }) else { continue }
-            adaptation.originals.append(newPlan.sessions[i])
-            newPlan.sessions[i] = light
-        }
-        guard !adaptation.created.isEmpty || !adaptation.originals.isEmpty else { return }
-        activityChoices.adaptations[activity.id] = adaptation
-        persistActivityFile()
-        await saveEdits(newPlan)
+    /// Séance refaite par le coach et déjà faite (elle reste, même si on annule).
+    func doneCoachCopy(for activity: HealthActivity) -> PlannedSession? {
+        guard let a = activityChoices.adaptations[activity.id] else { return nil }
+        return plan?.sessions.first { a.created.contains($0.id) && isDone($0.id) }
     }
 
-    /// Remet le plan comme avant, sauf ce qui a déjà été fait entre-temps.
-    private func undoAdaptation(for activity: HealthActivity) async {
-        guard let adaptation = activityChoices.adaptations[activity.id], var newPlan = plan else { return }
-        activityChoices.adaptations[activity.id] = nil
-        persistActivityFile()
-        newPlan.sessions.removeAll { adaptation.created.contains($0.id) && !isDone($0.id) }
-        for original in adaptation.originals where !isDone(original.id) {
-            if let i = newPlan.sessions.firstIndex(where: { $0.id == original.id }) { newPlan.sessions[i] = original }
+    /// Recalcule ce que le coach change pour cette activité (après « Séance principale du jour »,
+    /// un nouveau ressenti ou une annulation), en une seule écriture du plan.
+    private func readapt(_ activity: HealthActivity) async {
+        guard let before = plan else { return }
+        let existing = activityChoices.adaptations[activity.id]
+        let keptCopy = existing.flatMap { e in e.created.first(where: isDone) }
+        var current = existing.map { ReplacementPlanner.undo($0, in: before, isDone: isDone) } ?? before
+        var adaptation = ActivityChoices.Adaptation()
+
+        if let sessionId = activityChoices.mainFor[activity.id], !activityChoices.frozen.contains(activity.id),
+           let replaced = current.sessions.first(where: { $0.id == sessionId }) {
+            var d = ReplacementPlanner.decide(activity: activity, effort: activityChoices.efforts[activity.id],
+                                              replaced: replaced, sessions: current.sessions, isDone: isDone,
+                                              trainingDays: TrainingDays.current)
+            if keptCopy != nil {
+                // Déjà refaite : son jour ne change plus, seuls les allègements suivent le ressenti.
+                d = ReplacementDecision(sessionId: d.sessionId, fate: .countedDone, lightened: d.lightened,
+                                        sportIsHard: d.sportIsHard)
+            }
+            (current, adaptation) = ReplacementPlanner.apply(d, to: current, replaced: replaced, activity: activity)
         }
-        await saveEdits(newPlan)
+        if let keptCopy {
+            adaptation.created.append(keptCopy)
+            adaptation.redoneOn = existing?.redoneOn
+        }
+        let stored: ActivityChoices.Adaptation? = adaptation.isEmpty ? nil : adaptation
+        guard stored != existing || current != before else { return }
+        activityChoices.adaptations[activity.id] = stored
+        persistActivityFile()
+        if current != before { await saveEdits(current) }
     }
 
     /// Les séances faites ont peut-être changé : fichier et montre à jour.
