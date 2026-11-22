@@ -156,7 +156,8 @@ struct NewPlanView: View {
         if let days = TrainingDays.exportLine { out.append(days) }
         out.append("")
         if includeHistory {
-            let builder = ReportBuilder(plan: store.plan, logs: store.logs, profile: "")
+            let builder = ReportBuilder(plan: store.plan, logs: store.logs, profile: "",
+                                    links: store.healthLinks, efforts: store.activityChoices.efforts)
             out.append("Voici mon dernier mois de sport, pour partir de ma condition physique actuelle :")
             out.append("")
             out.append(await builder.build(days: Self.historyDays, comment: "", includePlan: false, footer: false))

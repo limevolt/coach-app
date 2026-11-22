@@ -7,8 +7,8 @@ import Observation
 @Observable
 @MainActor
 final class PlanStore {
-    var plan: TrainingPlan?
-    var logs: [SessionLog] = []
+    var plan: TrainingPlan? { didSet { linksCache = nil } }
+    var logs: [SessionLog] = [] { didSet { linksCache = nil } }
     var templates: [IntervalTemplate] = []
     var status: String?
     var isSyncing = false
@@ -23,6 +23,13 @@ final class PlanStore {
     private var logsURL: URL { URL.documentsDirectory.appending(path: "logs.json") }
     private var templatesURL: URL { URL.documentsDirectory.appending(path: "timers.json") }
     private var originalsURL: URL { URL.documentsDirectory.appending(path: "originals.json") }
+    private var activitiesURL: URL { URL.documentsDirectory.appending(path: "activities.json") }
+
+    /// Séances Santé de la semaine affichée (#54), et les choix de l'utilisateur à leur sujet.
+    /// Gardées sur l'iPhone (`activities.json`) : une séance faite avec une autre app reste faite,
+    /// même quand elle sort de la période relue dans Santé.
+    private(set) var healthActivities: [HealthActivity] = [] { didSet { linksCache = nil } }
+    private(set) var activityChoices = ActivityChoices() { didSet { linksCache = nil } }
 
     init() {
         if DemoMode.isOn {
@@ -30,6 +37,7 @@ final class PlanStore {
             plan = DemoMode.plan
             logs = DemoMode.doneIds.map { SessionLog(id: UUID(), sessionId: $0, completedAt: .now, rpe: 6) }
             templates = IntervalTemplate.defaults
+            healthActivities = Self.demoActivities()
             return
         }
         if let data = try? Data(contentsOf: planURL) {
@@ -42,6 +50,11 @@ final class PlanStore {
         }
         if let data = try? Data(contentsOf: logsURL) {
             logs = (try? Coding.decoder.decode([SessionLog].self, from: data)) ?? []
+        }
+        if let data = try? Data(contentsOf: activitiesURL),
+           let decoded = try? Coding.decoder.decode(ActivityFile.self, from: data) {
+            activityChoices = decoded.choices
+            healthActivities = decoded.activities
         }
         if let data = try? Data(contentsOf: templatesURL),
            let decoded = try? Coding.decoder.decode([IntervalTemplate].self, from: data) {
@@ -96,6 +109,7 @@ final class PlanStore {
             logs = DoneState.archiving(logs, at: now)
             persistLogs()
             UserDefaults.standard.set(now.timeIntervalSince1970, forKey: "lastReset")
+            forgetActivityChoices()
         }
         archiveCurrentPlan()
         try Coding.encoder.encode(newPlan).write(to: planURL, options: .atomic)
@@ -123,6 +137,7 @@ final class PlanStore {
         logs = DoneState.archiving(logs, at: now)
         persistLogs()
         UserDefaults.standard.set(now.timeIntervalSince1970, forKey: "lastReset")
+        forgetActivityChoices()
         try? FileManager.default.removeItem(at: planURL)
         plan = nil
         originals = [:]
@@ -155,7 +170,7 @@ final class PlanStore {
     /// Séance à venir et pas encore faite : peut changer de date.
     func isAvailable(_ s: PlannedSession) -> Bool {
         let today = Calendar.current.startOfDay(for: .now)
-        return (s.dayStart ?? .distantPast) >= today && log(for: s.id) == nil
+        return (s.dayStart ?? .distantPast) >= today && !isDone(s.id)
     }
 
     /// Fait une autre activité à la place de `slotId`.
@@ -392,11 +407,16 @@ final class PlanStore {
         guard let sessions = try? Coding.compactEncoder.encode(watchSessions),
               let timers = try? Coding.compactEncoder.encode(templates) else { return }
         PhoneConnectivity.shared.sendWatchData(sessions: sessions, timers: timers,
-                                               doneIds: DoneState.doneIds(plan: plan, logs: logs),
+                                               doneIds: doneIdsForWatch,
                                                resetAt: lastReset)
     }
 
     // MARK: Démarrer sur la montre (#5)
+
+    /// Faites dans Coach ou avec une autre app (Santé, #54), triées pour un envoi stable.
+    private var doneIdsForWatch: [String] {
+        Array(Set(DoneState.doneIds(plan: plan, logs: logs)).union(healthLinks.bySession.keys)).sorted()
+    }
 
     /// Lance la séance sur la montre : Coach s'y ouvre et la séance démarre aussitôt
     /// (sauf la course, qui s'ouvre prête dans l'app Exercice).
@@ -458,6 +478,11 @@ final class PlanStore {
     /// « Marquer comme non faite » (#13) : le ressenti et les séries sont retirés, la séance
     /// redevient disponible, et la montre reçoit la liste à jour. Une séance Santé éventuelle n'est pas touchée.
     func markNotDone(_ sessionId: String) {
+        // Faite avec une autre app (#54) : la séance Santé redevient une activité en plus.
+        if log(for: sessionId) == nil, let link = healthLinks.bySession[sessionId] {
+            unlink(link.activity)
+            return
+        }
         logs = DoneState.removingActive(sessionId, from: logs)
         persistLogs()
         pushToWatch()
@@ -465,7 +490,117 @@ final class PlanStore {
 
     /// Séance passée et pas faite.
     func isMissed(_ s: PlannedSession) -> Bool {
-        (s.dayStart ?? .distantFuture) < Calendar.current.startOfDay(for: .now) && log(for: s.id) == nil
+        (s.dayStart ?? .distantFuture) < Calendar.current.startOfDay(for: .now) && !isDone(s.id)
+    }
+
+    // MARK: Séances Santé (#54)
+
+    /// Liaison des séances Santé aux séances du plan (recalculée à chaque lecture : rien n'est figé).
+    var healthLinks: HealthLinks {
+        // Mémo, vidé à chaque changement du plan, des journaux ou des séances Santé (`didSet`).
+        if let linksCache { return linksCache }
+        let sessions = plan?.sessions ?? []
+        let doneByLog = Set(DoneState.doneIds(plan: plan, logs: logs))
+        // Rien d'avant la dernière réinitialisation : un nouveau plan n'hérite pas des anciennes séances.
+        let recent = healthActivities.filter { a in lastReset.map { a.start >= $0 } ?? true }
+        let links = HealthLinking.resolve(sessions: sessions, activities: recent, doneByLog: doneByLog,
+                                          choices: activityChoices, ownBundlePrefix: Bundle.main.bundleIdentifier)
+        linksCache = links
+        return links
+    }
+    @ObservationIgnored private var linksCache: HealthLinks?
+
+    /// Faite dans Coach (journal) ou avec une autre app (Santé).
+    func isDone(_ sessionId: String) -> Bool {
+        log(for: sessionId) != nil || healthLinks.bySession[sessionId] != nil
+    }
+
+    func healthLink(for sessionId: String) -> HealthLinks.Link? {
+        log(for: sessionId) == nil ? healthLinks.bySession[sessionId] : nil
+    }
+
+    /// Relit les séances Santé de la semaine (depuis le lundi précédent), sans jamais demander l'accès ici.
+    func refreshActivities(now: Date = .now) async {
+        if DemoMode.isOn { return }
+        let reader = HealthReader()
+        guard await reader.wasAuthorizationRequested() else { return }
+        let monday = PlanWeeks.start(of: now)
+        let from = Calendar.current.date(byAdding: .day, value: -7, to: monday) ?? monday
+        let list = await reader.activities(from: from, to: now)
+        // La période relue remplace ce qu'on avait (séances supprimées de Santé comprises) ; le reste est gardé.
+        let merged = (healthActivities.filter { $0.start < from } + list).sorted { $0.start < $1.start }
+        if merged != healthActivities {
+            healthActivities = merged
+            persistActivityFile()
+            pushToWatch()
+        }
+    }
+
+    /// Autre plan ou plan réinitialisé : les choix (« Séance principale du jour »…) ne passent pas au suivant.
+    private func forgetActivityChoices() {
+        let efforts = activityChoices.efforts
+        activityChoices = ActivityChoices()
+        activityChoices.efforts = efforts
+        persistActivityFile()
+    }
+
+    /// Séance du plan que cette activité peut remplacer (« Séance principale du jour »).
+    func replaceable(for activity: HealthActivity) -> PlannedSession? {
+        HealthLinking.replaceable(for: activity, sessions: plan?.sessions ?? [], isDone: isDone)
+    }
+
+    func markMain(_ activity: HealthActivity, replacing sessionId: String) {
+        activityChoices.mainFor[activity.id] = sessionId
+        activityChoices.detached.remove(activity.id)
+        persistActivityChoices()
+    }
+
+    /// « Ce n'est plus la séance du jour » / « Ce n'était pas cette séance » : redevient une activité en plus.
+    func unlink(_ activity: HealthActivity) {
+        activityChoices.mainFor[activity.id] = nil
+        activityChoices.detached.insert(activity.id)
+        persistActivityChoices()
+    }
+
+    func setEffort(_ rpe: Int, for activity: HealthActivity) {
+        activityChoices.efforts[activity.id] = rpe
+        persistActivityFile()
+    }
+
+    /// Les séances faites ont peut-être changé : fichier et montre à jour.
+    private func persistActivityChoices() {
+        persistActivityFile()
+        pushToWatch()
+    }
+
+    private struct ActivityFile: Codable {
+        var choices: ActivityChoices
+        var activities: [HealthActivity]
+    }
+
+    private func persistActivityFile() {
+        if DemoMode.isOn { return }
+        let file = ActivityFile(choices: activityChoices, activities: healthActivities)
+        if let data = try? Coding.encoder.encode(file) {
+            try? data.write(to: activitiesURL, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+        }
+    }
+
+    /// Captures : séances Santé fictives, datées par rapport à aujourd'hui.
+    private static func demoActivities(now: Date = .now) -> [HealthActivity] {
+        let cal = Calendar.current
+        return DemoMode.activitySpecs.enumerated().compactMap { i, spec in
+            let p = spec.split(separator: ":").map(String.init)
+            guard p.count >= 3, let offset = Int(p[0]), let minutes = Double(p[2]),
+                  let day = cal.date(byAdding: .day, value: offset, to: cal.startOfDay(for: now)),
+                  let noon = cal.date(bySettingHour: 12, minute: 0, second: 0, of: day) else { return nil }
+            // Aujourd'hui : déjà terminée au moment de la capture, quelle que soit l'heure.
+            let start = offset == 0 ? max(cal.startOfDay(for: now), now.addingTimeInterval(-(minutes + 10) * 60)) : noon
+            return HealthActivity(id: "demo-activity-\(i)", start: start, end: start.addingTimeInterval(minutes * 60),
+                                  kind: p[1], durationSec: minutes * 60, distanceKm: nil,
+                                  avgHR: p.count > 3 ? Double(p[3]) : nil,
+                                  sourceName: "Exercice", sourceBundleId: "demo.exercice")
+        }
     }
 
     func saveFeedback(for session: PlannedSession, rpe: Int, note: String) {

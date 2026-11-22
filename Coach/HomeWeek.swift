@@ -44,6 +44,10 @@ struct WeekDots<MenuItems: View>: View {
                         .buttonStyle(PressableButtonStyle())
                         .contextMenu { menu(session) }
                         .accessibilityHint("Ouvre la séance")
+                } else if let extra = day.extras.first {
+                    NavigationLink(value: extra) { DayDot(day: day) }
+                        .buttonStyle(PressableButtonStyle())
+                        .accessibilityHint("Ouvre l'activité")
                 } else {
                     DayDot(day: day)
                 }
@@ -74,6 +78,17 @@ struct DayDot: View {
 
     @ViewBuilder private var dot: some View {
         switch day.status {
+        case .rest where !day.extras.isEmpty:
+            // Repos, mais un autre sport fait (#54) : comme une séance faite, en gris.
+            let extra = Circle().fill(Theme.extraFill)
+                .overlay(Circle().strokeBorder(Theme.muted, lineWidth: 1.5))
+                .overlay(Image(systemName: day.extras[0].info.symbol)
+                    .font(Theme.tintedIconFont).foregroundStyle(Theme.text))
+            if day.isToday {
+                Circle().strokeBorder(Theme.accent, lineWidth: 2).overlay(extra.padding(5))
+            } else {
+                extra
+            }
         case .rest:
             ZStack {
                 if day.isToday { Circle().strokeBorder(Theme.accent, lineWidth: 2) }
@@ -102,8 +117,10 @@ struct DayDot: View {
             .overlay(icon.font(Theme.tintedIconFont).foregroundStyle(Theme.onTint))
     }
 
+    /// Icône de la séance ; celle du sport quand un autre sport l'a remplacée (#54).
     private var icon: Image {
-        Image(systemName: day.main.map { Theme.icon(for: $0.type) } ?? "minus")
+        if day.status == .done, let replacement = day.replacement { return Image(systemName: replacement.info.symbol) }
+        return Image(systemName: day.main.map { Theme.icon(for: $0.type) } ?? "minus")
     }
 
     /// « ! » orange : séance passée pas faite. Sinon « 2 » quand le jour a plusieurs séances.
@@ -130,7 +147,12 @@ struct DayDot: View {
     private var accessibilityText: String {
         var text = day.date.formatted(.dateTime.weekday(.wide)).capitalized
         if day.isToday { text += ", aujourd'hui" }
-        guard !day.sessions.isEmpty else { return text + " : repos" }
+        let extras = day.extras.isEmpty ? ""
+            : ". En plus : " + day.extras.map { $0.info.label.localizedLowercase }.joined(separator: ", ")
+        guard !day.sessions.isEmpty else { return text + " : repos" + extras }
+        if let replacement = day.replacement {
+            return text + " : \(replacement.info.label.localizedLowercase), séance du jour à la place de « \(day.main?.title ?? "") »" + extras
+        }
         let what = day.sessions.map(\.typeLabel.localizedLowercase).joined(separator: " et ")
         let titles = day.sessions.map(\.title).joined(separator: ", ")
         let plural = day.sessions.count > 1
@@ -140,7 +162,7 @@ struct DayDot: View {
         case .missed: state = "pas fait\(plural ? "s" : "")"
         default: state = "prévu\(plural ? "s" : "")"
         }
-        return text + " : \(what) \(state). \(titles)"
+        return text + " : \(what) \(state). \(titles)" + extras
     }
 }
 
@@ -172,21 +194,42 @@ struct TodayCard: View {
 
             case .done(let stored):
                 let session = stored.effective
-                VStack(alignment: .leading, spacing: 4) {
-                    Label { Text("Fait aujourd'hui") } icon: { Image(systemName: "checkmark") }
-                        .labelStyle(EyebrowLabelStyle(color: Theme.accent))
-                    Text(session.title).font(.number).foregroundStyle(Theme.text)
-                        .fixedSize(horizontal: false, vertical: true)
+                let link = store.healthLink(for: stored.id)
+                if let link, link.kind == .main {
+                    // Autre sport choisi comme séance du jour (#54).
+                    VStack(alignment: .leading, spacing: 4) {
+                        Label { Text("Séance du jour") } icon: { Image(systemName: "checkmark") }
+                            .labelStyle(EyebrowLabelStyle(color: Theme.accent))
+                        Label { Text(link.activity.info.label) } icon: { Image(systemName: link.activity.info.symbol) }
+                            .font(.number).foregroundStyle(Theme.text)
+                        Text("À la place de « \(session.title) » · enregistrée avec \(link.activity.sourceName)")
+                            .font(.detail).foregroundStyle(Theme.muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                } else {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Label { Text("Fait aujourd'hui") } icon: { Image(systemName: "checkmark") }
+                            .labelStyle(EyebrowLabelStyle(color: Theme.accent))
+                        Text(session.title).font(.number).foregroundStyle(Theme.text)
+                            .fixedSize(horizontal: false, vertical: true)
+                        if let link {
+                            Text("Enregistrée avec \(link.activity.sourceName)").font(.detail).foregroundStyle(Theme.muted)
+                        }
+                    }
                 }
-                let log = store.log(for: stored.id)
-                let stats = Self.stats(log)
+                let stats = link.map { Self.stats($0.activity, effort: store.activityChoices.efforts[$0.activity.id]) }
+                    ?? Self.stats(store.log(for: stored.id))
                 if !stats.isEmpty {
                     HStack(alignment: .top, spacing: 8) {
                         ForEach(stats, id: \.label) { StatValue(value: $0.value, unit: $0.unit, label: $0.label) }
                     }
                 }
-                NavigationLink(value: stored) {
-                    Text("Voir le détail").quietActionStyle()
+                Group {
+                    if let link, link.kind == .main {
+                        NavigationLink(value: link.activity) { Text("Voir le détail").quietActionStyle() }
+                    } else {
+                        NavigationLink(value: stored) { Text("Voir le détail").quietActionStyle() }
+                    }
                 }
                 .buttonStyle(PressableButtonStyle())
 
@@ -254,6 +297,18 @@ struct TodayCard: View {
     }
 
     struct Stat { let value: String; let unit: String?; let label: String }
+
+    /// Chiffres d'une séance Santé (#54) : durée, distance, FC moyenne, ressenti.
+    static func stats(_ activity: HealthActivity, effort: Int?) -> [Stat] {
+        var out = [Stat(value: "\(activity.minutes)", unit: "min", label: "Durée")]
+        if let km = activity.distanceKm, km > 0.2 {
+            out.append(Stat(value: km.formatted(.number.precision(.fractionLength(1))), unit: "km", label: "Distance"))
+        } else if let hr = activity.avgHR {
+            out.append(Stat(value: "\(Int(hr.rounded()))", unit: "bpm", label: "FC moy."))
+        }
+        out.append(Stat(value: effort.map { "\($0)" } ?? "—", unit: effort == nil ? nil : "/10", label: "Effort"))
+        return out
+    }
 
     /// Chiffres connus de la séance faite : effort ressenti, séries.
     static func stats(_ log: SessionLog?) -> [Stat] {

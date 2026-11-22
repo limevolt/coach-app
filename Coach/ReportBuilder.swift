@@ -8,6 +8,9 @@ struct ReportBuilder {
     let plan: TrainingPlan?
     let logs: [SessionLog]
     let profile: String
+    /// Séances faites avec une autre app (#54) : même règle que l'app.
+    var links: HealthLinks? = nil
+    var efforts: [String: Int] = [:]
 
     /// `includeFormat` : ajoute le format du plan à la fin quand le plan est joint, pour que le suivi
     /// se suffise dans une nouvelle conversation (#37). Désactivé pour « Mon propre coach » (déjà dans sa consigne).
@@ -67,7 +70,8 @@ struct ReportBuilder {
         if planned.isEmpty { out.append("Aucune séance prévue sur la période.") }
         for s in planned {
             let log = DoneState.activeLog(for: s.id, in: logs)
-            let matched = workouts.contains { w in
+            let link = log == nil ? links?.bySession[s.id] : nil
+            let matched = links != nil ? link != nil : workouts.contains { w in
                 guard let d = s.startDate, cal.isDate(w.start, inSameDayAs: d) else { return false }
                 return s.type == .run ? w.activity == .running : w.activity != .running
             }
@@ -75,6 +79,12 @@ struct ReportBuilder {
             if log != nil || matched { status = "✅ faite" }
             else if s.dayStart == todayStart { status = "⏳ prévue aujourd'hui" }
             else { status = "❌ non faite" }
+            if let link {
+                status += link.kind == .main
+                    ? " · remplacée par \(link.activity.info.label.lowercased()) (\(link.activity.minutes) min, autre app)"
+                    : " · enregistrée avec une autre app (\(link.activity.minutes) min)"
+                if let rpe = efforts[link.activity.id] { status += " · effort \(rpe)/10" }
+            }
             if let rpe = log?.rpe { status += " · effort \(rpe)/10" }
             var adapted: [String] = []
             if s.withoutEquipment { adapted.append("faite sans matériel") }

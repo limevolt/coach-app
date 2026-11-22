@@ -146,7 +146,8 @@ struct ReportView: View {
         askingCoach = true
         defer { askingCoach = false }
         // Le plan actuel est toujours joint : le coach en a besoin pour le mettre à jour.
-        let builder = ReportBuilder(plan: store.plan, logs: store.logs, profile: profile)
+        let builder = ReportBuilder(plan: store.plan, logs: store.logs, profile: profile,
+                                    links: store.healthLinks, efforts: store.activityChoices.efforts)
         // Sans le format : il est déjà dans la consigne du coach, et un petit modèle a peu de contexte.
         let coachReport = await builder.build(days: days, comment: comment, includePlan: true, includeFormat: false)
         report = store.plan == nil ? coachReport : PlanFormat.appending(to: coachReport)
@@ -168,7 +169,8 @@ struct ReportView: View {
     }
 
     private func generate() async {
-        let builder = ReportBuilder(plan: store.plan, logs: store.logs, profile: profile)
+        let builder = ReportBuilder(plan: store.plan, logs: store.logs, profile: profile,
+                                    links: store.healthLinks, efforts: store.activityChoices.efforts)
         report = await builder.build(days: days, comment: comment, includePlan: includePlan)
         healthStamp = await HealthReader().workoutStamp(days: days)
         lastInputs = currentInputs

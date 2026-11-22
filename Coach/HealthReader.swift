@@ -16,6 +16,7 @@ struct WorkoutSummary {
 @MainActor
 final class HealthReader {
     private let store = HKHealthStore()
+    var healthStore: HKHealthStore { store }
 
     static var bpm: HKUnit { HKUnit.count().unitDivided(by: .minute()) }
 

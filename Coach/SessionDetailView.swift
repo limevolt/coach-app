@@ -25,15 +25,16 @@ struct SessionDetailView: View {
 
     var body: some View {
         let log = store.log(for: session.id)
+        let done = store.isDone(session.id)
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 hero
-                if log == nil && inPlan {
+                if !done && inPlan {
                     StartOnWatchButton { await store.startOnWatch(session) }
                 }
                 if store.isMissed(stored) {
                     missedCard
-                } else if log == nil && inPlan {
+                } else if !done && inPlan {
                     secondaryActions
                 }
                 if let run = session.run { runSection(run) }
@@ -277,7 +278,33 @@ struct SessionDetailView: View {
 
     /// Séance faite : le ressenti, avec un menu « Modifier mon ressenti » / « Marquer comme non faite » (#13).
     @ViewBuilder private func feedbackSection(_ log: SessionLog?) -> some View {
-        if let log {
+        if log == nil, let link = store.healthLink(for: initial.id) {
+            // Faite avec une autre app (#54) : le détail et le ressenti sont sur la page de l'activité.
+            VStack(alignment: .leading, spacing: 8) {
+                sectionTitle("Ressenti")
+                NavigationLink(value: link.activity) {
+                    HStack(spacing: 12) {
+                        Image(systemName: link.activity.info.symbol)
+                            .font(Theme.tintedIconFont)
+                            .foregroundStyle(Theme.accent)
+                            .accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(link.kind == .main ? "Remplacée par : \(link.activity.info.label)"
+                                                    : "Faite avec \(link.activity.sourceName)")
+                                .font(.coach(.body, weight: .semibold)).foregroundStyle(Theme.text)
+                            Text("\(link.activity.minutes) min · voir l'activité et noter ton ressenti")
+                                .font(.detail).foregroundStyle(Theme.muted)
+                        }
+                        Spacer(minLength: 8)
+                        Image(systemName: "chevron.right").font(Theme.chevronFont).foregroundStyle(Theme.chevron)
+                            .accessibilityHidden(true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .card()
+                }
+                .buttonStyle(.plain)
+            }
+        } else if let log {
             VStack(alignment: .leading, spacing: 8) {
                 sectionTitle("Ressenti")
                 VStack(alignment: .leading, spacing: 6) {
@@ -383,16 +410,17 @@ struct FeedbackSheet: View {
     let session: PlannedSession
     @Environment(PlanStore.self) private var store
     @Environment(\.dismiss) private var dismiss
-    @State private var rpe = 6
+    @State private var rpe: Int? = 6
     @State private var note = ""
 
     var body: some View {
         NavigationStack {
             Form {
-                Section {
-                    Stepper("Effort perçu : \(rpe)/10", value: $rpe, in: 1...10)
-                } footer: {
-                    Text("1 = très facile · 5 = soutenu · 8 = dur · 10 = maximal")
+                Section("Ton ressenti") {
+                    // Même composant partout (#54) : 5 gros boutons, un appui.
+                    EffortPicker(value: $rpe)
+                        .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
+                        .listRowBackground(Color.clear)
                 }
                 Section("Note (douleurs, sensations, météo…)") {
                     TextField("Facultatif", text: $note, axis: .vertical)
@@ -408,13 +436,14 @@ struct FeedbackSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Enregistrer") {
-                        store.saveFeedback(for: session, rpe: rpe, note: note)
+                        store.saveFeedback(for: session, rpe: rpe ?? 6, note: note)
                         dismiss()
                     }
                 }
             }
             .onAppear {
                 if let log = store.log(for: session.id) {
+                    // Valeur gardée telle quelle (ancienne note 7/10 comprise) tant qu'aucun bouton n'est touché.
                     rpe = log.rpe ?? 6
                     note = log.note ?? ""
                 }

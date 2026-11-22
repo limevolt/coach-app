@@ -30,6 +30,10 @@ struct WeekOverview {
         /// Séance affichée dans la pastille : la première pas encore faite, sinon la première.
         let main: PlannedSession?
         let status: Status
+        /// Séances Santé en plus ce jour-là (#54), en gris.
+        var extras: [HealthActivity] = []
+        /// Autre sport choisi comme « Séance principale du jour » pour la séance de la pastille.
+        var replacement: HealthActivity? = nil
 
         var id: Date { date }
     }
@@ -65,6 +69,31 @@ struct WeekOverview {
     let upcoming: [PlannedSession]
     /// Plus aucune séance à venir et la dernière est passée : le plan est terminé.
     let planEnded: Bool
+    /// Séances Santé en plus cette semaine (#54), jusqu'à aujourd'hui.
+    var extras: [HealthActivity] = []
+
+    /// Ajoute les séances Santé (#54) : activités en plus par jour, sport choisi comme séance du jour.
+    func decorated(with links: HealthLinks, now: Date = .now, calendar: Calendar = .current) -> WeekOverview {
+        var copy = self
+        let cal = PlanWeeks.calendar(timeZone: calendar.timeZone)
+        copy.extras = links.extras.filter { a in
+            let d = cal.startOfDay(for: a.start)
+            return d >= start && d <= end && a.start <= now
+        }
+        copy = WeekOverview(start: start, end: end,
+                            days: days.map { day in
+                                var d = day
+                                d.extras = copy.extras.filter { cal.isDate($0.start, inSameDayAs: day.date) }
+                                if let main = day.main, let link = links.bySession[main.id], link.kind == .main {
+                                    d.replacement = link.activity
+                                }
+                                return d
+                            },
+                            doneCount: doneCount, plannedCount: plannedCount, weekNumber: weekNumber,
+                            totalWeeks: totalWeeks, today: today, upcoming: upcoming, planEnded: planEnded,
+                            extras: copy.extras)
+        return copy
+    }
 
     static func make(plan: TrainingPlan, isDone: (String) -> Bool, now: Date = .now,
                      calendar: Calendar = .current, upcomingLimit: Int = 3) -> WeekOverview {
