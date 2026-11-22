@@ -13,10 +13,15 @@ enum DemoMode {
     /// Séances marquées « faites » (identifiants séparés par des virgules).
     static let doneIds: [String] = (ProcessInfo.processInfo.environment["COACH_DEMO_DONE"] ?? "")
         .split(separator: ",").map(String.init)
+    /// Séances Santé fictives (#54) : « jours depuis aujourd'hui:sport:minutes:FC », séparées par des virgules.
+    /// Ex. « 0:squash:55:152,-2:hiking:100:112 ».
+    static let activitySpecs: [String] = (ProcessInfo.processInfo.environment["COACH_DEMO_ACTIVITIES"] ?? "")
+        .split(separator: ",").map(String.init)
     #else
     static let planJSON: String? = nil
     static let isOn = false
     static let doneIds: [String] = []
+    static let activitySpecs: [String] = []
     #endif
 
     static var plan: TrainingPlan? {

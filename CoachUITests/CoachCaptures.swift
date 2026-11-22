@@ -60,6 +60,23 @@ final class CoachCaptures: XCTestCase {
         _ = app.tabBars.firstMatch.waitForExistence(timeout: 30)
         shot("10b-accueil-fait")
 
+        // 4b. Séances Santé d'une autre app (#54) : squash aujourd'hui (course prévue), randonnée hier.
+        app = launchDemo(plan: DemoPlan.json(), activities: ["0:squash:55:152", "-1:hiking:100:112"])
+        _ = app.tabBars.firstMatch.waitForExistence(timeout: 30)
+        app.swipeUp()
+        shot("40-accueil-en-plus")
+        audit("Accueil — activités en plus", app)
+        if tap("aujourd'hui · 55 min", in: app) {
+            shot("41-activite-squash")
+            audit("Activité en plus", app)
+            if tap("Séance principale du jour", in: app) {
+                shot("42-activite-seance-du-jour")
+                back(app)
+                app.swipeDown()
+                shot("43-accueil-seance-du-jour")
+            }
+        }
+
         // 4. Accueil un jour de repos, avec des séances faites
         app = launchDemo(plan: DemoPlan.json(firstOffset: -2), done: Array(DemoPlan.sessionIds.prefix(2)))
         _ = app.tabBars.firstMatch.waitForExistence(timeout: 30)

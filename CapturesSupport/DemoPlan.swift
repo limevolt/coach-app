@@ -56,13 +56,15 @@ private final class BundleToken {}
 extension XCTestCase {
     /// Lance l'app en mode démo. `plan == nil` : aucun plan (écran vide).
     @MainActor
-    func launchDemo(plan: String?, done: [String] = [], arguments: [String] = []) -> XCUIApplication {
+    func launchDemo(plan: String?, done: [String] = [], activities: [String] = [],
+                    arguments: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
         app.terminate()
         app.launchArguments = ["-AppleLanguages", "(fr)", "-AppleLocale", "fr_BE"]
             + (plan == nil ? ["-coachDemo"] : []) + arguments
         if let plan { app.launchEnvironment["COACH_DEMO_PLAN"] = plan }
         if !done.isEmpty { app.launchEnvironment["COACH_DEMO_DONE"] = done.joined(separator: ",") }
+        if !activities.isEmpty { app.launchEnvironment["COACH_DEMO_ACTIVITIES"] = activities.joined(separator: ",") }
         app.launch()
         _ = app.wait(for: .runningForeground, timeout: 60)
         return app

@@ -19,6 +19,8 @@ enum Theme {
     static let chevron = Color(hex: 0x4A5462)
     /// Contour d'un interrupteur ou d'une case non cochés (au moins 3:1 sur le fond, #45).
     static let controlStroke = Color(hex: 0x707A8A)
+    /// Activité en plus (autre app, #54) : pastille grise.
+    static let extraFill = Color(hex: 0x3A4250)
     static let text = Color(hex: 0xEEF2F7)
     static let muted = Color(hex: 0x8B97A8)
     static let accent = Color(hex: 0xC6F432)      // citron vert
@@ -105,6 +107,8 @@ enum Theme {
     static let bottomFadeHeight: CGFloat = 32
     /// Étiquette discrète à côté d'un choix (« Conseillé », #57).
     static let tagRadius: CGFloat = 8
+    /// Gros bouton de ressenti (#54).
+    static let effortButtonHeight: CGFloat = 60
     /// Barres d'intensité (1 à 4) d'un niveau du plan (#57) : largeur, espace, hauteur de la 1re et pas.
     static let intensityBarWidth: CGFloat = 5
     static let intensityBarSpacing: CGFloat = 3

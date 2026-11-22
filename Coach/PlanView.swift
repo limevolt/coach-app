@@ -35,6 +35,8 @@ struct PlanView: View {
             }
             .background(Theme.bg.ignoresSafeArea())
             .navigationDestination(for: PlannedSession.self) { SessionDetailView(session: $0) }
+            .navigationDestination(for: HealthActivity.self) { ActivityDetailView(activity: $0) }
+            .task(id: now) { await store.refreshActivities(now: now) }
             .toolbar(.hidden, for: .navigationBar)
             // Barre masquée : un fond sous l'heure, pour que la liste ne défile pas sous le texte.
             .safeAreaInset(edge: .top, spacing: 0) {
@@ -88,7 +90,9 @@ struct PlanView: View {
     // MARK: Contenu
 
     private func content(_ plan: TrainingPlan) -> some View {
-        let week = WeekOverview.make(plan: plan, isDone: { store.log(for: $0) != nil }, now: now)
+        let links = store.healthLinks
+        let week = WeekOverview.make(plan: plan, isDone: { store.isDone($0) }, now: now)
+            .decorated(with: links, now: now)
         let others = weeks(plan).filter { $0.start != week.start }
         let later = others.filter { $0.start > week.start }
         let earlier = others.filter { $0.start < week.start }.reversed()
@@ -125,6 +129,21 @@ struct PlanView: View {
                         }
                         .buttonStyle(.plain)
                         .contextMenu { sessionMenu(session) }
+                    }
+                }
+            }
+
+            // Séances Santé hors plan (#54), en gris.
+            if !week.extras.isEmpty {
+                VStack(alignment: .leading, spacing: 0) {
+                    Eyebrow(text: "En plus cette semaine")
+                        .accessibilityAddTraits(.isHeader)
+                        .padding(.bottom, 4)
+                    ForEach(Array(week.extras.enumerated()), id: \.element.id) { i, activity in
+                        NavigationLink(value: activity) {
+                            ExtraActivityLine(activity: activity, showsSeparator: i < week.extras.count - 1)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             }
@@ -251,7 +270,7 @@ struct PlanView: View {
 
     /// Appui long sur une séance : marquer non faite, reprogrammer (#13).
     @ViewBuilder private func sessionMenu(_ session: PlannedSession) -> some View {
-        if store.log(for: session.id) != nil {
+        if store.isDone(session.id) {
             DestructiveButton("Marquer comme non faite", systemImage: "arrow.uturn.backward") {
                 notDone = session
             }
@@ -275,7 +294,7 @@ struct PlanView: View {
             .padding(.bottom, 4)
         ForEach(week.sessions) { session in
             NavigationLink(value: session) {
-                SessionRow(session: session, done: store.log(for: session.id) != nil)
+                SessionRow(session: session, done: store.isDone(session.id))
             }
             .buttonStyle(.plain)
             .contextMenu { sessionMenu(session) }
