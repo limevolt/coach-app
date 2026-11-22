@@ -48,7 +48,7 @@ final class HealthLinkingTests: XCTestCase {
     func testDecoratedShowsReplacementAndExtras() {
         let cal = Calendar.current
         let today = cal.startOfDay(for: .now)
-        let key = PlanStore.key(today)
+        let key = Day.key(today)
         let plan = TrainingPlan(schemaVersion: 1, planId: "demo", version: 1, title: "Démo", sessions: [session("s1", key, .run)])
         let start = cal.date(byAdding: .hour, value: 1, to: today)!
         let squash = HealthActivity(id: "a1", start: start, end: start.addingTimeInterval(3300), kind: "squash",
