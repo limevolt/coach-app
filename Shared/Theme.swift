@@ -109,6 +109,8 @@ enum Theme {
     static let tagRadius: CGFloat = 8
     /// Gros bouton de ressenti (#54).
     static let effortButtonHeight: CGFloat = 60
+    /// Feuille « Noter mon effort » (#54).
+    static let effortSheetHeight: CGFloat = 240
     /// Barres d'intensité (1 à 4) d'un niveau du plan (#57) : largeur, espace, hauteur de la 1re et pas.
     static let intensityBarWidth: CGFloat = 5
     static let intensityBarSpacing: CGFloat = 3
@@ -175,6 +177,8 @@ extension Font {
     static let text = Font.coach(.body, weight: .medium)
     /// Étiquette : 12, semi-gras, en capitales grises (`Eyebrow`).
     static let label = Font.coach(size: 12, weight: .semibold)
+    /// Lettre du jour d'aujourd'hui dans la semaine (#54) : plus grasse, en citron vert.
+    static let labelStrong = Font.coach(size: 12, weight: .heavy)
     /// Texte secondaire gris sous un titre (15).
     static let detail = Font.coach(.subheadline)
     /// Unité à côté d'un chiffre (« min », « /10 »).

@@ -29,42 +29,49 @@ struct WeekHero: View {
 
 // MARK: - Semaine en pastilles
 
-/// La semaine en 7 pastilles : pleine = faite, contour = prévue, tiret = repos,
-/// anneau citron vert = aujourd'hui. L'icône dit le type, pas seulement la couleur.
+/// La semaine en 7 pastilles : pleine = faite, contour = prévue, tiret = repos.
+/// Anneau citron vert = jour affiché (il suit le jour touché) ; lettre citron vert = aujourd'hui (#54).
+/// L'icône dit le type, pas seulement la couleur.
 struct WeekDots<MenuItems: View>: View {
     let days: [WeekOverview.Day]
+    /// Jour affiché par la carte (aujourd'hui au départ).
+    @Binding var selected: Date
     /// Menu contextuel d'une séance (marquer non faite, reprogrammer).
     @ViewBuilder let menu: (PlannedSession) -> MenuItems
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         HStack(alignment: .top, spacing: 0) {
             ForEach(days) { day in
-                if let session = day.main {
-                    NavigationLink(value: session) { DayDot(day: day) }
-                        .buttonStyle(PressableButtonStyle())
-                        .contextMenu { menu(session) }
-                        .accessibilityHint("Ouvre la séance")
-                } else if let extra = day.extras.first {
-                    NavigationLink(value: extra) { DayDot(day: day) }
-                        .buttonStyle(PressableButtonStyle())
-                        .accessibilityHint("Ouvre l'activité")
-                } else {
-                    DayDot(day: day)
+                let isSelected = Calendar.current.isDate(day.date, inSameDayAs: selected)
+                Button {
+                    withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) { selected = day.date }
+                } label: {
+                    DayDot(day: day, isSelected: isSelected)
                 }
+                .buttonStyle(PressableButtonStyle())
+                .contextMenu { if let session = day.main { menu(session) } }
+                .accessibilityAddTraits(isSelected ? .isSelected : [])
+                .accessibilityHint("Affiche ce jour")
             }
         }
+        .sensoryFeedback(.selection, trigger: selected)
     }
 }
 
 struct DayDot: View {
     let day: WeekOverview.Day
+    /// Jour affiché : anneau citron vert (par défaut, aujourd'hui).
+    var isSelected: Bool? = nil
+
+    private var ringed: Bool { isSelected ?? day.isToday }
 
     private var tint: Color { day.main.map { Theme.color(for: $0.type) } ?? Theme.line }
 
     var body: some View {
         VStack(spacing: 8) {
             Text(day.date.formatted(.dateTime.weekday(.narrow)))
-                .font(.label)
+                .font(day.isToday ? .labelStrong : .label)
                 .foregroundStyle(day.isToday ? Theme.accent : Theme.muted)
             dot
                 .frame(width: Theme.dayDot, height: Theme.dayDot)
@@ -84,20 +91,20 @@ struct DayDot: View {
                 .overlay(Circle().strokeBorder(Theme.muted, lineWidth: 1.5))
                 .overlay(Image(systemName: day.extras[0].info.symbol)
                     .font(Theme.tintedIconFont).foregroundStyle(Theme.text))
-            if day.isToday {
+            if ringed {
                 Circle().strokeBorder(Theme.accent, lineWidth: 2).overlay(extra.padding(5))
             } else {
                 extra
             }
         case .rest:
             ZStack {
-                if day.isToday { Circle().strokeBorder(Theme.accent, lineWidth: 2) }
+                if ringed { Circle().strokeBorder(Theme.accent, lineWidth: 2) }
                 Capsule()
-                    .fill(day.isToday ? Theme.accent : Theme.line)
+                    .fill(ringed ? Theme.accent : Theme.line)
                     .frame(width: Theme.dayDot * 0.3, height: 3)
             }
         case .done:
-            if day.isToday {
+            if ringed {
                 Circle().strokeBorder(Theme.accent, lineWidth: 2)
                     .overlay(filled.padding(5))
             } else {
@@ -105,8 +112,8 @@ struct DayDot: View {
             }
         case .planned, .missed:
             Circle()
-                .strokeBorder(day.isToday ? Theme.accent : tint.opacity(day.status == .missed ? 0.3 : 0.5),
-                              lineWidth: day.isToday ? 2 : 1.5)
+                .strokeBorder(ringed ? Theme.accent : tint.opacity(day.status == .missed ? 0.3 : 0.5),
+                              lineWidth: ringed ? 2 : 1.5)
                 .overlay(icon.font(Theme.smallIconFont).foregroundStyle(tint)
                     .opacity(day.status == .missed ? 0.6 : 1))
         }
@@ -166,6 +173,68 @@ struct DayDot: View {
     }
 }
 
+// MARK: - Carte d'un autre jour (#54)
+
+/// Jour touché dans la semaine : ses séances du plan et ses activités en plus, avec retour à aujourd'hui.
+struct SelectedDayCard: View {
+    @Environment(PlanStore.self) private var store
+    let day: WeekOverview.Day
+    let backToToday: () -> Void
+
+    private var title: String {
+        let date = day.date.formatted(.dateTime.weekday(.wide).day().month(.abbreviated))
+        let what = day.sessions.isEmpty ? "repos"
+            : day.sessions.map(\.typeLabel.localizedLowercase).joined(separator: " et ")
+        return "\(date) · \(what)"
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center) {
+                Eyebrow(text: title)
+                    .accessibilityAddTraits(.isHeader)
+                Spacer(minLength: 8)
+                Button("Aujourd'hui", action: backToToday)
+                    .font(.coach(.subheadline, weight: .semibold))
+                    .foregroundStyle(Theme.text)
+                    .frame(minHeight: Theme.minTap)
+                    .accessibilityHint("Revient à la séance du jour")
+            }
+            if day.sessions.isEmpty && day.extras.isEmpty {
+                Text("Pas de séance du plan ce jour-là.").font(.text).foregroundStyle(Theme.muted)
+            }
+            if day.sessions.isEmpty && !day.extras.isEmpty {
+                Text("Pas de séance du plan ce jour-là.").font(.detail).foregroundStyle(Theme.muted)
+            }
+            VStack(spacing: 0) {
+                ForEach(Array(day.sessions.enumerated()), id: \.element.id) { i, session in
+                    if let link = store.healthLink(for: session.id), link.kind == .main {
+                        NavigationLink(value: link.activity) {
+                            SessionRow(session: session, done: true, replacedBy: link.activity.info.label)
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        NavigationLink(value: session) {
+                            SessionRow(session: session, done: store.isDone(session.id))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    if i < day.sessions.count - 1 || !day.extras.isEmpty {
+                        Rectangle().fill(Theme.separator).frame(height: 1)
+                    }
+                }
+                ForEach(Array(day.extras.enumerated()), id: \.element.id) { i, activity in
+                    NavigationLink(value: activity) {
+                        ExtraActivityLine(activity: activity, showsSeparator: i < day.extras.count - 1)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .card()
+    }
+}
+
 // MARK: - Carte du jour
 
 /// La seule carte pleine de l'accueil. Elle change selon le jour : à faire, faite, ou repos.
@@ -177,6 +246,8 @@ struct TodayCard: View {
     let openTimers: () -> Void
     /// Plan terminé : « Créer un nouveau plan ».
     var newPlan: () -> Void = {}
+    /// Séance d'une autre app dont on note le ressenti (#54).
+    @State var effortFor: HealthActivity? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -224,6 +295,13 @@ struct TodayCard: View {
                         ForEach(stats, id: \.label) { StatValue(value: $0.value, unit: $0.unit, label: $0.label) }
                     }
                 }
+                if let link, store.activityChoices.efforts[link.activity.id] == nil {
+                    // Faite avec une autre app : le ressenti se demande ici, un appui suffit (#54).
+                    Button { effortFor = link.activity } label: {
+                        Text("Noter mon effort").quietActionStyle()
+                    }
+                    .buttonStyle(PressableButtonStyle())
+                }
                 Group {
                     if let link, link.kind == .main {
                         NavigationLink(value: link.activity) { Text("Voir le détail").quietActionStyle() }
@@ -257,6 +335,7 @@ struct TodayCard: View {
         .padding(.top, 18)
         .padding(.bottom, 16)
         .background(Theme.card, in: RoundedRectangle(cornerRadius: Theme.heroCardRadius, style: .continuous))
+        .sheet(item: $effortFor) { EffortSheet(activity: $0) }
     }
 
     private func heading(eyebrow: String, color: Color, title: String, detail: String?) -> some View {

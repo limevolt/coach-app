@@ -22,9 +22,15 @@ struct ActivityDetailView: View {
                 header
                 HStack(alignment: .top, spacing: 8) {
                     StatValue(value: "\(activity.minutes)", unit: "min", label: "Durée")
-                    StatValue(value: activity.avgHR.map { "\(Int($0.rounded()))" } ?? "—",
-                              unit: activity.avgHR == nil ? nil : "bpm", label: "FC moy.")
-                    StatValue(value: distance ?? "—", unit: distance == nil ? nil : "km", label: "Distance")
+                    if let distance, let pace {
+                        // Course : distance et allure (#54).
+                        StatValue(value: distance, unit: "km", label: "Distance")
+                        StatValue(value: pace, unit: "/km", label: "Allure")
+                    } else {
+                        StatValue(value: activity.avgHR.map { "\(Int($0.rounded()))" } ?? "—",
+                                  unit: activity.avgHR == nil ? nil : "bpm", label: "FC moy.")
+                        StatValue(value: distance ?? "—", unit: distance == nil ? nil : "km", label: "Distance")
+                    }
                 }
                 VStack(alignment: .leading, spacing: 10) {
                     Eyebrow(text: "Ton ressenti").accessibilityAddTraits(.isHeader)
@@ -65,6 +71,13 @@ struct ActivityDetailView: View {
     }
 
     private var isMain: Bool { link?.kind == .main }
+
+    /// Allure moyenne d'une course (« 5:42 »), si la distance est connue.
+    private var pace: String? {
+        guard activity.info.family == .run, let km = activity.distanceKm, km > 0.2 else { return nil }
+        let secPerKm = Int((activity.durationSec / km).rounded())
+        return "\(secPerKm / 60):" + String(format: "%02d", secPerKm % 60)
+    }
 
     // MARK: En-tête
 
@@ -237,6 +250,28 @@ struct ExtraActivityLine: View {
 }
 
 // MARK: - Ressenti
+
+/// Feuille « Noter mon effort » d'une séance faite avec une autre app : un appui enregistre (#54).
+struct EffortSheet: View {
+    let activity: HealthActivity
+    @Environment(PlanStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Ton ressenti").font(.coach(.title3, weight: .semibold)).foregroundStyle(Theme.text)
+                .accessibilityAddTraits(.isHeader)
+            Text("\(activity.info.label) · \(activity.minutes) min").font(.detail).foregroundStyle(Theme.muted)
+            EffortPicker(value: Binding(
+                get: { store.activityChoices.efforts[activity.id] },
+                set: { if let v = $0 { store.setEffort(v, for: activity); dismiss() } }))
+        }
+        .padding(Theme.screenMargin)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .presentationDetents([.height(Theme.effortSheetHeight), .medium])
+        .presentationBackground(Theme.card)
+    }
+}
 
 /// Ressenti en 5 gros boutons (2 Facile → 10 Max), un appui suffit (#54).
 /// Le choix se voit sans la couleur : fond, contour et texte gras.

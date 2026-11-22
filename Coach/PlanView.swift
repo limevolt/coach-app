@@ -22,6 +22,9 @@ struct PlanView: View {
     @State private var notDone: PlannedSession?
     /// « Aujourd'hui » de l'accueil : mis à jour au retour dans l'app et au changement de jour.
     @State private var now = Date.now
+    /// Jour touché dans la semaine (#54) ; nil = aujourd'hui.
+    @State private var selectedDay: Date?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -37,6 +40,8 @@ struct PlanView: View {
             .navigationDestination(for: PlannedSession.self) { SessionDetailView(session: $0) }
             .navigationDestination(for: HealthActivity.self) { ActivityDetailView(activity: $0) }
             .task(id: now) { await store.refreshActivities(now: now) }
+            // Nouveau jour ou autre semaine : la carte revient à aujourd'hui.
+            .onChange(of: Calendar.current.startOfDay(for: now)) { selectedDay = nil }
             .toolbar(.hidden, for: .navigationBar)
             // Barre masquée : un fond sous l'heure, pour que la liste ne défile pas sous le texte.
             .safeAreaInset(edge: .top, spacing: 0) {
@@ -103,10 +108,20 @@ struct PlanView: View {
                 WeekHero(done: week.doneCount, planned: week.plannedCount)
             }
 
-            WeekDots(days: week.days) { sessionMenu($0) }
+            WeekDots(days: week.days, selected: Binding(
+                get: { selectedDay ?? now },
+                set: { selectedDay = Calendar.current.isDate($0, inSameDayAs: now) ? nil : $0 })) { sessionMenu($0) }
 
-            TodayCard(today: week.today, planEnded: week.planEnded,
-                      openTimers: openTimers, newPlan: { showWizard = true })
+            if let selectedDay, let day = week.days.first(where: { Calendar.current.isDate($0.date, inSameDayAs: selectedDay) }) {
+                SelectedDayCard(day: day) {
+                    withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) { self.selectedDay = nil }
+                }
+                .transition(.opacity)
+            } else {
+                TodayCard(today: week.today, planEnded: week.planEnded,
+                          openTimers: openTimers, newPlan: { showWizard = true })
+                    .transition(.opacity)
+            }
 
             OffDaysBanner()
 
@@ -438,6 +453,8 @@ struct PlanView: View {
 struct SessionRow: View {
     let session: PlannedSession
     let done: Bool
+    /// Autre sport choisi comme séance du jour (#54).
+    var replacedBy: String? = nil
 
     /// Passée et pas faite.
     private var missed: Bool {
@@ -446,7 +463,8 @@ struct SessionRow: View {
 
     private var subtitle: String {
         var parts = [session.typeLabel, session.dateLabel]
-        if done { parts.append("faite") }
+        if let replacedBy { parts.append("remplacée par : \(replacedBy.localizedLowercase)") }
+        else if done { parts.append("faite") }
         if missed { parts.append("pas faite") }
         if session.withoutEquipment { parts.append("sans matériel") }
         if session.changeLabel != nil { parts.append("modifiée") }
