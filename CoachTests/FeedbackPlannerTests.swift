@@ -41,7 +41,7 @@ final class FeedbackPlannerTests: XCTestCase {
                        strength: StrengthWorkout(exercises: [Exercise(name: "Pompes", sets: 4, reps: 10)]))
     }
 
-    private func log(_ s: PlannedSession, rpe: Int? = nil, pain: PainReport? = nil,
+    private func log(_ s: PlannedSession, rpe: Int? = nil, pain: SessionPain? = nil,
                      fraction: Double? = nil, tired: Bool = false) -> SessionLog {
         let day = Int(s.date.suffix(2))!
         var l = SessionLog(id: UUID(), sessionId: s.id, completedAt: at(day), rpe: rpe, note: nil, sets: nil,
@@ -74,7 +74,7 @@ final class FeedbackPlannerTests: XCTestCase {
     func testLightPainLightensSessionsLoadingTheZoneForThreeDays() {
         let q = quality("s1", 5)
         let week = [q, easy("s2", 6), upper("s3", 7), long("s4", 8), easy("s5", 9)]
-        let d = decide(q, log(q, rpe: 8, pain: PainReport(zone: "knee", marked: false)), week)
+        let d = decide(q, log(q, rpe: 8, pain: SessionPain(zone: "knee", marked: false)), week)
         XCTAssertNotNil(d.changed["s2"])
         XCTAssertNotNil(d.changed["s4"], "dans les 3 jours")
         XCTAssertNil(d.changed["s3"], "le renfo du haut ne charge pas le genou")
@@ -86,7 +86,7 @@ final class FeedbackPlannerTests: XCTestCase {
     func testMarkedPainTurnsSessionsIntoNoImpact() {
         let q = quality("s1", 5)
         let week = [q, long("s2", 7)]
-        let d = decide(q, log(q, pain: PainReport(zone: "ankle", marked: true)), week)
+        let d = decide(q, log(q, pain: SessionPain(zone: "ankle", marked: true)), week)
         let s = d.changed["s2"]
         XCTAssertEqual(s?.type, .strength)
         XCTAssertNil(s?.run)
@@ -97,16 +97,16 @@ final class FeedbackPlannerTests: XCTestCase {
     func testOtherZoneChangesNothing() {
         let q = quality("s1", 5)
         let week = [q, easy("s2", 6)]
-        let d = decide(q, log(q, pain: PainReport(zone: "other", marked: true)), week)
-        XCTAssertTrue(d.changed.isEmpty)
+        let d = decide(q, log(q, pain: SessionPain(zone: "other", marked: false)), week)
+        XCTAssertTrue(d.changed.isEmpty, "gêne légère sans zone : rien")
     }
 
     func testSecondPainSameZoneLightensQualitiesUntilEndOfNextWeek() {
         let first = easy("s0", 4)
         let q = quality("s1", 8)
         let week = [first, q, easy("s2", 9), quality("s3", 13), quality("s4", 15), quality("s5", 19)]
-        let history = [FeedbackEntry(session: first, log: log(first, pain: PainReport(zone: "knee", marked: false)))]
-        let d = decide(q, log(q, pain: PainReport(zone: "knee", marked: false)), history: history, week)
+        let history = [FeedbackEntry(session: first, log: log(first, pain: SessionPain(zone: "knee", marked: false)))]
+        let d = decide(q, log(q, pain: SessionPain(zone: "knee", marked: false)), history: history, week)
         XCTAssertEqual(d.repeatedPainZone, "knee")
         XCTAssertNotNil(d.changed["s3"])
         XCTAssertNotNil(d.changed["s4"], "dimanche 17 : fin de la semaine suivante")
@@ -116,8 +116,8 @@ final class FeedbackPlannerTests: XCTestCase {
     func testPainInAnotherZoneIsNotARepeat() {
         let first = easy("s0", 4)
         let q = quality("s1", 8)
-        let history = [FeedbackEntry(session: first, log: log(first, pain: PainReport(zone: "back", marked: false)))]
-        let d = decide(q, log(q, pain: PainReport(zone: "knee", marked: false)), history: history, [first, q])
+        let history = [FeedbackEntry(session: first, log: log(first, pain: SessionPain(zone: "back", marked: false)))]
+        let d = decide(q, log(q, pain: SessionPain(zone: "knee", marked: false)), history: history, [first, q])
         XCTAssertNil(d.repeatedPainZone)
     }
 
@@ -201,9 +201,86 @@ final class FeedbackPlannerTests: XCTestCase {
     func testOldFeedbackOutsideWindowIgnored() {
         let old = easy("s0", 1)
         let q = quality("s1", 18)
-        let history = [FeedbackEntry(session: old, log: log(old, pain: PainReport(zone: "knee", marked: false)))]
-        let d = decide(q, log(q, pain: PainReport(zone: "knee", marked: false)), history: history, [old, q])
+        let history = [FeedbackEntry(session: old, log: log(old, pain: SessionPain(zone: "knee", marked: false)))]
+        let d = decide(q, log(q, pain: SessionPain(zone: "knee", marked: false)), history: history, [old, q])
         XCTAssertNil(d.repeatedPainZone, "plus de 14 jours")
+    }
+
+    // MARK: Relecture coach
+
+    private func stairs(_ id: String, _ day: Int) -> PlannedSession {
+        PlannedSession(id: id, date: key(day), type: .run, title: "Escaliers en continu",
+                       run: RunWorkout(blocks: [RunBlock(iterations: 1, steps: [step(40, zone: 3)])]))
+    }
+
+    func testStairsEnduranceIsHard() {
+        XCTAssertEqual(stairs("s", 5).role, .quality)
+    }
+
+    func testSecondAlertReplacesStairsWithFlatEasyRun() {
+        let first = easy("s0", 4)
+        let q = quality("s1", 6)
+        let history = [FeedbackEntry(session: first, log: log(first, pain: SessionPain(zone: "knee", marked: false)))]
+        let d = decide(q, log(q, pain: SessionPain(zone: "knee", marked: false)), history: history, [first, q, stairs("s2", 12)])
+        XCTAssertEqual(d.changed["s2"]?.title, "Footing facile sur le plat")
+        XCTAssertEqual(d.changed["s2"]?.role, .easyRun)
+    }
+
+    func testShortenedBeforeTaperChangesNothing() {
+        let q = quality("s1", 5, reps: 6)
+        let taper = quality("s2", 12, reps: 3)
+        let d = decide(q, log(q, rpe: 8, fraction: 0.5), [q, taper])
+        XCTAssertNil(d.changed["s2"], "la séance suivante est déjà plus légère")
+    }
+
+    func testShortenedNextTooFarChangesNothing() {
+        let q = quality("s1", 3, reps: 6)
+        let d = decide(q, log(q, fraction: 0.25), [q, quality("s2", 17, reps: 7)])
+        XCTAssertNil(d.changed["s2"])
+    }
+
+    func testLateFeedbackLeavesPastSessionsAlone() {
+        let e = easy("s1", 4)
+        let week = [e, easy("s2", 5), easy("s3", 8)]
+        var l = log(e, pain: SessionPain(zone: "knee", marked: false))
+        l.completedAt = at(4)
+        let d = FeedbackPlanner.decide(session: e, log: l, history: [], sessions: week,
+                                       isDone: { _ in false }, now: at(7))   // saisi le jeudi
+        XCTAssertNil(d.changed["s2"], "mardi est passé")
+        XCTAssertNotNil(d.changed["s3"], "3 jours à partir d'aujourd'hui")
+    }
+
+    func testMarkedPainProtectsNextLoadingSessionBeyondThreeDays() {
+        let l = long("s1", 9)
+        let d = decide(l, log(l, pain: SessionPain(zone: "knee", marked: true)), [l, upper("s2", 11), quality("s3", 13)])
+        XCTAssertNil(d.changed["s2"])
+        XCTAssertEqual(d.changed["s3"]?.type, .strength, "4 jours plus tard, mais la prochaine qui sollicite le genou")
+    }
+
+    func testOtherMarkedLightensNextHardAndIsNeverARepeat() {
+        let first = easy("s0", 4)
+        let q = quality("s1", 6)
+        let history = [FeedbackEntry(session: first, log: log(first, pain: SessionPain(zone: "other", marked: true)))]
+        let d = decide(q, log(q, pain: SessionPain(zone: "other", marked: true)), history: history,
+                       [first, q, easy("s2", 7), quality("s3", 8)])
+        XCTAssertNil(d.repeatedPainZone)
+        XCTAssertNil(d.changed["s2"])
+        XCTAssertNotNil(d.changed["s3"])
+    }
+
+    func testNoImpactSparesThePainfulZone() {
+        let hip = long("s", 7).noImpact(note: "x", sparing: "hip")
+        XCTAssertFalse(hip.strength!.exercises.contains { $0.name.contains("hanches") })
+        let back = long("s", 7).noImpact(note: "x", sparing: "back")
+        XCTAssertFalse(back.strength!.exercises.contains { $0.name.contains("Gainage") || $0.name.contains("Chat") })
+    }
+
+    func testUnratedFeedbackIsNotTooHard() {
+        let e = easy("s0", 4)
+        let f = easy("s1", 6)
+        let history = [FeedbackEntry(session: e, log: log(e, fraction: nil))]
+        let d = decide(f, log(f), history: history, [e, f, quality("s2", 8)])
+        XCTAssertTrue(d.changed.isEmpty)
     }
 
     // MARK: Annuler
@@ -212,7 +289,7 @@ final class FeedbackPlannerTests: XCTestCase {
         let q = quality("s1", 5)
         let l = long("s2", 7)
         let plan = TrainingPlan(schemaVersion: 1, planId: "p", version: 1, title: "Test", sessions: [q, l])
-        let d = decide(q, log(q, pain: PainReport(zone: "knee", marked: true)), plan.sessions)
+        let d = decide(q, log(q, pain: SessionPain(zone: "knee", marked: true)), plan.sessions)
         var changed = plan
         var a = ActivityChoices.Adaptation()
         for (id, new) in d.changed {

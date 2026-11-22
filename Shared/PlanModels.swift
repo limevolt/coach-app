@@ -232,14 +232,14 @@ struct SessionLog: Codable, Identifiable, Hashable {
     /// Plan réinitialisé : le journal reste dans l'historique mais n'est plus relié à une séance.
     var archivedAt: Date? = nil
     /// Retour rapide après séance (#44, B2).
-    var pain: PainReport? = nil
+    var pain: SessionPain? = nil
     /// Séance raccourcie : part faite (0,25 / 0,5 / 0,75).
     var doneFraction: Double? = nil
     var fatigued: Bool? = nil
 }
 
 /// Douleur signalée après une séance : zone (`BodyZone`, ou « other ») et gêne légère ou douleur marquée.
-struct PainReport: Codable, Hashable {
+struct SessionPain: Codable, Hashable {
     var zone: String
     var marked: Bool
 }

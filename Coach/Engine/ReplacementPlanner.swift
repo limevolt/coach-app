@@ -38,8 +38,10 @@ extension PlannedSession {
             let steps = run.blocks.flatMap(\.steps) + [run.warmup, run.cooldown].compactMap { $0 }
             let highZone = steps.contains { ($0.alert?.zone ?? 0) >= 4 }
             let repeats = run.blocks.contains { $0.iterations > 1 && $0.steps.contains { $0.purpose == "work" } }
-            if highZone || repeats { return .quality }
+            // Escaliers en continu, trail : zone 3 tenue, séance dure (relecture coach #44, B2).
+            let sustained = run.blocks.flatMap(\.steps).contains { $0.purpose == "work" && ($0.alert?.zone ?? 0) >= 3 }
             let t = Self.folded(title)
+            if highZone || repeats || sustained || t.contains("escalier") || t.contains("cote") { return .quality }
             if t.contains("longue") || t.contains("long run") { return .longRun }
             if (plannedMinutes ?? 0) >= ReplacementPlanner.longRunMinutes { return .longRun }
             return .easyRun

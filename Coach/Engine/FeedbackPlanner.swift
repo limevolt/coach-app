@@ -12,6 +12,12 @@
 // - Séance raccourcie : comptée faite ; qualité ou sortie longue faite à ½ ou moins → la suivante du même
 //   type ne progresse pas ; deux séances raccourcies de suite → comme « trop dur ».
 // - Très fatigué : séance dure du lendemain allégée.
+// Ajouts après la relecture coach (22/11) : escaliers en continu et trail comptés comme séances dures ;
+// fenêtres comptées depuis aujourd'hui si le retour est saisi en retard ; douleur marquée → aussi la
+// prochaine séance qui sollicite la zone ; « Autre » marquée → prochaine séance dure allégée ; deuxième
+// alerte → footing facile sur le plat ; séance sans impact sans les exercices qui touchent la zone (sinon
+// repos) ; « sans progression » seulement si la suivante (même séance, 10 jours) est plus lourde ;
+// séances déjà allégées par le coach et douleur récente exclues de « trop dur » / « trop facile ».
 
 import Foundation
 
@@ -39,21 +45,51 @@ extension PlannedSession {
         }
     }
 
-    /// Séance sans impact : mobilité et gainage doux (douleur marquée).
-    func noImpact(note: String) -> PlannedSession {
+    /// Séance sans impact : mobilité et gainage doux (douleur marquée), sans les exercices qui
+    /// sollicitent la zone douloureuse. Plus rien ne convient : repos.
+    func noImpact(note: String, sparing zone: String? = nil) -> PlannedSession {
         var s = self
         s.type = .strength
         s.run = nil
         s.circuit = nil
-        s.title = "Mobilité et gainage doux"
-        s.strength = StrengthWorkout(exercises: [
-            Exercise(name: "Mobilité des hanches", sets: 2, durationSec: 60, restSec: 20),
-            Exercise(name: "Chat-vache", sets: 2, durationSec: 45, restSec: 20),
-            Exercise(name: "Gainage sur les avant-bras", sets: 3, durationSec: 30, restSec: 30),
-            Exercise(name: "Gainage latéral", sets: 2, durationSec: 25, restSec: 30),
-            Exercise(name: "Respiration et étirements doux", sets: 1, durationSec: 300),
-        ])
+        let all: [(Exercise, Set<String>)] = [
+            (Exercise(name: "Mobilité des hanches", sets: 2, durationSec: 60, restSec: 20), ["hip", "knee"]),
+            (Exercise(name: "Chat-vache", sets: 2, durationSec: 45, restSec: 20), ["back", "wrist", "shoulder"]),
+            (Exercise(name: "Gainage sur les avant-bras", sets: 3, durationSec: 30, restSec: 30), ["back", "shoulder"]),
+            (Exercise(name: "Gainage latéral", sets: 2, durationSec: 25, restSec: 30), ["back", "shoulder", "hip"]),
+            (Exercise(name: "Respiration et étirements doux", sets: 1, durationSec: 300), []),
+        ]
+        let kept = all.filter { zone == nil || !$0.1.contains(zone!) }.map(\.0)
+        if kept.count > 1 {
+            s.title = "Mobilité et gainage doux"
+            s.strength = StrengthWorkout(exercises: kept)
+        } else {
+            s.title = "Repos"
+            s.strength = StrengthWorkout(exercises: [Exercise(name: "Repos, marche facile si l'envie est là",
+                                                              sets: 1, durationSec: 600)])
+        }
         s.coachNote = note
+        return s
+    }
+
+    /// Version légère après une gêne : comme `lightened`, et sans sauts ni sprints (renfo compris).
+    func painLight(note: String) -> PlannedSession {
+        var s = lightened(note: note)
+        if s.type == .strength, var w = s.strength {
+            let calm = w.exercises.filter { e in
+                let n = e.name.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "fr_FR"))
+                return !ReplacementPlanner.explosiveWords.contains { n.contains($0) }
+            }
+            if !calm.isEmpty { w.exercises = calm; s.strength = w }
+        }
+        return s
+    }
+
+    /// Escaliers, côtes ou intervalles retirés (deuxième alerte) : footing facile sur le plat.
+    func flatEasy(note: String) -> PlannedSession {
+        guard type == .run else { return painLight(note: note) }
+        var s = lightened(note: note)
+        s.title = "Footing facile sur le plat"
         return s
     }
 }
@@ -84,11 +120,17 @@ enum FeedbackPlanner {
     static func decide(session: PlannedSession, log: SessionLog, history: [FeedbackEntry],
                        sessions: [PlannedSession], isDone: (String) -> Bool, now: Date = .now) -> FeedbackDecision {
         let cal = PlanWeeks.calendar(timeZone: Calendar.current.timeZone)
-        let day = cal.startOfDay(for: session.startDate ?? log.completedAt)
-        let windowStart = cal.date(byAdding: .day, value: -windowDays, to: day) ?? day
+        let sessionDay = cal.startOfDay(for: session.startDate ?? log.completedAt)
+        // Retour saisi en retard : les fenêtres partent d'aujourd'hui, les séances passées ne bougent pas.
+        let today = cal.startOfDay(for: now)
+        let day = max(sessionDay, today)
+        let windowStart = cal.date(byAdding: .day, value: -windowDays, to: sessionDay) ?? sessionDay
         let recent = history.filter { $0.log.completedAt >= windowStart } + [FeedbackEntry(session: session, log: log)]
         let future = sessions
-            .filter { s in s.id != session.id && !isDone(s.id) && (s.dayStart ?? .distantPast) > day }
+            .filter { s in
+                guard s.id != session.id, !isDone(s.id), let start = s.dayStart else { return false }
+                return start > sessionDay && start >= today
+            }
             .sorted { ($0.startDate ?? .distantPast) < ($1.startDate ?? .distantPast) }
         var d = FeedbackDecision()
 
@@ -102,12 +144,21 @@ enum FeedbackPlanner {
         }
 
         // Douleur.
-        if let pain = log.pain {
-            let zone = BodyZone(rawValue: pain.zone)?.label.localizedLowercase ?? "zone signalée"
-            for s in future where within(s, days: painDays) && s.stressedZones.contains(pain.zone) {
-                change(s, pain.marked ? s.noImpact(note: "Sans impact (douleur : \(zone))")
-                                      : s.lightened(note: "Allégée par le coach (gêne : \(zone))"))
+        if let pain = log.pain, pain.zone == "other" {
+            // Zone non proposée : rien de ciblé, mais une douleur marquée allège la prochaine séance dure.
+            if pain.marked, let hard = future.first(where: { $0.countsAsHard || $0.isKey }) {
+                change(hard, hard.painLight(note: "Allégée par le coach (douleur signalée)"))
             }
+        } else if let pain = log.pain {
+            let zone = BodyZone(rawValue: pain.zone)?.label.localizedLowercase ?? "zone signalée"
+            let loading = future.filter { $0.stressedZones.contains(pain.zone) }
+            func protect(_ s: PlannedSession) {
+                change(s, pain.marked ? s.noImpact(note: "Sans impact (douleur : \(zone))", sparing: pain.zone)
+                                      : s.painLight(note: "Allégée par le coach (gêne : \(zone))"))
+            }
+            for s in loading where within(s, days: painDays) { protect(s) }
+            // Douleur marquée : la prochaine séance qui sollicite la zone, même au-delà de 3 jours.
+            if pain.marked, let next = loading.first { protect(next) }
             let previous = recent.dropLast().contains { $0.log.pain?.zone == pain.zone }
             if previous {
                 d.repeatedPainZone = pain.zone
@@ -115,7 +166,7 @@ enum FeedbackPlanner {
                 let thisWeek = cal.dateInterval(of: .weekOfYear, for: day)
                 let end = thisWeek.flatMap { cal.date(byAdding: .day, value: 7, to: $0.end) } ?? day
                 for s in future where s.role == .quality && (s.dayStart ?? .distantFuture) < end {
-                    change(s, s.lightened(note: "Allégée par le coach (\(zone) : deuxième alerte)"))
+                    change(s, s.flatEasy(note: "Remplacée par le coach (\(zone) : deuxième alerte)"))
                 }
             }
         }
@@ -127,16 +178,22 @@ enum FeedbackPlanner {
             }
         }
 
-        // Séance raccourcie : la suivante du même type ne progresse pas.
+        // Séance raccourcie : la suivante du même genre (même titre, ou sortie longue), dans les 10 jours,
+        // ne progresse pas. Plus légère (semaine allégée, affûtage) : on n'y touche pas.
         if let fraction = log.doneFraction, fraction <= 0.5, session.role == .quality || session.role == .longRun,
-           let next = future.first(where: { $0.role == session.role && $0.type == session.type }) {
+           let next = future.first(where: { s in
+               s.role == session.role && s.type == session.type
+                   && (session.role == .longRun || s.title == session.title)
+           }),
+           within(next, days: 10), (next.plannedMinutes ?? 0) > (session.plannedMinutes ?? 0) {
             change(next, withoutProgression(next, like: session))
         }
 
         // Trop dur (ressenti ou séances raccourcies deux fois de suite).
         let lastTwo = recent.suffix(2)
         let tooHard = lastTwo.count == 2 && lastTwo.allSatisfy { e in
-            (e.log.rpe ?? 0) >= e.session.role.expectedEffort + 2 || (e.log.doneFraction ?? 1) < 1
+            e.session.coachNote == nil
+                && ((e.log.rpe ?? 0) >= e.session.role.expectedEffort + 2 || (e.log.doneFraction ?? 1) < 1)
         }
         if tooHard {
             if let hard = future.first(where: { $0.countsAsHard || $0.isKey }) {
@@ -159,8 +216,11 @@ enum FeedbackPlanner {
 
         // Trop facile trois fois : proposition seulement.
         let lastThree = recent.suffix(3)
-        d.proposeHarder = lastThree.count == 3 && lastThree.allSatisfy { e in
-            (e.log.rpe ?? 10) <= e.session.role.expectedEffort - 2 && e.log.pain == nil && (e.log.doneFraction ?? 1) >= 1
+        // Séances allégées par le coach exclues, et rien dans les 14 jours après une douleur.
+        let painRecently = recent.contains { $0.log.pain != nil }
+        d.proposeHarder = !painRecently && lastThree.count == 3 && lastThree.allSatisfy { e in
+            e.session.coachNote == nil && (e.log.rpe ?? 10) <= e.session.role.expectedEffort - 2
+                && (e.log.doneFraction ?? 1) >= 1
         }
 
         if let fraction = log.doneFraction, fraction < 1 {
@@ -171,10 +231,20 @@ enum FeedbackPlanner {
             .sorted { ($0.startDate ?? .distantPast) < ($1.startDate ?? .distantPast) }
             .map { s in
                 let new = d.changed[s.id]!
-                let what = new.coachNote?.replacingOccurrences(of: "Allégée par le coach", with: "version légère") ?? "modifiée"
-                return "\(ReplacementPlanner.dayLabel(s.date).capitalized) · \(s.title) : \(what)"
+                return "\(ReplacementPlanner.dayLabel(s.date).capitalized) · \(s.title) : \(Self.what(new))"
             }
         return d
+    }
+
+    /// Ce qui change, en clair : « version légère (gêne : genou) », « mobilité et gainage doux (douleur : genou) ».
+    static func what(_ new: PlannedSession) -> String {
+        let note = new.coachNote ?? ""
+        let reason = note.firstIndex(of: "(").map { " " + note[$0...] } ?? ""
+        if note.hasPrefix("Allégée par le coach") { return "version légère" + reason }
+        if note.hasPrefix("Remplacée par le coach") || note.hasPrefix("Sans impact") {
+            return new.title.localizedLowercase + reason
+        }
+        return note.isEmpty ? "modifiée" : note.prefix(1).lowercased() + note.dropFirst()
     }
 
     /// « au quart », « à moitié », « aux trois quarts ».
@@ -204,7 +274,8 @@ enum FeedbackText {
     /// Zones proposées (choix unique), dans l'ordre de la maquette. « Autre » : rien d'adapté automatiquement.
     static let zones: [(id: String, label: String)] = [
         ("knee", "Genou"), ("ankle", "Cheville"), ("calf", "Mollet"), ("foot", "Pied"), ("hip", "Hanche"),
-        ("hamstring", "Arrière de la cuisse"), ("back", "Dos"), ("other", "Autre"),
+        ("hamstring", "Arrière de la cuisse"), ("shin", "Tibia"), ("back", "Dos"), ("shoulder", "Épaule"),
+        ("wrist", "Poignet"), ("other", "Autre"),
     ]
 
     static func zoneLabel(_ id: String) -> String {

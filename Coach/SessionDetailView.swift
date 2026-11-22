@@ -469,7 +469,8 @@ struct FeedbackSheet: View {
     @Environment(PlanStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var rpe: Int? = 6
+    /// Rien de présélectionné : sans ressenti, les règles d'effort ignorent la séance (relecture coach).
+    @State private var rpe: Int?
     @State private var note = ""
     @State private var hasPain = false
     @State private var zone: String?
@@ -479,9 +480,9 @@ struct FeedbackSheet: View {
     @State private var tired = false
     @State private var saving = false
 
-    private var pain: PainReport? {
+    private var pain: SessionPain? {
         guard hasPain, let zone else { return nil }
-        return PainReport(zone: zone, marked: marked)
+        return SessionPain(zone: zone, marked: marked)
     }
 
     /// Retour en cours de saisie, pour l'aperçu.
@@ -612,7 +613,7 @@ struct FeedbackSheet: View {
     private func load() {
         guard let log = store.log(for: session.id) else { return }
         // Valeur gardée telle quelle (ancienne note 7/10 comprise) tant qu'aucun bouton n'est touché.
-        rpe = log.rpe ?? 6
+        rpe = log.rpe
         note = log.note ?? ""
         if let p = log.pain { hasPain = true; zone = p.zone; marked = p.marked }
         if let f = log.doneFraction { shortened = true; fraction = f }
@@ -622,7 +623,7 @@ struct FeedbackSheet: View {
     private func save() {
         saving = true
         let pain = pain, fraction = shortened ? fraction : nil
-        let store = store, session = session, rpe = rpe ?? 6, note = note, tired = tired
+        let store = store, session = session, rpe = rpe, note = note, tired = tired
         // La feuille se ferme tout de suite ; l'envoi à la montre continue derrière.
         dismiss()
         Task { await store.saveFeedback(for: session, rpe: rpe, note: note, pain: pain,

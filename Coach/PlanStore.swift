@@ -38,7 +38,7 @@ final class PlanStore {
             logs = DemoMode.doneIds.enumerated().map { i, id in
                 var log = SessionLog(id: UUID(), sessionId: id, completedAt: .now.addingTimeInterval(Double(i)), rpe: 6)
                 // Même douleur sur chaque séance faite : conseil « deuxième alerte » sur l'accueil (#44).
-                log.pain = DemoMode.painZone.map { PainReport(zone: $0, marked: false) }
+                log.pain = DemoMode.painZone.map { SessionPain(zone: $0, marked: false) }
                 return log
             }
             templates = IntervalTemplate.defaults
@@ -691,7 +691,7 @@ final class PlanStore {
         }
     }
 
-    func saveFeedback(for session: PlannedSession, rpe: Int, note: String, pain: PainReport? = nil,
+    func saveFeedback(for session: PlannedSession, rpe: Int?, note: String, pain: SessionPain? = nil,
                       doneFraction: Double? = nil, fatigued: Bool = false) async {
         var log: SessionLog
         if let existing = self.log(for: session.id) {
@@ -801,7 +801,7 @@ final class PlanStore {
     /// Deuxième douleur au même endroit en 14 jours (conseil sur l'accueil), tant qu'il n'a pas été écarté.
     var painAdvice: (zone: String, logId: String)? {
         let recent = logs.filter { $0.archivedAt == nil && $0.pain != nil }.sorted { $0.completedAt < $1.completedAt }
-        guard let last = recent.last, let pain = last.pain,
+        guard let last = recent.last, let pain = last.pain, pain.zone != "other",
               last.completedAt > Date.now.addingTimeInterval(-7 * 86_400),
               !activityChoices.dismissedAdvice.contains(last.id.uuidString) else { return nil }
         let window = last.completedAt.addingTimeInterval(-Double(FeedbackPlanner.windowDays) * 86_400)
