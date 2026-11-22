@@ -204,6 +204,8 @@ struct TintedIconLabelStyle: LabelStyle {
 struct ExtraActivityLine: View {
     let activity: HealthActivity
     var showsSeparator = true
+    /// Dans la carte d'un jour, le jour est déjà dit : durée et distance seulement.
+    var showsDay = true
 
     var body: some View {
         HStack(spacing: 12) {
@@ -239,7 +241,11 @@ struct ExtraActivityLine: View {
             : activity.start.formatted(.dateTime.weekday(.abbreviated))
         let m = activity.minutes
         let duration = m >= 60 ? "\(m / 60) h \(String(format: "%02d", m % 60))" : "\(m) min"
-        return "\(day) · \(duration)"
+        guard !showsDay else { return "\(day) · \(duration)" }
+        if let km = activity.distanceKm, km > 0.2 {
+            return "\(duration) · " + km.formatted(.number.precision(.fractionLength(1))) + " km"
+        }
+        return duration
     }
 }
 

@@ -202,6 +202,18 @@ struct SelectedDayCard: View {
         return store.isMissed(session) ? "pas faite" : "prévue"
     }
 
+    private var todayButton: some View {
+        Button(action: backToToday) {
+            Text("Aujourd'hui")
+                .font(.coach(.subheadline, weight: .semibold))
+                .foregroundStyle(Theme.text)
+                .frame(minWidth: Theme.minTap, minHeight: Theme.minTap)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("Revient à la séance du jour")
+    }
+
     /// Séances du jour faites avec une autre app sans ressenti noté.
     private var effortToNote: HealthActivity? {
         day.sessions.lazy.compactMap { store.healthLink(for: $0.id)?.activity }
@@ -210,15 +222,17 @@ struct SelectedDayCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .center) {
-                Eyebrow(text: Self.title(for: day))
-                    .accessibilityAddTraits(.isHeader)
-                Spacer(minLength: 8)
-                Button("Aujourd'hui", action: backToToday)
-                    .font(.coach(.subheadline, weight: .semibold))
-                    .foregroundStyle(Theme.text)
-                    .frame(minHeight: Theme.minTap)
-                    .accessibilityHint("Revient à la séance du jour")
+            // Très grand texte : le lien passe sous la date au lieu de la tronquer.
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .center) {
+                    Eyebrow(text: Self.title(for: day)).fixedSize()
+                    Spacer(minLength: 8)
+                    todayButton
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    Eyebrow(text: Self.title(for: day))
+                    todayButton
+                }
             }
             if day.sessions.isEmpty {
                 Text("Pas de séance du plan ce jour-là.").font(.detail).foregroundStyle(Theme.muted)
@@ -241,7 +255,7 @@ struct SelectedDayCard: View {
                 }
                 ForEach(Array(day.extras.enumerated()), id: \.element.id) { i, activity in
                     NavigationLink(value: activity) {
-                        ExtraActivityLine(activity: activity, showsSeparator: i < day.extras.count - 1)
+                        ExtraActivityLine(activity: activity, showsSeparator: i < day.extras.count - 1, showsDay: false)
                     }
                     .buttonStyle(.plain)
                 }
