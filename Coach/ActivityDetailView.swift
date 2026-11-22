@@ -178,7 +178,7 @@ struct ActivityDetailView: View {
         }
     }
 
-    private func bar<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+    private func bar<Content: View>(@ViewBuilder _ content: @escaping () -> Content) -> some View {
         BottomBar(content: content)
     }
 }
