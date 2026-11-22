@@ -65,6 +65,7 @@ final class CoachCaptures: XCTestCase {
         let hikeOffset = Calendar.current.component(.weekday, from: .now) == 2 ? 0 : -1
         app = launchDemo(plan: DemoPlan.json(), activities: ["0:squash:55:152", "\(hikeOffset):hiking:100:112"])
         _ = app.tabBars.firstMatch.waitForExistence(timeout: 30)
+        shot("39-accueil-avant-seance-du-jour")
         app.swipeUp()
         shot("40-accueil-en-plus")
         audit("Accueil — activités en plus", app)

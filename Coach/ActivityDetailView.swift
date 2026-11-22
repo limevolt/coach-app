@@ -149,6 +149,7 @@ struct ActivityDetailView: View {
                     Image(systemName: Theme.icon(for: session.type)).foregroundStyle(Theme.color(for: session.type))
                 }
                 .font(.detail).foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
                 Text("Si cette activité devient ta séance du jour, « \(session.title) » comptera comme faite.")
                     .font(.detail).foregroundStyle(Theme.text)
                     .fixedSize(horizontal: false, vertical: true)
