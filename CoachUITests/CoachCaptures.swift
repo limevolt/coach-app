@@ -299,6 +299,12 @@ final class CoachCaptures: XCTestCase {
     /// Ouvre une séance depuis l'accueil (#54) : la pastille affiche le jour, puis la ligne de la carte ouvre la séance.
     @MainActor
     func openSession(_ text: String, in app: XCUIApplication) -> Bool {
+        // Séance d'une autre semaine (capture lancée un lundi, séance passée) : « Tout le plan ».
+        if !button(text, in: app).waitForExistence(timeout: 5) {
+            guard tap("Tout le plan", in: app) else { return false }
+            Thread.sleep(forTimeInterval: 0.6)
+            return tap(text, in: app)
+        }
         guard tap(text, in: app) else { return false }
         let matches = app.buttons.containing(NSPredicate(format: "label CONTAINS[c] %@", text))
         guard matches.count > 1 else { return true }
