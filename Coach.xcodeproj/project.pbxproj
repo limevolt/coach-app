@@ -67,6 +67,7 @@
 		801C62B7D0E42C0843D23D1C /* RunScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99BD1ECD404DB2315F4CB7D8 /* RunScheduler.swift */; };
 		80F341FDEBEBDE36145F0416 /* DemoMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6097D8724285314AF6D5C949 /* DemoMode.swift */; };
 		8114A82FDF9E0E45EE1F6E6B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 36ED7C29460F89A7A9A816B1 /* Assets.xcassets */; };
+		8118CA7306E3723EE11F4722 /* NavigationBarStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274FB8C9CA43AFA77F3E3430 /* NavigationBarStyle.swift */; };
 		816A05FD7B69A6E08F79DA15 /* Outfit-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3A94A8554D3534DDA5A5B299 /* Outfit-Regular.ttf */; };
 		818C210E3213408061381F1F /* OFL-Outfit.txt in Resources */ = {isa = PBXBuildFile; fileRef = 6E3BD735048A1D2577516BA2 /* OFL-Outfit.txt */; };
 		833CF3F23315B35AD8F3C0AA /* OwnCoach.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A43E92352C85583773BDC39 /* OwnCoach.swift */; };
@@ -102,6 +103,7 @@
 		DEF840ACDE27552F96B25523 /* Outfit-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = EFCD52B3FF61A80EF853190A /* Outfit-Bold.ttf */; };
 		DF0318C29903F6EB4EED560B /* CoachControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE78CB53888BAF0BF09DB385 /* CoachControls.swift */; };
 		E03F482288B9F4D4923EF730 /* SessionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BCEB04270CDBFAB907B3042 /* SessionDetailView.swift */; };
+		E0688256DBC2C973BAF97707 /* CoachTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59CBCEC04B1895240D53C3F1 /* CoachTabBar.swift */; };
 		E1DF8F935A11ECB154242625 /* Outfit-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9065AE64029D887414A302BC /* Outfit-Medium.ttf */; };
 		E40098F7E50B53627A343BEE /* ExerciseAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AD7181E658FD44CEBD338B0 /* ExerciseAnimation.swift */; };
 		E41992555F3D17F143761864 /* FeedbackPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CCD9F7E305075A4B543DCC4 /* FeedbackPlannerTests.swift */; };
@@ -175,6 +177,7 @@
 		1A98D9EE13E10A332EC287DF /* WorkoutManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutManager.swift; sourceTree = "<group>"; };
 		1C2AF906766BFC74E40B5658 /* PlanIntensityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanIntensityTests.swift; sourceTree = "<group>"; };
 		1F5A6F77FC2EA09B7D407281 /* ExerciseLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLibrary.swift; sourceTree = "<group>"; };
+		274FB8C9CA43AFA77F3E3430 /* NavigationBarStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationBarStyle.swift; sourceTree = "<group>"; };
 		276E7638F419A5D3A0590E11 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		27D8F44A98303FEE3588914E /* SessionBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionBuilder.swift; sourceTree = "<group>"; };
 		2A43E92352C85583773BDC39 /* OwnCoach.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnCoach.swift; sourceTree = "<group>"; };
@@ -196,6 +199,7 @@
 		4E6C06F91F59B047799297AF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		55CC634D74040B9A1862DFB4 /* Coach.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Coach.entitlements; sourceTree = "<group>"; };
 		56FEFFD9C39F28F9938C9D07 /* WorkoutScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutScreens.swift; sourceTree = "<group>"; };
+		59CBCEC04B1895240D53C3F1 /* CoachTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachTabBar.swift; sourceTree = "<group>"; };
 		5BC2FE5D6D5989A6C962A7D0 /* HealthReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthReader.swift; sourceTree = "<group>"; };
 		5CCD9F7E305075A4B543DCC4 /* FeedbackPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackPlannerTests.swift; sourceTree = "<group>"; };
 		6097D8724285314AF6D5C949 /* DemoMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoMode.swift; sourceTree = "<group>"; };
@@ -339,6 +343,7 @@
 				55CC634D74040B9A1862DFB4 /* Coach.entitlements */,
 				912D6F261042F3CACC531D2D /* CoachApp.swift */,
 				FE78CB53888BAF0BF09DB385 /* CoachControls.swift */,
+				59CBCEC04B1895240D53C3F1 /* CoachTabBar.swift */,
 				EEE5665EC92A631AFA09DBCE /* Collapsible.swift */,
 				EAEAC8B7EFE1AEA3EEB3B30A /* DestructiveButton.swift */,
 				3819F510E1AE826C638EB6F3 /* ExerciseGuideView.swift */,
@@ -347,6 +352,7 @@
 				7F7A31251C7C102888E383FC /* HomeWeek.swift */,
 				4E6C06F91F59B047799297AF /* Info.plist */,
 				C6BCAB4F5CBE08EEAD7F59B9 /* MailView.swift */,
+				274FB8C9CA43AFA77F3E3430 /* NavigationBarStyle.swift */,
 				2A43E92352C85583773BDC39 /* OwnCoach.swift */,
 				7BFF2B6DE85353BC2F5E9726 /* PhoneConnectivity.swift */,
 				D5C68541DC7A6C6D335CADFF /* PlanFormat.swift */,
@@ -686,6 +692,7 @@
 				43F18FB2DCD8D19787D3F09F /* CoachMemory.swift in Sources */,
 				8F148A94BA426F56B6317A92 /* CoachModules.swift in Sources */,
 				411B948974297B5F628405D6 /* CoachStorage.swift in Sources */,
+				E0688256DBC2C973BAF97707 /* CoachTabBar.swift in Sources */,
 				A61F07ADD1A3211330292A7A /* Collapsible.swift in Sources */,
 				DD3F4BAB78B17B131A286CC5 /* DayPlacer.swift in Sources */,
 				79EDDA1211FD2C5DDF7CC9B4 /* DemoMode.swift in Sources */,
@@ -699,6 +706,7 @@
 				9DE8E796EC1E88D558090CEF /* HealthReader.swift in Sources */,
 				3B1B88D7CB6ABAC1DFAD6330 /* HomeWeek.swift in Sources */,
 				EEA60429663CA54E818171BE /* MailView.swift in Sources */,
+				8118CA7306E3723EE11F4722 /* NavigationBarStyle.swift in Sources */,
 				833CF3F23315B35AD8F3C0AA /* OwnCoach.swift in Sources */,
 				7F240FBB125630B4B79B89B5 /* PhoneConnectivity.swift in Sources */,
 				5ED922B6D4F1954261DE2B75 /* PlanCalendar.swift in Sources */,

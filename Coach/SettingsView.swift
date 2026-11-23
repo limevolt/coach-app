@@ -20,7 +20,7 @@ struct SettingsView: View {
             Form {
                 Section {
                     NavigationLink {
-                        ExerciseLibraryView()
+                        ExerciseLibraryView().tabBarSpace()
                     } label: {
                         Label("Bibliothèque d'exercices animés", systemImage: "figure.strengthtraining.functional")
                     }
@@ -28,7 +28,7 @@ struct SettingsView: View {
 
                 Section {
                     NavigationLink {
-                        OwnCoachSettingsView()
+                        OwnCoachSettingsView().tabBarSpace()
                     } label: {
                         LabeledContent {
                             Text(ownCoachEnabled ? "Activé" : "Désactivé")
@@ -128,6 +128,7 @@ struct SettingsView: View {
                 }
             }
             .themedForm()
+            .tabBarSpace()
             .navigationTitle("Réglages")
             .shareFileSheet($exportFile)
             .task { healthRequested = await HealthReader().wasAuthorizationRequested() }

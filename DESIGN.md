@@ -192,10 +192,22 @@ repos et « Prêt ? », chiffre blanc sur fond carte.
   pas une rangée de boutons.
 - Prévoir les états : vide (aucun plan), chargement, erreur (import JSON invalide), terminé.
 - Dynamic Type testé à la plus grande taille, pas seulement par défaut.
-- **iOS 26 / Liquid Glass** : les barres natives (navigation, onglets, outils) prennent le
-  nouveau style automatiquement. Les garder natives, sans fond opaque maison, et laisser le
-  contenu défiler dessous. L'app vise iOS 17 : toute API Liquid Glass (`glassEffect`…) doit
-  être sous `if #available(iOS 26, *)`. Le verre est réservé aux commandes, pas aux cartes.
+- **Barre d'onglets maison `CoachTabBar`** (#64, maquette « Coach — barre d'onglets et boutons du haut »,
+  validée par le propriétaire le 23/11/2026) : fond `Theme.bg`, trait `Theme.line` en haut, sans verre ni
+  capsule, toujours visible. Onglet choisi = petit trait citron vert collé en haut + icône et libellé citron
+  vert, libellé semi-gras ; les autres en `Theme.muted`. Appuyé : pastille `Theme.card2`. Libellés de taille
+  fixe, visionneuse de grand contenu à l'appui long. Fondu au-dessus de la barre. Retoucher « Plan » ramène
+  à l'accueil, puis en haut de la page, sans rien effacer (`tabReselect`).
+  La `TabView` native reste dessous (état des onglets), seule sa barre est masquée (`.coachTabBar(_:)`).
+- **Boutons du haut sans bulle** (#64) : texte (17) ou icône (`BarIcon`, cible 44) posés sur le fond, en
+  blanc ; retour = « ‹ Plan » ; la validation d'une feuille en citron vert semi-gras, grise si inactive ;
+  appuyé = atténué. En haut de page la barre est transparente ; quand la page défile, elle prend le fond
+  de l'app avec un trait `Theme.separator` dessous (sans titre au centre). Réglages dans `Coach/NavigationBarStyle.swift`.
+- **iOS 26 / Liquid Glass : désactivé pour l'app** (`UIDesignRequiresCompatibility` dans `project.yml`,
+  #64) : c'est ce qui permet d'appliquer la maquette validée. Les feuilles et menus restent natifs
+  (style iOS 18). On perd la réduction de la barre au défilement. **À revoir avant
+  Xcode 27**, qui retirera cette option : il faudra alors masquer le verre bouton par bouton.
+  Le verre n'est jamais utilisé pour les cartes.
 
 ## Format d'une maquette (avant de coder)
 

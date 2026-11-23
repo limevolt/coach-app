@@ -26,23 +26,41 @@ struct PlanView: View {
     @State private var selectedDay: Date?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
+    /// Ré-appui sur l'onglet Plan (#64) : retour à l'accueil, puis en haut de la page.
+    @Environment(\.tabReselect) private var reselect
+    @State private var path = NavigationPath()
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                if let plan = store.plan {
-                    content(plan)
-                } else {
-                    emptyState
+        NavigationStack(path: $path) {
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(spacing: 0) {
+                        Color.clear.frame(height: 0).id(Self.topAnchor)
+                        if let plan = store.plan {
+                            content(plan)
+                        } else {
+                            emptyState
+                        }
+                    }
+                }
+                .onChange(of: reselect) {
+                    if path.isEmpty {
+                        withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo(Self.topAnchor, anchor: .top) }
+                    } else {
+                        path = NavigationPath()
+                    }
                 }
             }
+            .tabBarSpace()
             .background(Theme.bg.ignoresSafeArea())
-            .navigationDestination(for: PlannedSession.self) { SessionDetailView(session: $0) }
-            .navigationDestination(for: HealthActivity.self) { ActivityDetailView(activity: $0) }
+            .navigationDestination(for: PlannedSession.self) { SessionDetailView(session: $0).tabBarSpace() }
+            .navigationDestination(for: HealthActivity.self) { ActivityDetailView(activity: $0).tabBarSpace() }
             .task(id: now) { await store.refreshActivities(now: now) }
             // Nouveau jour ou autre semaine : la carte revient à aujourd'hui.
             .onChange(of: Calendar.current.startOfDay(for: now)) { selectedDay = nil }
             .toolbar(.hidden, for: .navigationBar)
+            // Titre invisible ici : c'est le libellé du retour (« ‹ Plan ») sur les écrans ouverts depuis l'accueil.
+            .navigationTitle("Plan")
             // Barre masquée : un fond sous l'heure, pour que la liste ne défile pas sous le texte.
             .safeAreaInset(edge: .top, spacing: 0) {
                 Color.clear.frame(height: 0).background(Theme.bg)
@@ -226,6 +244,8 @@ struct PlanView: View {
         .padding(.bottom, 24)
     }
 
+    private static let topAnchor = "haut-de-page"
+
     /// « Semaine 3 sur 20 · 17–23 nov. », « Cette semaine » et le bouton ••• .
     private func header(_ week: WeekOverview) -> some View {
         HStack(alignment: .bottom, spacing: 12) {
@@ -255,7 +275,7 @@ struct PlanView: View {
         return "Semaine \(number) sur \(week.totalWeeks) · \(range)"
     }
 
-    /// Actions du plan, dans un menu ••• (rond, cible de 44 pt).
+    /// Actions du plan, dans un menu ••• (cible de 44 pt).
     private var planMenu: some View {
         Menu {
             Button("Créer un nouveau plan", systemImage: "sparkles") { showWizard = true }
@@ -272,12 +292,8 @@ struct PlanView: View {
                 }
             }
         } label: {
-            Image(systemName: "ellipsis")
-                .font(Theme.iconFont)
-                .foregroundStyle(Theme.text)
-                .frame(width: Theme.minTap, height: Theme.minTap)
-                .background(Theme.card, in: Circle())
-                .contentShape(Circle())
+            // Sans bulle, comme les boutons du haut des autres écrans (#64).
+            BarIcon(systemName: "ellipsis")
         }
         .accessibilityLabel("Actions du plan")
         .disabled(busy || exporting)

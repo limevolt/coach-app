@@ -31,34 +31,39 @@ struct CoachApp: App {
 struct ContentView: View {
     @Environment(PlanStore.self) private var store
     @State private var tab = AppTab.plan
+    /// Appui sur l'onglet déjà choisi (#64) : compteur transmis à l'onglet (`tabReselect`).
+    @State private var reselects: [AppTab: Int] = [:]
 
     enum AppTab: Hashable { case plan, timers, report, settings }
 
+    private static let tabs: [CoachTab<AppTab>] = [
+        CoachTab(id: .plan, title: "Plan", systemImage: "calendar"),
+        CoachTab(id: .timers, title: "Libre", systemImage: "timer"),
+        CoachTab(id: .report, title: "Suivi", systemImage: "chart.line.uptrend.xyaxis"),
+        CoachTab(id: .settings, title: "Réglages", systemImage: "gearshape")
+    ]
+
     init() {
-        // Barres natives (Liquid Glass sous iOS 26, DESIGN.md) : seuls les titres passent en Outfit,
-        // à une taille qui suit Dynamic Type.
-        let bar = UINavigationBar.appearance()
-        if let large = UIFont(name: Outfit.name(for: .semibold), size: 34) {
-            bar.largeTitleTextAttributes = [.font: UIFontMetrics(forTextStyle: .largeTitle).scaledFont(for: large)]
-        }
-        if let title = UIFont(name: Outfit.name(for: .semibold), size: 17) {
-            bar.titleTextAttributes = [.font: UIFontMetrics(forTextStyle: .headline).scaledFont(for: title)]
-        }
+        NavigationBarStyle.apply()
     }
 
     var body: some View {
         TabView(selection: $tab) {
             PlanView(openTimers: { tab = .timers })
-                .tabItem { Label("Plan", systemImage: "calendar") }
+                .environment(\.tabReselect, reselects[.plan, default: 0])
+                .coachTabBar(bar)
                 .tag(AppTab.plan)
             TimersView()
-                .tabItem { Label("Libre", systemImage: "timer") }
+                .environment(\.tabReselect, reselects[.timers, default: 0])
+                .coachTabBar(bar)
                 .tag(AppTab.timers)
             ReportView()
-                .tabItem { Label("Suivi", systemImage: "chart.line.uptrend.xyaxis") }
+                .environment(\.tabReselect, reselects[.report, default: 0])
+                .coachTabBar(bar)
                 .tag(AppTab.report)
             SettingsView()
-                .tabItem { Label("Réglages", systemImage: "gearshape") }
+                .environment(\.tabReselect, reselects[.settings, default: 0])
+                .coachTabBar(bar)
                 .tag(AppTab.settings)
         }
         .alert("Coach",
@@ -70,6 +75,14 @@ struct ContentView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(store.alertMessage ?? "")
+        }
+    }
+}
+
+extension ContentView {
+    private var bar: some View {
+        CoachTabBar(tabs: Self.tabs, selection: $tab) { reselected in
+            reselects[reselected, default: 0] += 1
         }
     }
 }

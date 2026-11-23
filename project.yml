@@ -46,6 +46,8 @@ targets:
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         UIUserInterfaceStyle: Dark
+        # Barres au style de Coach, sans Liquid Glass (#64, DESIGN.md) : à revoir avant Xcode 27.
+        UIDesignRequiresCompatibility: true
         UIAppFonts:
           - Outfit-Regular.ttf
           - Outfit-Medium.ttf

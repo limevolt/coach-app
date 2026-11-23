@@ -15,7 +15,7 @@ final class CoachCaptures: XCTestCase {
     func testCaptures() {
         // 1. Accueil, séance du jour
         var app = launchDemo(plan: DemoPlan.json())
-        _ = app.tabBars.firstMatch.waitForExistence(timeout: 30)
+        _ = app.buttons["onglet-Plan"].waitForExistence(timeout: 30)
         shot("01-accueil")
         audit("Accueil", app)
         app.swipeUp()
@@ -26,7 +26,8 @@ final class CoachCaptures: XCTestCase {
         if openSession("Footing", in: app) {
             shot("03-seance-course")
             audit("Séance course", app)
-            app.swipeUp()
+            // Défilement depuis la liste (un geste sur un bouton ne fait pas défiler) : barre du haut sur fond (#64).
+            app.scrollViews.firstMatch.swipeUp()
             shot("04-seance-course-bas")
             back(app)
         }
@@ -50,9 +51,21 @@ final class CoachCaptures: XCTestCase {
             back(app)
         }
 
+        // Barre d'onglets de Coach (#64) : pas de barre native sur un écran ouvert depuis l'accueil,
+        // et ré-appui sur « Plan » = retour à l'accueil.
+        if openSession("Footing", in: app) {
+            if app.tabBars.count > 0 { note("Barre d'onglets native visible sur la séance (#64)") }
+            if !app.buttons["onglet-Plan"].exists { note("Barre d'onglets de Coach absente sur la séance (#64)") }
+            app.buttons["onglet-Plan"].tap()
+            if !app.staticTexts["Cette semaine"].waitForExistence(timeout: 5) {
+                note("Ré-appui sur Plan : pas de retour à l'accueil (#64)")
+                back(app)
+            }
+        }
+
         // 3. Les autres onglets
         for (index, tab) in ["Libre", "Suivi", "Réglages"].enumerated() {
-            let item = app.tabBars.buttons[tab]
+            let item = app.buttons["onglet-\(tab)"]
             guard item.waitForExistence(timeout: 5) else {
                 note("Onglet introuvable : \(tab)")
                 continue
@@ -64,14 +77,14 @@ final class CoachCaptures: XCTestCase {
 
         // 4a. Accueil : séance du jour faite (#40, carte « Fait aujourd'hui »)
         app = launchDemo(plan: DemoPlan.json(), done: [DemoPlan.sessionIds[0]])
-        _ = app.tabBars.firstMatch.waitForExistence(timeout: 30)
+        _ = app.buttons["onglet-Plan"].waitForExistence(timeout: 30)
         shot("10b-accueil-fait")
 
         // 4b. Séances Santé d'une autre app (#54) : squash aujourd'hui (course prévue), randonnée hier.
         // La randonnée reste dans la semaine affichée, même un lundi.
         let hikeOffset = Calendar.current.component(.weekday, from: .now) == 2 ? 0 : -1
         app = launchDemo(plan: DemoPlan.json(), activities: ["0:squash:55:152", "\(hikeOffset):hiking:100:112"])
-        _ = app.tabBars.firstMatch.waitForExistence(timeout: 30)
+        _ = app.buttons["onglet-Plan"].waitForExistence(timeout: 30)
         shot("39-accueil-avant-seance-du-jour")
         app.swipeUp()
         shot("40-accueil-en-plus")
@@ -96,7 +109,7 @@ final class CoachCaptures: XCTestCase {
 
         // 4. Accueil un jour de repos, avec des séances faites
         app = launchDemo(plan: DemoPlan.json(firstOffset: -2), done: Array(DemoPlan.sessionIds.prefix(2)))
-        _ = app.tabBars.firstMatch.waitForExistence(timeout: 30)
+        _ = app.buttons["onglet-Plan"].waitForExistence(timeout: 30)
         shot("10-accueil-repos")
         // Séance faite : ressenti + menu « Marquer comme non faite » (#13)
         if openSession("Footing", in: app) {
@@ -113,7 +126,7 @@ final class CoachCaptures: XCTestCase {
 
         // Deuxième douleur au même endroit : conseil du coach sur l'accueil (#44, B2)
         app = launchDemo(plan: DemoPlan.json(firstOffset: -2), done: Array(DemoPlan.sessionIds.prefix(2)), pain: "knee")
-        _ = app.tabBars.firstMatch.waitForExistence(timeout: 30)
+        _ = app.buttons["onglet-Plan"].waitForExistence(timeout: 30)
         // Défilement court : le titre du conseil reste visible, même sur petit iPhone.
         let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75))
         from.press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45)))
@@ -122,7 +135,7 @@ final class CoachCaptures: XCTestCase {
 
         // Séance passée non faite : « Pas encore faite » avec « Adapter » (#21)
         app = launchDemo(plan: DemoPlan.json(firstOffset: -3))
-        _ = app.tabBars.firstMatch.waitForExistence(timeout: 30)
+        _ = app.buttons["onglet-Plan"].waitForExistence(timeout: 30)
         if openSession("Footing", in: app) {
             shot("16-seance-manquee")
             // « Je l'ai faite » → feuille « Ton retour » (#44, B2)
@@ -157,7 +170,7 @@ final class CoachCaptures: XCTestCase {
         // 5. Accueil en très grande taille de texte
         app = launchDemo(plan: DemoPlan.json(),
                          arguments: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityL"])
-        _ = app.tabBars.firstMatch.waitForExistence(timeout: 30)
+        _ = app.buttons["onglet-Plan"].waitForExistence(timeout: 30)
         shot("11-accueil-grand-texte")
         app.swipeUp()
         shot("12-accueil-grand-texte-bas")
@@ -171,7 +184,7 @@ final class CoachCaptures: XCTestCase {
 
         // 6. Aucun plan
         app = launchDemo(plan: nil)
-        _ = app.tabBars.firstMatch.waitForExistence(timeout: 30)
+        _ = app.buttons["onglet-Plan"].waitForExistence(timeout: 30)
         shot("13-accueil-vide")
         audit("Accueil vide", app)
 

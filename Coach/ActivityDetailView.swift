@@ -53,8 +53,10 @@ struct ActivityDetailView: View {
                             Task { await store.unlink(activity) }
                         }
                     } label: {
-                        Image(systemName: "ellipsis").accessibilityLabel("Actions")
+                        BarIcon(systemName: "ellipsis").accessibilityLabel("Actions")
                     }
+                    // L'app est teintée citron vert : les boutons du haut restent blancs (#64).
+                    .tint(Theme.text)
                 }
             }
         }
