@@ -196,12 +196,13 @@ repos et « Prêt ? », chiffre blanc sur fond carte.
   validée par le propriétaire le 23/11/2026) : fond `Theme.bg`, trait `Theme.line` en haut, sans verre ni
   capsule, toujours visible. Onglet choisi = petit trait citron vert collé en haut + icône et libellé citron
   vert, libellé semi-gras ; les autres en `Theme.muted`. Appuyé : pastille `Theme.card2`. Libellés de taille
-  fixe, visionneuse de grand contenu à l'appui long. Toucher l'onglet déjà choisi ramène à son premier écran.
+  fixe, visionneuse de grand contenu à l'appui long. Fondu au-dessus de la barre. Retoucher « Plan » ramène
+  à l'accueil, puis en haut de la page, sans rien effacer (`tabReselect`).
   La `TabView` native reste dessous (état des onglets), seule sa barre est masquée (`.coachTabBar(_:)`).
 - **Boutons du haut sans bulle** (#64) : texte (17) ou icône (`BarIcon`, cible 44) posés sur le fond, en
   blanc ; retour = « ‹ Plan » ; la validation d'une feuille en citron vert semi-gras, grise si inactive ;
   appuyé = atténué. En haut de page la barre est transparente ; quand la page défile, elle prend le fond
-  de l'app avec un trait `Theme.separator` dessous. Réglages dans `Coach/NavigationBarStyle.swift`.
+  de l'app avec un trait `Theme.separator` dessous (sans titre au centre). Réglages dans `Coach/NavigationBarStyle.swift`.
 - **iOS 26 / Liquid Glass : désactivé pour l'app** (`UIDesignRequiresCompatibility` dans `project.yml`,
   #64) : c'est ce qui permet d'appliquer la maquette validée. Les feuilles et menus restent natifs
   (style iOS 18). On perd la réduction de la barre au défilement. **À revoir avant

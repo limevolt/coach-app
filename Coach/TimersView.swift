@@ -46,8 +46,9 @@ struct TimersView: View {
                             TimerSegment(kind: "rest", seconds: 30)
                         ])
                     } label: {
-                        Image(systemName: "plus").font(Theme.barIconFont)
+                        BarIcon(systemName: "plus")
                     }
+                    // L'app est teintée citron vert : les boutons du haut restent blancs (#64).
                     .tint(Theme.text)
                     .accessibilityLabel("Nouveau minuteur")
                 }

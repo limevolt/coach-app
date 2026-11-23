@@ -31,8 +31,8 @@ struct CoachApp: App {
 struct ContentView: View {
     @Environment(PlanStore.self) private var store
     @State private var tab = AppTab.plan
-    /// Appui sur l'onglet déjà choisi : nouvel identifiant = retour au premier écran, en haut (#64).
-    @State private var resets: [AppTab: Int] = [:]
+    /// Appui sur l'onglet déjà choisi (#64) : compteur transmis à l'onglet (`tabReselect`).
+    @State private var reselects: [AppTab: Int] = [:]
 
     enum AppTab: Hashable { case plan, timers, report, settings }
 
@@ -50,19 +50,19 @@ struct ContentView: View {
     var body: some View {
         TabView(selection: $tab) {
             PlanView(openTimers: { tab = .timers })
-                .id(resets[.plan, default: 0])
+                .environment(\.tabReselect, reselects[.plan, default: 0])
                 .coachTabBar(bar)
                 .tag(AppTab.plan)
             TimersView()
-                .id(resets[.timers, default: 0])
+                .environment(\.tabReselect, reselects[.timers, default: 0])
                 .coachTabBar(bar)
                 .tag(AppTab.timers)
             ReportView()
-                .id(resets[.report, default: 0])
+                .environment(\.tabReselect, reselects[.report, default: 0])
                 .coachTabBar(bar)
                 .tag(AppTab.report)
             SettingsView()
-                .id(resets[.settings, default: 0])
+                .environment(\.tabReselect, reselects[.settings, default: 0])
                 .coachTabBar(bar)
                 .tag(AppTab.settings)
         }
@@ -82,7 +82,7 @@ struct ContentView: View {
 extension ContentView {
     private var bar: some View {
         CoachTabBar(tabs: Self.tabs, selection: $tab) { reselected in
-            resets[reselected, default: 0] += 1
+            reselects[reselected, default: 0] += 1
         }
     }
 }

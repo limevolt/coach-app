@@ -2,6 +2,8 @@
 // Remplace la barre native (Liquid Glass) : fond de l'app, trait gris en haut ; onglet choisi =
 // petit trait citron vert collé en haut, icône et libellé citron vert, libellé semi-gras.
 // La TabView native reste dessous (état de chaque onglet, apparitions) ; seule sa barre est masquée.
+// Ré-appui sur l'onglet affiché : `tabReselect` change, l'onglet revient à son premier écran
+// sans rien effacer (texte saisi, suivi généré, export en cours).
 
 import SwiftUI
 
@@ -19,6 +21,8 @@ struct CoachTabBar<ID: Hashable>: View {
 
     /// Clavier ouvert : la barre s'efface au lieu de remonter avec lui.
     @State private var keyboardShown = false
+    /// iPhone à bouton d'accueil (pas de zone en bas) : petite marge sous les libellés.
+    @State private var noBottomInset = false
 
     var body: some View {
         Group {
@@ -29,6 +33,20 @@ struct CoachTabBar<ID: Hashable>: View {
                     }
                 }
                 .padding(.horizontal, Theme.tabPressInset * 2)
+                .padding(.bottom, noBottomInset ? Theme.tabBarBottomPadding : 0)
+                .background {
+                    GeometryReader { geometry in
+                        Color.clear.onAppear { noBottomInset = geometry.safeAreaInsets.bottom == 0 }
+                    }
+                }
+                // Fondu au-dessus de la barre : le contenu ne s'arrête pas net sur le trait.
+                .overlay(alignment: .top) {
+                    LinearGradient(colors: [Theme.bg.opacity(0), Theme.bg], startPoint: .top, endPoint: .bottom)
+                        .frame(height: Theme.bottomFadeHeight)
+                        .offset(y: -Theme.bottomFadeHeight)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
                 .background(alignment: .top) {
                     VStack(spacing: 0) {
                         Theme.line.frame(height: Theme.quietStroke)
@@ -53,10 +71,10 @@ struct CoachTabBar<ID: Hashable>: View {
         return Button {
             if on { reselect(tab.id) } else { selection = tab.id }
         } label: {
-            VStack(spacing: 3) {
+            VStack(spacing: Theme.tabItemSpacing) {
                 Image(systemName: tab.systemImage)
                     .font(Theme.tabIconFont)
-                    .frame(height: 26)
+                    .frame(height: Theme.tabIconHeight)
                 Text(tab.title)
                     .font(on ? Theme.tabLabelSelectedFont : Theme.tabLabelFont)
                     .lineLimit(1)
@@ -98,6 +116,12 @@ private struct TabPressStyle: ButtonStyle {
                 }
             }
     }
+}
+
+extension EnvironmentValues {
+    /// Compteur de ré-appuis sur l'onglet affiché : chaque onglet y réagit à sa façon
+    /// (Plan : retour à l'accueil, puis en haut de la page).
+    @Entry var tabReselect = 0
 }
 
 extension View {

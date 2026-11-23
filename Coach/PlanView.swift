@@ -26,14 +26,29 @@ struct PlanView: View {
     @State private var selectedDay: Date?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
+    /// Ré-appui sur l'onglet Plan (#64) : retour à l'accueil, puis en haut de la page.
+    @Environment(\.tabReselect) private var reselect
+    @State private var path = NavigationPath()
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                if let plan = store.plan {
-                    content(plan)
-                } else {
-                    emptyState
+        NavigationStack(path: $path) {
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(spacing: 0) {
+                        Color.clear.frame(height: 0).id(Self.topAnchor)
+                        if let plan = store.plan {
+                            content(plan)
+                        } else {
+                            emptyState
+                        }
+                    }
+                }
+                .onChange(of: reselect) {
+                    if path.isEmpty {
+                        withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo(Self.topAnchor, anchor: .top) }
+                    } else {
+                        path = NavigationPath()
+                    }
                 }
             }
             .background(Theme.bg.ignoresSafeArea())
@@ -227,6 +242,8 @@ struct PlanView: View {
         .padding(.top, 8)
         .padding(.bottom, 24)
     }
+
+    private static let topAnchor = "haut-de-page"
 
     /// « Semaine 3 sur 20 · 17–23 nov. », « Cette semaine » et le bouton ••• .
     private func header(_ week: WeekOverview) -> some View {

@@ -26,7 +26,8 @@ final class CoachCaptures: XCTestCase {
         if openSession("Footing", in: app) {
             shot("03-seance-course")
             audit("Séance course", app)
-            app.swipeUp()
+            // Défilement depuis la liste (un geste sur un bouton ne fait pas défiler) : barre du haut sur fond (#64).
+            app.scrollViews.firstMatch.swipeUp()
             shot("04-seance-course-bas")
             back(app)
         }
@@ -48,6 +49,18 @@ final class CoachCaptures: XCTestCase {
             if tap("Très fatigué", in: app) { shot("55-retour-fatigue") }
             _ = tap("Plus tard", in: app)
             back(app)
+        }
+
+        // Barre d'onglets de Coach (#64) : pas de barre native sur un écran ouvert depuis l'accueil,
+        // et ré-appui sur « Plan » = retour à l'accueil.
+        if openSession("Footing", in: app) {
+            if app.tabBars.count > 0 { note("Barre d'onglets native visible sur la séance (#64)") }
+            if !app.buttons["onglet-Plan"].exists { note("Barre d'onglets de Coach absente sur la séance (#64)") }
+            app.buttons["onglet-Plan"].tap()
+            if !app.staticTexts["Cette semaine"].waitForExistence(timeout: 5) {
+                note("Ré-appui sur Plan : pas de retour à l'accueil (#64)")
+                back(app)
+            }
         }
 
         // 3. Les autres onglets

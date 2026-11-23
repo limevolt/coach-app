@@ -136,6 +136,11 @@ enum Theme {
     /// Pastille d'un onglet appuyé.
     static let tabPressRadius: CGFloat = 12
     static let tabPressInset: CGFloat = 4
+    /// Espace entre l'icône et le libellé d'un onglet ; hauteur réservée à l'icône.
+    static let tabItemSpacing: CGFloat = 3
+    static let tabIconHeight: CGFloat = 26
+    /// Marge sous les libellés sur un iPhone à bouton d'accueil.
+    static let tabBarBottomPadding: CGFloat = 6
     /// Icône d'un onglet (taille fixe, comme la barre d'Apple).
     static let tabIconFont = Font.system(size: 22, weight: .medium)
     /// Libellé d'un onglet : 12, taille fixe (appui long = visionneuse de grand contenu).
