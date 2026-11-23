@@ -81,7 +81,8 @@ struct CoachTabBar<ID: Hashable>: View {
                     .minimumScaleFactor(0.8)
             }
             .foregroundStyle(on ? Theme.accent : Theme.muted)
-            .frame(maxWidth: .infinity, minHeight: Theme.tabBarHeight)
+            .padding(.top, Theme.tabItemTopPadding)
+            .frame(maxWidth: .infinity, minHeight: Theme.tabBarHeight, alignment: .top)
             .overlay(alignment: .top) {
                 if on {
                     UnevenRoundedRectangle(bottomLeadingRadius: Theme.tabIndicatorHeight,
