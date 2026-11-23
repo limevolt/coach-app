@@ -508,7 +508,9 @@ struct PainAdviceCard: View {
     /// « Escaliers et intervalles remplacés par un footing facile jusqu'au dimanche 6 déc. … »
     static func sentence(until: Date?) -> String {
         let end = until.map { " jusqu'au " + $0.formatted(.dateTime.weekday(.wide).day().month(.abbreviated)) } ?? ""
-        return "Escaliers et intervalles remplacés par un footing facile\(end). Tu peux annuler depuis chaque séance."
+        // « déc. » finit déjà par un point : pas de double point.
+        let sentence = "Escaliers et intervalles remplacés par un footing facile\(end)"
+        return sentence + (sentence.hasSuffix(".") ? "" : ".") + " Tu peux annuler depuis chaque séance."
     }
 
     var body: some View {
