@@ -175,7 +175,7 @@ private struct WizardStepView: View {
     // MARK: Création
 
     /// Attente maximale du calcul du plan (normalement moins d'une seconde).
-    static let generationTimeout: Duration = .seconds(20)
+    static let generationTimeout: Duration = .seconds(10)
 
     private func create() {
         guard !creating else { return }
