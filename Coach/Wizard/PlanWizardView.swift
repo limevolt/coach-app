@@ -174,6 +174,9 @@ private struct WizardStepView: View {
 
     // MARK: Création
 
+    /// Attente maximale du calcul du plan (normalement moins d'une seconde).
+    static let generationTimeout: Duration = .seconds(20)
+
     private func create() {
         guard !creating else { return }
         creating = true
@@ -184,9 +187,18 @@ private struct WizardStepView: View {
         let memory = CoachStorage.loadMemory()
         Task {
             do {
-                let generated = try await Task.detached(priority: .userInitiated) {
-                    try PlanGenerator(settings: settings, profile: profile, memory: memory, start: start).generate()
-                }.value
+                // Garde-fou : le calcul est local et rapide ; s'il ne finit pas, on le dit au lieu de tourner sans fin.
+                let result = await Deadline.value(within: Self.generationTimeout) {
+                    await Task.detached(priority: .userInitiated) {
+                        Result { try PlanGenerator(settings: settings, profile: profile, memory: memory, start: start).generate() }
+                    }.value
+                }
+                guard let result else {
+                    createError = "Le coach n'a pas réussi à créer le plan. Réessaie, ou change un réglage (jours, disciplines)."
+                    creating = false
+                    return
+                }
+                let generated = try result.get()
                 // Réglages et profil d'abord : en cas d'échec, le plan actuel n'est pas remplacé.
                 try CoachStorage.save(settings: settings, profile: profile)
                 try await store.apply(generated.plan)

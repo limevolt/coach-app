@@ -106,7 +106,8 @@ final class PlanStore {
         return newPlan
     }
 
-    /// Remplace le plan actuel (l'ancien est archivé) et synchronise la montre.
+    /// Remplace le plan actuel (l'ancien est archivé) et synchronise la montre en arrière-plan :
+    /// le plan est enregistré tout de suite, même si la montre met du temps à répondre (bug « Créer le plan » bloqué).
     func apply(_ newPlan: TrainingPlan) async throws {
         if DoneState.isDifferentPlan(current: plan, new: newPlan) {
             // Autre plan : les séances faites restent dans l'historique mais ne passent pas au nouveau (#45).
@@ -130,7 +131,7 @@ final class PlanStore {
         }
         originals = [:]
         persistOriginals()
-        await sync()
+        Task { await sync() }
     }
 
     /// Archive le plan actuel (historique local).
@@ -159,7 +160,7 @@ final class PlanStore {
         status = nil
         UserDefaults.standard.removeObject(forKey: "lastSyncDay")
         isSyncing = true
-        await RunScheduler.removeAll()
+        _ = await Deadline.value(within: Self.syncTimeout, { await RunScheduler.removeAll() })
         isSyncing = false
         pushToWatch()
     }
@@ -399,6 +400,9 @@ final class PlanStore {
 
     // MARK: Synchronisation montre
 
+    /// Attente maximale de la programmation des courses sur la montre (WorkoutKit).
+    static let syncTimeout: Duration = .seconds(45)
+
     /// `force: false` = une seule fois par jour (au lancement de l'app).
     func sync(force: Bool = true) async {
         if DemoMode.isOn { return }
@@ -408,7 +412,12 @@ final class PlanStore {
         if !force, UserDefaults.standard.string(forKey: "lastSyncDay") == today { return }
         isSyncing = true
         defer { isSyncing = false }
-        status = await RunScheduler.sync(plan: plan)
+        // WorkoutKit peut ne jamais répondre (montre injoignable, autorisation non affichée) : on n'attend pas sans fin.
+        guard let message = await Deadline.value(within: Self.syncTimeout, { await RunScheduler.sync(plan: plan) }) else {
+            status = "La montre n'a pas répondu : les courses ne sont pas encore programmées. Réessaie avec ••• > « Resynchroniser la montre »."
+            return
+        }
+        status = message
         UserDefaults.standard.set(today, forKey: "lastSyncDay")
     }
 
