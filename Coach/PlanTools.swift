@@ -124,7 +124,7 @@ struct NewPlanView: View {
                     Task {
                         do {
                             try await store.apply(proposal.plan)
-                            store.alertMessage = "Plan « \(proposal.plan.title) » appliqué.\n\n\(store.status ?? "")"
+                            store.alertMessage = "Plan « \(proposal.plan.title) » appliqué.\n\nLa montre se met à jour en arrière-plan."
                             dismiss()
                         } catch {
                             coachError = error.localizedDescription

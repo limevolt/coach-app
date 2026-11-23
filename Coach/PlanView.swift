@@ -101,7 +101,7 @@ struct PlanView: View {
                     ProgressView("Préparation du fichier…")
                         .padding()
                         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: Theme.smallButtonRadius))
-                } else if busy || store.isSyncing {
+                } else if busy {
                     ProgressView("Envoi vers la montre…")
                         .padding()
                         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))

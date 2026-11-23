@@ -146,13 +146,9 @@ private struct WizardStepView: View {
                     path.append(next)
                 }
             } label: {
-                HStack(spacing: 10) {
-                    if creating { ProgressView().tint(Theme.accentDark) }
-                    Text(step == .summary
-                         ? (creating ? "Création…" : (store.plan == nil ? "Créer le plan" : "Remplacer mon plan"))
-                         : "Continuer")
-                }
-                .primaryActionStyle(enabled: issue == nil)
+                // Pendant la création, l'écran d'attente recouvre ce bouton (#68).
+                Text(step == .summary ? (store.plan == nil ? "Créer le plan" : "Remplacer mon plan") : "Continuer")
+                    .primaryActionStyle(enabled: issue == nil)
             }
             .buttonStyle(.plain)
             .disabled(issue != nil || creating)

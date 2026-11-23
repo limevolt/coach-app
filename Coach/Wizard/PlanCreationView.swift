@@ -23,6 +23,9 @@ struct PlanCreationView: View {
     @Environment(\.dynamicTypeSize) private var typeSize
 
     static let phraseInterval: Duration = .milliseconds(1600)
+    /// Ligne de sol sous le coureur : sol du dessin à 402 sur 440 (ExerciseAnimation), un peu moins large que lui.
+    private static let groundFromBottom: CGFloat = 34 / 440
+    private static let groundWidth: CGFloat = 0.8
 
     /// Phrases liées aux vraies étapes du moteur (PlanGenerator), sans rien de propre à une personne.
     private var phrases: [String] {
@@ -71,6 +74,9 @@ struct PlanCreationView: View {
             .scrollBounceBehavior(.basedOnSize)
         }
         .background(Theme.bg.ignoresSafeArea())
+        // VoiceOver ne lit plus l'étape cachée dessous.
+        .accessibilityAddTraits(.isModal)
+        .onAppear { announce(state) }
         .task(id: state) { await runPhrases() }
         .sensoryFeedback(.success, trigger: state) { _, new in new == .ready }
         .sensoryFeedback(.error, trigger: state) { _, new in
@@ -108,8 +114,8 @@ struct PlanCreationView: View {
                         // Ligne de sol, au niveau des pieds (sol du dessin à 402 sur 440).
                         Capsule()
                             .fill(Theme.line)
-                            .frame(width: figureSize * 0.8, height: Theme.progressHeight)
-                            .padding(.bottom, figureSize * 34 / 440)
+                            .frame(width: figureSize * Self.groundWidth, height: Theme.progressHeight)
+                            .padding(.bottom, figureSize * Self.groundFromBottom)
                     }
                     .transition(.opacity)
             }
@@ -125,6 +131,8 @@ struct PlanCreationView: View {
             case .working:
                 Text(phrases[min(phraseIndex, phrases.count - 1)])
                     .foregroundStyle(Theme.muted)
+                    // Place réservée : le changement de phrase ne fait rien bouger (l'erreur, elle, s'affiche en entier).
+                    .lineLimit(largeText ? 4 : 2, reservesSpace: true)
                     .id(phraseIndex)
                     .transition(.opacity)
                     // VoiceOver : pas de phrase qui tourne, seulement l'état (la fin est annoncée).
@@ -132,6 +140,7 @@ struct PlanCreationView: View {
             case .ready:
                 Text("Ouverture de ton plan…")
                     .foregroundStyle(Theme.muted)
+                    .lineLimit(largeText ? 4 : 2, reservesSpace: true)
             case .failed(let text):
                 Label(text, systemImage: "exclamationmark.triangle")
                     .foregroundStyle(Theme.danger)
@@ -139,8 +148,6 @@ struct PlanCreationView: View {
         }
         .font(.detail)
         .multilineTextAlignment(.center)
-        // Place réservée : le changement de phrase ne fait rien bouger.
-        .lineLimit(largeText ? 4 : 2, reservesSpace: true)
         .frame(maxWidth: .infinity)
         .accessibilityHidden(state == .ready)
     }
@@ -190,7 +197,7 @@ struct PlanCreationView: View {
 
     private func announce(_ state: PlanCreationState) {
         switch state {
-        case .working: break
+        case .working: AccessibilityNotification.Announcement("Le coach prépare ton plan").post()
         case .ready: AccessibilityNotification.Announcement("Ton plan est prêt").post()
         case .failed(let text): AccessibilityNotification.Announcement(text).post()
         }

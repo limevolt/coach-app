@@ -106,13 +106,13 @@ enum ExerciseLibrary {
                             footAngN: 0, footAngF: 0, handN: sh + handN, handF: sh + handF, effort: 0.5)
         }
         // Pied avant posé / pied arrière levé, puis passage (genou haut), et l'inverse : bras opposés aux jambes.
-        let contactN = runPose(hipY: 206, footN: CGPoint(x: 238, y: 380), footF: CGPoint(x: 146, y: 326),
+        let contactN = runPose(hipY: 198, footN: CGPoint(x: 246, y: 378), footF: CGPoint(x: 134, y: 300),
                               handN: CGPoint(x: -36, y: 62), handF: CGPoint(x: 40, y: 46))
-        let passN = runPose(hipY: 196, footN: CGPoint(x: 198, y: 382), footF: CGPoint(x: 206, y: 300),
+        let passN = runPose(hipY: 190, footN: CGPoint(x: 198, y: 382), footF: CGPoint(x: 214, y: 296),
                            handN: CGPoint(x: 6, y: 72), handF: CGPoint(x: 2, y: 72))
-        let contactF = runPose(hipY: 206, footN: CGPoint(x: 140, y: 326), footF: CGPoint(x: 230, y: 380),
+        let contactF = runPose(hipY: 198, footN: CGPoint(x: 128, y: 300), footF: CGPoint(x: 238, y: 378),
                               handN: CGPoint(x: 40, y: 46), handF: CGPoint(x: -36, y: 62))
-        let passF = runPose(hipY: 196, footN: CGPoint(x: 212, y: 300), footF: CGPoint(x: 190, y: 382),
+        let passF = runPose(hipY: 190, footN: CGPoint(x: 222, y: 296), footF: CGPoint(x: 190, y: 382),
                            handN: CGPoint(x: 2, y: 72), handF: CGPoint(x: 6, y: 72))
         return ExerciseAnimation(
             id: "jog", name: "Course", muscles: [],
