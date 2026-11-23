@@ -111,6 +111,7 @@ struct ReportView: View {
                 }
             }
             .themedForm()
+            .tabBarSpace()
             .navigationTitle("Suivi")
             // Nouvel entraînement dans Santé ? Vérifié à l'ouverture de l'écran et au retour dans l'app.
             .task(id: "\(days)-\(scenePhase == .active)") {

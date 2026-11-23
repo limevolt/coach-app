@@ -36,6 +36,7 @@ struct TimersView: View {
                 }
             }
             .themedForm()
+            .tabBarSpace()
             .navigationTitle("Libre")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { EditButton().tint(Theme.text) }

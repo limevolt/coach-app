@@ -124,11 +124,36 @@ extension EnvironmentValues {
     @Entry var tabReselect = 0
 }
 
+/// Place réservée sous un écran pour la barre d'onglets, posée par-dessus (`coachTabBar`).
+/// Se replie quand le clavier est ouvert, comme la barre.
+private struct TabBarSpacer: View {
+    @State private var keyboardShown = false
+
+    var body: some View {
+        Color.clear
+            .frame(height: keyboardShown ? 0 : Theme.tabBarHeight + Theme.tabBarBottomPadding)
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+                keyboardShown = true
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+                keyboardShown = false
+            }
+            .accessibilityHidden(true)
+    }
+}
+
 extension View {
-    /// Racine d'un onglet : barre native masquée, barre de Coach en bas (y compris sur les écrans
-    /// ouverts depuis cet onglet).
+    /// Racine d'un onglet : barre native masquée, barre de Coach posée en bas, au-dessus de tous
+    /// les écrans de cet onglet.
     func coachTabBar(_ bar: some View) -> some View {
         toolbar(.hidden, for: .tabBar)
-            .safeAreaInset(edge: .bottom, spacing: 0) { bar }
+            .overlay(alignment: .bottom) { bar }
+    }
+
+    /// À mettre sur chaque écran d'un onglet (racine et écrans ouverts depuis elle) : le bas de la
+    /// page et ses boutons fixés en bas restent au-dessus de la barre d'onglets. Un écran poussé ne
+    /// reçoit pas la marge de son onglet : il faut la lui donner lui-même.
+    func tabBarSpace() -> some View {
+        safeAreaInset(edge: .bottom, spacing: 0) { TabBarSpacer() }
     }
 }

@@ -51,9 +51,10 @@ struct PlanView: View {
                     }
                 }
             }
+            .tabBarSpace()
             .background(Theme.bg.ignoresSafeArea())
-            .navigationDestination(for: PlannedSession.self) { SessionDetailView(session: $0) }
-            .navigationDestination(for: HealthActivity.self) { ActivityDetailView(activity: $0) }
+            .navigationDestination(for: PlannedSession.self) { SessionDetailView(session: $0).tabBarSpace() }
+            .navigationDestination(for: HealthActivity.self) { ActivityDetailView(activity: $0).tabBarSpace() }
             .task(id: now) { await store.refreshActivities(now: now) }
             // Nouveau jour ou autre semaine : la carte revient à aujourd'hui.
             .onChange(of: Calendar.current.startOfDay(for: now)) { selectedDay = nil }
