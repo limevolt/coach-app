@@ -17,11 +17,14 @@ enum DemoMode {
     /// Ex. « 0:squash:55:152,-2:hiking:100:112 ».
     static let activitySpecs: [String] = (ProcessInfo.processInfo.environment["COACH_DEMO_ACTIVITIES"] ?? "")
         .split(separator: ",").map(String.init)
+    /// Douleur signalée sur les séances faites (#44), ex. « knee ».
+    static let painZone: String? = ProcessInfo.processInfo.environment["COACH_DEMO_PAIN"]
     #else
     static let planJSON: String? = nil
     static let isOn = false
     static let doneIds: [String] = []
     static let activitySpecs: [String] = []
+    static let painZone: String? = nil
     #endif
 
     static var plan: TrainingPlan? {

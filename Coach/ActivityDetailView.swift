@@ -178,19 +178,8 @@ struct ActivityDetailView: View {
         }
     }
 
-    private func bar<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 12) { content() }
-            .padding(.horizontal, Theme.screenMargin)
-            .padding(.top, 12)
-            .padding(.bottom, 8)
-            .background(Theme.bg)
-            .background(alignment: .top) {
-                LinearGradient(colors: [Theme.bg.opacity(0), Theme.bg], startPoint: .top, endPoint: .bottom)
-                    .frame(height: Theme.bottomFadeHeight)
-                    .offset(y: -Theme.bottomFadeHeight)
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
-            }
+    private func bar<Content: View>(@ViewBuilder _ content: @escaping () -> Content) -> some View {
+        BottomBar(content: content)
     }
 }
 
@@ -310,10 +299,12 @@ struct EffortPicker: View {
                     value = level.value
                 } label: {
                     VStack(spacing: 2) {
+                        // Chiffre toujours blanc, mot gris sauf choisi (maquette #44).
                         Text("\(level.value)").font(.coach(.title3, weight: .semibold)).monospacedDigit()
+                            .foregroundStyle(Theme.text)
                         Text(level.word).font(.coach(.caption, weight: on ? .bold : .medium))
+                            .foregroundStyle(on ? Theme.text : Theme.muted)
                     }
-                    .foregroundStyle(on ? Theme.text : Theme.muted)
                     .frame(maxWidth: .infinity, minHeight: Theme.effortButtonHeight)
                     .selectableStyle(isOn: on)
                 }

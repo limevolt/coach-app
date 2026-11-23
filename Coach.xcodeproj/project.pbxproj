@@ -70,6 +70,7 @@
 		816A05FD7B69A6E08F79DA15 /* Outfit-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3A94A8554D3534DDA5A5B299 /* Outfit-Regular.ttf */; };
 		818C210E3213408061381F1F /* OFL-Outfit.txt in Resources */ = {isa = PBXBuildFile; fileRef = 6E3BD735048A1D2577516BA2 /* OFL-Outfit.txt */; };
 		833CF3F23315B35AD8F3C0AA /* OwnCoach.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A43E92352C85583773BDC39 /* OwnCoach.swift */; };
+		85F5E5B8D6CC550C96E2E5A3 /* FeedbackPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A535570E01A094C3E524720 /* FeedbackPlanner.swift */; };
 		87993750DF9FB3D9A8CD62CB /* CoachApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 912D6F261042F3CACC531D2D /* CoachApp.swift */; };
 		87D75285178084716F02B459 /* WorkoutManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A98D9EE13E10A332EC287DF /* WorkoutManager.swift */; };
 		8823366D3A52E0B2A7D52DD5 /* Outfit-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3D495D87289FD2F14C06D471 /* Outfit-Black.ttf */; };
@@ -103,6 +104,7 @@
 		E03F482288B9F4D4923EF730 /* SessionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BCEB04270CDBFAB907B3042 /* SessionDetailView.swift */; };
 		E1DF8F935A11ECB154242625 /* Outfit-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9065AE64029D887414A302BC /* Outfit-Medium.ttf */; };
 		E40098F7E50B53627A343BEE /* ExerciseAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AD7181E658FD44CEBD338B0 /* ExerciseAnimation.swift */; };
+		E41992555F3D17F143761864 /* FeedbackPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CCD9F7E305075A4B543DCC4 /* FeedbackPlannerTests.swift */; };
 		EBB1A3D5F4A480FF807A67FF /* HealthActivities.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC05BD771777D8DD2D41A190 /* HealthActivities.swift */; };
 		ECFB996FDF42F74172BEB5B5 /* PlanFormatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0C41F2C2A11F70869772F1C /* PlanFormatTests.swift */; };
 		EDAA025B818798B406B38923 /* Outfit-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 115586EA3063303368467DC1 /* Outfit-ExtraBold.ttf */; };
@@ -188,12 +190,14 @@
 		3D495D87289FD2F14C06D471 /* Outfit-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Outfit-Black.ttf"; sourceTree = "<group>"; };
 		4415AD572B9C9CA1090038DD /* BusyButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BusyButton.swift; sourceTree = "<group>"; };
 		469890DB7F1BA9D23EB804D4 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		4A535570E01A094C3E524720 /* FeedbackPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackPlanner.swift; sourceTree = "<group>"; };
 		4D3E65D02A73AC0CA8236C13 /* CoachWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CoachWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4E54238CA3796A3D428E0F5B /* WeekOverview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeekOverview.swift; sourceTree = "<group>"; };
 		4E6C06F91F59B047799297AF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		55CC634D74040B9A1862DFB4 /* Coach.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Coach.entitlements; sourceTree = "<group>"; };
 		56FEFFD9C39F28F9938C9D07 /* WorkoutScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutScreens.swift; sourceTree = "<group>"; };
 		5BC2FE5D6D5989A6C962A7D0 /* HealthReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthReader.swift; sourceTree = "<group>"; };
+		5CCD9F7E305075A4B543DCC4 /* FeedbackPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackPlannerTests.swift; sourceTree = "<group>"; };
 		6097D8724285314AF6D5C949 /* DemoMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoMode.swift; sourceTree = "<group>"; };
 		618410EA6899CC3F7508C627 /* TimersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimersView.swift; sourceTree = "<group>"; };
 		62A1A0756297FC10211EEB95 /* PlanGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanGenerator.swift; sourceTree = "<group>"; };
@@ -303,6 +307,7 @@
 			isa = PBXGroup;
 			children = (
 				734F29FDA42962E3833F9726 /* DoneStateTests.swift */,
+				5CCD9F7E305075A4B543DCC4 /* FeedbackPlannerTests.swift */,
 				04294D002204A3F5456A6755 /* HealthLinkingTests.swift */,
 				9945A4A769C10E083F4822CB /* PlanDraftTests.swift */,
 				A0C41F2C2A11F70869772F1C /* PlanFormatTests.swift */,
@@ -408,6 +413,7 @@
 				2D82669D91ECEDFA1646C365 /* CoachModules.swift */,
 				E56D00CF919BDFFFD3935AD2 /* CoachStorage.swift */,
 				E43E9868B60F306D446C6E70 /* DayPlacer.swift */,
+				4A535570E01A094C3E524720 /* FeedbackPlanner.swift */,
 				7243736ADAC582E44CBEB46D /* PlanCalendar.swift */,
 				62A1A0756297FC10211EEB95 /* PlanGenerator.swift */,
 				D2FFC5675FEFBC94118CE135 /* PlanIntensity.swift */,
@@ -688,6 +694,7 @@
 				DD164B74B9D4B53CA1728B62 /* ExerciseAnimation.swift in Sources */,
 				1E20496EC9E94FA4A73CAD8F /* ExerciseGuideView.swift in Sources */,
 				4BB5B6D42C271A74F444F734 /* ExerciseLibrary.swift in Sources */,
+				85F5E5B8D6CC550C96E2E5A3 /* FeedbackPlanner.swift in Sources */,
 				EBB1A3D5F4A480FF807A67FF /* HealthActivities.swift in Sources */,
 				9DE8E796EC1E88D558090CEF /* HealthReader.swift in Sources */,
 				3B1B88D7CB6ABAC1DFAD6330 /* HomeWeek.swift in Sources */,
@@ -767,6 +774,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C41EB81B2413AEF3EC2FF805 /* DoneStateTests.swift in Sources */,
+				E41992555F3D17F143761864 /* FeedbackPlannerTests.swift in Sources */,
 				FDE3D875C107FD568B80F574 /* HealthLinkingTests.swift in Sources */,
 				3F6CC9E499FC5CAF6599E731 /* PlanDraftTests.swift in Sources */,
 				ECFB996FDF42F74172BEB5B5 /* PlanFormatTests.swift in Sources */,

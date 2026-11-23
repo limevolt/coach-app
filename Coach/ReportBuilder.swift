@@ -86,6 +86,8 @@ struct ReportBuilder {
                 if let rpe = efforts[link.activity.id] { status += " · effort \(rpe)/10" }
             }
             if let rpe = log?.rpe { status += " · effort \(rpe)/10" }
+            // Retour rapide (#44, B2) : douleur, séance raccourcie, fatigue.
+            if let log, let signals = FeedbackText.signals(log) { status += " · \(signals.localizedLowercase)" }
             var adapted: [String] = []
             if s.withoutEquipment { adapted.append("faite sans matériel") }
             if let change = s.changeLabel { adapted.append(change.lowercased()) }

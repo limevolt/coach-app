@@ -123,6 +123,8 @@ struct PlanView: View {
                     .transition(.opacity)
             }
 
+            PainAdviceCard()
+
             OffDaysBanner()
 
             if let status = store.status {

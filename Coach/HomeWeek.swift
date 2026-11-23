@@ -487,3 +487,67 @@ struct PlanLine: View {
         .accessibilityElement(children: .combine)
     }
 }
+
+// MARK: - Conseil du coach (#44, B2)
+
+/// Deuxième douleur au même endroit en 14 jours : ce que le coach a fait, conseil de consulter,
+/// et proposition de ménager la zone dans les prochains plans.
+struct PainAdviceCard: View {
+    @Environment(PlanStore.self) private var store
+
+    /// « le genou », « la cheville », « l'arrière de la cuisse ».
+    static func withArticle(_ zone: String) -> String {
+        let label = FeedbackText.zoneLabel(zone).localizedLowercase
+        switch zone {
+        case "ankle", "hip": return "la \(label)"
+        case "hamstring": return "l'\(label)"
+        default: return "le \(label)"
+        }
+    }
+
+    /// « Escaliers et intervalles remplacés par un footing facile jusqu'au dimanche 6 déc. … »
+    static func sentence(until: Date?) -> String {
+        let end = until.map { " jusqu'au " + $0.formatted(.dateTime.weekday(.wide).day().month(.abbreviated)) } ?? ""
+        // « déc. » finit déjà par un point : pas de double point.
+        let sentence = "Escaliers et intervalles remplacés par un footing facile\(end)"
+        return sentence + (sentence.hasSuffix(".") ? "" : ".") + " Tu peux annuler depuis chaque séance."
+    }
+
+    var body: some View {
+        if let advice = store.painAdvice {
+            let spareable = BodyZone(rawValue: advice.zone) != nil
+            VStack(alignment: .leading, spacing: 10) {
+                Label("Le coach te conseille", systemImage: "sparkles")
+                    .labelStyle(EyebrowLabelStyle())
+                    .accessibilityAddTraits(.isHeader)
+                Text("\(FeedbackText.zoneLabel(advice.zone)) : deuxième alerte en 14 jours")
+                    .font(.coach(.body, weight: .semibold)).foregroundStyle(Theme.text)
+                Text(Self.sentence(until: advice.until))
+                    .font(.detail).foregroundStyle(Theme.muted)
+                Label("Consulte un professionnel si la douleur persiste.", systemImage: "info.circle")
+                    .font(.detail).foregroundStyle(Theme.text)
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 10) { buttons(advice, spareable: spareable) }
+                    VStack(spacing: 10) { buttons(advice, spareable: spareable) }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    @ViewBuilder private func buttons(_ advice: (zone: String, logId: String, until: Date?), spareable: Bool) -> some View {
+        if spareable {
+            Button { store.spareZone(advice.zone, advice: advice.logId) } label: {
+                Text("Ménager \(Self.withArticle(advice.zone))")
+                    .quietActionStyle(color: Theme.accent)
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Les prochains plans créés par le coach éviteront de la charger")
+        }
+        Button { store.dismissAdvice(advice.logId) } label: {
+            Text(spareable ? "Pas maintenant" : "Compris").quietActionStyle()
+        }
+        .buttonStyle(.plain)
+    }
+}

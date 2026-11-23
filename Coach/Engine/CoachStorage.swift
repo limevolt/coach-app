@@ -32,6 +32,15 @@ enum CoachStorage {
         try write(profile, to: profileURL)
     }
 
+    /// Profil seul (« Ménager le genou », #44). Présent mais illisible : on n'écrase pas.
+    static func save(profile: AthleteProfile) throws {
+        guard !DemoMode.isOn else { return }
+        if FileManager.default.fileExists(atPath: profileURL.path), load(AthleteProfile.self, from: profileURL) == nil {
+            throw CocoaError(.fileReadNoPermission)
+        }
+        try write(profile, to: profileURL)
+    }
+
     static func save(memory: CoachMemory) throws {
         guard !DemoMode.isOn else { return }
         // Mémoire présente mais illisible (téléphone pas encore déverrouillé) : on n'écrase pas.

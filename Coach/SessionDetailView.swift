@@ -78,6 +78,18 @@ struct SessionDetailView: View {
             if let change = stored.changeLabel {
                 badge(change, icon: "arrow.left.arrow.right", color: Theme.warm)
             }
+            if store.feedbackChange(for: initial.id) != nil && !store.isDone(initial.id) {
+                // Changée après un retour de séance (#44, B2) : revenir à la séance prévue.
+                Button { Task { await store.undoFeedbackChange(initial.id) } } label: {
+                    Label("Annuler ce changement", systemImage: "arrow.uturn.backward")
+                        .font(.coach(.subheadline, weight: .semibold))
+                        .foregroundStyle(Theme.accent)
+                        .frame(minHeight: Theme.minTap)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(store.isSyncing)
+            }
             if let original = store.original(for: initial.id) {
                 revertDialogAnchor(original)
             }
@@ -306,7 +318,7 @@ struct SessionDetailView: View {
             }
         } else if let log {
             VStack(alignment: .leading, spacing: 8) {
-                sectionTitle("Ressenti")
+                sectionTitle("Ton retour")
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
                         Label("Faite le \(log.completedAt.formatted(date: .abbreviated, time: .omitted))",
@@ -314,7 +326,7 @@ struct SessionDetailView: View {
                             .foregroundStyle(Theme.accent)
                         Spacer(minLength: 8)
                         Menu {
-                            MenuItemButton("Modifier mon ressenti", systemImage: "pencil") { showFeedback = true }
+                            MenuItemButton("Modifier mon retour", systemImage: "pencil") { showFeedback = true }
                             DestructiveButton("Marquer comme non faite", systemImage: "arrow.uturn.backward") {
                                 confirmNotDone = true
                             }
@@ -330,6 +342,9 @@ struct SessionDetailView: View {
                     if let rpe = log.rpe {
                         Text("Effort perçu : \(rpe)/10").foregroundStyle(Theme.text)
                     }
+                    if let signals = FeedbackText.signals(log) {
+                        Text(signals).foregroundStyle(Theme.text)
+                    }
                     if let sets = log.sets, !sets.isEmpty {
                         Text("\(sets.count) séries / efforts enregistrés").foregroundStyle(Theme.muted)
                     }
@@ -340,7 +355,48 @@ struct SessionDetailView: View {
                 .font(.coach(.body))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .card()
+                coachChanges(log)
             }
+        }
+    }
+
+    /// « Ce que le coach a changé » après ce retour : une ligne par séance, vers son détail.
+    @ViewBuilder private func coachChanges(_ log: SessionLog) -> some View {
+        let changed = store.feedbackChanges(of: log)
+        if !changed.isEmpty {
+            sectionTitle("Ce que le coach a changé")
+            VStack(spacing: 0) {
+                ForEach(changed, id: \.session.id) { change in
+                    let s = change.session
+                    NavigationLink(value: s) {
+                        HStack(spacing: 8) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                // Séance d'origine, puis ce qui change (maquette « Après le retour »).
+                                Text("\(ReplacementPlanner.dayTitle(s.date)) · \(change.original.title)")
+                                    .font(.coach(.body, weight: .semibold)).foregroundStyle(Theme.text)
+                                let what = FeedbackPlanner.what(s)
+                                Text(what.prefix(1).uppercased() + what.dropFirst())
+                                    .font(.detail).foregroundStyle(Theme.muted)
+                            }
+                            Spacer(minLength: 8)
+                            Image(systemName: "chevron.right").font(Theme.chevronFont).foregroundStyle(Theme.chevron)
+                                .accessibilityHidden(true)
+                        }
+                        .padding(.vertical, 12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    Divider().overlay(Theme.separator)
+                }
+            }
+            Button { showFeedback = true } label: {
+                Text("Modifier mon retour").quietActionStyle()
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 4)
+            Text("Modifier ton retour recalcule ces changements. Chaque séance modifiée a aussi « Annuler ce changement ».")
+                .font(.detail).foregroundStyle(Theme.muted)
         }
     }
 
@@ -406,50 +462,184 @@ struct ExerciseCard: View {
     }
 }
 
+/// Feuille « Ton retour » (#44, B2) : ressenti en 5 boutons, puis « Quelque chose à signaler ? »
+/// (douleur, séance raccourcie, très fatigué). Ce que le coach va changer s'affiche avant d'enregistrer.
 struct FeedbackSheet: View {
     let session: PlannedSession
     @Environment(PlanStore.self) private var store
     @Environment(\.dismiss) private var dismiss
-    @State private var rpe: Int? = 6
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Rien de présélectionné : sans ressenti, les règles d'effort ignorent la séance (relecture coach).
+    @State private var rpe: Int?
     @State private var note = ""
+    @State private var hasPain = false
+    @State private var zone: String?
+    @State private var marked = false
+    @State private var shortened = false
+    @State private var fraction = 0.5
+    @State private var tired = false
+    @State private var saving = false
+
+    private var missingZone: Bool { hasPain && zone == nil }
+
+    /// Quelque chose a été saisi : la feuille ne se ferme pas d'un glissement (« Plus tard » reste possible).
+    private var touched: Bool {
+        rpe != store.log(for: session.id)?.rpe || hasPain || shortened || tired || !note.isEmpty
+    }
+
+    private var pain: SessionPain? {
+        guard hasPain, let zone else { return nil }
+        return SessionPain(zone: zone, marked: marked)
+    }
+
+    /// Retour en cours de saisie, pour l'aperçu.
+    private var draft: SessionLog {
+        var log = store.log(for: session.id)
+            ?? SessionLog(id: UUID(), sessionId: session.id, completedAt: min(session.startDate ?? .now, .now),
+                          rpe: nil, note: nil, sets: nil, title: session.title, kind: nil)
+        log.rpe = rpe
+        log.pain = pain
+        log.doneFraction = shortened ? fraction : nil
+        log.fatigued = tired ? true : nil
+        return log
+    }
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Ton ressenti") {
-                    // Même composant partout (#54) : 5 gros boutons, un appui.
-                    EffortPicker(value: $rpe)
-                        .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
-                        .listRowBackground(Color.clear)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(session.title).font(.coach(.title2, weight: .semibold)).foregroundStyle(Theme.text)
+                        Text(subtitle).font(.detail).foregroundStyle(Theme.muted)
+                    }
+                    group("Ton ressenti") { EffortPicker(value: $rpe) }
+                    group("Quelque chose à signaler ?") {
+                        ChipFlow {
+                            SelectChip(title: "Douleur", isOn: hasPain) { toggle($hasPain) }
+                            SelectChip(title: "Séance raccourcie", isOn: shortened) { toggle($shortened) }
+                            SelectChip(title: "Très fatigué", isOn: tired) { toggle($tired) }
+                        }
+                    }
+                    if hasPain {
+                        group("Où ?") {
+                            ChipFlow {
+                                ForEach(FeedbackText.zones, id: \.id) { z in
+                                    SelectChip(title: z.label, isOn: zone == z.id) { zone = z.id }
+                                }
+                            }
+                        }
+                        SegmentedChoice("Intensité de la douleur", selection: $marked,
+                                        options: [(false, "Gêne légère"), (true, "Douleur marquée")])
+                    }
+                    if shortened {
+                        group("Jusqu'où ?") {
+                            SegmentedChoice("Part de la séance faite", selection: $fraction,
+                                            options: [(0.25, "Environ ¼"), (0.5, "Environ ½"), (0.75, "Environ ¾")])
+                        }
+                    }
+                    coachSays
+                    group("Note (facultatif)") {
+                        TextField("", text: $note, prompt: Text("Ajouter une note").foregroundStyle(Theme.muted),
+                                  axis: .vertical)
+                            .lineLimit(1...6)
+                            .padding(.vertical, 12)
+                            .fieldStyle()
+                    }
                 }
-                Section("Note (douleurs, sensations, météo…)") {
-                    TextField("Facultatif", text: $note, axis: .vertical)
-                        .lineLimit(3...6)
+                .padding(.horizontal, Theme.screenMargin)
+                // Sous le fondu de la barre du bas : aucune ligne ne s'arrête dans le dégradé.
+                .padding(.bottom, Theme.bottomFadeHeight + 12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .scrollDismissesKeyboard(.interactively)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                BottomBar(fill: Theme.card) {
+                    if missingZone {
+                        Text("Choisis où tu as mal pour enregistrer.")
+                            .font(.detail).foregroundStyle(Theme.muted)
+                    }
+                    Button {
+                        save()
+                    } label: {
+                        Text("Enregistrer").primaryActionStyle(enabled: !missingZone)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(saving || missingZone)
                 }
             }
-            .themedForm()
-            .navigationTitle("Ressenti")
+            .interactiveDismissDisabled(touched)
+            .background(Theme.card.ignoresSafeArea())
+            .navigationTitle("Ton retour")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Annuler") { dismiss() }
+                    Button("Plus tard") { dismiss() }.tint(Theme.text)
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Enregistrer") {
-                        store.saveFeedback(for: session, rpe: rpe ?? 6, note: note)
-                        dismiss()
+            }
+            .onAppear(perform: load)
+        }
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+        .presentationBackground(Theme.card)
+    }
+
+    private var subtitle: String {
+        let day = ReplacementPlanner.dayTitle(session.date)
+        return session.plannedMinutes.map { "\(day) · \($0) min" } ?? day
+    }
+
+    /// Bloc « Ce que le coach va changer », mis à jour à chaque choix.
+    private var coachSays: some View {
+        let lines = store.feedbackPreview(for: session, draft: draft).lines
+        return group("Ce que le coach va changer") {
+            VStack(alignment: .leading, spacing: 6) {
+                if lines.isEmpty {
+                    Text("Rien à changer : continue comme prévu.")
+                } else {
+                    ForEach(lines, id: \.self) { line in
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                            Text("•").foregroundStyle(Theme.muted).accessibilityHidden(true)
+                            Text(line)
+                        }
                     }
                 }
             }
-            .onAppear {
-                if let log = store.log(for: session.id) {
-                    // Valeur gardée telle quelle (ancienne note 7/10 comprise) tant qu'aucun bouton n'est touché.
-                    rpe = log.rpe ?? 6
-                    note = log.note ?? ""
-                }
-            }
+            .font(.detail)
+            .foregroundStyle(Theme.text)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityElement(children: .combine)
         }
-        .presentationDetents([.medium, .large])
+    }
+
+    private func group<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Eyebrow(text: title).accessibilityAddTraits(.isHeader)
+            content()
+        }
+    }
+
+    private func toggle(_ flag: Binding<Bool>) {
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) { flag.wrappedValue.toggle() }
+    }
+
+    private func load() {
+        guard let log = store.log(for: session.id) else { return }
+        // Valeur gardée telle quelle (ancienne note 7/10 comprise) tant qu'aucun bouton n'est touché.
+        rpe = log.rpe
+        note = log.note ?? ""
+        if let p = log.pain { hasPain = true; zone = p.zone; marked = p.marked }
+        if let f = log.doneFraction { shortened = true; fraction = f }
+        tired = log.fatigued == true
+    }
+
+    private func save() {
+        saving = true
+        let pain = pain, fraction = shortened ? fraction : nil
+        let store = store, session = session, rpe = rpe, note = note, tired = tired
+        // La feuille se ferme tout de suite ; l'envoi à la montre continue derrière.
+        dismiss()
+        Task { await store.saveFeedback(for: session, rpe: rpe, note: note, pain: pain,
+                                        doneFraction: fraction, fatigued: tired) }
     }
 }
 

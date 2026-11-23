@@ -42,6 +42,13 @@ final class CoachCaptures: XCTestCase {
             }
             back(app)
         }
+        // Très fatigué après le footing du jour : le renfo de demain en version légère (#44, B2)
+        if openSession("Footing", in: app), tap("Je l'ai faite", in: app) {
+            _ = tap("Dur, 8", in: app)
+            if tap("Très fatigué", in: app) { shot("55-retour-fatigue") }
+            _ = tap("Plus tard", in: app)
+            back(app)
+        }
 
         // 3. Les autres onglets
         for (index, tab) in ["Libre", "Suivi", "Réglages"].enumerated() {
@@ -104,11 +111,47 @@ final class CoachCaptures: XCTestCase {
             }
         }
 
+        // Deuxième douleur au même endroit : conseil du coach sur l'accueil (#44, B2)
+        app = launchDemo(plan: DemoPlan.json(firstOffset: -2), done: Array(DemoPlan.sessionIds.prefix(2)), pain: "knee")
+        _ = app.tabBars.firstMatch.waitForExistence(timeout: 30)
+        // Défilement court : le titre du conseil reste visible, même sur petit iPhone.
+        let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75))
+        from.press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45)))
+        shot("50-accueil-conseil-douleur")
+        audit("Accueil — conseil douleur", app)
+
         // Séance passée non faite : « Pas encore faite » avec « Adapter » (#21)
         app = launchDemo(plan: DemoPlan.json(firstOffset: -3))
         _ = app.tabBars.firstMatch.waitForExistence(timeout: 30)
         if openSession("Footing", in: app) {
             shot("16-seance-manquee")
+            // « Je l'ai faite » → feuille « Ton retour » (#44, B2)
+            if tap("Je l'ai faite", in: app) {
+                shot("51-retour")
+                audit("Ton retour", app)
+                if tap("Douleur", in: app) {
+                    _ = tap("Genou", in: app)
+                    shot("52-retour-douleur")
+                    _ = tap("Douleur marquée", in: app)
+                    shot("53-retour-douleur-marquee")
+                    _ = tap("Douleur", in: app)
+                }
+                if tap("Séance raccourcie", in: app) {
+                    shot("54-retour-raccourcie")
+                }
+                _ = tap("Très fatigué", in: app)
+                // Retour avec douleur marquée au genou enregistré : « Ce que le coach a changé » sur le détail.
+                // (`tap` fait défiler la feuille : pas de glissement vers le bas, qui la fermerait.)
+                _ = tap("Séance raccourcie", in: app)
+                _ = tap("Très fatigué", in: app)
+                _ = tap("Douleur", in: app)
+                if tap("Enregistrer", in: app) {
+                    Thread.sleep(forTimeInterval: 1.0)
+                    app.swipeUp()
+                    shot("56-seance-apres-retour")
+                    audit("Séance après le retour", app)
+                }
+            }
         }
 
         // 5. Accueil en très grande taille de texte
@@ -118,6 +161,13 @@ final class CoachCaptures: XCTestCase {
         shot("11-accueil-grand-texte")
         app.swipeUp()
         shot("12-accueil-grand-texte-bas")
+        app.swipeDown()
+        if openSession("Footing", in: app), tap("Je l'ai faite", in: app) {
+            _ = tap("Douleur", in: app)
+            shot("57-retour-grand-texte")
+            app.swipeUp()
+            shot("58-retour-grand-texte-bas")
+        }
 
         // 6. Aucun plan
         app = launchDemo(plan: nil)
@@ -249,6 +299,12 @@ final class CoachCaptures: XCTestCase {
     /// Ouvre une séance depuis l'accueil (#54) : la pastille affiche le jour, puis la ligne de la carte ouvre la séance.
     @MainActor
     func openSession(_ text: String, in app: XCUIApplication) -> Bool {
+        // Séance d'une autre semaine (capture lancée un lundi, séance passée) : « Tout le plan ».
+        if !button(text, in: app).waitForExistence(timeout: 5) {
+            guard tap("Tout le plan", in: app) else { return false }
+            Thread.sleep(forTimeInterval: 0.6)
+            return tap(text, in: app)
+        }
         guard tap(text, in: app) else { return false }
         let matches = app.buttons.containing(NSPredicate(format: "label CONTAINS[c] %@", text))
         guard matches.count > 1 else { return true }

@@ -35,7 +35,12 @@ final class PlanStore {
         if DemoMode.isOn {
             // Captures automatiques : plan de démo en mémoire, rien d'autre.
             plan = DemoMode.plan
-            logs = DemoMode.doneIds.map { SessionLog(id: UUID(), sessionId: $0, completedAt: .now, rpe: 6) }
+            logs = DemoMode.doneIds.enumerated().map { i, id in
+                var log = SessionLog(id: UUID(), sessionId: id, completedAt: .now.addingTimeInterval(Double(i)), rpe: 6)
+                // Même douleur sur chaque séance faite : conseil « deuxième alerte » sur l'accueil (#44).
+                log.pain = DemoMode.painZone.map { SessionPain(zone: $0, marked: false) }
+                return log
+            }
             templates = IntervalTemplate.defaults
             healthActivities = Self.demoActivities()
             return
@@ -116,9 +121,11 @@ final class PlanStore {
         plan = newPlan
         // Nouveau plan (ou nouvelle version) : il tient déjà compte des séances du jour remplacées ;
         // le coach ne le réadapte pas et n'y remet pas d'anciennes séances en annulant (#44).
-        if !activityChoices.adaptations.isEmpty || !activityChoices.mainFor.isEmpty {
+        if !activityChoices.adaptations.isEmpty || !activityChoices.mainFor.isEmpty
+            || !activityChoices.byFeedback.isEmpty {
             activityChoices.frozen.formUnion(activityChoices.mainFor.keys)
             activityChoices.adaptations = [:]
+            activityChoices.byFeedback = [:]
             persistActivityFile()
         }
         originals = [:]
@@ -490,9 +497,14 @@ final class PlanStore {
             Task { await unlink(link.activity) }
             return
         }
+        let removed = logs.filter { $0.sessionId == sessionId && $0.archivedAt == nil }.map(\.id)
         logs = DoneState.removingActive(sessionId, from: logs)
         persistLogs()
         pushToWatch()
+        // Le retour disparaît : ce que le coach avait changé à cause de lui est annulé (#44, B2).
+        for id in removed where activityChoices.byFeedback[id.uuidString] != nil {
+            Task { await enqueueAdaptation { await self.readaptFeedback(id) } }
+        }
     }
 
     /// Séance passée et pas faite.
@@ -679,17 +691,147 @@ final class PlanStore {
         }
     }
 
-    func saveFeedback(for session: PlannedSession, rpe: Int, note: String) {
-        if var log = log(for: session.id) {
-            log.rpe = rpe
-            log.note = note
-            upsert(log)
+    func saveFeedback(for session: PlannedSession, rpe: Int?, note: String, pain: SessionPain? = nil,
+                      doneFraction: Double? = nil, fatigued: Bool = false) async {
+        var log: SessionLog
+        if let existing = self.log(for: session.id) {
+            log = existing
         } else {
             // Séance passée marquée « faite » : on la date du jour prévu, pas d'aujourd'hui.
             let when = min(session.startDate ?? .now, .now)
-            upsert(SessionLog(id: UUID(), sessionId: session.id, completedAt: when, rpe: rpe,
-                              note: note, sets: nil, title: session.title, kind: nil))
+            log = SessionLog(id: UUID(), sessionId: session.id, completedAt: when, rpe: nil,
+                             note: nil, sets: nil, title: session.title, kind: nil)
         }
+        log.rpe = rpe
+        log.note = note
+        log.pain = pain
+        log.doneFraction = doneFraction
+        log.fatigued = fatigued ? true : nil
+        upsert(log)
+        // Le coach adapte les jours suivants (#44, B2).
+        let logId = log.id
+        await enqueueAdaptation { await self.readaptFeedback(logId) }
+    }
+
+    // MARK: Retour après séance, lot B2 (#44)
+
+    /// Séances faites avec un retour, dans l'ordre (sans `exceptLog`).
+    private func feedbackHistory(excluding exceptLog: UUID, before date: Date) -> [FeedbackEntry] {
+        let sessions = Dictionary((plan?.sessions ?? []).map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        return logs
+            .filter { $0.id != exceptLog && $0.archivedAt == nil && $0.kind == nil && $0.completedAt <= date }
+            .filter { $0.rpe != nil || $0.pain != nil || $0.doneFraction != nil }
+            .sorted { $0.completedAt < $1.completedAt }
+            .compactMap { l in sessions[l.sessionId].map { FeedbackEntry(session: $0, log: l) } }
+    }
+
+    /// Ce que le coach changera avec ce retour (bloc « Ce que le coach va changer », avant d'enregistrer).
+    func feedbackPreview(for session: PlannedSession, draft: SessionLog) -> FeedbackDecision {
+        guard var current = plan else { return FeedbackDecision() }
+        if let existing = log(for: session.id), let a = activityChoices.byFeedback[existing.id.uuidString] {
+            current = ReplacementPlanner.undo(a, in: current, isDone: isDone)
+        }
+        let declined = Set(activityChoices.feedbackDeclined.compactMap { pair -> String? in
+            let parts = pair.split(separator: "|", maxSplits: 1)
+            return parts.count == 2 && parts[0] == draft.id.uuidString ? String(parts[1]) : nil
+        })
+        return FeedbackPlanner.decide(session: session, log: draft,
+                                      history: feedbackHistory(excluding: draft.id, before: draft.completedAt),
+                                      sessions: current.sessions, isDone: isDone, declined: declined)
+    }
+
+    private func readaptFeedback(_ logId: UUID) async {
+        guard let before = plan else { return }
+        let key = logId.uuidString
+        let existing = activityChoices.byFeedback[key]
+        var current = existing.map { ReplacementPlanner.undo($0, in: before, isDone: isDone) } ?? before
+        var adaptation = ActivityChoices.Adaptation()
+        if let log = logs.first(where: { $0.id == logId && $0.archivedAt == nil }),
+           let session = current.sessions.first(where: { $0.id == log.sessionId }) {
+            let d = FeedbackPlanner.decide(session: session, log: log,
+                                           history: feedbackHistory(excluding: logId, before: log.completedAt),
+                                           sessions: current.sessions, isDone: isDone)
+            for (id, new) in d.changed.sorted(by: { $0.key < $1.key })
+            where !activityChoices.feedbackDeclined.contains("\(key)|\(id)") {
+                guard let i = current.sessions.firstIndex(where: { $0.id == id }) else { continue }
+                adaptation.originals.append(current.sessions[i])
+                adaptation.lightNotes[id] = new.coachNote
+                current.sessions[i] = new
+            }
+        }
+        let stored: ActivityChoices.Adaptation? = adaptation.isEmpty ? nil : adaptation
+        guard stored != existing || current != before else { return }
+        activityChoices.byFeedback[key] = stored
+        persistActivityFile()
+        if current != before { await saveEdits(current) }
+    }
+
+    /// Retour qui a changé cette séance, et la version d'avant.
+    func feedbackChange(for sessionId: String) -> (logKey: String, original: PlannedSession)? {
+        guard let current = plan?.sessions.first(where: { $0.id == sessionId }) else { return nil }
+        for (key, a) in activityChoices.byFeedback {
+            if let original = a.originals.first(where: { $0.id == sessionId }),
+               current.coachNote == a.lightNotes[sessionId] { return (key, original) }
+        }
+        return nil
+    }
+
+    /// Séances changées après le retour `log`, avec leur version d'origine (détail « Ce que le coach a changé »).
+    func feedbackChanges(of log: SessionLog) -> [(session: PlannedSession, original: PlannedSession)] {
+        guard let a = activityChoices.byFeedback[log.id.uuidString], let plan else { return [] }
+        return a.originals.compactMap { o in
+            plan.sessions.first { $0.id == o.id && $0.coachNote == a.lightNotes[o.id] }.map { ($0, o) }
+        }
+        .sorted { ($0.session.startDate ?? .distantPast) < ($1.session.startDate ?? .distantPast) }
+    }
+
+    /// « Annuler ce changement » : cette séance seule revient comme avant, et le coach ne la rechange pas.
+    func undoFeedbackChange(_ sessionId: String) async {
+        await enqueueAdaptation {
+            guard let plan = self.plan, let key = self.feedbackChange(for: sessionId)?.logKey,
+                  var a = self.activityChoices.byFeedback[key] else { return }
+            var single = ActivityChoices.Adaptation()
+            single.originals = a.originals.filter { $0.id == sessionId }
+            single.lightNotes = a.lightNotes.filter { $0.key == sessionId }
+            let restored = ReplacementPlanner.undo(single, in: plan, isDone: self.isDone)
+            a.originals.removeAll { $0.id == sessionId }
+            a.lightNotes[sessionId] = nil
+            self.activityChoices.byFeedback[key] = a.isEmpty ? nil : a
+            self.activityChoices.feedbackDeclined.insert("\(key)|\(sessionId)")
+            self.persistActivityFile()
+            await self.saveEdits(restored)
+        }
+    }
+
+    /// Deuxième douleur au même endroit en 14 jours (conseil sur l'accueil), tant qu'il n'a pas été écarté.
+    var painAdvice: (zone: String, logId: String, until: Date?)? {
+        let recent = logs.filter { $0.archivedAt == nil && $0.pain != nil }.sorted { $0.completedAt < $1.completedAt }
+        guard let last = recent.last, let pain = last.pain, pain.zone != "other",
+              last.completedAt > Date.now.addingTimeInterval(-7 * 86_400),
+              !activityChoices.dismissedAdvice.contains(last.id.uuidString) else { return nil }
+        let window = last.completedAt.addingTimeInterval(-Double(FeedbackPlanner.windowDays) * 86_400)
+        let again = recent.dropLast().contains { $0.pain?.zone == pain.zone && $0.completedAt >= window }
+        guard again else { return nil }
+        // Même fin que le moteur : dernier jour de la semaine suivante.
+        let cal = PlanWeeks.calendar(timeZone: Calendar.current.timeZone)
+        let session = plan?.sessions.first { $0.id == last.sessionId }
+        let day = cal.startOfDay(for: max(session?.startDate ?? last.completedAt, last.completedAt))
+        let until = cal.dateInterval(of: .weekOfYear, for: day).flatMap { cal.date(byAdding: .day, value: 6, to: $0.end) }
+        return (pain.zone, last.id.uuidString, until)
+    }
+
+    func dismissAdvice(_ logId: String) {
+        activityChoices.dismissedAdvice.insert(logId)
+        persistActivityFile()
+    }
+
+    /// « Ménager le genou » : la zone est ménagée dans les prochains plans créés par le coach.
+    func spareZone(_ zone: String, advice logId: String) {
+        dismissAdvice(logId)
+        guard let z = BodyZone(rawValue: zone) else { return }
+        var profile = CoachStorage.loadProfile()
+        profile.sparedZones.insert(z)
+        try? CoachStorage.save(profile: profile)
     }
 
     func upsert(_ log: SessionLog) {
