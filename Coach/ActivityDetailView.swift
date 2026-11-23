@@ -53,8 +53,9 @@ struct ActivityDetailView: View {
                             Task { await store.unlink(activity) }
                         }
                     } label: {
-                        Image(systemName: "ellipsis").accessibilityLabel("Actions")
+                        Image(systemName: "ellipsis").font(Theme.barIconFont).accessibilityLabel("Actions")
                     }
+                    .tint(Theme.text)
                 }
             }
         }

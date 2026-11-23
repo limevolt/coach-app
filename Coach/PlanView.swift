@@ -43,6 +43,8 @@ struct PlanView: View {
             // Nouveau jour ou autre semaine : la carte revient à aujourd'hui.
             .onChange(of: Calendar.current.startOfDay(for: now)) { selectedDay = nil }
             .toolbar(.hidden, for: .navigationBar)
+            // Titre invisible ici : c'est le libellé du retour (« ‹ Plan ») sur les écrans ouverts depuis l'accueil.
+            .navigationTitle("Plan")
             // Barre masquée : un fond sous l'heure, pour que la liste ne défile pas sous le texte.
             .safeAreaInset(edge: .top, spacing: 0) {
                 Color.clear.frame(height: 0).background(Theme.bg)
@@ -255,7 +257,7 @@ struct PlanView: View {
         return "Semaine \(number) sur \(week.totalWeeks) · \(range)"
     }
 
-    /// Actions du plan, dans un menu ••• (rond, cible de 44 pt).
+    /// Actions du plan, dans un menu ••• (cible de 44 pt).
     private var planMenu: some View {
         Menu {
             Button("Créer un nouveau plan", systemImage: "sparkles") { showWizard = true }
@@ -272,12 +274,8 @@ struct PlanView: View {
                 }
             }
         } label: {
-            Image(systemName: "ellipsis")
-                .font(Theme.iconFont)
-                .foregroundStyle(Theme.text)
-                .frame(width: Theme.minTap, height: Theme.minTap)
-                .background(Theme.card, in: Circle())
-                .contentShape(Circle())
+            // Sans bulle, comme les boutons du haut des autres écrans (#64).
+            BarIcon(systemName: "ellipsis")
         }
         .accessibilityLabel("Actions du plan")
         .disabled(busy || exporting)

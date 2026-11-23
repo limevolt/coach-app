@@ -38,7 +38,7 @@ struct TimersView: View {
             .themedForm()
             .navigationTitle("Libre")
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) { EditButton() }
+                ToolbarItem(placement: .topBarLeading) { EditButton().tint(Theme.text) }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         editing = IntervalTemplate(name: "", activity: "hiit", repeats: 5, segments: [
@@ -46,8 +46,10 @@ struct TimersView: View {
                             TimerSegment(kind: "rest", seconds: 30)
                         ])
                     } label: {
-                        Image(systemName: "plus")
+                        Image(systemName: "plus").font(Theme.barIconFont)
                     }
+                    .tint(Theme.text)
+                    .accessibilityLabel("Nouveau minuteur")
                 }
             }
             .sheet(item: $editing) { template in

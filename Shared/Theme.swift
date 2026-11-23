@@ -127,6 +127,25 @@ enum Theme {
     /// Petit badge sur une pastille (séance manquée, deux séances le même jour).
     static let dotBadge: CGFloat = 16
 
+    // Barres de l'iPhone (#64) : barre d'onglets maison et boutons du haut sans bulle
+    /// Hauteur de la barre d'onglets (hors zone du bas de l'écran).
+    static let tabBarHeight: CGFloat = 49
+    /// Trait citron vert au-dessus de l'onglet choisi.
+    static let tabIndicatorWidth: CGFloat = 28
+    static let tabIndicatorHeight: CGFloat = 3
+    /// Pastille d'un onglet appuyé.
+    static let tabPressRadius: CGFloat = 12
+    static let tabPressInset: CGFloat = 4
+    /// Icône d'un onglet (taille fixe, comme la barre d'Apple).
+    static let tabIconFont = Font.system(size: 22, weight: .medium)
+    /// Libellé d'un onglet : 12, taille fixe (appui long = visionneuse de grand contenu).
+    static let tabLabelFont = Font.custom(Outfit.name(for: .medium), fixedSize: 12)
+    static let tabLabelSelectedFont = Font.custom(Outfit.name(for: .semibold), fixedSize: 12)
+    /// Icône d'un bouton du haut (•••, +), posée sur le fond, sans bulle.
+    static let barIconFont = Font.system(size: 20, weight: .semibold)
+    /// Bouton du haut appuyé : atténué.
+    static let pressedOpacity: Double = 0.45
+
     // Icônes SF Symbols (taille fixe, graisse commune)
     /// Icône d'un bouton rond ou d'un état (•••, ✓ d'une ligne).
     static let iconFont = Font.system(size: 17, weight: .semibold)
