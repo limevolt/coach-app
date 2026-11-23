@@ -505,6 +505,12 @@ struct PainAdviceCard: View {
         }
     }
 
+    /// « Escaliers et intervalles remplacés par un footing facile jusqu'au dimanche 6 déc. … »
+    static func sentence(until: Date?) -> String {
+        let end = until.map { " jusqu'au " + $0.formatted(.dateTime.weekday(.wide).day().month(.abbreviated)) } ?? ""
+        return "Escaliers et intervalles remplacés par un footing facile\(end). Tu peux annuler depuis chaque séance."
+    }
+
     var body: some View {
         if let advice = store.painAdvice {
             let spareable = BodyZone(rawValue: advice.zone) != nil
@@ -514,7 +520,7 @@ struct PainAdviceCard: View {
                     .accessibilityAddTraits(.isHeader)
                 Text("\(FeedbackText.zoneLabel(advice.zone)) : deuxième alerte en 14 jours")
                     .font(.coach(.body, weight: .semibold)).foregroundStyle(Theme.text)
-                Text("Escaliers et intervalles allégés jusqu'à la fin de la semaine prochaine. Tu peux annuler depuis chaque séance.")
+                Text(Self.sentence(until: advice.until))
                     .font(.detail).foregroundStyle(Theme.muted)
                 Label("Consulte un professionnel si la douleur persiste.", systemImage: "info.circle")
                     .font(.detail).foregroundStyle(Theme.text)
@@ -528,17 +534,17 @@ struct PainAdviceCard: View {
         }
     }
 
-    @ViewBuilder private func buttons(_ advice: (zone: String, logId: String), spareable: Bool) -> some View {
+    @ViewBuilder private func buttons(_ advice: (zone: String, logId: String, until: Date?), spareable: Bool) -> some View {
         if spareable {
             Button { store.spareZone(advice.zone, advice: advice.logId) } label: {
-                Text("Ménager \(Self.withArticle(advice.zone))").lineLimit(1)
+                Text("Ménager \(Self.withArticle(advice.zone))")
                     .quietActionStyle(color: Theme.accent)
             }
             .buttonStyle(.plain)
             .accessibilityHint("Les prochains plans créés par le coach éviteront de la charger")
         }
         Button { store.dismissAdvice(advice.logId) } label: {
-            Text(spareable ? "Pas maintenant" : "Compris").lineLimit(1).quietActionStyle()
+            Text(spareable ? "Pas maintenant" : "Compris").quietActionStyle()
         }
         .buttonStyle(.plain)
     }

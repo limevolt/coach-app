@@ -776,12 +776,13 @@ final class PlanStore {
         return nil
     }
 
-    /// Séances changées après le retour `log` (détail « Ce que le coach a changé »).
-    func feedbackChanges(of log: SessionLog) -> [PlannedSession] {
+    /// Séances changées après le retour `log`, avec leur version d'origine (détail « Ce que le coach a changé »).
+    func feedbackChanges(of log: SessionLog) -> [(session: PlannedSession, original: PlannedSession)] {
         guard let a = activityChoices.byFeedback[log.id.uuidString], let plan else { return [] }
-        let ids = Set(a.originals.map(\.id))
-        return plan.sessions.filter { ids.contains($0.id) && $0.coachNote == a.lightNotes[$0.id] }
-            .sorted { ($0.startDate ?? .distantPast) < ($1.startDate ?? .distantPast) }
+        return a.originals.compactMap { o in
+            plan.sessions.first { $0.id == o.id && $0.coachNote == a.lightNotes[o.id] }.map { ($0, o) }
+        }
+        .sorted { ($0.session.startDate ?? .distantPast) < ($1.session.startDate ?? .distantPast) }
     }
 
     /// « Annuler ce changement » : cette séance seule revient comme avant, et le coach ne la rechange pas.
@@ -803,14 +804,20 @@ final class PlanStore {
     }
 
     /// Deuxième douleur au même endroit en 14 jours (conseil sur l'accueil), tant qu'il n'a pas été écarté.
-    var painAdvice: (zone: String, logId: String)? {
+    var painAdvice: (zone: String, logId: String, until: Date?)? {
         let recent = logs.filter { $0.archivedAt == nil && $0.pain != nil }.sorted { $0.completedAt < $1.completedAt }
         guard let last = recent.last, let pain = last.pain, pain.zone != "other",
               last.completedAt > Date.now.addingTimeInterval(-7 * 86_400),
               !activityChoices.dismissedAdvice.contains(last.id.uuidString) else { return nil }
         let window = last.completedAt.addingTimeInterval(-Double(FeedbackPlanner.windowDays) * 86_400)
         let again = recent.dropLast().contains { $0.pain?.zone == pain.zone && $0.completedAt >= window }
-        return again ? (pain.zone, last.id.uuidString) : nil
+        guard again else { return nil }
+        // Même fin que le moteur : dernier jour de la semaine suivante.
+        let cal = PlanWeeks.calendar(timeZone: Calendar.current.timeZone)
+        let session = plan?.sessions.first { $0.id == last.sessionId }
+        let day = cal.startOfDay(for: max(session?.startDate ?? last.completedAt, last.completedAt))
+        let until = cal.dateInterval(of: .weekOfYear, for: day).flatMap { cal.date(byAdding: .day, value: 6, to: $0.end) }
+        return (pain.zone, last.id.uuidString, until)
     }
 
     func dismissAdvice(_ logId: String) {

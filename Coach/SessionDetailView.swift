@@ -366,15 +366,17 @@ struct SessionDetailView: View {
         if !changed.isEmpty {
             sectionTitle("Ce que le coach a changé")
             VStack(spacing: 0) {
-                ForEach(changed) { s in
+                ForEach(changed, id: \.session.id) { change in
+                    let s = change.session
                     NavigationLink(value: s) {
                         HStack(spacing: 8) {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("\(ReplacementPlanner.dayTitle(s.date)) · \(s.title)")
+                                // Séance d'origine, puis ce qui change (maquette « Après le retour »).
+                                Text("\(ReplacementPlanner.dayTitle(s.date)) · \(change.original.title)")
                                     .font(.coach(.body, weight: .semibold)).foregroundStyle(Theme.text)
-                                if let note = s.coachNote {
-                                    Text(note).font(.detail).foregroundStyle(Theme.muted)
-                                }
+                                let what = FeedbackPlanner.what(s)
+                                Text(what.prefix(1).uppercased() + what.dropFirst())
+                                    .font(.detail).foregroundStyle(Theme.muted)
                             }
                             Spacer(minLength: 8)
                             Image(systemName: "chevron.right").font(Theme.chevronFont).foregroundStyle(Theme.chevron)
@@ -385,11 +387,9 @@ struct SessionDetailView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    if s.id != changed.last?.id { Divider().overlay(Theme.separator) }
+                    Divider().overlay(Theme.separator)
                 }
             }
-            .padding(.horizontal, 14)
-            .card(padding: 0)
             Button { showFeedback = true } label: {
                 Text("Modifier mon retour").quietActionStyle()
             }
@@ -539,14 +539,16 @@ struct FeedbackSheet: View {
                     }
                     coachSays
                     group("Note (facultatif)") {
-                        TextField("Ajouter une note", text: $note, axis: .vertical)
+                        TextField("", text: $note, prompt: Text("Ajouter une note").foregroundStyle(Theme.muted),
+                                  axis: .vertical)
                             .lineLimit(1...6)
                             .padding(.vertical, 12)
                             .fieldStyle()
                     }
                 }
                 .padding(.horizontal, Theme.screenMargin)
-                .padding(.bottom, 12)
+                // Sous le fondu de la barre du bas : aucune ligne ne s'arrête dans le dégradé.
+                .padding(.bottom, Theme.bottomFadeHeight + 12)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .scrollDismissesKeyboard(.interactively)
@@ -571,12 +573,13 @@ struct FeedbackSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Plus tard") { dismiss() }
+                    Button("Plus tard") { dismiss() }.tint(Theme.text)
                 }
             }
             .onAppear(perform: load)
         }
         .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
         .presentationBackground(Theme.card)
     }
 

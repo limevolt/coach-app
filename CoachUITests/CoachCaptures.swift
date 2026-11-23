@@ -42,6 +42,13 @@ final class CoachCaptures: XCTestCase {
             }
             back(app)
         }
+        // Très fatigué après le footing du jour : le renfo de demain en version légère (#44, B2)
+        if openSession("Footing", in: app), tap("Je l'ai faite", in: app) {
+            _ = tap("Dur, 8", in: app)
+            if tap("Très fatigué", in: app) { shot("55-retour-fatigue") }
+            _ = tap("Plus tard", in: app)
+            back(app)
+        }
 
         // 3. Les autres onglets
         for (index, tab) in ["Libre", "Suivi", "Réglages"].enumerated() {
@@ -107,7 +114,9 @@ final class CoachCaptures: XCTestCase {
         // Deuxième douleur au même endroit : conseil du coach sur l'accueil (#44, B2)
         app = launchDemo(plan: DemoPlan.json(firstOffset: -2), done: Array(DemoPlan.sessionIds.prefix(2)), pain: "knee")
         _ = app.tabBars.firstMatch.waitForExistence(timeout: 30)
-        app.swipeUp()
+        // Défilement court : le titre du conseil reste visible, même sur petit iPhone.
+        let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75))
+        from.press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45)))
         shot("50-accueil-conseil-douleur")
         audit("Accueil — conseil douleur", app)
 
@@ -130,10 +139,7 @@ final class CoachCaptures: XCTestCase {
                 if tap("Séance raccourcie", in: app) {
                     shot("54-retour-raccourcie")
                 }
-                if tap("Très fatigué", in: app) {
-                    app.swipeUp()
-                    shot("55-retour-fatigue-bas")
-                }
+                _ = tap("Très fatigué", in: app)
                 // Retour avec douleur marquée au genou enregistré : « Ce que le coach a changé » sur le détail.
                 // (`tap` fait défiler la feuille : pas de glissement vers le bas, qui la fermerait.)
                 _ = tap("Séance raccourcie", in: app)

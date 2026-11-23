@@ -175,8 +175,10 @@ enum FeedbackPlanner {
         }
 
         // Très fatigué : séance dure du lendemain allégée.
+        var fatigueHandled = false
         if log.fatigued == true, let next = cal.date(byAdding: .day, value: 1, to: day) {
             for s in future where (s.dayStart.map { cal.isDate($0, inSameDayAs: next) } ?? false) && (s.countsAsHard || s.isKey) {
+                fatigueHandled = true
                 change(s, s.lightened(note: "Allégée par le coach (fatigue la veille)"))
             }
         }
@@ -226,6 +228,10 @@ enum FeedbackPlanner {
                 && (e.log.doneFraction ?? 1) >= 1
         }
 
+        // Fatigue sans séance dure le lendemain : le dire, pour que le choix ne semble pas ignoré.
+        if log.fatigued == true, !fatigueHandled {
+            d.lines.append("Très fatigué : pas de séance dure demain, rien à alléger")
+        }
         if let fraction = log.doneFraction, fraction < 1 {
             d.lines.append("\(ReplacementPlanner.dayTitle(session.date)) · \(session.title) : "
                            + "comptée faite \(fractionLabel(fraction))")

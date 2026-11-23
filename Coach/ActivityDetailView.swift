@@ -299,10 +299,12 @@ struct EffortPicker: View {
                     value = level.value
                 } label: {
                     VStack(spacing: 2) {
+                        // Chiffre toujours blanc, mot gris sauf choisi (maquette #44).
                         Text("\(level.value)").font(.coach(.title3, weight: .semibold)).monospacedDigit()
+                            .foregroundStyle(Theme.text)
                         Text(level.word).font(.coach(.caption, weight: on ? .bold : .medium))
+                            .foregroundStyle(on ? Theme.text : Theme.muted)
                     }
-                    .foregroundStyle(on ? Theme.text : Theme.muted)
                     .frame(maxWidth: .infinity, minHeight: Theme.effortButtonHeight)
                     .selectableStyle(isOn: on)
                 }
