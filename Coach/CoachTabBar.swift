@@ -132,7 +132,8 @@ private struct TabBarSpacer: View {
 
     var body: some View {
         Color.clear
-            .frame(height: keyboardShown ? 0 : Theme.tabBarHeight + Theme.tabBarBottomPadding)
+            // Barre + fondu : un bouton fixé en bas d'écran reste au-dessus du fondu.
+            .frame(height: keyboardShown ? 0 : Theme.tabBarHeight + Theme.tabBarBottomPadding + Theme.bottomFadeHeight)
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
                 keyboardShown = true
             }
