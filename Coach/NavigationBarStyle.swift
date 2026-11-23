@@ -35,6 +35,13 @@ enum NavigationBarStyle {
         look.largeTitleTextAttributes = [.font: font(.semibold, 34, .largeTitle), .foregroundColor: text]
         look.titleTextAttributes = [.font: font(.semibold, 17, .headline), .foregroundColor: text]
 
+        // Chevron du retour en blanc, quelle que soit la teinte de l'app (citron vert).
+        let chevronConfig = UIImage.SymbolConfiguration(pointSize: 17, weight: .semibold)
+        if let chevron = UIImage(systemName: "chevron.backward", withConfiguration: chevronConfig)?
+            .withTintColor(UIColor(Theme.text), renderingMode: .alwaysOriginal) {
+            look.setBackIndicatorImage(chevron, transitionMaskImage: chevron)
+        }
+
         let plain = UIBarButtonItemAppearance(style: .plain)
         style(plain, weight: .medium, color: Theme.text)
         look.buttonAppearance = plain
