@@ -240,6 +240,20 @@ final class CoachCaptures: XCTestCase {
             audit("Assistant — récapitulatif", app)
             app.swipeUp()
             shot("29-assistant-recap-bas")
+            // Écran d'attente, puis le plan : jamais d'attente sans fin (10 s voulues, 20 s au plus ici).
+            if tap("Créer le plan", in: app) {
+                Thread.sleep(forTimeInterval: 2.5)
+                shot("29b-creation-en-cours")
+                audit("Création du plan", app)
+                let waiting = app.staticTexts["Le coach prépare ton plan"]
+                let deadline = Date.now.addingTimeInterval(20)
+                while waiting.exists && Date.now < deadline { Thread.sleep(forTimeInterval: 0.5) }
+                if waiting.exists { note("Création du plan : toujours en attente après 20 s") }
+                Thread.sleep(forTimeInterval: 1.5)
+                shot("29c-plan-cree")
+            } else {
+                note("Bouton « Créer le plan » introuvable")
+            }
         } else {
             note("Bouton « Créer mon plan » introuvable")
         }

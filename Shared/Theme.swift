@@ -122,6 +122,13 @@ enum Theme {
     static let screenMargin: CGFloat = 20
     /// Espace entre deux blocs d'un écran.
     static let blockSpacing: CGFloat = 28
+    /// Écran « Le coach prépare ton plan » : petit coureur (réduit en très grand texte) et barre d'avancement.
+    static let creationFigure: CGFloat = 180
+    static let creationFigureCompact: CGFloat = 120
+    static let creationBarWidth: CGFloat = 220
+    /// Pastille de la coche « Ton plan est prêt » et taille de la coche.
+    static let creationDone: CGFloat = 96
+    static let creationDoneIcon = Font.system(size: 44, weight: .bold)
     /// Pastille d'un jour de la semaine (accueil).
     static let dayDot: CGFloat = 40
     /// Petit badge sur une pastille (séance manquée, deux séances le même jour).
