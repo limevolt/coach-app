@@ -14,6 +14,12 @@ struct AdaptSessionView: View {
 
     private var slot: PlannedSession? { store.plan?.sessions.first { $0.id == sessionId } }
 
+    /// Onglet affiché : « Course » pour la course classique comme pour les escaliers (#73).
+    /// Passer d'un autre onglet à « Course » choisit la course classique.
+    private var tab: Binding<ActivityChoice> {
+        Binding(get: { choice.tab }, set: { if $0 != choice.tab { choice = $0 } })
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -55,7 +61,7 @@ struct AdaptSessionView: View {
                 if working {
                     ProgressView("Enregistrement…")
                         .padding()
-                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: Theme.smallButtonRadius))
                 }
             }
             .onAppear {
@@ -77,8 +83,8 @@ struct AdaptSessionView: View {
         let unchanged = isSame && (choice != .strength || noEquipment == slot.withoutEquipment)
 
         Section {
-            SegmentedChoice("Activité", selection: $choice,
-                            options: ActivityChoice.allCases.map { (value: $0, label: $0.label) })
+            SegmentedChoice("Activité", selection: tab,
+                            options: ActivityChoice.tabs.map { (value: $0, label: $0.label) })
 
             switch choice {
             case .strength:
@@ -88,8 +94,20 @@ struct AdaptSessionView: View {
                 Label("Avec matériel : il faut un sac de frappe.", systemImage: "info.circle")
                     .font(.coach(.footnote))
                     .foregroundStyle(Theme.muted)
-            case .run:
-                EmptyView()
+            case .run, .stairs:
+                // Toujours les deux : on peut changer de genre de course dans les deux sens (#73).
+                VStack(alignment: .leading, spacing: Theme.segmentSpacing * 2) {
+                    Text("Genre de course")
+                        .font(.detail)
+                        .foregroundStyle(Theme.muted)
+                        .accessibilityHidden(true)   // déjà le nom du groupe pour VoiceOver
+                    SegmentedChoice("Genre de course", selection: $choice, options: ActivityChoice.runKinds)
+                }
+                if choice == .stairs {
+                    Label("Il faut un escalier.", systemImage: "info.circle")
+                        .font(.coach(.footnote))
+                        .foregroundStyle(Theme.muted)
+                }
             }
 
             if let source, !isSame {
@@ -122,11 +140,7 @@ struct AdaptSessionView: View {
                 Label(Self.buttonTitle(choice: choice, isSame: isSame, unchanged: unchanged,
                                        noEquipment: noEquipment),
                       systemImage: unchanged ? "equal.circle" : "checkmark")
-                    .font(.coach(size: 17, weight: .bold))
-                    .foregroundStyle(unchanged ? Theme.muted : Theme.accentDark)
-                    .frame(maxWidth: .infinity, minHeight: 48)
-                    .background(unchanged ? Theme.line : Theme.accent,
-                                in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .primaryActionStyle(enabled: !unchanged)
             }
             .buttonStyle(.plain)
             .disabled(unchanged)
@@ -143,7 +157,7 @@ struct AdaptSessionView: View {
     /// le bouton (inactif) dit pourquoi.
     nonisolated static func buttonTitle(choice: ActivityChoice, isSame: Bool, unchanged: Bool, noEquipment: Bool) -> String {
         if unchanged { return "C'est déjà la séance prévue" }
-        guard isSame, choice == .strength else { return "Valider" }
+        guard isSame, choice == .strength else { return "Remplacer" }
         return noEquipment ? "Faire sans matériel" : "Faire avec matériel"
     }
 
@@ -171,7 +185,8 @@ struct AdaptSessionView: View {
                             }
                             Spacer()
                             Image(systemName: "arrow.left.arrow.right")
-                                .foregroundStyle(Theme.accent)
+                                .foregroundStyle(Theme.muted)
+                                .accessibilityHidden(true)
                         }
                     }
                 }
@@ -191,24 +206,32 @@ struct AdaptSessionView: View {
             let mine = TrainingDays.current
             Section {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: Theme.dayTileSpacing) {
                         ForEach(days, id: \.self) { day in
-                            let preferred = mine.isEmpty || mine.contains(TrainingDays.isoWeekday(day))
+                            // Jour d'entraînement : petit point citron vert, et dit à VoiceOver (#73).
+                            let training = !mine.isEmpty && mine.contains(TrainingDays.isoWeekday(day))
                             Button {
                                 run { await store.move(slot.id, to: Day.key(day)) }
                             } label: {
-                                VStack(spacing: 2) {
+                                VStack(spacing: 3) {
                                     Text(day.formatted(.dateTime.weekday(.abbreviated)))
-                                        .font(.coach(size: 12, weight: .semibold))
+                                        .font(.label)
+                                        .foregroundStyle(Theme.muted)
                                     Text(day.formatted(.dateTime.day()))
-                                        .font(.coach(size: 20, weight: .heavy))
+                                        .font(.coach(.headline))
+                                        .foregroundStyle(Theme.text)
+                                    Circle()
+                                        .fill(training ? Theme.accent : Color.clear)
+                                        .frame(width: Theme.trainingDayDot, height: Theme.trainingDayDot)
                                 }
-                                .foregroundStyle(preferred ? Theme.accentDark : Theme.muted)
-                                .frame(width: 54, height: 60)
-                                .background(preferred ? Theme.accent : Theme.line.opacity(0.6),
-                                            in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .frame(width: Theme.dayTileWidth, height: Theme.dayTileHeight)
+                                .overlay(RoundedRectangle(cornerRadius: Theme.smallButtonRadius, style: .continuous)
+                                    .strokeBorder(Theme.line, lineWidth: Theme.quietStroke))
+                                .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
+                            .accessibilityLabel(day.formatted(.dateTime.weekday(.wide).day().month(.wide)))
+                            .accessibilityValue(training ? "Jour d'entraînement" : "")
                         }
                     }
                     .padding(.vertical, 4)
@@ -218,7 +241,7 @@ struct AdaptSessionView: View {
             } footer: {
                 Text(TrainingDays.current.isEmpty
                      ? "Jours sans séance des 2 prochaines semaines."
-                     : "En vert : tes jours d'entraînement. Les autres restent possibles.")
+                     : "Point vert : tes jours d'entraînement. Les autres restent possibles.")
             }
         }
     }

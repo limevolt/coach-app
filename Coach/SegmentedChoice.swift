@@ -1,5 +1,6 @@
 // SegmentedChoice.swift — choix en onglets au style de Coach (maquette #45, retour du propriétaire) :
-// cadre gris fin, option choisie sur fond Theme.card2 en texte blanc, les autres en gris.
+// cadre gris fin ; option choisie sur fond Theme.card2, contour citron vert et texte blanc semi-gras,
+// comme un jour choisi (#74 : le fond seul ne se voyait pas sur une ligne grise) ; les autres en gris.
 // Remplace le Picker segmenté natif partout sur l'iPhone (DESIGN.md).
 
 import SwiftUI
@@ -37,6 +38,12 @@ struct SegmentedChoice<Value: Hashable>: View {
                         .frame(maxWidth: .infinity, minHeight: Theme.minTap)
                         .background(on ? Theme.card2 : Color.clear,
                                     in: RoundedRectangle(cornerRadius: Theme.segmentRadius, style: .continuous))
+                        .overlay {
+                            if on {
+                                RoundedRectangle(cornerRadius: Theme.segmentRadius, style: .continuous)
+                                    .strokeBorder(Theme.accent, lineWidth: Theme.selectionStroke)
+                            }
+                        }
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)

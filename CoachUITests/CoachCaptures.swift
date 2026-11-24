@@ -167,6 +167,27 @@ final class CoachCaptures: XCTestCase {
             }
         }
 
+        // « Adapter » une course : onglets (#74), genre de course (#73), jours libres
+        app = launchDemo(plan: DemoPlan.json())
+        _ = app.buttons["onglet-Plan"].waitForExistence(timeout: 30)
+        if openSession("Fractionné", in: app) {
+            if tap("Adapter", in: app) {
+                Thread.sleep(forTimeInterval: 0.6)
+                shot("60-adapter-course")
+                audit("Adapter", app)
+                if tap("Escaliers", in: app) {
+                    shot("61-adapter-escaliers")
+                }
+                if tap("Renfo", in: app) {
+                    shot("62-adapter-renfo")
+                }
+                app.swipeUp()
+                shot("63-adapter-jours")
+            } else {
+                note("Bouton « Adapter » introuvable")
+            }
+        }
+
         // 5. Accueil en très grande taille de texte
         app = launchDemo(plan: DemoPlan.json(),
                          arguments: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityL"])

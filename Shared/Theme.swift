@@ -133,6 +133,11 @@ enum Theme {
     static let dayDot: CGFloat = 40
     /// Petit badge sur une pastille (séance manquée, deux séances le même jour).
     static let dotBadge: CGFloat = 16
+    /// Tuile d'un jour libre dans « Adapter » (#73) et point « jour d'entraînement » dessous.
+    static let dayTileWidth: CGFloat = 54
+    static let dayTileHeight: CGFloat = 68
+    static let dayTileSpacing: CGFloat = 8
+    static let trainingDayDot: CGFloat = 6
 
     // Barres de l'iPhone (#64) : barre d'onglets maison et boutons du haut sans bulle
     /// Hauteur de la barre d'onglets (hors zone du bas de l'écran).

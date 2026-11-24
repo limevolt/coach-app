@@ -68,6 +68,6 @@ final class WatchSyncTests: XCTestCase {
         XCTAssertEqual(AdaptSessionView.buttonTitle(choice: .strength, isSame: true, unchanged: false, noEquipment: false),
                        "Faire avec matériel")
         XCTAssertEqual(AdaptSessionView.buttonTitle(choice: .martial, isSame: false, unchanged: false, noEquipment: false),
-                       "Valider")
+                       "Remplacer")
     }
 }
