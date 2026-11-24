@@ -1,0 +1,11 @@
+commit: 26fc4cf3001755632bd4c6a396e93544dd05b924
+version TestFlight: 1
+archive: failure
+envoi: skipped
+
+===== ARCHIVE =====
+** ARCHIVE FAILED **
+error: Ad Hoc code signing is not allowed with SDK 'iOS 26.5'. (in target 'Coach' from project 'Coach')
+error: Ad Hoc code signing is not allowed with SDK 'watchOS 26.5'. (in target 'CoachWatch' from project 'Coach')
+
+===== ENVOI =====
