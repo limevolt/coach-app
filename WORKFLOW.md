@@ -59,7 +59,7 @@
    - `design-reviewer` (mode « conformité ») : vérifie seulement que les captures correspondent à la maquette validée et que le rendu réel tient (texte coupé, grand texte, petits écrans, contraste). Pas de nouvelle critique du design.
    - `coach-reviewer` [Coach], dès qu'un lot touche le moteur de coaching (`Coach/Engine/`) : relit les décisions d'entraînement comme un entraîneur (sécurité, règles décidées, sportifs fictifs) et propose des règles pour améliorer le coach.
 6. **Pull request** : ce qui change, les issues fermées, le résultat des relectures et ce que le propriétaire doit tester.
-7. **Fusion sur `main`** : la version part sur TestFlight (à mettre en place), et les issues sont fermées ou passées en `à retester`.
+7. **Fusion sur `main`** : la version part sur TestFlight (workflow « TestFlight », #89), et les issues sont fermées ou passées en `à retester`.
 
 ## Économiser les compilations [générique]
 
@@ -71,7 +71,7 @@
 
 ## Avant le sport : vérification en deux minutes [Coach]
 
-1. Installer la dernière version.
+1. Installer la dernière version : app TestFlight › Coach › « Mettre à jour » (la montre suit).
 2. Sur l'iPhone, ouvrir la semaine, choisir la séance du jour et appuyer sur « Démarrer ».
 3. Sur la montre, vérifier que la séance arrive prête et ne démarre qu'après un seul « Commencer ».
 4. Si ça bloque, noter ce qu'on voit (photo de l'écran si possible) pour le retour d'après séance.
@@ -83,5 +83,4 @@
 
 ## En attente [générique]
 
-- Envoi automatique sur TestFlight à chaque fusion sur `main`.
 - Exporter ce workflow en modèle réutilisable (dépôt modèle + skill « nouvelle app »), une fois la méthode stable.

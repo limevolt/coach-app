@@ -40,6 +40,6 @@
 		<string>workout-processing</string>
 	</array>
 	<key>WKCompanionAppBundleIdentifier</key>
-	<string>com.limevolt.coach</string>
+	<string>com.limevolt.coachapp</string>
 </dict>
 </plist>

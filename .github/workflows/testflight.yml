@@ -1,0 +1,149 @@
+# Envoie l'app iPhone + montre sur TestFlight (#89).
+# - Se lance à chaque mise à jour de main (après fusion d'une pull request), si du code a changé.
+# - Signature automatique avec la clé App Store Connect rangée dans les Secrets GitHub
+#   (ASC_ISSUER_ID, ASC_KEY_ID, ASC_KEY_P8) : certificats et profils sont gérés par Apple.
+# - Le journal public (branche ci-logs) ne contient que les erreurs, jamais les identifiants de la clé.
+
+name: TestFlight
+
+on:
+  push:
+    # « testflight » : branche du premier essai (#89), à retirer avant la fusion.
+    branches: [main, testflight]
+    paths:
+      - "**"
+      - "!docs/**"
+      - "!**.md"
+      - "docs/PLAN_FORMAT.md"
+  workflow_dispatch:
+
+concurrency:
+  group: testflight
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  testflight:
+    runs-on: macos-26
+    timeout-minutes: 45
+    env:
+      # Numéro de version unique et croissant pour TestFlight.
+      BUILD_NUMBER: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Outils
+        run: |
+          brew install xcodegen xcbeautify
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app 2>/dev/null | grep -v -i beta | sort -V | tail -1)"
+          xcodebuild -version
+
+      - name: Générer le projet Xcode
+        run: xcodegen generate
+
+      - name: Clé App Store Connect
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          if [ -z "$ASC_KEY_P8" ]; then echo "Secret ASC_KEY_P8 manquant."; exit 1; fi
+          KEY="$RUNNER_TEMP/AuthKey.p8"
+          printf '%s\n' "$ASC_KEY_P8" > "$KEY"
+          chmod 600 "$KEY"
+          echo "ASC_KEY_PATH=$KEY" >> "$GITHUB_ENV"
+
+      # Archive signée « localement » (signature ad hoc) : les droits HealthKit restent dans l'app.
+      # La vraie signature de distribution est faite à l'export, par Apple (certificat géré dans le cloud).
+      - name: Archiver
+        id: archive
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project Coach.xcodeproj -scheme Coach -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Coach.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- PROVISIONING_PROFILE_SPECIFIER= \
+            2>&1 | tee archive.log | xcbeautify --renderer github-actions
+
+      - name: Envoyer sur TestFlight
+        id: upload
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set -o pipefail
+          TEAM=$(grep -m1 'DEVELOPMENT_TEAM:' project.yml | awk '{print $2}')
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>${TEAM}</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+            <key>testFlightInternalTestingOnly</key><true/>
+          </dict>
+          </plist>
+          EOF
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/Coach.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            2>&1 | tee upload.log | xcbeautify --renderer github-actions
+
+      - name: Supprimer la clé
+        if: always()
+        run: rm -f "$RUNNER_TEMP/AuthKey.p8"
+
+      - name: Publier le journal (branche ci-logs)
+        if: always()
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          {
+            echo "commit: ${GITHUB_SHA}"
+            echo "version TestFlight: ${BUILD_NUMBER}"
+            echo "archive: ${{ steps.archive.outcome }}"
+            echo "envoi: ${{ steps.upload.outcome }}"
+            echo
+            echo "===== ARCHIVE ====="
+            grep -E "error:|ARCHIVE (SUCCEEDED|FAILED)|requires a provisioning profile|No profiles|No signing certificate" archive.log 2>/dev/null | sort -u | head -60 || true
+            echo
+            echo "===== ENVOI ====="
+            grep -E "error|Error|EXPORT (SUCCEEDED|FAILED)|Upload succeeded|Uploaded|exportArchive" upload.log 2>/dev/null | sort -u | head -60 || true
+          } > summary.txt
+          # Jamais d'identifiant de clé dans un journal public.
+          for v in "$ASC_KEY_ID" "$ASC_ISSUER_ID"; do
+            [ -n "$v" ] && sed -i '' "s/$v/[masqué]/g" summary.txt
+          done
+          git config user.name "coach-ci"
+          git config user.email "coach-ci@users.noreply.github.com"
+          git fetch origin ci-logs:ci-logs 2>/dev/null || true
+          if git show-ref --quiet refs/heads/ci-logs; then
+            git worktree add /tmp/ci-logs ci-logs
+          else
+            git worktree add --detach /tmp/ci-logs
+            git -C /tmp/ci-logs checkout --orphan ci-logs
+            git -C /tmp/ci-logs rm -rf . >/dev/null 2>&1 || true
+          fi
+          mkdir -p /tmp/ci-logs/testflight
+          cp summary.txt /tmp/ci-logs/testflight/latest.txt
+          git -C /tmp/ci-logs add -A
+          git -C /tmp/ci-logs commit -m "Journal TestFlight ${GITHUB_SHA::7}" || true
+          git -C /tmp/ci-logs push origin ci-logs || true
