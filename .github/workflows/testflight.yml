@@ -1,4 +1,4 @@
-# Envoie l'app iPhone + montre sur TestFlight (#89).
+# Envoie l'app iPhone + montre sur TestFlight (#89), en test interne.
 # - Se lance à chaque mise à jour de main (après fusion d'une pull request), si du code a changé.
 # - Secrets GitHub : clé App Store Connect (ASC_ISSUER_ID, ASC_KEY_ID, ASC_KEY_P8) et certificat
 #   « Apple Distribution » (BUILD_CERT_P12 en base64, BUILD_CERT_PASSWORD).
