@@ -6,7 +6,8 @@ import HealthKit
 import WorkoutKit
 
 enum RunScheduler {
-    /// Supprime les séances programmées par l'app puis reprogramme les prochaines séances de course.
+    /// Met à jour les prochaines séances de course programmées par l'app : retire celles qui ne sont plus
+    /// prévues, ajoute les nouvelles, laisse les autres en place (#71).
     @MainActor
     static func sync(plan: TrainingPlan) async -> String {
         let strengthCount = plan.sessions.filter { $0.type != .run }.count
@@ -24,28 +25,42 @@ enum RunScheduler {
         // Mise à jour abandonnée (délai dépassé ou remplacée par une plus récente, #67) : on s'arrête là.
         if Task.isCancelled { return "" }
 
-        await scheduler.removeAllWorkouts()
-        if Task.isCancelled { return "" }
-
         let today = Calendar.current.startOfDay(for: .now)
         let upcoming = plan.sessions
             .filter { $0.type == .run && ($0.startDate ?? .distantPast) >= today }
             .sorted { ($0.startDate ?? .distantFuture) < ($1.startDate ?? .distantFuture) }
         let limit = WorkoutScheduler.maxAllowedScheduledWorkoutCount
 
-        var scheduled = 0
+        // Courses voulues sur la montre.
+        var wanted: [ScheduleItem<WorkoutPlan.Workout>] = []
+        var wantedDates: [DateComponents] = []
         var errors: [String] = []
         for session in upcoming.prefix(limit) {
-            if Task.isCancelled { break }
             guard let when = session.dateComponents else { continue }
             do {
                 let workout = try RunWorkoutFactory.customWorkout(for: session)
-                await scheduler.schedule(WorkoutPlan(.custom(workout)), at: when)
-                scheduled += 1
+                wanted.append(ScheduleItem(key: ScheduleKey(when), workout: .custom(workout)))
+                wantedDates.append(when)
             } catch {
                 errors.append("\(session.title) : \(error.localizedDescription)")
             }
         }
+
+        // Seules les courses qui ont changé passent par la montre (#71) : chaque appel peut être lent.
+        // Une mise à jour interrompue (#67) laisse un état partiel que la suivante corrige.
+        let existing = await scheduler.scheduledWorkouts
+        if Task.isCancelled { return "" }
+        let current = existing.map { ScheduleItem(key: ScheduleKey($0.date), workout: $0.plan.workout) }
+        let changes = scheduleChanges(current: current, wanted: wanted)
+        for index in changes.remove {
+            if Task.isCancelled { return "" }
+            await scheduler.remove(existing[index].plan, at: existing[index].date)
+        }
+        for index in changes.add {
+            if Task.isCancelled { return "" }
+            await scheduler.schedule(WorkoutPlan(wanted[index].workout), at: wantedDates[index])
+        }
+        let scheduled = wanted.count
 
         var message = "\(scheduled) séance(s) de course programmée(s) sur la montre"
         if upcoming.count > limit {
@@ -66,4 +81,36 @@ enum RunScheduler {
         guard await scheduler.authorizationState == .authorized, !Task.isCancelled else { return }
         await scheduler.removeAllWorkouts()
     }
+
+    /// Compare les courses programmées et les courses voulues : indices à retirer (dans `current`)
+    /// et à ajouter (dans `wanted`). Une course identique, au même moment, reste en place.
+    static func scheduleChanges<W: Equatable>(current: [ScheduleItem<W>],
+                                             wanted: [ScheduleItem<W>]) -> (remove: [Int], add: [Int]) {
+        var matched = Set<Int>()
+        var remove: [Int] = []
+        for (i, item) in current.enumerated() {
+            if let j = wanted.indices.first(where: { !matched.contains($0) && wanted[$0] == item }) {
+                matched.insert(j)
+            } else {
+                remove.append(i)
+            }
+        }
+        let add = wanted.indices.filter { !matched.contains($0) }
+        return (remove, add)
+    }
+}
+
+/// Moment d'une course programmée, à la minute (les DateComponents relus peuvent porter calendrier et fuseau).
+struct ScheduleKey: Hashable {
+    let year, month, day, hour, minute: Int
+
+    init(_ c: DateComponents) {
+        year = c.year ?? 0; month = c.month ?? 0; day = c.day ?? 0
+        hour = c.hour ?? 0; minute = c.minute ?? 0
+    }
+}
+
+struct ScheduleItem<W: Equatable>: Equatable {
+    let key: ScheduleKey
+    let workout: W
 }

@@ -137,7 +137,7 @@ final class PlanStore {
         persistOriginals()
         // L'ancien message parlait de l'ancien plan ; le nouveau arrive à la fin de la mise à jour.
         status = nil
-        Task { await sync() }
+        Task { await sync(quiet: true) }
     }
 
     /// Archive le plan actuel (historique local).
@@ -379,10 +379,13 @@ final class PlanStore {
     }
 
     /// Enregistre un plan modifié dans l'app (même version) et met la montre à jour.
+    /// N'attend pas la montre (#71) : l'app Coach de la montre reçoit le plan tout de suite,
+    /// les courses de l'app Exercice suivent en arrière-plan.
     private func saveEdits(_ newPlan: TrainingPlan) async {
         try? Coding.encoder.encode(newPlan).write(to: planURL, options: .atomic)
         plan = newPlan
-        await sync()
+        pushToWatch()
+        scheduleRunSync()
     }
 
     /// Fichier ouvert depuis Mail, Fichiers ou le partage (« Ouvrir avec Coach »).
@@ -417,7 +420,9 @@ final class PlanStore {
 
     /// Une seule opération WorkoutKit à la fois (#67) : la précédente est annulée, pour ne jamais programmer
     /// les courses en double ni laisser celles d'un ancien plan ; et jamais plus de `syncTimeout` d'attente.
-    private func onWatch<T>(_ operation: @escaping @Sendable () async -> T) async -> WatchOutcome<T> {
+    /// `counted: false` = en arrière-plan : `isSyncing` ne bouge pas, rien n'est grisé à l'écran (#71).
+    private func onWatch<T>(counted: Bool = true,
+                            _ operation: @escaping @Sendable () async -> T) async -> WatchOutcome<T> {
         cancelWatchWork?()
         let work = Task { await Deadline.value(within: Self.syncTimeout, operation) }
         var replaced = false
@@ -425,22 +430,24 @@ final class PlanStore {
             replaced = true
             work.cancel()
         }
-        activeSyncs += 1
-        defer { activeSyncs -= 1 }
+        if counted { activeSyncs += 1 }
+        defer { if counted { activeSyncs -= 1 } }
         let value = await work.value
         if replaced { return .replaced }
         cancelWatchWork = nil
         return value.map { .done($0) } ?? .timedOut
     }
 
-    /// `force: false` = une seule fois par jour (au lancement de l'app).
-    func sync(force: Bool = true) async {
+    /// `force: false` = une seule fois par jour (au lancement de l'app), en arrière-plan.
+    /// `quiet: true` = en arrière-plan, sans griser l'écran (#71) ; « Resynchroniser » reste visible.
+    func sync(force: Bool = true, quiet: Bool = false) async {
         if DemoMode.isOn { return }
         pushToWatch()
         guard let plan else { return }
         let today = Day.key(.now)
         if !force, UserDefaults.standard.string(forKey: "lastSyncDay") == today { return }
-        switch await onWatch({ await RunScheduler.sync(plan: plan) }) {
+        let runSync = self.runSync
+        switch await onWatch(counted: force && !quiet, { await runSync(plan) }) {
         case .done(let message):
             status = message
         case .timedOut:
@@ -450,6 +457,30 @@ final class PlanStore {
             return
         }
         UserDefaults.standard.set(today, forKey: "lastSyncDay")
+    }
+
+    /// Ce qui programme les courses dans l'app Exercice ; remplaçable dans les tests.
+    @ObservationIgnored var runSync: @Sendable (TrainingPlan) async -> String = { await RunScheduler.sync(plan: $0) }
+    /// Mise à jour des courses en attente après une modification (une seule pour des changements rapprochés).
+    @ObservationIgnored private var pendingRunSync: Task<Void, Never>?
+    @ObservationIgnored private var runSyncRequest = 0
+
+    /// Met les courses à jour en arrière-plan, 1 s après la dernière modification (#71) :
+    /// plusieurs changements rapprochés = une seule mise à jour ; une plus récente remplace celle en cours (#67).
+    func scheduleRunSync(after delay: Duration = .seconds(1)) {
+        if DemoMode.isOn { return }
+        runSyncRequest += 1
+        let request = runSyncRequest
+        pendingRunSync = Task { [weak self] in
+            try? await Task.sleep(for: delay)
+            guard let self, request == self.runSyncRequest else { return }
+            await self.sync(quiet: true)
+        }
+    }
+
+    /// Pour les tests : attend la dernière mise à jour en arrière-plan.
+    func waitForScheduledRunSync() async {
+        await pendingRunSync?.value
     }
 
     /// Toutes les séances (course comprise, lancée via l'app Exercice) et minuteurs libres → app Coach de la montre.
