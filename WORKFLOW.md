@@ -23,13 +23,13 @@
 - `obsolète` : issue déjà corrigée, remplacée par une autre ou en double. Claude ajoute l'étiquette et un commentaire court (pourquoi, avec le lien vers la PR ou l'issue qui la remplace), sans fermer l'issue : c'est le propriétaire qui la ferme.
 - Une issue de bug dit toujours : ce qui s'est passé, ce qui était attendu, et comment le reproduire. Sans données personnelles (voir `CLAUDE.md`).
 
-## Tableau de bord : l'issue épinglée #78 [générique]
+## Tableau de bord : la page « Coach · tableau de bord » [générique]
 
-- L'issue « 📌 Tableau de bord » (#78), épinglée en haut du dépôt, montre où en est l'app, lisible sur téléphone. Elle résume les issues, sans les remplacer : le détail reste dans chaque issue.
-- Cinq colonnes, en sections : **À faire**, **En cours**, **À tester par moi**, **À fusionner**, **Fait** (issues `obsolète` que le propriétaire doit fermer). Chaque issue ouverte et chaque pull request ouverte y a une carte, et une seule.
-- Chaque carte : le numéro et un titre court, puis deux lignes : « 👉 » ce que le propriétaire doit faire (« Rien. » si rien), et « ✅ » ce qui a été fait. Phrases courtes, sans jargon.
-- En haut : la date de mise à jour et « En bref pour toi », le résumé de ce que le propriétaire a à faire.
-- **Chaque conversation met à jour les cartes touchées avant de finir** (déplacer, ajouter, retirer une carte fermée, réécrire les deux lignes, changer la date). Modifier le texte de l'issue (`gh api -X PATCH repos/limevolt/coach-app/issues/78 -F body=@fichier.md`), sans commentaire.
+- Une page claude.ai, privée au propriétaire, montre où en est l'app d'un coup d'œil, sur téléphone : https://claude.ai/artifact/P8tSx7QD6HQc5EeKWXzr2D. Elle résume les issues sans les remplacer : le détail reste dans chaque issue.
+- En haut, un compteur par colonne, avec un point par carte (citron vert : quelque chose attend le propriétaire ; contour orange : `priorité haute`). En dessous, cinq colonnes : **À faire**, **En cours**, **À tester par moi**, **À fusionner**, **Fait** (issues `obsolète` que le propriétaire doit fermer). Chaque issue ouverte et chaque pull request ouverte y a une carte, et une seule.
+- Chaque carte : numéro, titre court, puis « À toi » (ce que le propriétaire doit faire, ou « Rien. ») et « Fait » (ce qui a été fait). Phrases courtes, sans jargon.
+- **Chaque conversation met à jour les cartes touchées avant de finir** : déplacer, ajouter, retirer une carte fermée, réécrire les deux lignes, changer la date `maj`. Les données sont dans le bloc `<script id="data">` de la page, une carte par ligne (`n`, `col` = todo / doing / test / merge / done, `t`, `toi`, `fait`, et au besoin `pr`, `kind` = bug / idee / a11y, `on`, `haute`, `later`). Modifier ces lignes avec l'outil d'artefact (`edit_version`, après `get_artifact` pour la version), sans toucher au reste de la page.
+- Sans accès aux artefacts (conversation vocale, par exemple) : donner à la fin les cartes à changer, à coller dans une conversation écrite.
 - Même règle de vie privée que partout : décrire l'app, jamais la vie du propriétaire.
 - Pourquoi pas GitHub Projects : les conversations Claude n'ont accès qu'au dépôt, pas aux tableaux Projects ; elles ne pourraient pas le tenir à jour.
 
@@ -76,8 +76,8 @@
 
 ## Début et fin de conversation [générique]
 
-- **Au début** : relire `WORKFLOW.md`, `CLAUDE.md` et `DESIGN.md`, regarder le tableau de bord (#78) et les issues ouvertes `priorité haute`, et rappeler en une phrase où on en est.
-- **À la fin** : mettre à jour les issues touchées, **puis leurs cartes dans le tableau de bord (#78)**, et noter ici toute nouvelle décision sur la façon de travailler.
+- **Au début** : relire `WORKFLOW.md`, `CLAUDE.md` et `DESIGN.md`, regarder le tableau de bord et les issues ouvertes `priorité haute`, et rappeler en une phrase où on en est.
+- **À la fin** : mettre à jour les issues touchées, **puis leurs cartes dans le tableau de bord**, et noter ici toute nouvelle décision sur la façon de travailler.
 
 ## En attente [générique]
 
