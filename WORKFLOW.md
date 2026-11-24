@@ -29,7 +29,9 @@
 - En haut, un compteur par colonne, avec un point par carte (citron vert : quelque chose attend le propriétaire ; contour orange : `priorité haute`). En dessous, cinq colonnes : **À faire**, **En cours**, **À tester par moi**, **À fusionner**, **Fait** (issues `obsolète` que le propriétaire doit fermer). Chaque issue ouverte et chaque pull request ouverte y a une carte, et une seule.
 - Chaque carte : numéro, titre court, puis « À toi » (ce que le propriétaire doit faire, ou « Rien. ») et « Fait » (ce qui a été fait). Phrases courtes, sans jargon.
 - **Chaque conversation met à jour les cartes touchées avant de finir** : déplacer, ajouter, retirer une carte fermée, réécrire les deux lignes, changer la date `maj`. Les données sont dans le bloc `<script id="data">` de la page, une carte par ligne (`n`, `col` = todo / doing / test / merge / done, `t`, `toi`, `fait`, et au besoin `pr`, `kind` = bug / idee / a11y, `on`, `haute`, `later`). Modifier ces lignes avec l'outil d'artefact (`edit_version`, après `get_artifact` pour la version), sans toucher au reste de la page.
-- Sans accès aux artefacts (conversation vocale, par exemple) : donner à la fin les cartes à changer, à coller dans une conversation écrite.
+- **Vue « Conversations »** (deuxième onglet de la page) : une ligne par conversation du projet, « Attend ta réponse » ou « Terminée », avec « À toi » (ce que le propriétaire doit répondre ou faire) et « Fait » (ce qu'elle a produit). Données dans le même bloc, liste `convs` : `u` (lien de la conversation), `t` (titre), `d` (date AAAA-MM-JJ), `st` (`wait` ou `done`), `toi`, `fait`.
+- **Chaque conversation met aussi sa propre ligne à jour avant de finir** (l'ajoute si elle n'y est pas). `wait` si elle se termine sur une question ou une validation attendue (maquette, PR à fusionner, essai), `done` sinon. Quand elle règle ce qu'une autre conversation attendait, elle passe aussi la ligne de l'autre en `done`.
+- Sans accès aux artefacts (conversation vocale, par exemple) : donner à la fin les cartes et la ligne de conversation à changer, à coller dans une conversation écrite.
 - Même règle de vie privée que partout : décrire l'app, jamais la vie du propriétaire.
 - Pourquoi pas GitHub Projects : les conversations Claude n'ont accès qu'au dépôt, pas aux tableaux Projects ; elles ne pourraient pas le tenir à jour.
 
@@ -77,7 +79,7 @@
 ## Début et fin de conversation [générique]
 
 - **Au début** : relire `WORKFLOW.md`, `CLAUDE.md` et `DESIGN.md`, regarder le tableau de bord et les issues ouvertes `priorité haute`, et rappeler en une phrase où on en est.
-- **À la fin** : mettre à jour les issues touchées, **puis leurs cartes dans le tableau de bord**, et noter ici toute nouvelle décision sur la façon de travailler.
+- **À la fin** : mettre à jour les issues touchées, **puis leurs cartes et la ligne de cette conversation dans le tableau de bord**, et noter ici toute nouvelle décision sur la façon de travailler.
 
 ## En attente [générique]
 
