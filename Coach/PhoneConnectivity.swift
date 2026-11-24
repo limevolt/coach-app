@@ -13,7 +13,7 @@ enum WatchStartResult: Equatable {
 }
 
 /// Reprend une attente une seule fois (réponse, erreur ou délai dépassé).
-private final class Once: @unchecked Sendable {
+final class Once: @unchecked Sendable {
     private var continuation: CheckedContinuation<Bool, Never>?
     private let lock = NSLock()
     init(_ continuation: CheckedContinuation<Bool, Never>) { self.continuation = continuation }

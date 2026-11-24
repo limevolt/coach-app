@@ -159,6 +159,8 @@ final class PlanStore {
         status = nil
         UserDefaults.standard.removeObject(forKey: "lastSyncDay")
         isSyncing = true
+        runSyncNeeded = false          // plus de plan : rien à reprogrammer
+        await runSyncTask?.value       // ne pas croiser une reprogrammation en cours
         await RunScheduler.removeAll()
         isSyncing = false
         pushToWatch()
@@ -374,10 +376,13 @@ final class PlanStore {
     }
 
     /// Enregistre un plan modifié dans l'app (même version) et met la montre à jour.
+    /// Ne bloque pas l'écran (#71) : l'app Coach de la montre reçoit le plan tout de suite,
+    /// les courses de l'app Exercice sont reprogrammées en arrière-plan.
     private func saveEdits(_ newPlan: TrainingPlan) async {
         try? Coding.encoder.encode(newPlan).write(to: planURL, options: .atomic)
         plan = newPlan
-        await sync()
+        pushToWatch()
+        scheduleRunSync()
     }
 
     /// Fichier ouvert depuis Mail, Fichiers ou le partage (« Ouvrir avec Coach »).
@@ -399,17 +404,62 @@ final class PlanStore {
 
     // MARK: Synchronisation montre
 
-    /// `force: false` = une seule fois par jour (au lancement de l'app).
+    /// `force: false` = une seule fois par jour (au lancement de l'app), en arrière-plan.
+    /// `force: true` = demande explicite (import, « Resynchroniser ») : attend la fin, au plus
+    /// `explicitWait`, puis laisse la mise à jour continuer en arrière-plan (#71).
     func sync(force: Bool = true) async {
         if DemoMode.isOn { return }
         pushToWatch()
-        guard let plan else { return }
-        let today = Day.key(.now)
-        if !force, UserDefaults.standard.string(forKey: "lastSyncDay") == today { return }
+        guard plan != nil else { return }
+        guard force else {
+            if UserDefaults.standard.string(forKey: "lastSyncDay") != Day.key(.now) { scheduleRunSync(delay: .zero) }
+            return
+        }
         isSyncing = true
         defer { isSyncing = false }
-        status = await RunScheduler.sync(plan: plan)
-        UserDefaults.standard.set(today, forKey: "lastSyncDay")
+        scheduleRunSync(delay: .zero)
+        if !(await waitForRunSync(timeout: Self.explicitWait)) {
+            status = "La montre ne répond pas pour l'instant : les courses seront mises à jour dès qu'elle sera joignable."
+        }
+    }
+
+    static let explicitWait: Duration = .seconds(15)
+
+    /// Reprogrammation des courses en cours (une seule à la fois).
+    @ObservationIgnored private var runSyncTask: Task<Void, Never>?
+    /// Le plan a changé depuis le début de la reprogrammation en cours : il faudra la refaire.
+    @ObservationIgnored private var runSyncNeeded = false
+
+    /// Reprogramme les courses dans l'app Exercice, sans bloquer l'écran.
+    /// Les changements rapprochés sont regroupés : une seule reprogrammation pour plusieurs modifications.
+    func scheduleRunSync(delay: Duration = .seconds(1)) {
+        if DemoMode.isOn { return }
+        runSyncNeeded = true
+        guard runSyncTask == nil else { return }
+        runSyncTask = Task { [weak self] in
+            if delay > .zero { try? await Task.sleep(for: delay) }
+            await self?.drainRunSync()
+        }
+    }
+
+    private func drainRunSync() async {
+        while runSyncNeeded, let plan {
+            runSyncNeeded = false
+            status = await RunScheduler.sync(plan: plan)
+            UserDefaults.standard.set(Day.key(.now), forKey: "lastSyncDay")
+        }
+        runSyncNeeded = false
+        runSyncTask = nil
+    }
+
+    /// Attend la fin de la reprogrammation en cours ; `false` si elle dépasse `timeout`.
+    private func waitForRunSync(timeout: Duration) async -> Bool {
+        guard let task = runSyncTask else { return true }
+        return await withCheckedContinuation { continuation in
+            let once = Once(continuation)
+            Task { await task.value; once.resume(true) }
+            Task { try? await Task.sleep(for: timeout); once.resume(false) }
+        }
     }
 
     /// Toutes les séances (course comprise, lancée via l'app Exercice) et minuteurs libres → app Coach de la montre.
