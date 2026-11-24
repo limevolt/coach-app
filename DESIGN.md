@@ -124,6 +124,20 @@ repos et « Prêt ? », chiffre blanc sur fond carte.
 - **Chaque appui a un retour visible** : état de chargement dans le bouton pendant une attente,
   sans que la mise en page saute.
 
+## Moins de mots (choix du propriétaire, 24/11/2026, #88)
+
+Trop de texte fait perdre l'utilisateur. On garde l'essentiel ; si quelque chose manque, le
+propriétaire le signale.
+
+- **Un titre tient sur une ligne**, même sur petit iPhone et en très grand texte. Sinon on
+  raccourcit le mot, pas la police.
+- **Une ligne de texte secondaire maximum** par élément, aucune si une icône ou un chiffre suffit.
+- **Pas de phrase d'explication** sur un écran d'action : elle va dans une fiche, ou disparaît.
+- **Icône + chiffre plutôt que mot + chiffre** (trophée 11:58, pas « record 11:58 »). L'icône
+  garde un libellé VoiceOver.
+- **Petit titre (`Eyebrow`) : un ou deux mots**, ou pas de petit titre.
+- **Test** : retirer un mot ; si on comprend toujours, il ne revient pas.
+
 ## Apple Watch
 
 - **Lisible en moins de 2 secondes, en mouvement.** Si ça demande de lire une phrase, c'est trop.
@@ -226,11 +240,15 @@ Pour chaque écran :
 - **États** : vide, en cours, erreur, terminé.
 - **Petit écran** : ce qui change sur montre 41 mm ou petit iPhone.
 
+La maquette part du design système « Coach » (canevas avec ses jetons installés), jamais
+d'un dessin à l'œil.
+
 ## Checklist de relecture
 
 - Comprend-on quoi faire en 2 secondes ?
 - Une seule action principale visible ?
 - Texte tronqué ou trop petit ? Et avec les grandes tailles de texte ?
+- Peut-on retirer un mot ? Un titre passe-t-il sur deux lignes ?
 - Alignements et espacements cohérents avec les autres écrans ?
 - Chaque couleur vient-elle de `Theme` et a-t-elle un sens ?
 - Est-ce que ça fait sportif, ou générique ?
