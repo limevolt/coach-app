@@ -113,7 +113,7 @@ struct SessionDetailView: View {
             Label("Pas encore faite", systemImage: "exclamationmark.circle.fill")
                 .font(.coach(size: 16, weight: .bold))
                 .foregroundStyle(Theme.warm)
-            Text("Elle était prévue \(stored.dateLabel). Reprogramme-la ou indique que tu l'as faite.")
+            Text("Elle était prévue \(stored.dateLabel.endingSentence) Reprogramme-la ou indique que tu l'as faite.")
                 .font(.coach(size: 14))
                 .foregroundStyle(Theme.muted)
             HStack(spacing: 8) {
@@ -648,6 +648,12 @@ extension View {
     func themedForm() -> some View {
         self.scrollContentBackground(.hidden)
             .background(Theme.bg.ignoresSafeArea())
+    }
+
+    /// Ligne de formulaire sur `Theme.card` au lieu du gris iOS : les contours `Theme.line`
+    /// (onglets, tuiles) restent visibles (#74).
+    func coachRow() -> some View {
+        self.listRowBackground(Theme.card)
     }
 }
 

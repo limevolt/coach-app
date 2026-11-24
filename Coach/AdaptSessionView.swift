@@ -25,8 +25,11 @@ struct AdaptSessionView: View {
             Form {
                 if let slot {
                     Section {
-                        LabeledContent("Prévu", value: slot.title)
-                        LabeledContent("Jour", value: slot.dateLabel)
+                        Group {
+                            LabeledContent("Prévu", value: slot.title)
+                            LabeledContent("Jour", value: slot.dateLabel)
+                        }
+                        .coachRow()
                     }
                     if let original = store.original(for: slot.id) {
                         Section {
@@ -36,6 +39,7 @@ struct AdaptSessionView: View {
                                 Label("Revenir à « \(original.title) » (\(original.dateLabel))",
                                       systemImage: "arrow.uturn.backward")
                             }
+                            .coachRow()
                         } footer: {
                             let linked = store.linkedOriginals(for: slot.id)
                             if !linked.isEmpty {
@@ -53,7 +57,7 @@ struct AdaptSessionView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Fermer") { dismiss() }
+                    Button("Fermer") { dismiss() }.tint(Theme.text)
                 }
             }
             .disabled(working)
@@ -83,74 +87,94 @@ struct AdaptSessionView: View {
         let unchanged = isSame && (choice != .strength || noEquipment == slot.withoutEquipment)
 
         Section {
-            SegmentedChoice("Activité", selection: tab,
-                            options: ActivityChoice.tabs.map { (value: $0, label: $0.label) })
-
-            switch choice {
-            case .strength:
-                SegmentedChoice("Matériel", selection: $noEquipment,
-                                options: [(false, "Avec matériel"), (true, "Sans matériel")])
-            case .martial:
-                Label("Avec matériel : il faut un sac de frappe.", systemImage: "info.circle")
-                    .font(.coach(.footnote))
-                    .foregroundStyle(Theme.muted)
-            case .run, .stairs:
-                // Toujours les deux : on peut changer de genre de course dans les deux sens (#73).
-                VStack(alignment: .leading, spacing: Theme.segmentSpacing * 2) {
-                    Text("Genre de course")
-                        .font(.detail)
-                        .foregroundStyle(Theme.muted)
-                        .accessibilityHidden(true)   // déjà le nom du groupe pour VoiceOver
-                    SegmentedChoice("Genre de course", selection: $choice, options: ActivityChoice.runKinds)
-                }
-                if choice == .stairs {
-                    Label("Il faut un escalier.", systemImage: "info.circle")
-                        .font(.coach(.footnote))
-                        .foregroundStyle(Theme.muted)
-                }
-            }
-
-            if let source, !isSame {
-                Text("Reprend « \(source.title) », prévue \(source.dateLabel).")
-                    .font(.coach(.subheadline))
-                    .foregroundStyle(Theme.text)
-                if canSwap {
-                    Toggle(isOn: $swapDates) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Échanger les jours")
-                            Text("« \(slot.title) » passe \(source.dateLabel).")
-                                .font(.coach(.caption))
-                                .foregroundStyle(Theme.muted)
-                        }
+            Group {
+                // Onglets et choix qui en dépend dans une seule ligne : pas de séparateur entre eux (#73).
+                VStack(alignment: .leading, spacing: Theme.blockSpacing / 2) {
+                    SegmentedChoice("Activité", selection: tab,
+                                    options: ActivityChoice.tabs.map { (value: $0, label: $0.label) })
+                    switch choice {
+                    case .strength:
+                        subChoice("Matériel", selection: $noEquipment,
+                                  options: [(false, "Avec matériel"), (true, "Sans matériel")])
+                    case .run, .stairs:
+                        // Toujours les deux : on peut changer de genre de course dans les deux sens (#73).
+                        subChoice("Genre de course", selection: $choice, options: ActivityChoice.runKinds)
+                    case .martial:
+                        EmptyView()
                     }
-                    .toggleStyle(.coach)
                 }
-            } else if source == nil {
-                Text("Aucune séance de ce type dans ton plan : l'app te propose une séance type (\(DefaultSessions.make(choice, id: "", date: slot.date, time: nil).title)).")
-                    .font(.coach(.subheadline))
-                    .foregroundStyle(Theme.muted)
-            }
 
-            Button {
-                run {
-                    await store.adapt(slotId: slot.id, to: choice, withoutEquipment: noEquipment,
-                                      swap: canSwap && swapDates)
+                if let source, !isSame {
+                    Text("Reprend « \(source.title) », prévue \(source.dateLabel.endingSentence)")
+                        .font(.coach(.subheadline))
+                        .foregroundStyle(Theme.text)
+                    if canSwap {
+                        Toggle(isOn: $swapDates) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Échanger les jours")
+                                Text("« \(slot.title) » passe \(source.dateLabel.endingSentence)")
+                                    .font(.coach(.caption))
+                                    .foregroundStyle(Theme.muted)
+                            }
+                        }
+                        .toggleStyle(.coach)
+                    }
                 }
-            } label: {
-                Label(Self.buttonTitle(choice: choice, isSame: isSame, unchanged: unchanged,
-                                       noEquipment: noEquipment),
-                      systemImage: unchanged ? "equal.circle" : "checkmark")
-                    .primaryActionStyle(enabled: !unchanged)
+
+                Button {
+                    run {
+                        await store.adapt(slotId: slot.id, to: choice, withoutEquipment: noEquipment,
+                                          swap: canSwap && swapDates)
+                    }
+                } label: {
+                    Label(Self.buttonTitle(choice: choice, isSame: isSame, unchanged: unchanged,
+                                           noEquipment: noEquipment),
+                          systemImage: unchanged ? "equal.circle" : "checkmark")
+                        .primaryActionStyle(enabled: !unchanged)
+                }
+                .buttonStyle(.plain)
+                .disabled(unchanged)
             }
-            .buttonStyle(.plain)
-            .disabled(unchanged)
+            .listRowSeparator(.hidden)   // un seul bloc, comme la maquette
+            .coachRow()
         } header: {
             Text("Faire autre chose à la place")
         } footer: {
-            if choice == .strength && noEquipment {
-                Text("Chaque exercice avec charge est remplacé par une variante maison (ex. squat lesté → squat sauté, rowing haltères → rowing sac à dos).")
-            }
+            let notes = Self.activityNotes(choice: choice, isSame: isSame, noEquipment: noEquipment,
+                                           madeTitle: source == nil
+                                               ? DefaultSessions.make(choice, id: "", date: slot.date, time: nil).title
+                                               : nil)
+            if !notes.isEmpty { Text(notes) }
         }
+    }
+
+    /// Choix qui dépend de l'onglet, avec son petit titre gris (DESIGN.md, #73).
+    private func subChoice<Value: Hashable>(_ title: String, selection: Binding<Value>,
+                                            options: [(value: Value, label: String)]) -> some View {
+        VStack(alignment: .leading, spacing: Theme.subChoiceTitleSpacing) {
+            Text(title)
+                .font(.detail)
+                .foregroundStyle(Theme.muted)
+                .accessibilityHidden(true)   // déjà le nom du groupe pour VoiceOver
+            SegmentedChoice(title, selection: selection, options: options)
+        }
+    }
+
+    /// Note grise sous le bloc : matériel nécessaire, séance type proposée, variante maison.
+    nonisolated static func activityNotes(choice: ActivityChoice, isSame: Bool, noEquipment: Bool,
+                                          madeTitle: String?) -> String {
+        var notes: [String] = []
+        if let madeTitle {
+            notes.append("Aucune séance de ce type dans ton plan : l'app te propose une séance type (\(madeTitle)).")
+        }
+        if !isSame {
+            if choice == .stairs { notes.append("Il faut un escalier.") }
+            if choice == .martial { notes.append("Il faut un sac de frappe.") }
+        }
+        if choice == .strength && noEquipment {
+            notes.append("Chaque exercice avec charge est remplacé par une variante maison (ex. squat lesté → squat sauté, rowing haltères → rowing sac à dos).")
+        }
+        return notes.joined(separator: " ")
     }
 
     /// Libellé du bouton (#72) : « avec / sans matériel » seulement pour le renfo ; quand rien ne change,
@@ -189,6 +213,7 @@ struct AdaptSessionView: View {
                                 .accessibilityHidden(true)
                         }
                     }
+                    .coachRow()
                 }
             } header: {
                 Text("Ou échanger avec un autre jour")
@@ -224,18 +249,20 @@ struct AdaptSessionView: View {
                                         .fill(training ? Theme.accent : Color.clear)
                                         .frame(width: Theme.trainingDayDot, height: Theme.trainingDayDot)
                                 }
-                                .frame(width: Theme.dayTileWidth, height: Theme.dayTileHeight)
+                                .padding(.horizontal, Theme.segmentSpacing)
+                                .frame(minWidth: Theme.dayTileWidth, minHeight: Theme.dayTileHeight)
                                 .overlay(RoundedRectangle(cornerRadius: Theme.smallButtonRadius, style: .continuous)
                                     .strokeBorder(Theme.line, lineWidth: Theme.quietStroke))
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
-                            .accessibilityLabel(day.formatted(.dateTime.weekday(.wide).day().month(.wide)))
-                            .accessibilityValue(training ? "Jour d'entraînement" : "")
+                            .accessibilityLabel(day.formatted(.dateTime.weekday(.wide).day().month(.wide))
+                                                + (training ? ", jour d'entraînement" : ""))
                         }
                     }
                     .padding(.vertical, 4)
                 }
+                .coachRow()
             } header: {
                 Text("Déplacer à un jour libre")
             } footer: {

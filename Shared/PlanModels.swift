@@ -292,6 +292,30 @@ enum PlanDate {
 }
 
 extension PlannedSession {
+    /// Titre sans accents ni majuscules, pour reconnaître un genre de séance.
+    private var foldedTitle: String {
+        title.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "fr_FR"))
+    }
+
+    /// Escaliers = course dont le titre parle d'escaliers (#73), mais pas « Côtes ou escaliers ».
+    var isStairs: Bool {
+        type == .run && foldedTitle.contains(anyOf: ["escalier", "stair"]) && !isHillsOrStairs
+    }
+
+    /// « Côtes ou escaliers » du coach : des côtes quand on n'a pas d'escalier (CoachModules).
+    var isHillsOrStairs: Bool {
+        type == .run && foldedTitle.contains(anyOf: ["escalier", "stair"]) && foldedTitle.contains(anyOf: ["cote", "hill"])
+    }
+}
+
+extension String {
+    func contains(anyOf words: [String]) -> Bool { words.contains { self.contains($0) } }
+
+    /// Termine une phrase par un point, sans doubler celui d'une abréviation (« 25 nov. »).
+    var endingSentence: String { hasSuffix(".") ? self : self + "." }
+}
+
+extension PlannedSession {
     var dateComponents: DateComponents? { PlanDate.components(date, time: time) }
 
     var startDate: Date? {

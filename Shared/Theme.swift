@@ -138,6 +138,8 @@ enum Theme {
     static let dayTileHeight: CGFloat = 68
     static let dayTileSpacing: CGFloat = 8
     static let trainingDayDot: CGFloat = 6
+    /// Petit titre gris au-dessus d'un choix qui dépend d'un autre (« Genre de course », « Matériel »).
+    static let subChoiceTitleSpacing: CGFloat = 8
 
     // Barres de l'iPhone (#64) : barre d'onglets maison et boutons du haut sans bulle
     /// Hauteur de la barre d'onglets (hors zone du bas de l'écran).

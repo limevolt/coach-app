@@ -187,6 +187,17 @@ final class CoachCaptures: XCTestCase {
                 note("Bouton « Adapter » introuvable")
             }
         }
+        // « Adapter » en très grand texte : onglets empilés, tuiles de jour qui grandissent (revue #74)
+        app = launchDemo(plan: DemoPlan.json(),
+                         arguments: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityL"])
+        _ = app.buttons["onglet-Plan"].waitForExistence(timeout: 30)
+        if openSession("Fractionné", in: app), tap("Adapter", in: app) {
+            Thread.sleep(forTimeInterval: 0.6)
+            shot("64-adapter-grand-texte")
+            app.swipeUp()
+            shot("65-adapter-grand-texte-suite")
+            audit("Adapter — grand texte", app)
+        }
 
         // 5. Accueil en très grande taille de texte
         app = launchDemo(plan: DemoPlan.json(),

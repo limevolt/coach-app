@@ -32,8 +32,10 @@ enum ActivityChoice: String, CaseIterable, Identifiable {
     /// Ordre de préférence quand l'app cherche une séance de ce type dans le plan.
     func rank(_ s: PlannedSession) -> Int? {
         switch self {
-        case .run: return s.type == .run && !s.isStairs ? 0 : nil
-        case .stairs: return s.isStairs ? 0 : nil
+        // « Côtes ou escaliers » : escaliers en 2e choix (des côtes chez qui n'a pas d'escalier), jamais
+        // « course classique », pour qu'on puisse la remplacer par un footing (revue #73).
+        case .run: return s.type == .run && !s.isStairs && !s.isHillsOrStairs ? 0 : nil
+        case .stairs: return s.isStairs ? 0 : (s.isHillsOrStairs ? 1 : nil)
         case .martial: return s.isMartial ? 0 : nil
         case .strength:
             if s.type == .strength { return 0 }
@@ -51,16 +53,9 @@ extension PlannedSession {
         return ["martial", "boxe", "sac de frappe", "frappe"].contains { t.contains($0) }
     }
 
-    /// Escaliers = course dont le titre parle d'escaliers (comme le coach, ReplacementPlanner).
-    var isStairs: Bool {
-        guard type == .run else { return false }
-        let t = title.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "fr_FR"))
-        return ["escalier", "stairs"].contains { t.contains($0) }
-    }
-
     var activity: ActivityChoice {
         if isMartial { return .martial }
-        if isStairs { return .stairs }
+        if isStairs || isHillsOrStairs { return .stairs }
         return type == .run ? .run : .strength
     }
 
