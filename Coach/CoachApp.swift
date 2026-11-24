@@ -68,10 +68,7 @@ struct ContentView: View {
         }
         .alert("Coach",
                isPresented: Binding(get: { store.alertMessage != nil },
-                                    set: { if !$0 { store.alertMessage = nil; store.alertRepair = nil } })) {
-            if let repair = store.alertRepair {
-                Button("Copier la demande de correction") { UIPasteboard.general.string = repair }
-            }
+                                    set: { if !$0 { store.alertMessage = nil } })) {
             Button("OK", role: .cancel) {}
         } message: {
             Text(store.alertMessage ?? "")

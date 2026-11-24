@@ -20,8 +20,6 @@ final class PlanStore {
     @ObservationIgnored private var watchChain: Task<Void, Never>?
     /// Message affiché en alerte (ex. après « Ouvrir avec Coach »).
     var alertMessage: String?
-    /// Demande de correction à copier pour l'IA quand un plan importé est refusé (#37).
-    var alertRepair: String?
     /// Séances adaptées dans l'app : leur version d'origine (pour pouvoir y revenir).
     private(set) var originals: [String: SessionOriginal] = [:]
 
@@ -398,7 +396,6 @@ final class PlanStore {
 
     /// Fichier ouvert depuis Mail, Fichiers ou le partage (« Ouvrir avec Coach »).
     func importFile(_ url: URL) async {
-        alertRepair = nil
         let access = url.startAccessingSecurityScopedResource()
         defer { if access { url.stopAccessingSecurityScopedResource() } }
         do {
@@ -407,9 +404,7 @@ final class PlanStore {
             try await importPlan(text: text)
             alertMessage = "Plan « \(plan?.title ?? "") » v\(plan?.version ?? 0) importé.\n\n\(status ?? "")"
         } catch {
-            let failure = PlanFormat.importFailure(error)
-            alertMessage = "Import impossible : \(failure.message)"
-            alertRepair = failure.repair
+            alertMessage = "Import impossible : \(error.localizedDescription)"
         }
     }
 

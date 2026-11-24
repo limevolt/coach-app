@@ -10,9 +10,7 @@ struct PlanView: View {
     var openTimers: () -> Void = {}
     @State private var showImporter = false
     @State private var importError: String?
-    @State private var importRepair: String?
     @State private var busy = false
-    @State private var showNewPlan = false
     /// Assistant de création d'un plan par le coach local (#45).
     @State private var showWizard = false
     @State private var confirmReset = false
@@ -75,7 +73,6 @@ struct PlanView: View {
                 case .failure(let error): importError = error.localizedDescription
                 }
             }
-            .sheet(isPresented: $showNewPlan) { NewPlanView() }
             .fullScreenCover(isPresented: $showWizard) { PlanWizardView() }
             .shareFileSheet($exportFile)
             .confirmationDialog("Marquer comme non faite ?",
@@ -88,10 +85,7 @@ struct PlanView: View {
             }
             .alert("Import impossible",
                    isPresented: Binding(get: { importError != nil },
-                                        set: { if !$0 { importError = nil; importRepair = nil } })) {
-                if let repair = importRepair {
-                    Button("Copier la demande de correction") { UIPasteboard.general.string = repair }
-                }
+                                        set: { if !$0 { importError = nil } })) {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(importError ?? "")
@@ -279,7 +273,7 @@ struct PlanView: View {
     private var planMenu: some View {
         Menu {
             Button("Créer un nouveau plan", systemImage: "sparkles") { showWizard = true }
-            importItems
+            Button("Importer un plan", systemImage: "folder") { showImporter = true }
             if let plan = store.plan {
                 Divider()
                 Button("Exporter le plan", systemImage: "square.and.arrow.up") { export(plan) }
@@ -334,13 +328,6 @@ struct PlanView: View {
         }
     }
 
-    /// Importer un plan fait ailleurs (IA, fichier) : regroupé dans un menu (#45).
-    @ViewBuilder private var importItems: some View {
-        Button("Coller le plan (presse-papiers)", systemImage: "doc.on.clipboard") { importClipboard() }
-        Button("Importer un fichier", systemImage: "folder") { showImporter = true }
-        Button("Préparer une demande pour ton IA", systemImage: "text.bubble") { showNewPlan = true }
-    }
-
     /// Aucun plan (#45, maquette validée) : titre « Plan », message au centre, « Créer mon plan » (coach local)
     /// et « Importer un plan » en bas, à portée de pouce.
     private var emptyState: some View {
@@ -373,12 +360,10 @@ struct PlanView: View {
                     Text("Créer mon plan")
                 }
                 .buttonStyle(.coachPrimary())
-                Menu {
-                    importItems
-                } label: {
+                Button { showImporter = true } label: {
                     Label("Importer un plan", systemImage: "doc")
-                        .quietActionStyle()
                 }
+                .buttonStyle(.coachQuiet())
             }
         }
         .padding(.horizontal, Theme.screenMargin)
@@ -388,14 +373,6 @@ struct PlanView: View {
     }
 
     // MARK: Import
-
-    private func importClipboard() {
-        guard let text = UIPasteboard.general.string, !text.isEmpty else {
-            importError = "Le presse-papiers est vide. Copie d'abord le plan JSON envoyé par ton IA."
-            return
-        }
-        performThrowing { try await store.importPlan(text: text) }
-    }
 
     private func importFile(_ url: URL) {
         let access = url.startAccessingSecurityScopedResource()
@@ -421,11 +398,9 @@ struct PlanView: View {
         }
     }
 
-    /// Plan refusé : l'erreur, une aide et la demande de correction à copier pour l'IA (#37).
+    /// Plan refusé : le message d'erreur.
     private func showImportError(_ error: Error) {
-        let failure = PlanFormat.importFailure(error)
-        importError = failure.message
-        importRepair = failure.repair
+        importError = error.localizedDescription
     }
 
     private func perform(_ operation: @escaping () async -> Void) {

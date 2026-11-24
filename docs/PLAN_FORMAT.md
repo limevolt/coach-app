@@ -1,6 +1,6 @@
 # Format du plan — app Coach (schemaVersion 1)
 
-> L'app ajoute déjà ce texte (à partir de « Consigne pour l'IA ») à la demande de nouveau plan et au suivi.
+> L'app ajoute déjà ce texte (à partir de « Consigne pour l'IA ») au suivi.
 > Ce fichier est embarqué dans l'app : le modifier change aussi ce que l'app envoie à l'IA.
 
 ## Consigne pour l'IA

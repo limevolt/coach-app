@@ -42,9 +42,6 @@ final class PlanFormatTests: XCTestCase {
             let message = error.localizedDescription
             XCTAssertTrue(message.contains("« title »"), message)
             XCTAssertTrue(message.contains("(plan)"), message)
-            let repair = PlanFormat.repairRequest(error: message)
-            XCTAssertTrue(repair.contains(message))
-            XCTAssertTrue(repair.contains("Consigne pour l'IA"))
         }
     }
 
@@ -53,15 +50,6 @@ final class PlanFormatTests: XCTestCase {
         let text = PlanFormat.appending(to: "Demande de démo")
         XCTAssertTrue(text.hasPrefix("Demande de démo\n\n---"))
         XCTAssertEqual(text.components(separatedBy: "## Consigne pour l'IA").count, 2)
-    }
-
-    /// Erreur sans lien avec le plan (fichier illisible…) : pas de demande de correction.
-    func testOtherErrorsHaveNoRepair() {
-        let failure = PlanFormat.importFailure(CocoaError(.fileReadNoSuchFile))
-        XCTAssertNil(failure.repair)
-        let planFailure = PlanFormat.importFailure(PlanError.invalid("Le plan ne contient aucune séance."))
-        XCTAssertNotNil(planFailure.repair)
-        XCTAssertTrue(planFailure.message.contains(PlanFormat.importHelp))
     }
 
     /// Le même plan, avec son titre, est accepté.
