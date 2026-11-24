@@ -20,6 +20,7 @@
 - Tout bug, toute idée et toute décision vit dans une issue, pas dans un document à part.
 - Avant de créer une issue, chercher si elle existe déjà. Si oui, ajouter un commentaire avec ce qui est nouveau.
 - Étiquettes : `bug` ou `enhancement`, plus `iPhone`, `Montre` ou `Design`. Ajouter `priorité haute` quand un problème empêche de faire une séance, et `à retester` quand un bug est peut-être déjà corrigé.
+- `obsolète` : issue déjà corrigée, remplacée par une autre ou en double. Claude ajoute l'étiquette et un commentaire court (pourquoi, avec le lien vers la PR ou l'issue qui la remplace), sans fermer l'issue : c'est le propriétaire qui la ferme.
 - Une issue de bug dit toujours : ce qui s'est passé, ce qui était attendu, et comment le reproduire. Sans données personnelles (voir `CLAUDE.md`).
 
 ## Après chaque séance : le retour [générique]
