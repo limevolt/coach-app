@@ -37,17 +37,10 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<false/>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<true/>
-	</dict>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Coach lit tes entraînements, ta fréquence cardiaque et ta VFC pour préparer ton suivi.</string>
+	<string>Coach lit tes entraînements et ta fréquence cardiaque pour adapter ton plan.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Coach enregistre tes séances dans Santé.</string>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>Coach se connecte à ton propre coach (par exemple Ollama sur ton Mac) sur ton réseau.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Outfit-Regular.ttf</string>

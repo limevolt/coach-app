@@ -30,7 +30,7 @@ enum DoneState {
         return current.planId != new.planId
     }
 
-    /// Plan réinitialisé : les journaux de séances restent dans l'historique (suivi, export)
+    /// Plan réinitialisé : les journaux de séances restent dans l'historique (export)
     /// mais ne sont plus reliés à aucune séance, même si le nouveau plan reprend les mêmes identifiants.
     static func archiving(_ logs: [SessionLog], at date: Date) -> [SessionLog] {
         logs.map { log in

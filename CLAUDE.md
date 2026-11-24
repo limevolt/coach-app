@@ -28,6 +28,8 @@ commit, issues, pull requests, commentaires, branches `ci-logs` et `ci-captures`
 Coach est développée par et pour son propriétaire, mais doit pouvoir servir à d'autres personnes,
 chacune avec ses propres réglages et son propre plan.
 
+- **Pas de fonction d'IA pour le moment (#92)** : ni copier-coller vers une IA, ni « Mon propre coach ».
+  Une couche IA facultative reviendra plus tard (#51), en suivant les règles ci-dessous.
 - **Fonctions génériques.** Ne pas lier l'app à un outil précis : « Partager », « Copier »,
   « ton IA » ou « ton coach », pas « Claude ». L'utilisateur choisit l'IA ou l'app dans le menu
   de partage d'iOS. Quand le propriétaire parle de Claude, comprendre « l'IA » et proposer la
@@ -49,7 +51,6 @@ chacune avec ses propres réglages et son propre plan.
 
 - Grouper les corrections et vérifier le code avant de pousser ; éviter les allers-retours.
 - Un commit qui ne change que de la doc ou la config sans code : ajouter `[skip ci]`.
-  Exception : `docs/PLAN_FORMAT.md` est embarqué dans l'app (texte envoyé à l'IA) : pas de `[skip ci]`.
 - `[captures]` seulement pour un vrai changement d'écran, et une fois le code prêt.
 
 ## Interface (iPhone et montre)

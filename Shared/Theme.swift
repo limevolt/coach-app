@@ -31,7 +31,7 @@ enum Theme {
     static let dangerBg = Color(hex: 0x1F1514)
     static let successBg = Color(hex: 0x18210F)
 
-    /// Héros : dégradé citron vert → turquoise, réservé à la progression (accueil, Suivi).
+    /// Héros : dégradé citron vert → turquoise, réservé à la progression (accueil).
     static let heroGradient = LinearGradient(colors: [accent, teal], startPoint: .leading, endPoint: .trailing)
 
     /// Texte posé sur une pastille pleine (couleur du type de séance).

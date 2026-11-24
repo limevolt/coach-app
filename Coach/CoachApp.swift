@@ -34,12 +34,11 @@ struct ContentView: View {
     /// Appui sur l'onglet déjà choisi (#64) : compteur transmis à l'onglet (`tabReselect`).
     @State private var reselects: [AppTab: Int] = [:]
 
-    enum AppTab: Hashable { case plan, timers, report, settings }
+    enum AppTab: Hashable { case plan, timers, settings }
 
     private static let tabs: [CoachTab<AppTab>] = [
         CoachTab(id: .plan, title: "Plan", systemImage: "calendar"),
         CoachTab(id: .timers, title: "Libre", systemImage: "timer"),
-        CoachTab(id: .report, title: "Suivi", systemImage: "chart.line.uptrend.xyaxis"),
         CoachTab(id: .settings, title: "Réglages", systemImage: "gearshape")
     ]
 
@@ -57,10 +56,6 @@ struct ContentView: View {
                 .environment(\.tabReselect, reselects[.timers, default: 0])
                 .coachTabBar(bar)
                 .tag(AppTab.timers)
-            ReportView()
-                .environment(\.tabReselect, reselects[.report, default: 0])
-                .coachTabBar(bar)
-                .tag(AppTab.report)
             SettingsView()
                 .environment(\.tabReselect, reselects[.settings, default: 0])
                 .coachTabBar(bar)

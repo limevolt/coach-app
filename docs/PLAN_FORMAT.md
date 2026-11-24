@@ -1,11 +1,11 @@
 # Format du plan — app Coach (schemaVersion 1)
 
-> L'app ajoute déjà ce texte (à partir de « Consigne pour l'IA ») au suivi.
-> Ce fichier est embarqué dans l'app : le modifier change aussi ce que l'app envoie à l'IA.
+> Format d'un fichier de plan à importer dans l'app (menu ••• › « Importer un plan »).
+> Les plans créés par le coach de l'app suivent le même format.
 
 ## Consigne pour l'IA
 
-Tu es mon coach course + renforcement musculaire. Tu produis mon plan au format JSON ci-dessous, dans un seul bloc de code. Mets des consignes pas à pas (`instructions`) pour chaque exercice, en commençant par des exercices classiques. Quand je t'envoie un suivi (généré par l'app), tu l'analyses (séances faites ou manquées, effort perçu, FC, allures, charges, circuits, séances libres, FC au repos, VFC, progression vers les objectifs) et tu renvoies le plan complet mis à jour : même `planId`, `version` + 1, séances datées à partir d'aujourd'hui, objectifs mis à jour (`current`, `progress`). Construis le plan à rebours depuis l'échéance des objectifs, avec une semaine allégée toutes les 3 ou 4 semaines. Pour chaque exercice avec charge ou matériel, ajoute une variante `noEquipment` (au poids du corps). Si le suivi ou la demande indique « Jours disponibles pour m'entraîner », place les séances **uniquement ces jours-là**.
+Tu es mon coach course + renforcement musculaire. Tu produis mon plan au format JSON ci-dessous, dans un seul bloc de code. Mets des consignes pas à pas (`instructions`) pour chaque exercice, en commençant par des exercices classiques. Pour une mise à jour du plan : même `planId`, `version` + 1, séances datées à partir d'aujourd'hui, objectifs mis à jour (`current`, `progress`). Construis le plan à rebours depuis l'échéance des objectifs, avec une semaine allégée toutes les 3 ou 4 semaines. Pour chaque exercice avec charge ou matériel, ajoute une variante `noEquipment` (au poids du corps). Si je donne mes jours disponibles pour m'entraîner, place les séances **uniquement ces jours-là**.
 
 **Textes courts** : `notes` (plan et séances) = 3 à 5 lignes maximum, une idée par ligne, commençant par `- `. Pas de paragraphe. `**gras**` autorisé pour l'essentiel (allure, zone, consigne clé). La première ligne doit résumer la séance : elle sert d'aperçu quand le texte est replié.
 
@@ -120,7 +120,7 @@ L'utilisateur peut adapter une séance depuis l'iPhone (autre activité, sans ma
 - `replaces` : titre de la séance remplacée ;
 - `coachNote` : ce que le coach de l'app a changé (« Déplacée par le coach (squash jeudi) », « Allégée par le coach (squash la veille) »).
 
-Le suivi les signale. Dans le plan mis à jour, **supprime `originalDate`, `replaces` et `coachNote`** (tiens-en compte pour la suite).
+Dans un plan mis à jour, **supprime `originalDate`, `replaces` et `coachNote`** (tiens-en compte pour la suite).
 
 ### Consignes et vidéos (tous les exercices)
 

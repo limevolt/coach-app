@@ -124,7 +124,7 @@ private struct WizardStepView: View {
             Button("Remplacer mon plan", role: .destructive) { create() }
             Button("Annuler", role: .cancel) {}
         } message: {
-            Text("Le plan en cours est archivé sur ton iPhone. Tes séances faites restent dans le suivi.")
+            Text("Le plan en cours est archivé sur ton iPhone. Tes séances faites sont conservées.")
         }
     }
 

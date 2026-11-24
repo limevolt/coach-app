@@ -33,7 +33,7 @@ extension View {
             }
             Button("Annuler", role: .cancel) {}
         } message: {
-            Text("Le plan est archivé puis retiré de l'iPhone et de la montre. Ton historique (séances faites, ressentis) reste dans le suivi, mais le prochain plan démarre sans aucune séance faite. Pense à l'exporter avant si tu veux le garder.")
+            Text("Le plan est archivé puis retiré de l'iPhone et de la montre. Ton historique (séances faites, ressentis) est conservé, mais le prochain plan démarre sans aucune séance faite. Pense à l'exporter avant si tu veux le garder.")
         }
     }
 }

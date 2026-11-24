@@ -38,13 +38,6 @@ enum TrainingDays {
         guard n.count > 1 else { return n.first ?? "" }
         return n.dropLast().joined(separator: ", ") + " et " + n.last!
     }
-
-    /// Ligne ajoutée au suivi, pour que l'IA en tienne compte.
-    static var exportLine: String? {
-        let days = current
-        guard !days.isEmpty, days.count < 7 else { return nil }
-        return "Jours disponibles pour m'entraîner : \(label(days)). Place les séances uniquement ces jours-là."
-    }
 }
 
 // MARK: - Sélecteur de jours (7 pastilles)
