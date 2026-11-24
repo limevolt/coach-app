@@ -89,7 +89,7 @@ Toutes ces tailles suivent Dynamic Type, sauf le héros (taille fixe, comme les 
 
 ### Formes et espaces
 Les mesures sont des jetons (`Shared/DesignTokens.swift`) : voir « Design système » plus bas.
-- Marges latérales 20 (`Theme.screenMargin`), 28 entre les blocs (`Theme.blockSpacing`, passage à 24 proposé dans #76).
+- Marges latérales 20 (`Theme.screenMargin`), 24 entre les blocs (`Theme.blockSpacing`, choix du propriétaire, #76).
 - Bouton principal : plein citron vert, 52 de haut, rayon 16 (`.coachPrimary()`).
 - Bouton discret : contour gris, texte blanc, 44 de haut (`.coachQuiet()`).
 - Lignes de liste : 52 de haut (`Theme.rowHeight`).
@@ -226,8 +226,8 @@ ici. S'il manque quelque chose, on l'ajoute au catalogue (et à cette liste), pu
 | Famille | Valeurs | Dans le code |
 |---|---|---|
 | Espacements | 2 · 4 · 8 · 12 · 16 · 24 · 32 | `Space.hairline` (dans un composant seulement) · `xs` · `s` · `m` · `l` · `xl` · `xxl` |
-| Rôles d'espace | marge d'écran 20, entre blocs 28 | `Theme.screenMargin`, `Theme.blockSpacing` |
-| Rayons | 8 · 12 · 16 · 20 · 24 | `Radius.xs` (étiquette, case) · `s` (tuile, option d'onglets) · `m` (bouton, champ, choix) · `card` · `hero` (carte du jour) |
+| Rôles d'espace | marge d'écran 20, entre blocs 24 | `Theme.screenMargin`, `Theme.blockSpacing` |
+| Rayons | 8 · 12 · 16 · 24 | `Radius.xs` (étiquette, case) · `s` (tuile, option d'onglets) · `m` (bouton, champ, choix) · `card` (toutes les cartes, carte du jour comprise) |
 | Marges de carte | 16 (carte), 12 (tuile) | `Theme.cardPadding`, `Theme.tilePadding` |
 | Hauteurs | 44 · 52 · 64 | `Theme.minTap`, `Theme.primaryButtonHeight` / `rowHeight`, `Theme.largeButtonHeight` |
 | Texte | voir « Typographie » | `Font.hero`, `.screenTitle`, `.number`, `.text`, `.detail`, `.unit`, `.label` |

@@ -34,10 +34,10 @@ enum Radius {
     static let s: CGFloat = 12
     /// 16 : bouton, champ, choix.
     static let m: CGFloat = 16
-    /// 20 : carte (question ouverte dans #76 : passer à 24 comme la carte du jour ?).
-    static let card: CGFloat = 20
-    /// 24 : carte principale de l'écran (la carte du jour).
-    static let hero: CGFloat = 24
+    /// 24 : toutes les cartes, comme la carte du jour (choix du propriétaire, 24/11/2026, #76).
+    static let card: CGFloat = 24
+    /// Carte du jour : même rayon que les autres cartes.
+    static let hero: CGFloat = card
 }
 
 extension Theme {

@@ -121,7 +121,7 @@ enum Theme {
     /// Marge latérale de l'écran.
     static let screenMargin: CGFloat = 20
     /// Espace entre deux blocs d'un écran.
-    static let blockSpacing: CGFloat = 28
+    static let blockSpacing: CGFloat = Space.xl  // 24 (choix du propriétaire, 24/11/2026, #76)
     /// Écran « Le coach prépare ton plan » : petit coureur (réduit en très grand texte) et barre d'avancement.
     static let creationFigure: CGFloat = 180
     static let creationFigureCompact: CGFloat = 120
