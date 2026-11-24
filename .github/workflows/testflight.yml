@@ -9,8 +9,7 @@ name: TestFlight
 
 on:
   push:
-    # « testflight » : branche du premier essai (#89), à retirer avant la fusion.
-    branches: [main, testflight]
+    branches: [main]
     paths:
       - "**"
       - "!docs/**"
