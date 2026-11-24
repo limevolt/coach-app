@@ -12,18 +12,6 @@ enum WatchStartResult: Equatable {
     var isSent: Bool { self == .sent }
 }
 
-/// Reprend une attente une seule fois (réponse, erreur ou délai dépassé).
-final class Once: @unchecked Sendable {
-    private var continuation: CheckedContinuation<Bool, Never>?
-    private let lock = NSLock()
-    init(_ continuation: CheckedContinuation<Bool, Never>) { self.continuation = continuation }
-    func resume(_ value: Bool) {
-        lock.lock(); defer { lock.unlock() }
-        continuation?.resume(returning: value)
-        continuation = nil
-    }
-}
-
 @MainActor
 final class PhoneConnectivity: NSObject, WCSessionDelegate {
     static let shared = PhoneConnectivity()

@@ -158,12 +158,10 @@ final class PlanStore {
         persistOriginals()
         status = nil
         UserDefaults.standard.removeObject(forKey: "lastSyncDay")
-        isSyncing = true
-        runSyncNeeded = false          // plus de plan : rien à reprogrammer
-        await runSyncTask?.value       // ne pas croiser une reprogrammation en cours
-        await RunScheduler.removeAll()
-        isSyncing = false
         pushToWatch()
+        // Retrait des courses dans la même file que les reprogrammations : sans attendre la montre (#71),
+        // et sans croiser une reprogrammation en cours (plus de plan → tout est retiré).
+        scheduleRunSync(delay: .zero)
     }
 
     // MARK: Adapter une séance
@@ -424,42 +422,80 @@ final class PlanStore {
     }
 
     static let explicitWait: Duration = .seconds(15)
+    /// Au-delà, une reprogrammation est jugée bloquée (montre injoignable) : la suivante ne l'attend plus.
+    @ObservationIgnored var stuckAfter: Duration = .seconds(60)
 
-    /// Reprogrammation des courses en cours (une seule à la fois).
+    /// Ce qui parle à l'app Exercice de la montre ; remplaçable dans les tests.
+    struct RunSyncOperations {
+        var sync: @MainActor (TrainingPlan) async -> String
+        var removeAll: @MainActor () async -> Void
+
+        static let live = RunSyncOperations(sync: { await RunScheduler.sync(plan: $0) },
+                                            removeAll: { await RunScheduler.removeAll() })
+    }
+
+    @ObservationIgnored var runSyncOperations = RunSyncOperations.live
+    /// Reprogrammation en cours (une seule à la fois), avec son numéro et son heure de départ.
     @ObservationIgnored private var runSyncTask: Task<Void, Never>?
+    @ObservationIgnored private var runSyncGeneration = 0
+    @ObservationIgnored private var runSyncStartedAt: ContinuousClock.Instant?
     /// Le plan a changé depuis le début de la reprogrammation en cours : il faudra la refaire.
     @ObservationIgnored private var runSyncNeeded = false
+    /// Attentes de « Resynchroniser », reprises à la fin de la file.
+    @ObservationIgnored private var runSyncWaiters: [Once] = []
 
-    /// Reprogramme les courses dans l'app Exercice, sans bloquer l'écran.
+    /// Met les courses de l'app Exercice à jour (ou les retire s'il n'y a plus de plan), sans bloquer l'écran.
     /// Les changements rapprochés sont regroupés : une seule reprogrammation pour plusieurs modifications.
     func scheduleRunSync(delay: Duration = .seconds(1)) {
         if DemoMode.isOn { return }
         runSyncNeeded = true
-        guard runSyncTask == nil else { return }
+        if runSyncTask != nil {
+            // Une reprogrammation bloquée (montre qui ne répond jamais) ne doit pas bloquer les suivantes.
+            guard let started = runSyncStartedAt, ContinuousClock.now - started > stuckAfter else { return }
+        }
+        runSyncGeneration += 1
+        let generation = runSyncGeneration
+        runSyncStartedAt = .now
         runSyncTask = Task { [weak self] in
             if delay > .zero { try? await Task.sleep(for: delay) }
-            await self?.drainRunSync()
+            await self?.drainRunSync(generation)
         }
     }
 
-    private func drainRunSync() async {
-        while runSyncNeeded, let plan {
+    private func drainRunSync(_ generation: Int) async {
+        while runSyncNeeded, generation == runSyncGeneration {
             runSyncNeeded = false
-            status = await RunScheduler.sync(plan: plan)
-            UserDefaults.standard.set(Day.key(.now), forKey: "lastSyncDay")
+            runSyncStartedAt = .now
+            if let plan {
+                let message = await runSyncOperations.sync(plan)
+                guard generation == runSyncGeneration else { return }   // abandonnée entre-temps
+                if self.plan != nil {
+                    status = message
+                    UserDefaults.standard.set(Day.key(.now), forKey: "lastSyncDay")
+                }
+            } else {
+                await runSyncOperations.removeAll()
+            }
         }
-        runSyncNeeded = false
+        guard generation == runSyncGeneration else { return }
         runSyncTask = nil
+        runSyncStartedAt = nil
+        let waiters = runSyncWaiters
+        runSyncWaiters = []
+        waiters.forEach { $0.resume(true) }
     }
 
-    /// Attend la fin de la reprogrammation en cours ; `false` si elle dépasse `timeout`.
-    private func waitForRunSync(timeout: Duration) async -> Bool {
-        guard let task = runSyncTask else { return true }
-        return await withCheckedContinuation { continuation in
+    /// Attend que la file soit vide ; `false` si ça dépasse `timeout`.
+    func waitForRunSync(timeout: Duration) async -> Bool {
+        guard runSyncTask != nil else { return true }
+        var timer: Task<Void, Never>?
+        let done = await withCheckedContinuation { continuation in
             let once = Once(continuation)
-            Task { await task.value; once.resume(true) }
-            Task { try? await Task.sleep(for: timeout); once.resume(false) }
+            runSyncWaiters.append(once)
+            timer = Task { try? await Task.sleep(for: timeout); once.resume(false) }
         }
+        timer?.cancel()
+        return done
     }
 
     /// Toutes les séances (course comprise, lancée via l'app Exercice) et minuteurs libres → app Coach de la montre.
