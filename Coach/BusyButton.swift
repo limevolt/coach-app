@@ -1,7 +1,7 @@
 // BusyButton.swift — composants partagés pour les actions qui prennent du temps (#34, #20).
 // - BusyButton : pendant le travail, indicateur dans le bouton et bouton désactivé ;
 //   l'écran reste réactif et on ne peut pas réappuyer.
-// - LongTextPreview : aperçu léger d'un long texte (suivi, demande de plan). Afficher tout le
+// - LongTextPreview : aperçu léger d'un long texte (suivi). Afficher tout le
 //   texte dans un formulaire figeait l'écran à chaque mise à jour.
 // - ShareFileSheet : feuille de partage d'un fichier déjà préparé en arrière-plan.
 

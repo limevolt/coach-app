@@ -56,7 +56,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Mes jours d'entraînement")
                 } footer: {
-                    Text("Ajoutés au suivi et à la demande de nouveau plan : le coach place les séances ces jours-là. Sur l'écran Plan, l'app propose de ranger les séances qui tombent un autre jour.")
+                    Text("Ajoutés au suivi : le coach place les séances ces jours-là. Sur l'écran Plan, l'app propose de ranger les séances qui tombent un autre jour.")
                 }
 
                 Section {
