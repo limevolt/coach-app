@@ -16,6 +16,8 @@ final class PlanStore {
     var isSyncing: Bool { activeSyncs > 0 }
     /// Annule l'opération WorkoutKit en cours : une seule à la fois (#67).
     @ObservationIgnored private var cancelWatchWork: (() -> Void)?
+    /// Fin réelle de la dernière opération WorkoutKit (même annulée) : la suivante l'attend (#71).
+    @ObservationIgnored private var watchChain: Task<Void, Never>?
     /// Message affiché en alerte (ex. après « Ouvrir avec Coach »).
     var alertMessage: String?
     /// Demande de correction à copier pour l'IA quand un plan importé est refusé (#37).
@@ -137,6 +139,7 @@ final class PlanStore {
         persistOriginals()
         // L'ancien message parlait de l'ancien plan ; le nouveau arrive à la fin de la mise à jour.
         status = nil
+        cancelScheduledRunSync()
         Task { await sync(quiet: true) }
     }
 
@@ -165,7 +168,9 @@ final class PlanStore {
         persistOriginals()
         status = nil
         UserDefaults.standard.removeObject(forKey: "lastSyncDay")
-        _ = await onWatch { await RunScheduler.removeAll() }
+        cancelScheduledRunSync()
+        let removeAll = runRemoveAll
+        _ = await onWatch { await removeAll() }
         pushToWatch()
     }
 
@@ -384,6 +389,9 @@ final class PlanStore {
     private func saveEdits(_ newPlan: TrainingPlan) async {
         try? Coding.encoder.encode(newPlan).write(to: planURL, options: .atomic)
         plan = newPlan
+        // Courses à refaire tant que la mise à jour n'a pas abouti : si l'app est fermée avant,
+        // la synchro du retour au premier plan la relance (#71, revue).
+        UserDefaults.standard.removeObject(forKey: "lastSyncDay")
         pushToWatch()
         scheduleRunSync()
     }
@@ -420,22 +428,38 @@ final class PlanStore {
 
     /// Une seule opération WorkoutKit à la fois (#67) : la précédente est annulée, pour ne jamais programmer
     /// les courses en double ni laisser celles d'un ancien plan ; et jamais plus de `syncTimeout` d'attente.
+    /// La suivante ne démarre qu'une fois la précédente vraiment arrêtée (#71, revue) : un appel WorkoutKit
+    /// déjà parti va jusqu'au bout, et la comparaison des courses doit se faire après lui.
     /// `counted: false` = en arrière-plan : `isSyncing` ne bouge pas, rien n'est grisé à l'écran (#71).
     private func onWatch<T>(counted: Bool = true,
                             _ operation: @escaping @Sendable () async -> T) async -> WatchOutcome<T> {
         cancelWatchWork?()
-        let work = Task { await Deadline.value(within: Self.syncTimeout, operation) }
+        let previous = watchChain
+        let limit = Self.syncTimeout
+        let real = Task<T?, Never> {
+            // Une précédente qui ne revient jamais (montre muette) ne bloque pas la file au-delà de `limit`.
+            if let previous { _ = await Deadline.value(within: limit) { await previous.value } }
+            if Task.isCancelled { return nil }
+            return await operation()
+        }
+        watchChain = Task { _ = await real.value }
+        let work = Task { await Deadline.value(within: Self.syncTimeout) { await real.value } }
         var replaced = false
         cancelWatchWork = {
             replaced = true
             work.cancel()
+            real.cancel()
         }
         if counted { activeSyncs += 1 }
         defer { if counted { activeSyncs -= 1 } }
-        let value = await work.value
+        let value = await work.value ?? nil
         if replaced { return .replaced }
         cancelWatchWork = nil
-        return value.map { .done($0) } ?? .timedOut
+        guard let value else {
+            real.cancel()   // délai dépassé : elle s'arrête au prochain appel à la montre
+            return .timedOut
+        }
+        return .done(value)
     }
 
     /// `force: false` = une seule fois par jour (au lancement de l'app), en arrière-plan.
@@ -461,6 +485,7 @@ final class PlanStore {
 
     /// Ce qui programme les courses dans l'app Exercice ; remplaçable dans les tests.
     @ObservationIgnored var runSync: @Sendable (TrainingPlan) async -> String = { await RunScheduler.sync(plan: $0) }
+    @ObservationIgnored var runRemoveAll: @Sendable () async -> Void = { await RunScheduler.removeAll() }
     /// Mise à jour des courses en attente après une modification (une seule pour des changements rapprochés).
     @ObservationIgnored private var pendingRunSync: Task<Void, Never>?
     @ObservationIgnored private var runSyncRequest = 0
@@ -476,6 +501,13 @@ final class PlanStore {
             guard let self, request == self.runSyncRequest else { return }
             await self.sync(quiet: true)
         }
+    }
+
+    /// Oublie la mise à jour en attente (plan remplacé ou réinitialisé : sa propre synchro suit).
+    func cancelScheduledRunSync() {
+        runSyncRequest += 1
+        pendingRunSync?.cancel()
+        pendingRunSync = nil
     }
 
     /// Pour les tests : attend la dernière mise à jour en arrière-plan.
