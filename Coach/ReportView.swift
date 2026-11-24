@@ -123,7 +123,7 @@ struct ReportView: View {
                     Task {
                         do {
                             try await store.apply(proposal.plan)
-                            store.alertMessage = "Plan « \(proposal.plan.title) » v\(proposal.plan.version) appliqué.\n\n\(store.status ?? "")"
+                            store.alertMessage = "Plan « \(proposal.plan.title) » v\(proposal.plan.version) appliqué.\n\nLa montre se met à jour en arrière-plan."
                         } catch {
                             coachError = error.localizedDescription
                         }

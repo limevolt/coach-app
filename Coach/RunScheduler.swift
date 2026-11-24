@@ -21,8 +21,11 @@ enum RunScheduler {
         guard state == .authorized else {
             return "Course : autorisation refusée. Active-la dans Réglages > Apps > Coach."
         }
+        // Mise à jour abandonnée (délai dépassé ou remplacée par une plus récente, #67) : on s'arrête là.
+        if Task.isCancelled { return "" }
 
         await scheduler.removeAllWorkouts()
+        if Task.isCancelled { return "" }
 
         let today = Calendar.current.startOfDay(for: .now)
         let upcoming = plan.sessions
@@ -33,6 +36,7 @@ enum RunScheduler {
         var scheduled = 0
         var errors: [String] = []
         for session in upcoming.prefix(limit) {
+            if Task.isCancelled { break }
             guard let when = session.dateComponents else { continue }
             do {
                 let workout = try RunWorkoutFactory.customWorkout(for: session)
@@ -59,7 +63,7 @@ enum RunScheduler {
     static func removeAll() async {
         guard WorkoutScheduler.isSupported else { return }
         let scheduler = WorkoutScheduler.shared
-        guard await scheduler.authorizationState == .authorized else { return }
+        guard await scheduler.authorizationState == .authorized, !Task.isCancelled else { return }
         await scheduler.removeAllWorkouts()
     }
 }

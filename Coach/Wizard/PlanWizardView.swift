@@ -51,6 +51,7 @@ private struct WizardStepView: View {
 
     @Environment(PlanStore.self) private var store
     @State private var creating = false
+    @State private var creationState: PlanCreationState = .working
     @State private var createError: String?
     @State private var confirmReplace = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -109,6 +110,16 @@ private struct WizardStepView: View {
         .navigationBarBackButtonHidden(creating)
         .interactiveDismissDisabled(creating)
         .safeAreaInset(edge: .bottom) { bottomBar }
+        // Écran d'attente « Le coach prépare ton plan » par-dessus l'étape, barres du haut cachées.
+        .overlay {
+            if creating {
+                PlanCreationView(state: creationState, hasEvent: draft.hasEvent, retry: create,
+                                 edit: { creating = false })
+                    .transition(.opacity)
+            }
+        }
+        .toolbar(creating ? .hidden : .automatic, for: .navigationBar)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: creating)
         .confirmationDialog("Remplacer ton plan actuel ?", isPresented: $confirmReplace, titleVisibility: .visible) {
             Button("Remplacer mon plan", role: .destructive) { create() }
             Button("Annuler", role: .cancel) {}
@@ -135,13 +146,9 @@ private struct WizardStepView: View {
                     path.append(next)
                 }
             } label: {
-                HStack(spacing: 10) {
-                    if creating { ProgressView().tint(Theme.accentDark) }
-                    Text(step == .summary
-                         ? (creating ? "Création…" : (store.plan == nil ? "Créer le plan" : "Remplacer mon plan"))
-                         : "Continuer")
-                }
-                .primaryActionStyle(enabled: issue == nil)
+                // Pendant la création, l'écran d'attente recouvre ce bouton (#68).
+                Text(step == .summary ? (store.plan == nil ? "Créer le plan" : "Remplacer mon plan") : "Continuer")
+                    .primaryActionStyle(enabled: issue == nil)
             }
             .buttonStyle(.plain)
             .disabled(issue != nil || creating)
@@ -174,30 +181,51 @@ private struct WizardStepView: View {
 
     // MARK: Création
 
+    /// Attente maximale du calcul du plan (normalement moins d'une seconde).
+    static let generationTimeout: Duration = .seconds(10)
+    /// Durée minimale de l'écran d'attente (choix du propriétaire) : le coach « travaille », sans clignotement.
+    static let minimumWaiting: Duration = .seconds(10)
+    /// « Ton plan est prêt » reste affiché un instant avant l'ouverture du plan.
+    static let readyPause: Duration = .milliseconds(600)
+
     private func create() {
-        guard !creating else { return }
+        if creating && creationState == .working { return }
         creating = true
+        creationState = .working
         createError = nil
         let settings = draft.settings()
         let profile = draft.profile
         let start = draft.startingPoint
         let memory = CoachStorage.loadMemory()
+        let started = ContinuousClock.now
         Task {
             do {
-                let generated = try await Task.detached(priority: .userInitiated) {
-                    try PlanGenerator(settings: settings, profile: profile, memory: memory, start: start).generate()
-                }.value
+                // Garde-fou : le calcul est local et rapide ; s'il ne finit pas, on le dit au lieu de tourner sans fin.
+                let result = await Deadline.value(within: Self.generationTimeout) {
+                    await Task.detached(priority: .userInitiated) {
+                        Result { try PlanGenerator(settings: settings, profile: profile, memory: memory, start: start).generate() }
+                    }.value
+                }
+                guard let result else {
+                    creationState = .failed("Le coach n'a pas réussi à créer le plan. Réessaie, ou change un réglage (jours, disciplines).")
+                    return
+                }
+                let generated = try result.get()
                 // Réglages et profil d'abord : en cas d'échec, le plan actuel n'est pas remplacé.
                 try CoachStorage.save(settings: settings, profile: profile)
+                let waited = ContinuousClock.now - started
+                if waited < Self.minimumWaiting { try? await Task.sleep(for: Self.minimumWaiting - waited) }
+                // La montre est mise à jour en arrière-plan : on n'attend pas sa réponse ici.
                 try await store.apply(generated.plan)
-                creating = false
+                creationState = .ready
+                try? await Task.sleep(for: Self.readyPause)
                 finish()
             } catch PlanGeneratorError.invalidSettings(let issues) {
+                // Réglage à corriger : retour à l'étape, message au-dessus du bouton.
                 createError = issues.first?.message ?? "Réglages incomplets."
                 creating = false
             } catch {
-                createError = "Impossible de créer le plan : \(error.localizedDescription)"
-                creating = false
+                creationState = .failed("Impossible de créer le plan : \(error.localizedDescription)")
             }
         }
     }

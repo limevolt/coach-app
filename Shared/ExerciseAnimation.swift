@@ -431,12 +431,13 @@ struct AnimatedExerciseFigure: View {
     var muscles = false
     var playing = true
     var fps: Double = 30
+    var shadow = true
 
     var body: some View {
         TimelineView(.animation(minimumInterval: 1 / fps, paused: !playing)) { context in
             ExerciseFigure(animation: animation,
                            time: context.date.timeIntervalSinceReferenceDate,
-                           muscles: muscles)
+                           muscles: muscles, shadow: shadow)
         }
     }
 }

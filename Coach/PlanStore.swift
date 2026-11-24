@@ -11,7 +11,11 @@ final class PlanStore {
     var logs: [SessionLog] = [] { didSet { linksCache = nil } }
     var templates: [IntervalTemplate] = []
     var status: String?
-    var isSyncing = false
+    /// Mises à jour de la montre en cours (création, resynchronisation, réinitialisation).
+    private var activeSyncs = 0
+    var isSyncing: Bool { activeSyncs > 0 }
+    /// Annule l'opération WorkoutKit en cours : une seule à la fois (#67).
+    @ObservationIgnored private var cancelWatchWork: (() -> Void)?
     /// Message affiché en alerte (ex. après « Ouvrir avec Coach »).
     var alertMessage: String?
     /// Demande de correction à copier pour l'IA quand un plan importé est refusé (#37).
@@ -106,7 +110,8 @@ final class PlanStore {
         return newPlan
     }
 
-    /// Remplace le plan actuel (l'ancien est archivé) et synchronise la montre.
+    /// Remplace le plan actuel (l'ancien est archivé) et synchronise la montre en arrière-plan :
+    /// le plan est enregistré tout de suite, même si la montre met du temps à répondre (bug « Créer le plan » bloqué).
     func apply(_ newPlan: TrainingPlan) async throws {
         if DoneState.isDifferentPlan(current: plan, new: newPlan) {
             // Autre plan : les séances faites restent dans l'historique mais ne passent pas au nouveau (#45).
@@ -130,7 +135,9 @@ final class PlanStore {
         }
         originals = [:]
         persistOriginals()
-        await sync()
+        // L'ancien message parlait de l'ancien plan ; le nouveau arrive à la fin de la mise à jour.
+        status = nil
+        Task { await sync() }
     }
 
     /// Archive le plan actuel (historique local).
@@ -158,9 +165,7 @@ final class PlanStore {
         persistOriginals()
         status = nil
         UserDefaults.standard.removeObject(forKey: "lastSyncDay")
-        isSyncing = true
-        await RunScheduler.removeAll()
-        isSyncing = false
+        _ = await onWatch { await RunScheduler.removeAll() }
         pushToWatch()
     }
 
@@ -399,6 +404,35 @@ final class PlanStore {
 
     // MARK: Synchronisation montre
 
+    /// Attente maximale de la programmation des courses sur la montre (WorkoutKit).
+    static let syncTimeout: Duration = .seconds(45)
+
+    enum WatchOutcome<T> {
+        case done(T)
+        /// La montre n'a pas répondu à temps.
+        case timedOut
+        /// Une mise à jour plus récente a pris la place de celle-ci.
+        case replaced
+    }
+
+    /// Une seule opération WorkoutKit à la fois (#67) : la précédente est annulée, pour ne jamais programmer
+    /// les courses en double ni laisser celles d'un ancien plan ; et jamais plus de `syncTimeout` d'attente.
+    private func onWatch<T>(_ operation: @escaping @Sendable () async -> T) async -> WatchOutcome<T> {
+        cancelWatchWork?()
+        let work = Task { await Deadline.value(within: Self.syncTimeout, operation) }
+        var replaced = false
+        cancelWatchWork = {
+            replaced = true
+            work.cancel()
+        }
+        activeSyncs += 1
+        defer { activeSyncs -= 1 }
+        let value = await work.value
+        if replaced { return .replaced }
+        cancelWatchWork = nil
+        return value.map { .done($0) } ?? .timedOut
+    }
+
     /// `force: false` = une seule fois par jour (au lancement de l'app).
     func sync(force: Bool = true) async {
         if DemoMode.isOn { return }
@@ -406,9 +440,15 @@ final class PlanStore {
         guard let plan else { return }
         let today = Day.key(.now)
         if !force, UserDefaults.standard.string(forKey: "lastSyncDay") == today { return }
-        isSyncing = true
-        defer { isSyncing = false }
-        status = await RunScheduler.sync(plan: plan)
+        switch await onWatch({ await RunScheduler.sync(plan: plan) }) {
+        case .done(let message):
+            status = message
+        case .timedOut:
+            status = "La montre n'a pas répondu : les courses ne sont pas encore programmées. Réessaie avec ••• > « Resynchroniser la montre »."
+            return
+        case .replaced:
+            return
+        }
         UserDefaults.standard.set(today, forKey: "lastSyncDay")
     }
 
