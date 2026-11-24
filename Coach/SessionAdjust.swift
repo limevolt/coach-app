@@ -5,9 +5,12 @@ import Foundation
 // MARK: - Activité choisie
 
 enum ActivityChoice: String, CaseIterable, Identifiable {
+    /// Course classique (tout sauf les escaliers).
     case run
     case strength
     case martial
+    /// Escaliers : présentés sous l'onglet « Course » (#73).
+    case stairs
 
     var id: String { rawValue }
 
@@ -16,13 +19,23 @@ enum ActivityChoice: String, CaseIterable, Identifiable {
         case .run: return "Course"
         case .strength: return "Renfo"
         case .martial: return "Martial cross"
+        case .stairs: return "Escaliers"
         }
     }
+
+    /// Onglets d'« Adapter » : les escaliers sont un genre de course, choisi sous « Course » (#73).
+    static let tabs: [ActivityChoice] = [.run, .strength, .martial]
+    var tab: ActivityChoice { self == .stairs ? .run : self }
+    /// Genres de course proposés sous l'onglet « Course », toujours tous les deux (retour du propriétaire, #73).
+    static let runKinds: [(value: ActivityChoice, label: String)] = [(.stairs, "Escaliers"), (.run, "Course classique")]
 
     /// Ordre de préférence quand l'app cherche une séance de ce type dans le plan.
     func rank(_ s: PlannedSession) -> Int? {
         switch self {
-        case .run: return s.type == .run ? 0 : nil
+        // « Côtes ou escaliers » : escaliers en 2e choix (des côtes chez qui n'a pas d'escalier), jamais
+        // « course classique », pour qu'on puisse la remplacer par un footing (revue #73).
+        case .run: return s.type == .run && !s.isStairs && !s.isHillsOrStairs ? 0 : nil
+        case .stairs: return s.isStairs ? 0 : (s.isHillsOrStairs ? 1 : nil)
         case .martial: return s.isMartial ? 0 : nil
         case .strength:
             if s.type == .strength { return 0 }
@@ -42,6 +55,7 @@ extension PlannedSession {
 
     var activity: ActivityChoice {
         if isMartial { return .martial }
+        if isStairs || isHillsOrStairs { return .stairs }
         return type == .run ? .run : .strength
     }
 
@@ -245,6 +259,21 @@ enum DefaultSessions {
                                   title: "Footing facile 30 min",
                                   notes: "- Footing en **zone 2** : tu dois pouvoir parler.\n- Séance proposée par l'app.",
                                   run: RunWorkout(location: "outdoor", blocks: [RunBlock(iterations: 1, steps: [step])]))
+        case .stairs:
+            return PlannedSession(id: id, date: date, time: time, type: .run,
+                                  title: "Escaliers 30 min",
+                                  notes: "- Il faut un **escalier**.\n- Montées à ton rythme, descentes en marchant.\n- Séance proposée par l'app.",
+                                  run: RunWorkout(location: "outdoor",
+                                                  warmup: RunStep(purpose: nil,
+                                                                  goal: StepGoal(type: "time", value: 10, unit: "min"),
+                                                                  alert: StepAlert(type: "hrZone", zone: 2)),
+                                                  blocks: [RunBlock(iterations: 1, steps: [
+                                                      RunStep(purpose: "work",
+                                                              goal: StepGoal(type: "time", value: 15, unit: "min"),
+                                                              alert: StepAlert(type: "hrZone", zone: 3))])],
+                                                  cooldown: RunStep(purpose: nil,
+                                                                    goal: StepGoal(type: "time", value: 5, unit: "min"),
+                                                                    alert: nil)))
         case .strength:
             return PlannedSession(id: id, date: date, time: time, type: .strength,
                                   title: "Renfo maison",

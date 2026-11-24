@@ -310,7 +310,7 @@ extension PlannedSession {
     var sportLabel: String {
         let t = title.lowercased()
         if t.contains("martial") { return "Martial cross" }
-        if t.contains("escalier") || t.contains("bueren") { return "Escaliers" }
+        if isStairs || isHillsOrStairs { return "Escaliers" }
         return typeLabel
     }
 }

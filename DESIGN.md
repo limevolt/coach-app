@@ -164,8 +164,14 @@ repos et « Prêt ? », chiffre blanc sur fond carte.
 - **Titres d'écran courts, sur une seule ligne** même sur un iPhone de 375 pt (« Ton objectif »,
   pas « Quel est ton objectif ? ») : la question va dans le texte gris dessous (retour du propriétaire, #45).
 - **Choix en onglets : composant `SegmentedChoice`**, jamais le `Picker` segmenté natif (style par défaut
-  d'Apple, pas celui de Coach) : cadre gris fin, option choisie sur fond `Theme.card2` en blanc (retour du
-  propriétaire, #45).
+  d'Apple, pas celui de Coach) : cadre gris fin, option choisie sur fond `Theme.card2`, **contour citron vert**
+  (`Theme.selectionStroke`) et texte blanc semi-gras, comme un jour choisi (#45). Le fond seul ne suffit pas :
+  `card2` sur une ligne de formulaire grise = 1,04:1, invisible (#74). Un choix qui dépend d'un autre
+  (« Genre de course » sous « Course ») vient juste en dessous, avec son petit titre gris (`Font.detail`) ;
+  jamais un 4e onglet qui ne tiendrait pas sur 375 pt (#73).
+- **Tuiles de jour à choisir** (« Déplacer à un jour libre ») : discrètes (contour `Theme.line`, texte blanc),
+  jamais en citron vert plein, réservé à l'action principale. Jour d'entraînement = petit point citron vert
+  sous le chiffre, et « Jour d'entraînement » dit à VoiceOver (pas de couleur seule, #73).
 - **Jours de la semaine en 2 lettres** (Lu, Ma, Me…) dans les grilles de 7 : pas de coche ni d'abréviation
   de 3 lettres, qui ne tiennent pas. Jour choisi = fond `Theme.card2`, contour citron vert, texte gras (#45).
 - **Interrupteurs : style `.toggleStyle(.coach)`** (`Coach/CoachControls.swift`), jamais le `Toggle` natif
