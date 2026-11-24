@@ -1,4 +1,4 @@
-// TrainingDays.swift — jours où je peux m'entraîner (réglage, rangement du plan, export pour Claude)
+// TrainingDays.swift — jours où je peux m'entraîner (réglage, rangement du plan)
 
 import SwiftUI
 
@@ -37,13 +37,6 @@ enum TrainingDays {
         let n = days.sorted().map { names[$0 - 1] }
         guard n.count > 1 else { return n.first ?? "" }
         return n.dropLast().joined(separator: ", ") + " et " + n.last!
-    }
-
-    /// Ligne ajoutée au suivi, pour que l'IA en tienne compte.
-    static var exportLine: String? {
-        let days = current
-        guard !days.isEmpty, days.count < 7 else { return nil }
-        return "Jours disponibles pour m'entraîner : \(label(days)). Place les séances uniquement ces jours-là."
     }
 }
 

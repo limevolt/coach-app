@@ -64,7 +64,7 @@ final class CoachCaptures: XCTestCase {
         }
 
         // 3. Les autres onglets
-        for (index, tab) in ["Libre", "Suivi", "Réglages"].enumerated() {
+        for (index, tab) in ["Libre", "Réglages"].enumerated() {
             let item = app.buttons["onglet-\(tab)"]
             guard item.waitForExistence(timeout: 5) else {
                 note("Onglet introuvable : \(tab)")

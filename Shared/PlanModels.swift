@@ -3,7 +3,7 @@
 
 import Foundation
 
-// MARK: - Plan d'entraînement (JSON généré par Claude)
+// MARK: - Plan d'entraînement (JSON créé par le coach de l'app ou importé)
 
 struct TrainingPlan: Codable, Equatable {
     var schemaVersion: Int
@@ -41,7 +41,7 @@ struct PlannedSession: Codable, Identifiable, Hashable {
     var run: RunWorkout?
     var strength: StrengthWorkout?
     var circuit: CircuitWorkout?
-    /// "none" = séance faite sans matériel (à la maison). Réglable depuis l'app ou par Claude.
+    /// "none" = séance faite sans matériel (à la maison). Réglable depuis l'app.
     var equipment: String?
     /// Rempli par l'app quand la séance est déplacée : date prévue à l'origine.
     var originalDate: String?
@@ -377,11 +377,6 @@ enum Pace {
         let secPerKm = p[0] * 60 + p[1]
         guard secPerKm > 0 else { return nil }
         return 1000 / secPerKm
-    }
-
-    static func label(secondsPerKm: Double) -> String {
-        let total = Int(secondsPerKm.rounded())
-        return String(format: "%d:%02d/km", total / 60, total % 60)
     }
 }
 

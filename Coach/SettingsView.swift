@@ -1,13 +1,10 @@
-// SettingsView.swift — e-mail, profil, autorisations
+// SettingsView.swift — exercices, jours d'entraînement, autorisations, plan actuel
 
 import SwiftUI
 
 struct SettingsView: View {
     @Environment(PlanStore.self) private var store
-    @AppStorage("reportEmail") private var email = ""
-    @AppStorage("athleteProfile") private var profile = ""
     @State private var healthMessage: String?
-    @AppStorage(OwnCoach.Keys.enabled) private var ownCoachEnabled = false
     @State private var confirmReset = false
     /// nil = pas encore vérifié ; true = l'accès à Santé a déjà été demandé (#36).
     @State private var healthRequested: Bool?
@@ -27,43 +24,11 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    NavigationLink {
-                        OwnCoachSettingsView().tabBarSpace()
-                    } label: {
-                        LabeledContent {
-                            Text(ownCoachEnabled ? "Activé" : "Désactivé")
-                        } label: {
-                            Label("Mon propre coach", systemImage: "brain.head.profile")
-                        }
-                    }
-                } footer: {
-                    Text("Facultatif : relie l'app à ton propre modèle (Ollama sur ton Mac) pour mettre ton plan à jour sans quitter l'app.")
-                }
-
-                Section {
-                    TextField("ton@email.com", text: $email)
-                        .keyboardType(.emailAddress)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                } header: {
-                    Text("E-mail du suivi")
-                } footer: {
-                    Text("Le suivi part depuis ton iPhone, avec ton app Mail : aucun serveur intermédiaire.")
-                }
-
-                Section {
                     TrainingDaysPicker()
                 } header: {
                     Text("Mes jours d'entraînement")
                 } footer: {
-                    Text("Ajoutés au suivi : le coach place les séances ces jours-là. Sur l'écran Plan, l'app propose de ranger les séances qui tombent un autre jour.")
-                }
-
-                Section {
-                    TextField("Objectif, niveau, matériel, blessures…", text: $profile, axis: .vertical)
-                        .lineLimit(3...8)
-                } header: {
-                    Text("Profil (ajouté en tête du suivi)")
+                    Text("Le coach place les séances ces jours-là. Sur l'écran Plan, l'app propose de ranger les séances qui tombent un autre jour.")
                 }
 
                 Section {

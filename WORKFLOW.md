@@ -64,7 +64,7 @@
 ## Économiser les compilations [générique]
 
 - Regrouper les correctifs : une compilation par lot, pas une par correction.
-- `[skip ci]` pour les changements qui ne touchent que la doc ou les règles (sauf `docs/PLAN_FORMAT.md`, embarqué dans l'app).
+- `[skip ci]` pour les changements qui ne touchent que la doc ou les règles.
 - `[captures]` seulement quand l'interface change, une fois le code prêt.
 - Ne pas pousser pendant que des captures tournent.
 - Le dépôt est public depuis le 18/11/2026 : les compilations sont gratuites, mais restent longues. Grouper reste la règle.

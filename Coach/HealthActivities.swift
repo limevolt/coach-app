@@ -245,7 +245,7 @@ struct HealthLinks: Equatable {
 }
 
 enum HealthLinking {
-    /// Les marches de moins de 30 min ne s'affichent pas sur l'accueil (seulement dans le Suivi).
+    /// Les marches de moins de 30 min ne s'affichent pas sur l'accueil.
     static let shortWalkMinutes = 30
 
     /// Relie les activités Santé aux séances du plan.

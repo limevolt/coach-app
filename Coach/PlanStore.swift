@@ -93,11 +93,6 @@ final class PlanStore {
         try await apply(Self.decodePlan(data: data))
     }
 
-    /// Lit et vérifie un plan sans l'appliquer (ex. réponse de « Mon propre coach »).
-    static func decodePlan(text: String) throws -> TrainingPlan {
-        try decodePlan(data: Data(extractJSON(text).utf8))
-    }
-
     static func decodePlan(data: Data) throws -> TrainingPlan {
         let newPlan: TrainingPlan
         do {
@@ -151,7 +146,7 @@ final class PlanStore {
     // MARK: Réinitialiser
 
     /// Supprime le plan (archivé) et les courses programmées sur la montre.
-    /// Les journaux restent dans l'historique (suivi, export) mais sont détachés : un plan
+    /// Les journaux restent dans l'historique (export) mais sont détachés : un plan
     /// réimporté avec les mêmes identifiants de séance démarre sans aucune séance faite (#14).
     func resetPlan() async {
         archiveCurrentPlan()

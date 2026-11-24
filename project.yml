@@ -31,9 +31,6 @@ targets:
     sources:
       - path: Coach
       - path: Shared
-      # Format du plan, ajouté aux textes envoyés à l'IA (#37) : une seule source, la doc.
-      - path: docs/PLAN_FORMAT.md
-        buildPhase: resources
     dependencies:
       - target: CoachWatch
     info:
@@ -55,13 +52,9 @@ targets:
           - Outfit-Bold.ttf
           - Outfit-ExtraBold.ttf
           - Outfit-Black.ttf
-        NSHealthShareUsageDescription: Coach lit tes entraînements, ta fréquence cardiaque et ta VFC pour préparer ton suivi.
+        NSHealthShareUsageDescription: Coach lit tes entraînements et ta fréquence cardiaque pour adapter ton plan.
         NSHealthUpdateUsageDescription: Coach enregistre tes séances dans Santé.
         LSSupportsOpeningDocumentsInPlace: false
-        # « Mon propre coach » : joindre un serveur personnel (Ollama sur le Mac, en http)
-        NSLocalNetworkUsageDescription: Coach se connecte à ton propre coach (par exemple Ollama sur ton Mac) sur ton réseau.
-        NSAppTransportSecurity:
-          NSAllowsArbitraryLoads: true
         CFBundleDocumentTypes:
           - CFBundleTypeName: Plan Coach
             CFBundleTypeRole: Viewer

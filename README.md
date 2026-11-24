@@ -19,10 +19,10 @@ Mode développeur à activer sur l'iPhone et la montre : Réglages › Confident
 
 ## Comment c'est construit
 
-- `Coach/` : app iPhone (plan, import, suivi, minuteurs, guide des exercices).
+- `Coach/` : app iPhone (plan, import, minuteurs, guide des exercices).
 - `CoachWatch/` : app montre (renfo guidé, circuits, minuteurs, séance enregistrée dans Santé).
 - `Shared/` : modèles du plan, thème, moteur d'animation et bibliothèque d'exercices (les deux apps).
 - `project.yml` : description du projet ; `Coach.xcodeproj` est régénéré automatiquement.
-- `docs/PLAN_FORMAT.md` : format du plan que l'IA produit (embarqué dans l'app) ; `docs/exemple-plan.json` : plan de test.
+- `docs/PLAN_FORMAT.md` : format d'un fichier de plan à importer ; `docs/exemple-plan.json` : plan de test.
 
 La compilation est vérifiée automatiquement sur un Mac de GitHub à chaque mise à jour.

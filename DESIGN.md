@@ -57,7 +57,7 @@ le canevas « Coach — nouvelle ambiance ». Valeurs dans `Shared/Theme.swift`.
 - Un seul élément gros sur l'écran : le **héros** (76 pt, semi-gras, `Font.hero`). Tout le reste
   est plus petit et plus discret.
 - **Dégradé citron vert → turquoise (`Theme.heroGradient`) réservé à la progression** : accueil
-  (séances faites de la semaine) et Suivi. Sur une séance, le héros (la durée) est en blanc.
+  (séances faites de la semaine). Sur une séance, le héros (la durée) est en blanc.
 
 ### Couleurs
 - Fond presque noir `Theme.bg` #06080B.
@@ -104,7 +104,7 @@ Les mesures sont des jetons (`Shared/DesignTokens.swift`) : voir « Design syst�
   une taille fixe. `Font.display` (ancien style très gras) disparaît au fil de la migration.
 - Vérifier le contraste de chaque couleur de texte sur son fond (4,5:1 minimum).
 - Icônes : SF Symbols, même graisse sur un écran.
-- Pas de graphique hors du Suivi.
+- Pas de graphique pour l'instant (la future page Suivi, #2, pourra en avoir).
 
 ### Montre
 La montre garde ses tailles de chronos (`Theme.watch…`) jusqu'à son lot : même ambiance, un

@@ -3,7 +3,7 @@
 // petit trait citron vert collé en haut, icône et libellé citron vert, libellé semi-gras.
 // La TabView native reste dessous (état de chaque onglet, apparitions) ; seule sa barre est masquée.
 // Ré-appui sur l'onglet affiché : `tabReselect` change, l'onglet revient à son premier écran
-// sans rien effacer (texte saisi, suivi généré, export en cours).
+// sans rien effacer (texte saisi, export en cours).
 
 import SwiftUI
 

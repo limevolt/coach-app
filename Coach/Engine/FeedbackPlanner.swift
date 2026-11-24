@@ -278,7 +278,7 @@ enum FeedbackPlanner {
     }
 }
 
-/// Textes du retour de séance : zones proposées, résumé « Ton retour » (détail et suivi hebdo).
+/// Textes du retour de séance : zones proposées, résumé « Ton retour » (détail de la séance).
 enum FeedbackText {
     /// Zones proposées (choix unique), dans l'ordre de la maquette. « Autre » : rien d'adapté automatiquement.
     static let zones: [(id: String, label: String)] = [

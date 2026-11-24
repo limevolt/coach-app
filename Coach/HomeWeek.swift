@@ -353,7 +353,7 @@ struct TodayCard: View {
             case .rest where planEnded:
                 heading(eyebrow: "Plan terminé", color: Theme.accent,
                         title: "Bravo, le plan est bouclé",
-                        detail: "Crée le suivant avec ton IA, à partir de ce que tu as fait.")
+                        detail: "Crée le suivant avec le coach.")
                 Button(action: newPlan) {
                     Label("Créer un nouveau plan", systemImage: "sparkles")
                 }
