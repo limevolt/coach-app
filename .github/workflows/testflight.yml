@@ -1,7 +1,8 @@
 # Envoie l'app iPhone + montre sur TestFlight (#89).
 # - Se lance à chaque mise à jour de main (après fusion d'une pull request), si du code a changé.
-# - Signature automatique avec la clé App Store Connect rangée dans les Secrets GitHub
-#   (ASC_ISSUER_ID, ASC_KEY_ID, ASC_KEY_P8) : certificats et profils sont gérés par Apple.
+# - Secrets GitHub : clé App Store Connect (ASC_ISSUER_ID, ASC_KEY_ID, ASC_KEY_P8) et certificat
+#   « Apple Distribution » (BUILD_CERT_P12 en base64, BUILD_CERT_PASSWORD).
+# - Identifiants, HealthKit et profils App Store sont préparés par .github/scripts/asc_profiles.py.
 # - Le journal public (branche ci-logs) ne contient que les erreurs, jamais les identifiants de la clé.
 
 name: TestFlight
@@ -43,35 +44,65 @@ jobs:
       - name: Générer le projet Xcode
         run: xcodegen generate
 
-      - name: Clé App Store Connect
+      - name: Clé App Store Connect et certificat
         env:
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          BUILD_CERT_P12: ${{ secrets.BUILD_CERT_P12 }}
+          BUILD_CERT_PASSWORD: ${{ secrets.BUILD_CERT_PASSWORD }}
         run: |
-          if [ -z "$ASC_KEY_P8" ]; then echo "Secret ASC_KEY_P8 manquant."; exit 1; fi
+          for v in ASC_KEY_P8 BUILD_CERT_P12 BUILD_CERT_PASSWORD; do
+            [ -n "${!v}" ] || { echo "error: secret $v manquant."; exit 1; }
+          done
           KEY="$RUNNER_TEMP/AuthKey.p8"
-          printf '%s\n' "$ASC_KEY_P8" > "$KEY"
-          chmod 600 "$KEY"
+          printf '%s\n' "$ASC_KEY_P8" > "$KEY"; chmod 600 "$KEY"
           echo "ASC_KEY_PATH=$KEY" >> "$GITHUB_ENV"
+          # Trousseau temporaire, supprimé à la fin.
+          KC="$RUNNER_TEMP/signature.keychain-db"
+          KCPW=$(uuidgen)
+          echo "$BUILD_CERT_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security create-keychain -p "$KCPW" "$KC"
+          security set-keychain-settings -lut 21600 "$KC"
+          security unlock-keychain -p "$KCPW" "$KC"
+          security import "$RUNNER_TEMP/cert.p12" -P "$BUILD_CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KC" \
+            || { echo "error: impossible d'importer le certificat (mot de passe ?)."; exit 1; }
+          rm -f "$RUNNER_TEMP/cert.p12"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KCPW" "$KC" >/dev/null
+          security list-keychains -d user -s "$KC" $(security list-keychains -d user | tr -d '"')
+          SERIAL=$(security find-certificate -c "Apple Distribution" -p "$KC" | openssl x509 -noout -serial | cut -d= -f2)
+          [ -n "$SERIAL" ] || { echo "error: le certificat n'est pas un « Apple Distribution »."; exit 1; }
+          # Le certificat porte le nom du titulaire : masqué dans tous les journaux (dépôt public).
+          CN=$(security find-certificate -c "Apple Distribution" "$KC" | awk -F'"' '/"labl"/{print $4; exit}')
+          OWNER=$(echo "$CN" | sed -E 's/^Apple Distribution: (.*) \([A-Z0-9]{10}\)$/\1/')
+          [ -n "$OWNER" ] && echo "::add-mask::$OWNER"
+          echo "OWNER_NAME=$OWNER" >> "$GITHUB_ENV"
+          echo "KEYCHAIN=$KC" >> "$GITHUB_ENV"
+          echo "CERT_SERIAL=$SERIAL" >> "$GITHUB_ENV"
 
-      # Archive signée « localement » (signature ad hoc) : les droits HealthKit restent dans l'app.
-      # La vraie signature de distribution est faite à l'export, par Apple (certificat géré dans le cloud).
-      - name: Archiver
-        id: archive
+      - name: Identifiants, HealthKit et profils
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set -o pipefail
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install -q pyjwt cryptography
+          APP_ID=$(awk '/^  Coach:/{t=1} t&&/PRODUCT_BUNDLE_IDENTIFIER/{print $2; exit}' project.yml)
+          WATCH_ID=$(awk '/^  CoachWatch:/{t=1} t&&/PRODUCT_BUNDLE_IDENTIFIER/{print $2; exit}' project.yml)
+          echo "iPhone : $APP_ID ; montre : $WATCH_ID"
+          "$RUNNER_TEMP/venv/bin/python" .github/scripts/asc_profiles.py "$CERT_SERIAL" "$APP_ID" "$WATCH_ID" 2>&1 | tee profiles.log
+
+      - name: Archiver
+        id: archive
         run: |
           set -o pipefail
           xcodebuild archive \
             -project Coach.xcodeproj -scheme Coach -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath "$RUNNER_TEMP/Coach.xcarchive" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$ASC_KEY_PATH" \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
-            CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- PROVISIONING_PROFILE_SPECIFIER= \
+            CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Distribution" \
+            COACH_PROFILE="$COACH_PROFILE" WATCH_PROFILE="$WATCH_PROFILE" \
+            OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN" \
             2>&1 | tee archive.log | xcbeautify --renderer github-actions
 
       - name: Envoyer sur TestFlight
@@ -82,6 +113,8 @@ jobs:
         run: |
           set -o pipefail
           TEAM=$(grep -m1 'DEVELOPMENT_TEAM:' project.yml | awk '{print $2}')
+          APP_ID=$(awk '/^  Coach:/{t=1} t&&/PRODUCT_BUNDLE_IDENTIFIER/{print $2; exit}' project.yml)
+          WATCH_ID=$(awk '/^  CoachWatch:/{t=1} t&&/PRODUCT_BUNDLE_IDENTIFIER/{print $2; exit}' project.yml)
           cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -90,7 +123,13 @@ jobs:
             <key>method</key><string>app-store-connect</string>
             <key>destination</key><string>upload</string>
             <key>teamID</key><string>${TEAM}</string>
-            <key>signingStyle</key><string>automatic</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>signingCertificate</key><string>Apple Distribution</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>${APP_ID}</key><string>${COACH_PROFILE}</string>
+              <key>${WATCH_ID}</key><string>${WATCH_PROFILE}</string>
+            </dict>
             <key>manageAppVersionAndBuildNumber</key><false/>
             <key>testFlightInternalTestingOnly</key><true/>
           </dict>
@@ -100,15 +139,16 @@ jobs:
             -archivePath "$RUNNER_TEMP/Coach.xcarchive" \
             -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
             -exportPath "$RUNNER_TEMP/export" \
-            -allowProvisioningUpdates \
             -authenticationKeyPath "$ASC_KEY_PATH" \
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             2>&1 | tee upload.log | xcbeautify --renderer github-actions
 
-      - name: Supprimer la clé
+      - name: Supprimer la clé et le certificat
         if: always()
-        run: rm -f "$RUNNER_TEMP/AuthKey.p8"
+        run: |
+          rm -f "$RUNNER_TEMP/AuthKey.p8" "$RUNNER_TEMP/cert.p12"
+          [ -n "$KEYCHAIN" ] && security delete-keychain "$KEYCHAIN" || true
 
       - name: Publier le journal (branche ci-logs)
         if: always()
@@ -122,6 +162,9 @@ jobs:
             echo "archive: ${{ steps.archive.outcome }}"
             echo "envoi: ${{ steps.upload.outcome }}"
             echo
+            echo "===== PROFILS ====="
+            grep -E "error|Certificat|Profil|Création|Activation" profiles.log 2>/dev/null | head -20 || true
+            echo
             echo "===== ARCHIVE ====="
             grep -E "error:|ARCHIVE (SUCCEEDED|FAILED)|requires a provisioning profile|No profiles|No signing certificate" archive.log 2>/dev/null | sort -u | head -60 || true
             echo
@@ -129,7 +172,7 @@ jobs:
             grep -E "error|Error|EXPORT (SUCCEEDED|FAILED)|Upload succeeded|Uploaded|exportArchive" upload.log 2>/dev/null | sort -u | head -60 || true
           } > summary.txt
           # Jamais d'identifiant de clé dans un journal public.
-          for v in "$ASC_KEY_ID" "$ASC_ISSUER_ID"; do
+          for v in "$ASC_KEY_ID" "$ASC_ISSUER_ID" "$OWNER_NAME"; do
             [ -n "$v" ] && sed -i '' "s/$v/[masqué]/g" summary.txt
           done
           git config user.name "coach-ci"
