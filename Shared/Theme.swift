@@ -75,9 +75,9 @@ enum Theme {
     static let watchControlRadius: CGFloat = 20
 
     // Boutons et cartes de l'iPhone
-    static let buttonRadius: CGFloat = 16
-    static let smallButtonRadius: CGFloat = 14
-    static let heroCardRadius: CGFloat = 24
+    static let buttonRadius: CGFloat = Radius.m
+    static let smallButtonRadius: CGFloat = Radius.m  // ancien nom : même rayon que buttonRadius
+    static let heroCardRadius: CGFloat = Radius.card  // ancien nom, garder Radius.card
     /// Hauteur du bouton principal d'un écran ; `minTap` = cible tactile minimale (44 pt).
     static let primaryButtonHeight: CGFloat = 52
     /// Bouton principal d'une séance (« Démarrer »).
@@ -89,16 +89,16 @@ enum Theme {
     static let selectionStroke: CGFloat = 1.5
     static let quietStroke: CGFloat = 1
     /// Marge intérieure d'un champ de saisie ou d'une pastille de choix.
-    static let fieldPadding: CGFloat = 16
-    static let chipPadding: CGFloat = 14
+    static let fieldPadding: CGFloat = Space.l
+    static let chipPadding: CGFloat = Space.m
     /// Barre de progression de l'assistant.
     static let progressHeight: CGFloat = 4
     /// Choix en onglets (SegmentedChoice) : rayon d'une option et espace autour.
-    static let segmentRadius: CGFloat = 10
-    static let segmentSpacing: CGFloat = 4
+    static let segmentRadius: CGFloat = Radius.s  // concentrique : smallButtonRadius − segmentSpacing
+    static let segmentSpacing: CGFloat = Space.xs
     /// Case à cocher (choix multiple) et interrupteur Coach (#45).
     static let checkboxSize: CGFloat = 26
-    static let checkboxRadius: CGFloat = 8
+    static let checkboxRadius: CGFloat = Radius.xs
     static let switchWidth: CGFloat = 52
     static let switchHeight: CGFloat = 32
     static let switchThumb: CGFloat = 24
@@ -106,7 +106,7 @@ enum Theme {
     /// Fondu au-dessus d'une barre d'action fixée en bas : le contenu qui défile dessous n'est pas tranché.
     static let bottomFadeHeight: CGFloat = 32
     /// Étiquette discrète à côté d'un choix (« Conseillé », #57).
-    static let tagRadius: CGFloat = 8
+    static let tagRadius: CGFloat = Radius.xs
     /// Gros bouton de ressenti (#54).
     static let effortButtonHeight: CGFloat = 60
     /// Feuille « Noter mon effort » (#54).
@@ -121,7 +121,7 @@ enum Theme {
     /// Marge latérale de l'écran.
     static let screenMargin: CGFloat = 20
     /// Espace entre deux blocs d'un écran.
-    static let blockSpacing: CGFloat = 28
+    static let blockSpacing: CGFloat = Space.xl  // 24 (choix du propriétaire, 24/11/2026, #76)
     /// Écran « Le coach prépare ton plan » : petit coureur (réduit en très grand texte) et barre d'avancement.
     static let creationFigure: CGFloat = 180
     static let creationFigureCompact: CGFloat = 120
@@ -136,10 +136,10 @@ enum Theme {
     /// Tuile d'un jour libre dans « Adapter » (#73) et point « jour d'entraînement » dessous.
     static let dayTileWidth: CGFloat = 54
     static let dayTileHeight: CGFloat = 68
-    static let dayTileSpacing: CGFloat = 8
+    static let dayTileSpacing: CGFloat = Space.s
     static let trainingDayDot: CGFloat = 6
     /// Petit titre gris au-dessus d'un choix qui dépend d'un autre (« Genre de course », « Matériel »).
-    static let subChoiceTitleSpacing: CGFloat = 8
+    static let subChoiceTitleSpacing: CGFloat = Space.s
 
     // Barres de l'iPhone (#64) : barre d'onglets maison et boutons du haut sans bulle
     /// Hauteur de la barre d'onglets (hors zone du bas de l'écran).
@@ -148,12 +148,12 @@ enum Theme {
     static let tabIndicatorWidth: CGFloat = 28
     static let tabIndicatorHeight: CGFloat = 3
     /// Pastille d'un onglet appuyé.
-    static let tabPressRadius: CGFloat = 12
+    static let tabPressRadius: CGFloat = Radius.s
     static let tabPressInset: CGFloat = 4
     /// Espace entre l'icône et le libellé d'un onglet ; hauteur réservée à l'icône.
     static let tabItemSpacing: CGFloat = 3
     /// Air entre le trait du haut de la barre et les icônes (retour du propriétaire, #64).
-    static let tabItemTopPadding: CGFloat = 8
+    static let tabItemTopPadding: CGFloat = Space.s
     static let tabIconHeight: CGFloat = 26
     /// Marge sous les libellés sur un iPhone à bouton d'accueil.
     static let tabBarBottomPadding: CGFloat = 6
@@ -283,8 +283,8 @@ extension View {
 /// Carte pleine, sans bordure par défaut (#40). Une bordure colorée reste possible pour un
 /// avertissement (`stroke: Theme.warm.opacity(0.5)`).
 struct CardModifier: ViewModifier {
-    var padding: CGFloat = 14
-    var radius: CGFloat = 20
+    var padding: CGFloat = Theme.cardPadding
+    var radius: CGFloat = Radius.card
     var fill: Color = Theme.card
     var stroke: Color = .clear
 
@@ -297,7 +297,7 @@ struct CardModifier: ViewModifier {
 }
 
 extension View {
-    func card(padding: CGFloat = 14, radius: CGFloat = 20, fill: Color = Theme.card, stroke: Color = .clear) -> some View {
+    func card(padding: CGFloat = Theme.cardPadding, radius: CGFloat = Radius.card, fill: Color = Theme.card, stroke: Color = .clear) -> some View {
         modifier(CardModifier(padding: padding, radius: radius, fill: fill, stroke: stroke))
     }
 }
@@ -323,8 +323,8 @@ struct StatValue: View {
     let label: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
+        VStack(alignment: .leading, spacing: Space.hairline) {
+            HStack(alignment: .firstTextBaseline, spacing: Space.xs) {
                 Text(value).font(.number).foregroundStyle(Theme.text)
                 if let unit { Text(unit).font(.unit).foregroundStyle(Theme.muted) }
             }
@@ -342,10 +342,10 @@ struct BottomBar<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) { content() }
+        VStack(alignment: .leading, spacing: Space.m) { content() }
             .padding(.horizontal, Theme.screenMargin)
-            .padding(.top, 12)
-            .padding(.bottom, 8)
+            .padding(.top, Space.m)
+            .padding(.bottom, Space.s)
             .background(fill)
             .background(alignment: .top) {
                 LinearGradient(colors: [fill.opacity(0), fill], startPoint: .top, endPoint: .bottom)
@@ -365,8 +365,8 @@ struct Chip: View {
     var body: some View {
         Text(text)
             .font(.coach(size: 12, weight: hot ? .semibold : .medium))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.xs)
             .foregroundStyle(hot ? Color(hex: 0x1A1205) : Theme.muted)
             .background(hot ? Theme.warm : Theme.card2, in: Capsule())
             .overlay(Capsule().stroke(hot ? Theme.warm : Theme.line, lineWidth: 1))

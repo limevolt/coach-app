@@ -305,6 +305,7 @@ final class CoachCaptures: XCTestCase {
     private func next(_ app: XCUIApplication) {
         let button = app.buttons["Continuer"].firstMatch
         if button.waitForExistence(timeout: 5), button.isEnabled {
+            Thread.sleep(forTimeInterval: 0.5)   // après un défilement : l'appui ne doit pas seulement l'arrêter
             button.tap()
             Thread.sleep(forTimeInterval: 0.6)
         } else {

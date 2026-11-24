@@ -26,8 +26,8 @@
      ce fichier, checklist de relecture) et rend une liste courte de remarques classées.
      Corriger la maquette, puis la présenter au propriétaire avec les remarques non retenues.
      C'est ici que la relecture design rapporte le plus : corriger un dessin ne coûte rien.
-2. **Coder avec des composants partagés.** Réutiliser ce qui existe (`Theme`, `Eyebrow`,
-   `.card()`, `Collapsible`, styles de boutons). Un élément visuel utilisé à deux endroits
+2. **Coder avec des composants partagés.** Réutiliser ce qui existe (catalogue de la section
+   « Design système » : jetons, `Eyebrow`, `.card()`, `CollapsibleCard`, styles de boutons). Un élément visuel utilisé à deux endroits
    devient un composant dans `Shared/` ou un fichier commun, au lieu d'être recopié.
    Suivre les skills `ios-design-guidelines`, `watchos-design-guidelines` et `swiftui-pro`.
 3. **Captures réelles.** Mettre `[captures]` dans le message du dernier commit : le build
@@ -88,9 +88,10 @@ Le texte secondaire gris sous un titre utilise `Font.detail` (15, normal). Bouto
 Toutes ces tailles suivent Dynamic Type, sauf le héros (taille fixe, comme les chronos de la montre).
 
 ### Formes et espaces
-- Marges latérales 20 (`Theme.screenMargin`), 24 à 28 entre les blocs (`Theme.blockSpacing`).
-- Bouton principal : plein citron vert, 52 de haut, rayon 16 (`primaryActionStyle`).
-- Bouton discret : contour gris, texte blanc, 44 de haut (`quietActionStyle`).
+Les mesures sont des jetons (`Shared/DesignTokens.swift`) : voir « Design système » plus bas.
+- Marges latérales 20 (`Theme.screenMargin`), 24 entre les blocs (`Theme.blockSpacing`, choix du propriétaire, #76).
+- Bouton principal : plein citron vert, 52 de haut, rayon 16 (`.coachPrimary()`).
+- Bouton discret : contour gris, texte blanc, 44 de haut (`.coachQuiet()`).
 - Lignes de liste : 52 de haut (`Theme.rowHeight`).
 
 ### Règles du thème
@@ -228,6 +229,83 @@ propriétaire le signale.
   (style iOS 18). On perd la réduction de la barre au défilement. **À revoir avant
   Xcode 27**, qui retirera cette option : il faudra alors masquer le verre bouton par bouton.
   Le verre n'est jamais utilisé pour les cartes.
+
+## Design système (#76)
+
+Le but : **ne jamais réinventer un élément**. Avant de dessiner ou de coder quoi que ce soit, chercher
+ici. S'il manque quelque chose, on l'ajoute au catalogue (et à cette liste), puis on l'utilise partout.
+
+Une page de référence visuelle (privée au propriétaire) montre les jetons et les composants dessinés :
+https://claude.ai/artifact/SXnzRE61vrJ4j4hH3QcGJB. Quand un jeton ou un composant change ici, la mettre à jour.
+Le code reste la référence.
+
+### Jetons (`Shared/DesignTokens.swift`, `Shared/Theme.swift`, `Shared/Typography.swift`)
+
+| Famille | Valeurs | Dans le code |
+|---|---|---|
+| Espacements | 2 · 4 · 8 · 12 · 16 · 24 · 32 | `Space.hairline` (dans un composant seulement) · `xs` · `s` · `m` · `l` · `xl` · `xxl` |
+| Rôles d'espace | marge d'écran 20, entre blocs 24 | `Theme.screenMargin`, `Theme.blockSpacing` |
+| Rayons | 8 · 12 · 16 · 24 | `Radius.xs` (étiquette, case) · `s` (tuile, option d'onglets) · `m` (bouton, champ, choix, bloc compact) · `card` (toutes les cartes, carte du jour comprise) |
+| Marges de carte | 16 (carte), 12 (tuile, bloc compact) | `Theme.cardPadding`, `Theme.tilePadding` |
+| Hauteurs | 44 · 52 · 64 | `Theme.minTap`, `Theme.primaryButtonHeight` / `rowHeight`, `Theme.largeButtonHeight` |
+| Texte | voir « Typographie » | `Font.hero`, `.screenTitle`, `.number`, `.text`, `.detail`, `.unit`, `.label` |
+| Couleurs | voir « Couleurs » | `Theme.…` |
+
+- **Rayons concentriques** : un élément collé au bord d'une carte ou d'un cadre (écart de 8 au plus) a un
+  rayon = rayon du cadre − marge. Exemple : `SegmentedChoice`, cadre 16, marge 4, option 12. Un bouton
+  posé dans une carte garde son propre rayon (16).
+- **Désactivé** : jamais une simple transparence. Un bouton indisponible = fond `card2`, texte `muted` lisible (#45,
+  confirmé par le propriétaire le 24/11/2026 : « la lisibilité est clé ») :
+  `.buttonStyle(.coachPrimary(enabled: false))` **et** `.disabled(true)`. Un bouton bloqué le temps d'un envoi
+  garde son aspect actif (`enabled: true`) et montre un chargement.
+- **Appuyé** : les boutons s'enfoncent (`Theme.buttonPressedScale` / `buttonPressedOpacity`) ; les boutons du
+  haut s'atténuent (`Theme.pressedOpacity`).
+
+### Composants (catalogue)
+
+| Famille | Composant | Quand l'utiliser |
+|---|---|---|
+| Boutons iPhone | `.buttonStyle(.coachPrimary())` | l'action principale, une seule par écran ; `large: true` pour « Démarrer », `compact: true` dans une ligne |
+| | `.buttonStyle(.coachQuiet())` | toute autre action visible (« Voir le détail », « Séance libre ») |
+| | `.buttonStyle(.coachPressable)` | une carte, une ligne ou une pastille qui se touche, sans habillage |
+| | `primaryActionStyle()` / `quietActionStyle()` | seulement l'étiquette d'un `Menu` (qui n'accepte pas de style de bouton) |
+| | `BusyButton`, `StartOnWatchButton`, `BarIcon`, `DestructiveButton` | chargement, lancer sur la montre, bouton du haut, action destructive |
+| Boutons montre | `.coachPrimary`, `.coachQuiet`, `.coachDestructive`, `.coachDashed` | mêmes rôles que sur l'iPhone, tailles de la montre |
+| Choix | `SegmentedChoice` | 2 ou 3 options exclusives en onglets |
+| | `RadioRow` | choix unique avec explication (rond) |
+| | `CoachCheckbox` | plusieurs choix possibles (carré) |
+| | `SelectChip` | pastille à choisir dans un groupe |
+| | `Toggle` + `.toggleStyle(.coach)` | activer / désactiver |
+| | `TrainingDaysPicker`, `EffortPicker`, `DurationPicker` | jours, ressenti, durée |
+| Conteneurs | `.card()` | une carte : marge 16, rayon 24 (la carte du jour, un bandeau, une section) |
+| | `.block()` | bloc compact d'une liste sur le fond de l'écran : étape du déroulé, exercice, statistique, consigne (marge 12, rayon 16) |
+| | `.card(padding: Theme.tilePadding, radius: Radius.s, fill: Theme.card2)` | tuile dans une carte |
+| | `CollapsibleCard`, `BottomBar` | contenu replié, barre d'action fixée en bas |
+| | `.selectableStyle(isOn:)`, `.fieldStyle()` | fond d'un choix, champ de saisie |
+| Lignes | `PlanLine`, `SessionRow`, `ExtraActivityLine` | une ligne de liste de 52, séparateur et chevron |
+| Données | `Eyebrow` | petit titre en capitales grises |
+| | `StatValue` | chiffre + unité + libellé |
+| | `Chip` | étiquette (muscles, niveau) |
+| | `IntensityBars`, `DayDot`, `WeekHero`, `WizardProgress` | niveau, jour de la semaine, héros de l'accueil, avancement |
+
+**À unifier (lots suivants, avec maquette, car le rendu change)** : `secondaryActionStyle` et
+`quietActionStyle(color: Theme.accent)` (un 2e citron vert à côté de l'action principale), `missedStyle`,
+le bouton fait à la main d'`OffDaysBanner`, le choix Lent / Normal / Rapide et l'interrupteur « Muscles
+sollicités » de la fiche exercice, les trois barres de progression (→ `ProgressBar`), les bandeaux
+(→ `Notice` avec icône et titre), l'étiquette de `RadioRow` et `Chip` (→ une seule étiquette), `EyebrowLabelStyle`.
+
+### Garde-fou automatique
+
+`scripts/check-design.py` liste les valeurs tapées à la main dans les vues (couleurs, tailles et styles de
+texte, graisses très grasses, rayons, marges, espaces, hauteurs, matières). La compilation l'affiche dans
+son journal (`ci-logs`). Pour l'instant c'est un **avertissement** ; il deviendra **bloquant** quand
+chaque écran sera passé aux jetons. Exception ponctuelle et justifiée : `// design-ok: raison` en fin de ligne.
+
+### Migration écran par écran
+
+La montre et la typographie des écrans pas encore passés à la nouvelle ambiance (détail de séance, fiche
+exercice, jours d'entraînement, écran de fin de la montre) changent visiblement : un lot par écran, avec
+maquette avant / après, comme tout écran.
 
 ## Format d'une maquette (avant de coder)
 

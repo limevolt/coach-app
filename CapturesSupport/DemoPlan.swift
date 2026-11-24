@@ -98,8 +98,18 @@ extension XCTestCase {
         }
         // Petits glissements (un swipeUp entier fait sauter la ligne au-dessus de l'écran sur
         // petite montre), dans le bon sens selon où se trouve l'élément.
+        // Un élément caché sous une barre fixée en bas (« Enregistrer ») reste « touchable » pour
+        // XCUITest, qui appuierait alors sur la barre : on le remonte d'abord dans le haut de l'écran.
+        // Trois essais au plus : un bouton qui EST la barre du bas ne remonte jamais.
         var tries = 0
-        while !element.isHittable, tries < 10 {
+        func underBottomBar() -> Bool {
+            #if os(iOS)
+            return tries < 3 && element.frame.maxY > app.frame.maxY * 0.78
+            #else
+            return false
+            #endif
+        }
+        while (!element.isHittable && tries < 10) || underBottomBar() {
             let up = element.frame.midY > app.frame.midY
             let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: up ? 0.65 : 0.35))
             let to = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: up ? 0.35 : 0.65))
@@ -110,6 +120,7 @@ extension XCTestCase {
             note("Bouton hors écran : « \(text) »")
             return false
         }
+        Thread.sleep(forTimeInterval: 0.3)   // laisser le défilement s'arrêter : sinon l'appui ne fait que le stopper
         element.tap()
         return true
     }

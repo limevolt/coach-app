@@ -19,7 +19,7 @@ struct ActivityDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.blockSpacing) {
                 header
-                HStack(alignment: .top, spacing: 8) {
+                HStack(alignment: .top, spacing: Space.s) {
                     StatValue(value: "\(activity.minutes)", unit: "min", label: "Durée")
                     StatValue(value: activity.avgHR.map { "\(Int($0.rounded()))" } ?? "—",
                               unit: activity.avgHR == nil ? nil : "bpm", label: "FC moy.")
@@ -27,11 +27,11 @@ struct ActivityDetailView: View {
                 }
                 if let pace = activity.pace {
                     // Course : allure en plus (#54).
-                    HStack(alignment: .top, spacing: 8) {
+                    HStack(alignment: .top, spacing: Space.s) {
                         StatValue(value: pace, unit: "/km", label: "Allure")
                     }
                 }
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: Space.m) {
                     Eyebrow(text: "Ton ressenti").accessibilityAddTraits(.isHeader)
                     EffortPicker(value: Binding(
                         get: { store.activityChoices.efforts[activity.id] },
@@ -40,8 +40,8 @@ struct ActivityDetailView: View {
                 coachSection
             }
             .padding(.horizontal, Theme.screenMargin)
-            .padding(.top, 8)
-            .padding(.bottom, 24)
+            .padding(.top, Space.s)
+            .padding(.bottom, Space.xl)
         }
         .background(Theme.bg.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
@@ -86,8 +86,8 @@ struct ActivityDetailView: View {
     // MARK: En-tête
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 10) {
+        VStack(alignment: .leading, spacing: Space.s) {
+            HStack(spacing: Space.m) {
                 Image(systemName: activity.info.symbol)
                     .font(Theme.tintedIconFont)
                     .foregroundStyle(isMain ? Theme.onTint : Theme.muted)
@@ -119,7 +119,7 @@ struct ActivityDetailView: View {
     // MARK: Pour le coach
 
     private var coachSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.s) {
             Eyebrow(text: "Pour le coach").accessibilityAddTraits(.isHeader)
             if let link, let session = linkedSession {
                 if link.kind == .main {
@@ -154,9 +154,9 @@ struct ActivityDetailView: View {
                 Button {
                     Task { await store.unlink(activity) }
                 } label: {
-                    Text("Ce n'est plus la séance du jour").quietActionStyle()
+                    Text("Ce n'est plus la séance du jour")
                 }
-                .buttonStyle(PressableButtonStyle())
+                .buttonStyle(.coachQuiet())
             }
         } else if link == nil, let session = store.replaceable(for: activity) {
             bar {
@@ -173,9 +173,9 @@ struct ActivityDetailView: View {
                 Button {
                     Task { await store.markMain(activity, replacing: session.id) }
                 } label: {
-                    Text("Séance principale du jour").primaryActionStyle()
+                    Text("Séance principale du jour")
                 }
-                .buttonStyle(PressableButtonStyle())
+                .buttonStyle(.coachPrimary())
             }
         }
     }
@@ -190,7 +190,7 @@ struct TintedIconLabelStyle: LabelStyle {
     let color: Color
 
     func makeBody(configuration: Configuration) -> some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Space.s) {
             configuration.icon.foregroundStyle(color)
             configuration.title
         }
@@ -207,7 +207,7 @@ struct ExtraActivityLine: View {
     var showsDay = true
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: Space.m) {
             Image(systemName: activity.info.symbol)
                 .font(Theme.smallIconFont)
                 .foregroundStyle(Theme.muted)
@@ -225,7 +225,7 @@ struct ExtraActivityLine: View {
                 .foregroundStyle(Theme.chevron)
                 .accessibilityHidden(true)
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, Space.s)
         .frame(minHeight: Theme.rowHeight)
         .overlay(alignment: .bottom) {
             if showsSeparator { Rectangle().fill(Theme.separator).frame(height: 1) }
@@ -260,7 +260,7 @@ struct EffortSheet: View {
 
     var body: some View {
         ScrollView {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: Space.l) {
             Text("Ton ressenti").font(.coach(.title3, weight: .semibold)).foregroundStyle(Theme.text)
                 .accessibilityAddTraits(.isHeader)
             Text("\(activity.info.label) · \(activity.minutes) min").font(.detail).foregroundStyle(Theme.muted)
@@ -293,14 +293,14 @@ struct EffortPicker: View {
 
     var body: some View {
         let layout = typeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(spacing: 8)) : AnyLayout(HStackLayout(spacing: 6))
+            ? AnyLayout(VStackLayout(spacing: Space.s)) : AnyLayout(HStackLayout(spacing: Space.s))
         layout {
             ForEach(Self.levels, id: \.value) { level in
                 let on = value.map(Self.nearest) == level.value
                 Button {
                     value = level.value
                 } label: {
-                    VStack(spacing: 2) {
+                    VStack(spacing: Space.hairline) {
                         // Chiffre toujours blanc, mot gris sauf choisi (maquette #44).
                         Text("\(level.value)").font(.coach(.title3, weight: .semibold)).monospacedDigit()
                             .foregroundStyle(Theme.text)
@@ -310,7 +310,7 @@ struct EffortPicker: View {
                     .frame(maxWidth: .infinity, minHeight: Theme.effortButtonHeight)
                     .selectableStyle(isOn: on)
                 }
-                .buttonStyle(PressableButtonStyle())
+                .buttonStyle(.coachPressable)
                 .accessibilityLabel("\(level.word), \(level.value) sur 10")
                 .accessibilityAddTraits(on ? .isSelected : [])
             }

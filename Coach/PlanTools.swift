@@ -81,7 +81,7 @@ struct NewPlanView: View {
                             Task { await askCoach() }
                         } label: {
                             if askingCoach {
-                                HStack(spacing: 10) {
+                                HStack(spacing: Space.m) {
                                     ProgressView()
                                     Text("Ton coach réfléchit…")
                                 }

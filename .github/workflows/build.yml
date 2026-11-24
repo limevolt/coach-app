@@ -41,6 +41,10 @@ jobs:
           sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app /Applications/Xcode_16*.app 2>/dev/null | grep -v -i beta | sort -V | tail -1)"
           xcodebuild -version
 
+      - name: Design système (valeurs en dur, avertissement — #76)
+        continue-on-error: true
+        run: python3 scripts/check-design.py > design.log 2>&1 || true; cat design.log
+
       - name: Générer le projet Xcode
         run: xcodegen generate
 
@@ -93,6 +97,9 @@ jobs:
             echo
             echo "===== TESTS UNITAIRES ====="
             grep -E "error:|Test Case .* (passed|failed)|Executed [0-9]+ test" build-tests.log 2>/dev/null | tail -60 || true
+            echo
+            echo "===== DESIGN SYSTÈME (valeurs en dur) ====="
+            head -14 design.log 2>/dev/null || true
             echo
             echo "===== FIN DU JOURNAL iOS ====="
             grep -E "BUILD (SUCCEEDED|FAILED)|error:" build-ios.log | tail -20 || true

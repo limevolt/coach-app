@@ -27,7 +27,7 @@ struct SessionDetailView: View {
         let log = store.log(for: session.id)
         let done = store.isDone(session.id)
         ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: Space.l) {
                 hero
                 if !done && inPlan {
                     StartOnWatchButton { await store.startOnWatch(session) }
@@ -42,7 +42,7 @@ struct SessionDetailView: View {
                 if let strength = session.strength { strengthSection(strength) }
                 feedbackSection(log)
             }
-            .padding(16)
+            .padding(Space.l)
         }
         .background(Theme.bg.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
@@ -66,7 +66,7 @@ struct SessionDetailView: View {
     // MARK: En-tête
 
     private var hero: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.s) {
             Eyebrow(text: session.typeLabel, color: Theme.color(for: session.type))
             Text(session.title).font(.display(30)).foregroundStyle(Theme.text)
             Label(session.dateLabel, systemImage: "calendar")
@@ -102,21 +102,21 @@ struct SessionDetailView: View {
                 } content: {
                     FormattedNotes(text: notes)
                 }
-                .padding(.top, 4)
+                .padding(.top, Space.xs)
             }
         }
     }
 
     /// Séance passée et pas faite : la reprogrammer ou dire qu'elle est faite.
     private var missedCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: Space.m) {
             Label("Pas encore faite", systemImage: "exclamationmark.circle.fill")
                 .font(.coach(size: 16, weight: .bold))
                 .foregroundStyle(Theme.warm)
             Text("Elle était prévue \(stored.dateLabel.endingSentence) Reprogramme-la ou indique que tu l'as faite.")
                 .font(.coach(size: 14))
                 .foregroundStyle(Theme.muted)
-            HStack(spacing: 8) {
+            HStack(spacing: Space.s) {
                 missedButton("Aujourd'hui", icon: "calendar") {
                     await store.move(initial.id, to: Day.key(.now))
                 }
@@ -125,7 +125,7 @@ struct SessionDetailView: View {
                     await store.move(initial.id, to: Day.key(tomorrow))
                 }
             }
-            HStack(spacing: 8) {
+            HStack(spacing: Space.s) {
                 Button { showAdapt = true } label: {
                     // « Adapter » comme sur une séance à venir : autre activité, sans matériel, autre jour (#21).
                     Label("Adapter", systemImage: "slider.horizontal.3")
@@ -157,7 +157,7 @@ struct SessionDetailView: View {
     @ViewBuilder private func badge(_ text: String, icon: String, color: Color) -> some View {
         let canRevert = store.original(for: initial.id) != nil
         Button { if canRevert { confirmRevert = true } } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: Space.s) {
                 Image(systemName: icon)
                 Text(text).multilineTextAlignment(.leading)
                 if canRevert {
@@ -166,7 +166,7 @@ struct SessionDetailView: View {
             }
             .font(.coach(size: 12, weight: .bold))
             .foregroundStyle(color)
-            .padding(.horizontal, 10).padding(.vertical, 5)
+            .padding(.horizontal, Space.m).padding(.vertical, Space.xs)
             .background(color.opacity(0.14), in: Capsule())
         }
         .buttonStyle(.plain)
@@ -193,7 +193,7 @@ struct SessionDetailView: View {
 
     /// Sous « Démarrer sur la montre » : adapter la séance, ou dire qu'elle est faite sans la montre.
     private var secondaryActions: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Space.s) {
             Button { showAdapt = true } label: {
                 Label("Adapter", systemImage: "slider.horizontal.3").secondaryActionStyle()
             }
@@ -209,18 +209,18 @@ struct SessionDetailView: View {
     // MARK: Course
 
     private func runSection(_ run: RunWorkout) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.s) {
             sectionTitle("Déroulé")
             if let warmup = run.warmup {
                 stepCard(title: "Échauffement", detail: warmup.label, color: Theme.teal)
             }
             ForEach(Array(run.blocks.enumerated()), id: \.offset) { _, block in
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: Space.s) {
                     Text(block.iterations > 1 ? "\(block.iterations) ×" : "Bloc")
                         .font(.coach(size: 22, weight: .heavy))
                         .foregroundStyle(Theme.warm)
                     ForEach(Array(block.steps.enumerated()), id: \.offset) { _, step in
-                        HStack(spacing: 8) {
+                        HStack(spacing: Space.s) {
                             Circle()
                                 .fill(step.purpose == "recovery" ? Theme.teal : Theme.warm)
                                 .frame(width: 8, height: 8)
@@ -231,7 +231,7 @@ struct SessionDetailView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .card()
+                .block()
             }
             if let cooldown = run.cooldown {
                 stepCard(title: "Retour au calme", detail: cooldown.label, color: Theme.teal)
@@ -245,14 +245,14 @@ struct SessionDetailView: View {
             Spacer()
             Text(detail).font(.coach(size: 14)).foregroundStyle(color)
         }
-        .card(padding: 12, radius: 16)
+        .block()
     }
 
     // MARK: Circuit
 
     private func circuitSection(_ circuit: CircuitWorkout) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.s) {
+            HStack(spacing: Space.s) {
                 statTile("Tours", "\(circuit.rounds)")
                 statTile("Effort", "\(circuit.workSec) s")
                 statTile("Repos", "\(circuit.restSec) s")
@@ -266,19 +266,19 @@ struct SessionDetailView: View {
     }
 
     private func statTile(_ label: String, _ value: String) -> some View {
-        VStack(spacing: 2) {
+        VStack(spacing: Space.hairline) {
             Text(value).font(.coach(size: 18, weight: .heavy)).foregroundStyle(Theme.text)
                 .lineLimit(1).minimumScaleFactor(0.7)
             Text(label.uppercased()).font(.coach(size: 10, weight: .semibold)).foregroundStyle(Theme.muted)
         }
         .frame(maxWidth: .infinity)
-        .card(padding: 10, radius: 14)
+        .block()
     }
 
     // MARK: Renfo
 
     private func strengthSection(_ strength: StrengthWorkout) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.s) {
             sectionTitle("Exercices")
             ForEach(Array(strength.exercises.enumerated()), id: \.offset) { _, ex in
                 ExerciseCard(exercise: ex, detail: ex.targetLabel) { guide = ex }
@@ -292,22 +292,22 @@ struct SessionDetailView: View {
     @ViewBuilder private func feedbackSection(_ log: SessionLog?) -> some View {
         if log == nil, let link = store.healthLink(for: initial.id) {
             // Faite avec une autre app (#54) : le détail et le ressenti sont sur la page de l'activité.
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: Space.s) {
                 sectionTitle("Ressenti")
                 NavigationLink(value: link.activity) {
-                    HStack(spacing: 12) {
+                    HStack(spacing: Space.m) {
                         Image(systemName: link.activity.info.symbol)
                             .font(Theme.tintedIconFont)
                             .foregroundStyle(Theme.accent)
                             .accessibilityHidden(true)
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: Space.hairline) {
                             Text(link.kind == .main ? "Remplacée par : \(link.activity.info.label)"
                                                     : "Faite avec \(link.activity.sourceName)")
                                 .font(.coach(.body, weight: .semibold)).foregroundStyle(Theme.text)
                             Text("\(link.activity.minutes) min · voir l'activité et noter ton ressenti")
                                 .font(.detail).foregroundStyle(Theme.muted)
                         }
-                        Spacer(minLength: 8)
+                        Spacer(minLength: Space.s)
                         Image(systemName: "chevron.right").font(Theme.chevronFont).foregroundStyle(Theme.chevron)
                             .accessibilityHidden(true)
                     }
@@ -317,14 +317,14 @@ struct SessionDetailView: View {
                 .buttonStyle(.plain)
             }
         } else if let log {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: Space.s) {
                 sectionTitle("Ton retour")
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: Space.s) {
                     HStack {
                         Label("Faite le \(log.completedAt.formatted(date: .abbreviated, time: .omitted))",
                               systemImage: "checkmark.circle.fill")
                             .foregroundStyle(Theme.accent)
-                        Spacer(minLength: 8)
+                        Spacer(minLength: Space.s)
                         Menu {
                             MenuItemButton("Modifier mon retour", systemImage: "pencil") { showFeedback = true }
                             DestructiveButton("Marquer comme non faite", systemImage: "arrow.uturn.backward") {
@@ -369,8 +369,8 @@ struct SessionDetailView: View {
                 ForEach(changed, id: \.session.id) { change in
                     let s = change.session
                     NavigationLink(value: s) {
-                        HStack(spacing: 8) {
-                            VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: Space.s) {
+                            VStack(alignment: .leading, spacing: Space.xs) {
                                 // Séance d'origine, puis ce qui change (maquette « Après le retour »).
                                 Text("\(ReplacementPlanner.dayTitle(s.date)) · \(change.original.title)")
                                     .font(.coach(.body, weight: .semibold)).foregroundStyle(Theme.text)
@@ -378,11 +378,11 @@ struct SessionDetailView: View {
                                 Text(what.prefix(1).uppercased() + what.dropFirst())
                                     .font(.detail).foregroundStyle(Theme.muted)
                             }
-                            Spacer(minLength: 8)
+                            Spacer(minLength: Space.s)
                             Image(systemName: "chevron.right").font(Theme.chevronFont).foregroundStyle(Theme.chevron)
                                 .accessibilityHidden(true)
                         }
-                        .padding(.vertical, 12)
+                        .padding(.vertical, Space.m)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .contentShape(Rectangle())
                     }
@@ -391,10 +391,10 @@ struct SessionDetailView: View {
                 }
             }
             Button { showFeedback = true } label: {
-                Text("Modifier mon retour").quietActionStyle()
+                Text("Modifier mon retour")
             }
-            .buttonStyle(.plain)
-            .padding(.top, 4)
+            .buttonStyle(.coachQuiet())
+            .padding(.top, Space.xs)
             Text("Modifier ton retour recalcule ces changements. Chaque séance modifiée a aussi « Annuler ce changement ».")
                 .font(.detail).foregroundStyle(Theme.muted)
         }
@@ -407,7 +407,7 @@ struct SessionDetailView: View {
             .font(.coach(size: 13, weight: .semibold))
             .tracking(1.4)
             .foregroundStyle(Theme.muted)
-            .padding(.top, 8)
+            .padding(.top, Space.s)
     }
 
 }
@@ -422,7 +422,7 @@ struct ExerciseCard: View {
 
     var body: some View {
         Button(action: onOpen) {
-            HStack(spacing: 12) {
+            HStack(spacing: Space.m) {
                 Group {
                     if let animation {
                         AnimatedExerciseFigure(animation: animation, fps: 24)
@@ -433,9 +433,9 @@ struct ExerciseCard: View {
                     }
                 }
                 .frame(width: 84, height: 84)
-                .background(Theme.card2, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .background(Theme.card2, in: RoundedRectangle(cornerRadius: Radius.m, style: .continuous))
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: Space.xs) {
                     Text(exercise.name)
                         .font(.coach(size: 16, weight: .bold))
                         .foregroundStyle(Theme.text)
@@ -456,7 +456,7 @@ struct ExerciseCard: View {
                     .font(.coach(.title3))
                     .foregroundStyle(Theme.accent)
             }
-            .card(padding: 10, radius: 18)
+            .block()
         }
         .buttonStyle(.plain)
     }
@@ -507,8 +507,8 @@ struct FeedbackSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: Space.l) {
+                    VStack(alignment: .leading, spacing: Space.xs) {
                         Text(session.title).font(.coach(.title2, weight: .semibold)).foregroundStyle(Theme.text)
                         Text(subtitle).font(.detail).foregroundStyle(Theme.muted)
                     }
@@ -542,7 +542,7 @@ struct FeedbackSheet: View {
                         TextField("", text: $note, prompt: Text("Ajouter une note").foregroundStyle(Theme.muted),
                                   axis: .vertical)
                             .lineLimit(1...6)
-                            .padding(.vertical, 12)
+                            .padding(.vertical, Space.m)
                             .fieldStyle()
                     }
                 }
@@ -561,9 +561,9 @@ struct FeedbackSheet: View {
                     Button {
                         save()
                     } label: {
-                        Text("Enregistrer").primaryActionStyle(enabled: !missingZone)
+                        Text("Enregistrer")
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.coachPrimary(enabled: !missingZone))
                     .disabled(saving || missingZone)
                 }
             }
@@ -592,12 +592,12 @@ struct FeedbackSheet: View {
     private var coachSays: some View {
         let lines = store.feedbackPreview(for: session, draft: draft).lines
         return group("Ce que le coach va changer") {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: Space.s) {
                 if lines.isEmpty {
                     Text("Rien à changer : continue comme prévu.")
                 } else {
                     ForEach(lines, id: \.self) { line in
-                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        HStack(alignment: .firstTextBaseline, spacing: Space.s) {
                             Text("•").foregroundStyle(Theme.muted).accessibilityHidden(true)
                             Text(line)
                         }
@@ -612,7 +612,7 @@ struct FeedbackSheet: View {
     }
 
     private func group<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: Space.m) {
             Eyebrow(text: title).accessibilityAddTraits(.isHeader)
             content()
         }
@@ -661,10 +661,10 @@ private extension View {
     func missedStyle(filled: Bool) -> some View {
         self.font(.coach(size: 15, weight: .bold))
             .foregroundStyle(filled ? Theme.accentDark : Theme.accent)
-            .frame(maxWidth: .infinity, minHeight: 44)
+            .frame(maxWidth: .infinity, minHeight: Theme.minTap)
             .background(filled ? Theme.accent : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous)
+                        in: RoundedRectangle(cornerRadius: Radius.m, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Radius.m, style: .continuous)
                 .stroke(Theme.accent.opacity(filled ? 0 : 0.6), lineWidth: 1))
     }
 }

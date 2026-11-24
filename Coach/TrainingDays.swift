@@ -54,7 +54,7 @@ struct TrainingDaysPicker: View {
 
     var body: some View {
         let days = TrainingDays.parse(raw)
-        HStack(spacing: 6) {
+        HStack(spacing: Space.s) {
             ForEach(1...7, id: \.self) { day in
                 let on = days.contains(day)
                 Button {
@@ -65,7 +65,7 @@ struct TrainingDaysPicker: View {
                     Text(TrainingDays.initials[day - 1])
                         .font(.coach(size: 15, weight: .bold))
                         .foregroundStyle(on ? Theme.accentDark : Theme.muted)
-                        .frame(maxWidth: .infinity, minHeight: 40)
+                        .frame(maxWidth: .infinity, minHeight: Theme.minTap)
                         .background(on ? Theme.accent : Theme.line.opacity(0.6), in: Circle())
                 }
                 .buttonStyle(.plain)
@@ -73,7 +73,7 @@ struct TrainingDaysPicker: View {
                 .accessibilityAddTraits(on ? .isSelected : [])
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, Space.xs)
     }
 }
 
@@ -88,7 +88,7 @@ struct OffDaysBanner: View {
         let days = TrainingDays.parse(raw)
         let off = store.sessionsOffTrainingDays(days)
         if !off.isEmpty {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: Space.m) {
                 Label(off.count == 1
                       ? "1 séance tombe en dehors de tes jours d'entraînement."
                       : "\(off.count) séances tombent en dehors de tes jours d'entraînement.",
@@ -113,14 +113,14 @@ struct OffDaysBanner: View {
                     }
                     .font(.coach(size: 15, weight: .bold))
                     .foregroundStyle(Theme.accentDark)
-                    .frame(maxWidth: .infinity, minHeight: 44)
-                    .background(Theme.accent, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .frame(maxWidth: .infinity, minHeight: Theme.minTap)
+                    .background(Theme.accent, in: RoundedRectangle(cornerRadius: Radius.s, style: .continuous))
                 }
                 .buttonStyle(.plain)
                 .disabled(working)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .card(padding: 14, radius: 16)
+            .card()
         }
     }
 }

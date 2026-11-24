@@ -72,8 +72,10 @@ chacune avec ses propres réglages et son propre plan.
   pastille, titre de section), chercher s'il existe déjà (`Shared/Theme.swift`,
   `Coach/Collapsible.swift`, `CoachWatch/WatchButtons.swift`…) et le réutiliser.
 - Un élément utilisé à deux endroits devient un composant commun, au lieu d'être recopié.
-- Jamais de couleur, de taille de police ou de rayon en dur dans une vue : passer par `Theme`
-  et par les styles de texte (`.title`, `.body`…).
+- Jamais de couleur, de taille de police, de rayon, de marge ou d'espace en dur dans une vue :
+  passer par les jetons (`Space`, `Radius`, `Theme`) et les rôles de texte (`Font.text`, `.detail`…),
+  voir la section « Design système » de `DESIGN.md`. Vérifier avec `python3 scripts/check-design.py`
+  avant de pousser : pas de nouvelle ligne signalée dans les fichiers touchés.
 
 ## Captures automatiques
 

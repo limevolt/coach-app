@@ -61,7 +61,7 @@ struct LongTextPreview: View {
     var body: some View {
         let head = Self.head(of: text, lines: maxLines)
         let total = Self.lineCount(text)
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.s) {
             Text(head)
                 .font(.system(.caption2, design: .monospaced))
                 .foregroundStyle(Theme.muted)
@@ -116,7 +116,7 @@ struct ReadOnlyTextView: UIViewRepresentable {
                                                weight: .regular)
         view.font = UIFontMetrics(forTextStyle: .caption1).scaledFont(for: base)
         view.adjustsFontForContentSizeCategory = true
-        view.textContainerInset = UIEdgeInsets(top: 16, left: 12, bottom: 16, right: 12)
+        view.textContainerInset = UIEdgeInsets(top: 16, left: 12, bottom: 16, right: 12) // design-ok: marges internes UIKit de la zone de texte
         return view
     }
 

@@ -301,7 +301,7 @@ struct OwnCoachSettingsView: View {
             Section {
                 TextEditor(text: $prompt)
                     .font(.system(.footnote, design: .monospaced))
-                    .frame(minHeight: 280)
+                    .frame(minHeight: 280) // design-ok: hauteur de la zone de saisie
                     .scrollContentBackground(.hidden)
                 Button("Rétablir le message par défaut", systemImage: "arrow.counterclockwise") {
                     prompt = OwnCoach.defaultPrompt
@@ -386,11 +386,11 @@ struct PlanProposalView: View {
                 if !upcoming.isEmpty {
                     Section("Prochaines séances") {
                         ForEach(upcoming.prefix(10), id: \.id) { s in
-                            HStack(spacing: 12) {
+                            HStack(spacing: Space.m) {
                                 Image(systemName: Theme.icon(for: s.type))
                                     .foregroundStyle(Theme.color(for: s.type))
                                     .frame(width: 24)
-                                VStack(alignment: .leading, spacing: 2) {
+                                VStack(alignment: .leading, spacing: Space.hairline) {
                                     Text(s.title).font(.coach(.subheadline, weight: .semibold))
                                     Text("\(s.date) · \(s.typeLabel)")
                                         .font(.coach(.caption))

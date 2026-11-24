@@ -55,7 +55,7 @@ struct PlanCreationView: View {
                 VStack(spacing: Theme.blockSpacing) {
                     Spacer(minLength: 0)
                     hero
-                    VStack(spacing: 8) {
+                    VStack(spacing: Space.s) {
                         Text(title)
                             .font(.number)
                             .foregroundStyle(Theme.text)
@@ -170,15 +170,15 @@ struct PlanCreationView: View {
     }
 
     private var actions: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: Space.m) {
             Button(action: retry) {
-                Text("Réessayer").primaryActionStyle()
+                Text("Réessayer")
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.coachPrimary())
             Button(action: edit) {
-                Text("Modifier mes choix").quietActionStyle()
+                Text("Modifier mes choix")
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.coachQuiet())
         }
     }
 

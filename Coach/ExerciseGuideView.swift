@@ -24,7 +24,7 @@ struct ExerciseGuideView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: Space.l) {
                     header
                     chips
                     if let animation {
@@ -51,7 +51,7 @@ struct ExerciseGuideView: View {
                         .card(fill: Theme.card2)
                     }
                 }
-                .padding(16)
+                .padding(Space.l)
             }
             .background(Theme.bg.ignoresSafeArea())
             .toolbar {
@@ -68,7 +68,7 @@ struct ExerciseGuideView: View {
 
     private var header: some View {
         HStack(alignment: .bottom) {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Space.xs) {
                 Eyebrow(text: "Comment faire")
                 Text(exercise.name).font(.display(32)).foregroundStyle(Theme.text)
             }
@@ -87,7 +87,7 @@ struct ExerciseGuideView: View {
 
     private var chips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
+            HStack(spacing: Space.s) {
                 ForEach(animation?.muscles ?? [], id: \.self) { Chip(text: $0.label, hot: true) }
                 if let level = animation?.level { Chip(text: level) }
                 if let target = targetText { Chip(text: target) }
@@ -105,21 +105,21 @@ struct ExerciseGuideView: View {
     private func stage(_ animation: ExerciseAnimation, _ t: Double) -> some View {
         let sample = animation.sample(at: t)
         return ZStack {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+            RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                 .fill(RadialGradient(colors: [Color(hex: 0x1F2A3A), Color(hex: 0x121821), Color(hex: 0x0D1219)],
                                      center: UnitPoint(x: 0.5, y: 0.1), startRadius: 0, endRadius: 420))
             ExerciseFigure(animation: animation, time: t, muscles: showMuscles)
-                .padding(8)
+                .padding(Space.s)
         }
-        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(Theme.line, lineWidth: 1))
+        .overlay(RoundedRectangle(cornerRadius: Radius.card, style: .continuous).stroke(Theme.line, lineWidth: 1))
         .overlay(alignment: .topLeading) {
-            HStack(spacing: 8) {
+            HStack(spacing: Space.s) {
                 Circle().fill(Theme.accent).frame(width: 8, height: 8).shadow(color: Theme.accent, radius: 5)
                 Text(sample.phase.label).font(.coach(size: 13, weight: .semibold))
             }
-            .padding(.horizontal, 12).padding(.vertical, 7)
+            .padding(.horizontal, Space.m).padding(.vertical, Space.s)
             .background(.ultraThinMaterial, in: Capsule())
-            .padding(14)
+            .padding(Space.l)
         }
         .overlay(alignment: .bottom) {
             GeometryReader { geo in
@@ -131,62 +131,62 @@ struct ExerciseGuideView: View {
                 }
             }
             .frame(height: 4)
-            .padding(14)
+            .padding(Space.l)
         }
         .aspectRatio(1 / 1.05, contentMode: .fit)
     }
 
     private func cue(_ phase: AnimPhase) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: Space.m) {
             Text("\((phase.step ?? 0) + 1)")
                 .font(.coach(size: 15, weight: .heavy))
                 .foregroundStyle(Color(hex: 0x11160A))
                 .frame(width: 30, height: 30)
-                .background(Theme.accent, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .background(Theme.accent, in: RoundedRectangle(cornerRadius: Radius.xs, style: .continuous))
             Text(phase.cue)
                 .font(.coach(size: 18, weight: .semibold))
                 .foregroundStyle(Theme.text)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(minHeight: 34)
-        .card(radius: 18)
+        .card()
         .animation(.easeInOut(duration: 0.2), value: phase.cue)
     }
 
     // MARK: Commandes
 
     private var controls: some View {
-        VStack(spacing: 10) {
-            HStack(spacing: 10) {
+        VStack(spacing: Space.m) {
+            HStack(spacing: Space.m) {
                 Button { togglePlay() } label: {
                     Image(systemName: playing ? "pause.fill" : "play.fill")
                         .font(.system(size: 22, weight: .heavy))
                         .foregroundStyle(Color(hex: 0x11160A))
                         .frame(width: 56, height: 56)
-                        .background(Theme.accent, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .background(Theme.accent, in: RoundedRectangle(cornerRadius: Radius.m, style: .continuous))
                 }
-                HStack(spacing: 4) {
+                HStack(spacing: Space.xs) {
                     tempoButton("Lent", 0.6)
                     tempoButton("Normal", 1)
                     tempoButton("Rapide", 1.4)
                 }
-                .padding(4)
+                .padding(Space.xs)
                 .frame(height: 56)
-                .background(Theme.card, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(Theme.line))
+                .background(Theme.card, in: RoundedRectangle(cornerRadius: Radius.m, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: Radius.m, style: .continuous).stroke(Theme.line))
             }
             Button {
                 showMuscles.toggle()
             } label: {
-                HStack(spacing: 8) {
+                HStack(spacing: Space.s) {
                     Circle().fill(showMuscles ? Theme.warm : Theme.line).frame(width: 10, height: 10)
                         .shadow(color: showMuscles ? Theme.warm : .clear, radius: 4)
                     Text("Muscles sollicités").font(.coach(size: 14, weight: .semibold))
                 }
                 .foregroundStyle(showMuscles ? Theme.text : Theme.muted)
-                .frame(maxWidth: .infinity, minHeight: 44)
-                .background(showMuscles ? Theme.card2 : Theme.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Theme.line))
+                .frame(maxWidth: .infinity, minHeight: Theme.minTap)
+                .background(showMuscles ? Theme.card2 : Theme.card, in: RoundedRectangle(cornerRadius: Radius.m, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: Radius.m, style: .continuous).stroke(Theme.line))
             }
         }
         .buttonStyle(.plain)
@@ -202,7 +202,7 @@ struct ExerciseGuideView: View {
                 .font(.coach(size: 14, weight: .semibold))
                 .foregroundStyle(speed == value ? Theme.text : Theme.muted)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(speed == value ? Theme.card2 : .clear, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .background(speed == value ? Theme.card2 : .clear, in: RoundedRectangle(cornerRadius: Radius.s, style: .continuous))  // concentrique : cadre 16 − marge 4
         }
     }
 
@@ -219,29 +219,28 @@ struct ExerciseGuideView: View {
     // MARK: Consignes
 
     private var stepsSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: Space.m) {
             sectionTitle("Les étapes")
             TimelineView(.periodic(from: .now, by: 0.1)) { context in
                 let active: Int? = {
                     guard usesLibrarySteps, let animation else { return nil }
                     return animation.sample(at: time(at: context.date)).phase.step
                 }()
-                VStack(spacing: 8) {
+                VStack(spacing: Space.s) {
                     ForEach(Array(steps.enumerated()), id: \.offset) { i, step in
                         let on = active == i
-                        HStack(alignment: .top, spacing: 12) {
+                        HStack(alignment: .top, spacing: Space.m) {
                             Text("\(i + 1)")
                                 .font(.coach(size: 13, weight: .bold))
                                 .foregroundStyle(on ? Color(hex: 0x11160A) : Theme.text)
                                 .frame(width: 24, height: 24)
-                                .background(on ? Theme.accent : Theme.card2, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                .background(on ? Theme.accent : Theme.card2, in: RoundedRectangle(cornerRadius: Radius.xs, style: .continuous))
                             Text(step)
                                 .font(.coach(size: 15))
                                 .foregroundStyle(on ? Theme.text : Theme.muted)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .card(padding: 12, radius: 16,
-                              fill: on ? Theme.successBg : Theme.card,
+                        .block(fill: on ? Theme.successBg : Theme.card,
                               stroke: on ? Color(hex: 0x3E5520) : Theme.line)
                     }
                 }
@@ -251,20 +250,20 @@ struct ExerciseGuideView: View {
     }
 
     private var mistakesSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: Space.m) {
             sectionTitle("Erreurs à éviter")
             ForEach(Array(mistakes.enumerated()), id: \.offset) { _, m in
                 Text(m)
                     .font(.coach(size: 14))
                     .foregroundStyle(Color(hex: 0xF2C9BD))
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .card(padding: 12, radius: 16, fill: Theme.dangerBg, stroke: Color(hex: 0x3A2420))
+                    .block(fill: Theme.dangerBg, stroke: Color(hex: 0x3A2420))
             }
         }
     }
 
     private var noAnimation: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: Space.s) {
             Image(systemName: "figure.strengthtraining.functional").font(.system(size: 44)).foregroundStyle(Theme.accent)
             Text("Pas encore d'animation pour cet exercice.")
                 .font(.coach(size: 15, weight: .semibold))
@@ -273,7 +272,7 @@ struct ExerciseGuideView: View {
                 .font(.coach(.caption)).foregroundStyle(Theme.muted).multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 30)
+        .padding(.vertical, Space.xxl)
         .card()
     }
 
@@ -282,7 +281,7 @@ struct ExerciseGuideView: View {
             .font(.coach(size: 13, weight: .semibold))
             .tracking(1.4)
             .foregroundStyle(Theme.muted)
-            .padding(.top, 6)
+            .padding(.top, Space.s)
     }
 }
 
@@ -290,20 +289,20 @@ struct ExerciseGuideView: View {
 struct ExerciseLibraryView: View {
     @State private var selected: Exercise?
 
-    private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
+    private let columns = [GridItem(.flexible(), spacing: Space.m), GridItem(.flexible(), spacing: Space.m)]
 
     var body: some View {
         ScrollView {
-            LazyVGrid(columns: columns, spacing: 12) {
+            LazyVGrid(columns: columns, spacing: Space.m) {
                 ForEach(ExerciseLibrary.all) { anim in
                     Button {
                         selected = Exercise(name: anim.name, animation: anim.id)
                     } label: {
-                        VStack(alignment: .leading, spacing: 6) {
+                        VStack(alignment: .leading, spacing: Space.s) {
                             AnimatedExerciseFigure(animation: anim, fps: 24)
                                 .frame(height: 130)
                                 .frame(maxWidth: .infinity)
-                                .background(Theme.card2, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                .background(Theme.card2, in: RoundedRectangle(cornerRadius: Radius.m, style: .continuous))
                             Text(anim.name)
                                 .font(.coach(size: 15, weight: .bold))
                                 .foregroundStyle(Theme.text)
@@ -313,12 +312,12 @@ struct ExerciseLibraryView: View {
                                 .foregroundStyle(Theme.muted)
                                 .lineLimit(1)
                         }
-                        .card(padding: 10, radius: 18)
+                        .block()
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(16)
+            .padding(Space.l)
         }
         .background(Theme.bg.ignoresSafeArea())
         .navigationTitle("Exercices")

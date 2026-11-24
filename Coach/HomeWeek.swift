@@ -11,7 +11,7 @@ struct WeekHero: View {
     let planned: Int
 
     var body: some View {
-        VStack(spacing: 2) {
+        VStack(spacing: Space.hairline) {
             Text("\(done) / \(planned)")
                 .font(.hero)
                 .tracking(-2)
@@ -51,7 +51,7 @@ struct WeekDots<MenuItems: View>: View {
                 } label: {
                     DayDot(day: day, isSelected: isSelected)
                 }
-                .buttonStyle(PressableButtonStyle())
+                .buttonStyle(.coachPressable)
                 .contextMenu { if let session = day.main { menu(session) } }
                 .accessibilityAddTraits(isSelected ? .isSelected : [])
                 .accessibilityHint(isSelected ? "Jour affiché" : "Affiche ce jour")
@@ -72,7 +72,7 @@ struct DayDot: View {
     private var tint: Color { day.main.map { Theme.color(for: $0.type) } ?? Theme.line }
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: Space.s) {
             Text(day.date.formatted(.dateTime.weekday(.narrow)))
                 .font(day.isToday ? .labelStrong : .label)
                 .foregroundStyle(day.isToday ? Theme.accent : Theme.muted)
@@ -95,7 +95,7 @@ struct DayDot: View {
                 .overlay(Image(systemName: day.extras[0].info.symbol)
                     .font(Theme.tintedIconFont).foregroundStyle(Theme.text))
             if ringed {
-                Circle().strokeBorder(Theme.accent, lineWidth: 2).overlay(extra.padding(5))
+                Circle().strokeBorder(Theme.accent, lineWidth: 2).overlay(extra.padding(5)) // design-ok: anneau du jour, géométrie de la pastille
             } else {
                 extra
             }
@@ -109,7 +109,7 @@ struct DayDot: View {
         case .done:
             if ringed {
                 Circle().strokeBorder(Theme.accent, lineWidth: 2)
-                    .overlay(filled.padding(5))
+                    .overlay(filled.padding(5)) // design-ok: anneau du jour, géométrie de la pastille
             } else {
                 filled
             }
@@ -221,15 +221,15 @@ struct SelectedDayCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Space.m) {
             // Très grand texte : le lien passe sous la date au lieu de la tronquer.
             ViewThatFits(in: .horizontal) {
                 HStack(alignment: .center) {
                     Eyebrow(text: Self.title(for: day)).fixedSize()
-                    Spacer(minLength: 8)
+                    Spacer(minLength: Space.s)
                     todayButton
                 }
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: Space.xs) {
                     Eyebrow(text: Self.title(for: day))
                     todayButton
                 }
@@ -261,15 +261,15 @@ struct SelectedDayCard: View {
                 }
             }
             if let activity = effortToNote {
-                Button { effortFor = activity } label: { Text("Noter mon effort").quietActionStyle() }
-                    .buttonStyle(PressableButtonStyle())
+                Button { effortFor = activity } label: { Text("Noter mon effort") }
+                    .buttonStyle(.coachQuiet())
             }
         }
         // Même forme que la carte du jour : la carte ne saute pas quand on change de jour.
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.top, 18)
-        .padding(.bottom, 16)
+        .padding(.horizontal, Space.l)
+        .padding(.top, Space.l)
+        .padding(.bottom, Space.l)
         .background(Theme.card, in: RoundedRectangle(cornerRadius: Theme.heroCardRadius, style: .continuous))
         .sheet(item: $effortFor) { EffortSheet(activity: $0) }
     }
@@ -290,7 +290,7 @@ struct TodayCard: View {
     @State private var effortFor: HealthActivity?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: Space.l) {
             switch today {
             case .toDo(let stored):
                 let session = stored.effective
@@ -308,7 +308,7 @@ struct TodayCard: View {
                 let link = store.healthLink(for: stored.id)
                 if let link, link.kind == .main {
                     // Autre sport choisi comme séance du jour (#54).
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Space.xs) {
                         Label { Text("Séance du jour") } icon: { Image(systemName: "checkmark") }
                             .labelStyle(EyebrowLabelStyle(color: Theme.accent))
                         Label { Text(link.activity.info.label) } icon: { Image(systemName: link.activity.info.symbol) }
@@ -318,7 +318,7 @@ struct TodayCard: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 } else {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Space.xs) {
                         Label { Text("Fait aujourd'hui") } icon: { Image(systemName: "checkmark") }
                             .labelStyle(EyebrowLabelStyle(color: Theme.accent))
                         Text(session.title).font(.number).foregroundStyle(Theme.text)
@@ -331,55 +331,54 @@ struct TodayCard: View {
                 let stats = link.map { Self.stats($0.activity, effort: store.activityChoices.efforts[$0.activity.id]) }
                     ?? Self.stats(store.log(for: stored.id))
                 if !stats.isEmpty {
-                    HStack(alignment: .top, spacing: 8) {
+                    HStack(alignment: .top, spacing: Space.s) {
                         ForEach(stats, id: \.label) { StatValue(value: $0.value, unit: $0.unit, label: $0.label) }
                     }
                 }
                 if let link, store.activityChoices.efforts[link.activity.id] == nil {
                     // Faite avec une autre app : le ressenti se demande ici, un appui suffit (#54).
                     Button { effortFor = link.activity } label: {
-                        Text("Noter mon effort").quietActionStyle()
+                        Text("Noter mon effort")
                     }
-                    .buttonStyle(PressableButtonStyle())
+                    .buttonStyle(.coachQuiet())
                 }
                 Group {
                     if let link, link.kind == .main {
-                        NavigationLink(value: link.activity) { Text("Voir le détail").quietActionStyle() }
+                        NavigationLink(value: link.activity) { Text("Voir le détail") }.buttonStyle(.coachQuiet())
                     } else {
-                        NavigationLink(value: stored) { Text("Voir le détail").quietActionStyle() }
+                        NavigationLink(value: stored) { Text("Voir le détail") }.buttonStyle(.coachQuiet())
                     }
                 }
-                .buttonStyle(PressableButtonStyle())
 
             case .rest where planEnded:
                 heading(eyebrow: "Plan terminé", color: Theme.accent,
                         title: "Bravo, le plan est bouclé",
                         detail: "Crée le suivant avec ton IA, à partir de ce que tu as fait.")
                 Button(action: newPlan) {
-                    Label("Créer un nouveau plan", systemImage: "sparkles").primaryActionStyle()
+                    Label("Créer un nouveau plan", systemImage: "sparkles")
                 }
-                .buttonStyle(PressableButtonStyle())
+                .buttonStyle(.coachPrimary())
 
             case .rest(let next):
                 heading(eyebrow: "Aujourd'hui · Repos", color: Theme.muted,
                         title: next.map { Self.restTitle(before: $0) } ?? "Récupère bien",
                         detail: next.map { Self.nextLine($0.effective) })
                 Button(action: openTimers) {
-                    Label("Séance libre", systemImage: "timer").quietActionStyle()
+                    Label("Séance libre", systemImage: "timer")
                 }
-                .buttonStyle(PressableButtonStyle())
+                .buttonStyle(.coachQuiet())
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.top, 18)
-        .padding(.bottom, 16)
+        .padding(.horizontal, Space.l)
+        .padding(.top, Space.l)
+        .padding(.bottom, Space.l)
         .background(Theme.card, in: RoundedRectangle(cornerRadius: Theme.heroCardRadius, style: .continuous))
         .sheet(item: $effortFor) { EffortSheet(activity: $0) }
     }
 
     private func heading(eyebrow: String, color: Color, title: String, detail: String?) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             Eyebrow(text: eyebrow, color: color)
             Text(title)
                 .font(.number)
@@ -444,7 +443,7 @@ struct EyebrowLabelStyle: LabelStyle {
     var color: Color = Theme.muted
 
     func makeBody(configuration: Configuration) -> some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Space.s) {
             configuration.icon.font(Theme.chevronFont)
             configuration.title
         }
@@ -464,7 +463,7 @@ struct PlanLine: View {
     var showsSeparator = true
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: Space.m) {
             Text(session.title)
                 .font(.text)
                 .foregroundStyle(Theme.text)
@@ -478,7 +477,7 @@ struct PlanLine: View {
                 .foregroundStyle(Theme.chevron)
                 .accessibilityHidden(true)
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, Space.s)
         .frame(minHeight: Theme.rowHeight)
         .overlay(alignment: .bottom) {
             if showsSeparator { Rectangle().fill(Theme.separator).frame(height: 1) }
@@ -516,7 +515,7 @@ struct PainAdviceCard: View {
     var body: some View {
         if let advice = store.painAdvice {
             let spareable = BodyZone(rawValue: advice.zone) != nil
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: Space.m) {
                 Label("Le coach te conseille", systemImage: "sparkles")
                     .labelStyle(EyebrowLabelStyle())
                     .accessibilityAddTraits(.isHeader)
@@ -527,8 +526,8 @@ struct PainAdviceCard: View {
                 Label("Consulte un professionnel si la douleur persiste.", systemImage: "info.circle")
                     .font(.detail).foregroundStyle(Theme.text)
                 ViewThatFits(in: .horizontal) {
-                    HStack(spacing: 10) { buttons(advice, spareable: spareable) }
-                    VStack(spacing: 10) { buttons(advice, spareable: spareable) }
+                    HStack(spacing: Space.m) { buttons(advice, spareable: spareable) }
+                    VStack(spacing: Space.m) { buttons(advice, spareable: spareable) }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -540,14 +539,13 @@ struct PainAdviceCard: View {
         if spareable {
             Button { store.spareZone(advice.zone, advice: advice.logId) } label: {
                 Text("Ménager \(Self.withArticle(advice.zone))")
-                    .quietActionStyle(color: Theme.accent)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.coachQuiet(color: Theme.accent))
             .accessibilityHint("Les prochains plans créés par le coach éviteront de la charger")
         }
         Button { store.dismissAdvice(advice.logId) } label: {
-            Text(spareable ? "Pas maintenant" : "Compris").quietActionStyle()
+            Text(spareable ? "Pas maintenant" : "Compris")
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.coachQuiet())
     }
 }
