@@ -42,7 +42,8 @@ jobs:
           xcodebuild -version
 
       - name: Design système (valeurs en dur, avertissement — #76)
-        run: python3 scripts/check-design.py | tee design.log
+        continue-on-error: true
+        run: python3 scripts/check-design.py > design.log 2>&1 || true; cat design.log
 
       - name: Générer le projet Xcode
         run: xcodegen generate

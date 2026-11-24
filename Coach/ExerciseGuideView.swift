@@ -105,13 +105,13 @@ struct ExerciseGuideView: View {
     private func stage(_ animation: ExerciseAnimation, _ t: Double) -> some View {
         let sample = animation.sample(at: t)
         return ZStack {
-            RoundedRectangle(cornerRadius: Radius.hero, style: .continuous)
+            RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                 .fill(RadialGradient(colors: [Color(hex: 0x1F2A3A), Color(hex: 0x121821), Color(hex: 0x0D1219)],
                                      center: UnitPoint(x: 0.5, y: 0.1), startRadius: 0, endRadius: 420))
             ExerciseFigure(animation: animation, time: t, muscles: showMuscles)
                 .padding(Space.s)
         }
-        .overlay(RoundedRectangle(cornerRadius: Radius.hero, style: .continuous).stroke(Theme.line, lineWidth: 1))
+        .overlay(RoundedRectangle(cornerRadius: Radius.card, style: .continuous).stroke(Theme.line, lineWidth: 1))
         .overlay(alignment: .topLeading) {
             HStack(spacing: Space.s) {
                 Circle().fill(Theme.accent).frame(width: 8, height: 8).shadow(color: Theme.accent, radius: 5)
@@ -149,7 +149,7 @@ struct ExerciseGuideView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(minHeight: 34)
-        .card(radius: Radius.card)
+        .card()
         .animation(.easeInOut(duration: 0.2), value: phase.cue)
     }
 
@@ -163,7 +163,7 @@ struct ExerciseGuideView: View {
                         .font(.system(size: 22, weight: .heavy))
                         .foregroundStyle(Color(hex: 0x11160A))
                         .frame(width: 56, height: 56)
-                        .background(Theme.accent, in: RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
+                        .background(Theme.accent, in: RoundedRectangle(cornerRadius: Radius.m, style: .continuous))
                 }
                 HStack(spacing: Space.xs) {
                     tempoButton("Lent", 0.6)
@@ -172,8 +172,8 @@ struct ExerciseGuideView: View {
                 }
                 .padding(Space.xs)
                 .frame(height: 56)
-                .background(Theme.card, in: RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: Radius.card, style: .continuous).stroke(Theme.line))
+                .background(Theme.card, in: RoundedRectangle(cornerRadius: Radius.m, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: Radius.m, style: .continuous).stroke(Theme.line))
             }
             Button {
                 showMuscles.toggle()
@@ -202,7 +202,7 @@ struct ExerciseGuideView: View {
                 .font(.coach(size: 14, weight: .semibold))
                 .foregroundStyle(speed == value ? Theme.text : Theme.muted)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(speed == value ? Theme.card2 : .clear, in: RoundedRectangle(cornerRadius: Radius.m, style: .continuous))
+                .background(speed == value ? Theme.card2 : .clear, in: RoundedRectangle(cornerRadius: Radius.s, style: .continuous))  // concentrique : cadre 16 − marge 4
         }
     }
 
@@ -240,8 +240,7 @@ struct ExerciseGuideView: View {
                                 .foregroundStyle(on ? Theme.text : Theme.muted)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .card(padding: Theme.tilePadding, radius: Radius.m,
-                              fill: on ? Theme.successBg : Theme.card,
+                        .block(fill: on ? Theme.successBg : Theme.card,
                               stroke: on ? Color(hex: 0x3E5520) : Theme.line)
                     }
                 }
@@ -258,7 +257,7 @@ struct ExerciseGuideView: View {
                     .font(.coach(size: 14))
                     .foregroundStyle(Color(hex: 0xF2C9BD))
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .card(padding: Theme.tilePadding, radius: Radius.m, fill: Theme.dangerBg, stroke: Color(hex: 0x3A2420))
+                    .block(fill: Theme.dangerBg, stroke: Color(hex: 0x3A2420))
             }
         }
     }
@@ -313,7 +312,7 @@ struct ExerciseLibraryView: View {
                                 .foregroundStyle(Theme.muted)
                                 .lineLimit(1)
                         }
-                        .card(padding: Theme.tilePadding, radius: Radius.card)
+                        .block()
                     }
                     .buttonStyle(.plain)
                 }

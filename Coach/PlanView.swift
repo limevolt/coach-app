@@ -506,7 +506,7 @@ struct SessionRow: View {
                     .foregroundStyle(Theme.muted)
                     .lineLimit(2)
             }
-            Spacer(minLength: 4)
+            Spacer(minLength: Space.xs)
             Image(systemName: done ? "checkmark.circle.fill" : (missed ? "exclamationmark.circle" : "chevron.right"))
                 .font(done || missed ? Theme.iconFont : Theme.chevronFont)
                 .foregroundStyle(done ? Theme.accent : (missed ? Theme.warm : Theme.chevron))
@@ -531,7 +531,7 @@ struct GoalCard: View {
             }
             HStack(alignment: .firstTextBaseline) {
                 Text(goal.title).font(.text).foregroundStyle(Theme.text)
-                Spacer(minLength: 8)
+                Spacer(minLength: Space.s)
                 if let days = goal.daysLeft {
                     Text(days >= 0 ? "J-\(days)" : "Échu")
                         .font(.coach(.body, weight: .semibold))

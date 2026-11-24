@@ -55,7 +55,7 @@ private struct CollapsibleBackground: ViewModifier {
                 .padding(.vertical, Space.l)
                 .overlay(alignment: .bottom) { Rectangle().fill(Theme.separator).frame(height: 1) }
         } else {
-            content.card(padding: Theme.cardPadding, radius: Radius.card)
+            content.card()
         }
     }
 }

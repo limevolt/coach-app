@@ -252,7 +252,7 @@ private struct ObjectiveStep: View {
                         HStack {
                             Text(draft.eventDate.formatted(.dateTime.weekday(.wide).day().month(.wide).year()).capitalizingFirst)
                                 .foregroundStyle(Theme.text)
-                            Spacer(minLength: 8)
+                            Spacer(minLength: Space.s)
                             if let weeksLine { Text(weeksLine).font(.detail).foregroundStyle(Theme.muted) }
                         }
                         .fieldStyle()
@@ -431,7 +431,7 @@ private struct AvailabilityStep: View {
                     } label: {
                         HStack(spacing: Space.s) {
                             Text("Sortie longue jusqu'à").font(.text).foregroundStyle(Theme.text)
-                            Spacer(minLength: 8)
+                            Spacer(minLength: Space.s)
                             Text(Self.label(draft.longRunMinutes ?? draft.settings().defaultLongRunMinutes))
                                 .font(.text).foregroundStyle(Theme.muted)
                             Image(systemName: "chevron.up.chevron.down")
@@ -803,7 +803,7 @@ private struct SummaryStep: View {
         } label: {
             HStack(spacing: Space.m) {
                 Text(title).font(.text).foregroundStyle(Theme.text)
-                Spacer(minLength: 8)
+                Spacer(minLength: Space.s)
                 Text(value).font(.detail).foregroundStyle(Theme.muted).multilineTextAlignment(.trailing)
                 Image(systemName: "chevron.right").font(Theme.chevronFont).foregroundStyle(Theme.chevron)
                     .accessibilityHidden(true)

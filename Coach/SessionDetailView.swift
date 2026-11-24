@@ -231,7 +231,7 @@ struct SessionDetailView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .card()
+                .block()
             }
             if let cooldown = run.cooldown {
                 stepCard(title: "Retour au calme", detail: cooldown.label, color: Theme.teal)
@@ -245,7 +245,7 @@ struct SessionDetailView: View {
             Spacer()
             Text(detail).font(.coach(size: 14)).foregroundStyle(color)
         }
-        .card(padding: Theme.tilePadding, radius: Radius.m)
+        .block()
     }
 
     // MARK: Circuit
@@ -272,7 +272,7 @@ struct SessionDetailView: View {
             Text(label.uppercased()).font(.coach(size: 10, weight: .semibold)).foregroundStyle(Theme.muted)
         }
         .frame(maxWidth: .infinity)
-        .card(padding: Theme.tilePadding, radius: Radius.m)
+        .block()
     }
 
     // MARK: Renfo
@@ -307,7 +307,7 @@ struct SessionDetailView: View {
                             Text("\(link.activity.minutes) min · voir l'activité et noter ton ressenti")
                                 .font(.detail).foregroundStyle(Theme.muted)
                         }
-                        Spacer(minLength: 8)
+                        Spacer(minLength: Space.s)
                         Image(systemName: "chevron.right").font(Theme.chevronFont).foregroundStyle(Theme.chevron)
                             .accessibilityHidden(true)
                     }
@@ -324,7 +324,7 @@ struct SessionDetailView: View {
                         Label("Faite le \(log.completedAt.formatted(date: .abbreviated, time: .omitted))",
                               systemImage: "checkmark.circle.fill")
                             .foregroundStyle(Theme.accent)
-                        Spacer(minLength: 8)
+                        Spacer(minLength: Space.s)
                         Menu {
                             MenuItemButton("Modifier mon retour", systemImage: "pencil") { showFeedback = true }
                             DestructiveButton("Marquer comme non faite", systemImage: "arrow.uturn.backward") {
@@ -378,7 +378,7 @@ struct SessionDetailView: View {
                                 Text(what.prefix(1).uppercased() + what.dropFirst())
                                     .font(.detail).foregroundStyle(Theme.muted)
                             }
-                            Spacer(minLength: 8)
+                            Spacer(minLength: Space.s)
                             Image(systemName: "chevron.right").font(Theme.chevronFont).foregroundStyle(Theme.chevron)
                                 .accessibilityHidden(true)
                         }
@@ -456,7 +456,7 @@ struct ExerciseCard: View {
                     .font(.coach(.title3))
                     .foregroundStyle(Theme.accent)
             }
-            .card(padding: Theme.tilePadding, radius: Radius.card)
+            .block()
         }
         .buttonStyle(.plain)
     }
@@ -507,7 +507,7 @@ struct FeedbackSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: Space.xl) {
+                VStack(alignment: .leading, spacing: Space.l) {
                     VStack(alignment: .leading, spacing: Space.xs) {
                         Text(session.title).font(.coach(.title2, weight: .semibold)).foregroundStyle(Theme.text)
                         Text(subtitle).font(.detail).foregroundStyle(Theme.muted)

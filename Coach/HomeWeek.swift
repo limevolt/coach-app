@@ -51,7 +51,7 @@ struct WeekDots<MenuItems: View>: View {
                 } label: {
                     DayDot(day: day, isSelected: isSelected)
                 }
-                .buttonStyle(PressableButtonStyle())
+                .buttonStyle(.coachPressable)
                 .contextMenu { if let session = day.main { menu(session) } }
                 .accessibilityAddTraits(isSelected ? .isSelected : [])
                 .accessibilityHint(isSelected ? "Jour affiché" : "Affiche ce jour")
@@ -226,7 +226,7 @@ struct SelectedDayCard: View {
             ViewThatFits(in: .horizontal) {
                 HStack(alignment: .center) {
                     Eyebrow(text: Self.title(for: day)).fixedSize()
-                    Spacer(minLength: 8)
+                    Spacer(minLength: Space.s)
                     todayButton
                 }
                 VStack(alignment: .leading, spacing: Space.xs) {
@@ -349,7 +349,6 @@ struct TodayCard: View {
                         NavigationLink(value: stored) { Text("Voir le détail") }.buttonStyle(.coachQuiet())
                     }
                 }
-                .buttonStyle(PressableButtonStyle())
 
             case .rest where planEnded:
                 heading(eyebrow: "Plan terminé", color: Theme.accent,

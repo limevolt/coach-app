@@ -29,8 +29,8 @@ SKIP_DIRS = ("Coach/Engine/",)
 
 NUM = r"[0-9]+(?:\.[0-9]+)?"
 RULES = [
-    ("couleur en dur", re.compile(r"Color\(hex:|Color\.(white|black|red|green|blue|gray|orange|yellow|purple|pink)\b")),
-    ("taille de texte en dur", re.compile(r"\.coach\(size:\s*" + NUM + r"|\.system\(size:\s*" + NUM)),
+    ("couleur en dur", re.compile(r"Color\(hex:|Color\.(white|black|red|green|blue|gray|orange|yellow|purple|pink)\b|(foregroundStyle|foregroundColor|tint|fill)\(\.(white|black|red|green|blue|gray|orange|yellow|purple|pink)\b")),
+    ("taille de texte en dur", re.compile(r"\.coach\(size:\s*" + NUM + r"|\.system\(size:\s*" + NUM + r"|\.system\(\.[a-zA-Z0-9]+")),
     # Un style d'Apple (.footnote, .caption…) donne une taille hors de l'échelle : utiliser un rôle
     # (Font.text, .detail, .label, .number…). Seules les définitions de Theme/Typography y ont droit.
     ("style de texte hors échelle", re.compile(r"\.coach\(\.[a-zA-Z0-9]+")),
@@ -40,7 +40,7 @@ RULES = [
     ("hauteur minimale en dur", re.compile(r"minHeight:\s*" + NUM)),
     ("matière ou ombre hors thème", re.compile(r"\.(regular|thin|ultraThin|thick)Material|\.shadow\(")),
     ("marge en dur", re.compile(r"\.padding\((?:\.[a-zA-Z]+,\s*|\[[^\]]*\],\s*)?(?!0\))" + NUM + r"\)")),
-    ("espace en dur", re.compile(r"spacing:\s*(?!0\b)" + NUM)),
+    ("espace en dur", re.compile(r"spacing:\s*(?!0\b)" + NUM + r"|Spacer\(minLength:\s*(?!0\b)" + NUM + r"|EdgeInsets\(")),
 ]
 EXEMPT = "design-ok"
 
@@ -52,8 +52,9 @@ def scan():
             rel = path.relative_to(ROOT).as_posix()
             if rel in SKIP or rel.startswith(SKIP_DIRS):
                 continue
-            for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-                code = line.split("//")[0] if EXEMPT not in line else ""
+            for number, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+                # Retire le commentaire de fin de ligne (sans couper « https:// » dans une chaîne).
+                code = re.split(r"(?<!:)//", line)[0] if EXEMPT not in line else ""
                 for label, rule in RULES:
                     if rule.search(code):
                         findings.append((label, rel, number, line.strip()))

@@ -178,7 +178,7 @@ struct RadioRow: View {
                     } else {
                         HStack(spacing: Space.m) {
                             titleLine
-                            Spacer(minLength: 8)
+                            Spacer(minLength: Space.s)
                             if let bars { IntensityBars(level: bars) }
                         }
                     }

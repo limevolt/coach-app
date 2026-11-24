@@ -28,24 +28,30 @@ enum Space {
 /// Rayons d'angle. Un élément collé au bord d'une carte suit la règle concentrique :
 /// rayon de l'élément = rayon de la carte − marge de la carte (écart de 8 au plus).
 enum Radius {
-    /// 8 : étiquette, case à cocher, option d'onglets.
+    /// 8 : étiquette, case à cocher.
     static let xs: CGFloat = 8
-    /// 12 : tuile dans une carte, petit bouton dans une ligne.
+    /// 12 : tuile dans une carte, option d'onglets (concentrique dans un cadre de 16).
     static let s: CGFloat = 12
-    /// 16 : bouton, champ, choix.
+    /// 16 : bouton, champ, choix, bloc compact d'une liste (`.block()`).
     static let m: CGFloat = 16
-    /// 24 : toutes les cartes, comme la carte du jour (choix du propriétaire, 24/11/2026, #76).
+    /// 24 : toutes les cartes, carte du jour comprise (choix du propriétaire, 24/11/2026, #76).
     static let card: CGFloat = 24
-    /// Carte du jour : même rayon que les autres cartes.
-    static let hero: CGFloat = card
 }
 
 extension Theme {
     /// Marge intérieure d'une carte.
     static let cardPadding: CGFloat = Space.l
-    /// Marge intérieure d'une tuile (fond `card2`, dans une carte).
+    /// Marge intérieure d'une tuile (fond `card2`, dans une carte) et d'un bloc compact (`.block()`).
     static let tilePadding: CGFloat = Space.m
     /// Bouton appuyé : il s'enfonce légèrement.
     static let buttonPressedScale: CGFloat = 0.97
     static let buttonPressedOpacity: Double = 0.9
+}
+
+extension View {
+    /// Bloc compact d'une liste (étape du déroulé, exercice, statistique, consigne) : posé sur le fond
+    /// de l'écran comme une carte, mais plus serré (marge 12, rayon 16). Une carte = `.card()`.
+    func block(fill: Color = Theme.card, stroke: Color = .clear) -> some View {
+        card(padding: Theme.tilePadding, radius: Radius.m, fill: fill, stroke: stroke)
+    }
 }

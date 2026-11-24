@@ -120,7 +120,7 @@ struct OffDaysBanner: View {
                 .disabled(working)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .card(padding: Theme.cardPadding, radius: Radius.m)
+            .card()
         }
     }
 }

@@ -310,7 +310,7 @@ struct EffortPicker: View {
                     .frame(maxWidth: .infinity, minHeight: Theme.effortButtonHeight)
                     .selectableStyle(isOn: on)
                 }
-                .buttonStyle(PressableButtonStyle())
+                .buttonStyle(.coachPressable)
                 .accessibilityLabel("\(level.word), \(level.value) sur 10")
                 .accessibilityAddTraits(on ? .isSelected : [])
             }

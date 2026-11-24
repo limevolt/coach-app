@@ -76,8 +76,8 @@ enum Theme {
 
     // Boutons et cartes de l'iPhone
     static let buttonRadius: CGFloat = Radius.m
-    static let smallButtonRadius: CGFloat = Radius.m
-    static let heroCardRadius: CGFloat = Radius.hero
+    static let smallButtonRadius: CGFloat = Radius.m  // ancien nom : même rayon que buttonRadius
+    static let heroCardRadius: CGFloat = Radius.card  // ancien nom, garder Radius.card
     /// Hauteur du bouton principal d'un écran ; `minTap` = cible tactile minimale (44 pt).
     static let primaryButtonHeight: CGFloat = 52
     /// Bouton principal d'une séance (« Démarrer »).
@@ -90,7 +90,7 @@ enum Theme {
     static let quietStroke: CGFloat = 1
     /// Marge intérieure d'un champ de saisie ou d'une pastille de choix.
     static let fieldPadding: CGFloat = Space.l
-    static let chipPadding: CGFloat = Space.l
+    static let chipPadding: CGFloat = Space.m
     /// Barre de progression de l'assistant.
     static let progressHeight: CGFloat = 4
     /// Choix en onglets (SegmentedChoice) : rayon d'une option et espace autour.

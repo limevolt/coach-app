@@ -227,8 +227,8 @@ ici. S'il manque quelque chose, on l'ajoute au catalogue (et à cette liste), pu
 |---|---|---|
 | Espacements | 2 · 4 · 8 · 12 · 16 · 24 · 32 | `Space.hairline` (dans un composant seulement) · `xs` · `s` · `m` · `l` · `xl` · `xxl` |
 | Rôles d'espace | marge d'écran 20, entre blocs 24 | `Theme.screenMargin`, `Theme.blockSpacing` |
-| Rayons | 8 · 12 · 16 · 24 | `Radius.xs` (étiquette, case) · `s` (tuile, option d'onglets) · `m` (bouton, champ, choix) · `card` (toutes les cartes, carte du jour comprise) |
-| Marges de carte | 16 (carte), 12 (tuile) | `Theme.cardPadding`, `Theme.tilePadding` |
+| Rayons | 8 · 12 · 16 · 24 | `Radius.xs` (étiquette, case) · `s` (tuile, option d'onglets) · `m` (bouton, champ, choix, bloc compact) · `card` (toutes les cartes, carte du jour comprise) |
+| Marges de carte | 16 (carte), 12 (tuile, bloc compact) | `Theme.cardPadding`, `Theme.tilePadding` |
 | Hauteurs | 44 · 52 · 64 | `Theme.minTap`, `Theme.primaryButtonHeight` / `rowHeight`, `Theme.largeButtonHeight` |
 | Texte | voir « Typographie » | `Font.hero`, `.screenTitle`, `.number`, `.text`, `.detail`, `.unit`, `.label` |
 | Couleurs | voir « Couleurs » | `Theme.…` |
@@ -236,7 +236,9 @@ ici. S'il manque quelque chose, on l'ajoute au catalogue (et à cette liste), pu
 - **Rayons concentriques** : un élément collé au bord d'une carte ou d'un cadre (écart de 8 au plus) a un
   rayon = rayon du cadre − marge. Exemple : `SegmentedChoice`, cadre 16, marge 4, option 12. Un bouton
   posé dans une carte garde son propre rayon (16).
-- **Désactivé** : jamais une simple transparence. Un bouton indisponible = fond `card2`, texte `muted` lisible (#45).
+- **Désactivé** : jamais une simple transparence. Un bouton indisponible = fond `card2`, texte `muted` lisible (#45) :
+  `.buttonStyle(.coachPrimary(enabled: false))` **et** `.disabled(true)`. Un bouton bloqué le temps d'un envoi
+  garde son aspect actif (`enabled: true`) et montre un chargement.
 - **Appuyé** : les boutons s'enfoncent (`Theme.buttonPressedScale` / `buttonPressedOpacity`) ; les boutons du
   haut s'atténuent (`Theme.pressedOpacity`).
 
@@ -256,7 +258,8 @@ ici. S'il manque quelque chose, on l'ajoute au catalogue (et à cette liste), pu
 | | `SelectChip` | pastille à choisir dans un groupe |
 | | `Toggle` + `.toggleStyle(.coach)` | activer / désactiver |
 | | `TrainingDaysPicker`, `EffortPicker`, `DurationPicker` | jours, ressenti, durée |
-| Conteneurs | `.card()` | la carte pleine de l'écran (une seule, #40) |
+| Conteneurs | `.card()` | une carte : marge 16, rayon 24 (la carte du jour, un bandeau, une section) |
+| | `.block()` | bloc compact d'une liste sur le fond de l'écran : étape du déroulé, exercice, statistique, consigne (marge 12, rayon 16) |
 | | `.card(padding: Theme.tilePadding, radius: Radius.s, fill: Theme.card2)` | tuile dans une carte |
 | | `CollapsibleCard`, `BottomBar` | contenu replié, barre d'action fixée en bas |
 | | `.selectableStyle(isOn:)`, `.fieldStyle()` | fond d'un choix, champ de saisie |
