@@ -53,7 +53,7 @@ struct AdaptSessionView: View {
             .disabled(working)
             .overlay {
                 if working {
-                    ProgressView("Mise à jour de la montre…")
+                    ProgressView("Enregistrement…")
                         .padding()
                         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
                 }
@@ -119,9 +119,11 @@ struct AdaptSessionView: View {
                                       swap: canSwap && swapDates)
                 }
             } label: {
-                Label(buttonTitle(isSame: isSame), systemImage: "checkmark")
+                Label(Self.buttonTitle(choice: choice, isSame: isSame, unchanged: unchanged,
+                                       noEquipment: noEquipment),
+                      systemImage: unchanged ? "equal.circle" : "checkmark")
                     .font(.coach(size: 17, weight: .bold))
-                    .foregroundStyle(Theme.accentDark)
+                    .foregroundStyle(unchanged ? Theme.muted : Theme.accentDark)
                     .frame(maxWidth: .infinity, minHeight: 48)
                     .background(unchanged ? Theme.line : Theme.accent,
                                 in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -137,8 +139,11 @@ struct AdaptSessionView: View {
         }
     }
 
-    private func buttonTitle(isSame: Bool) -> String {
-        guard isSame else { return "Valider" }
+    /// Libellé du bouton (#72) : « avec / sans matériel » seulement pour le renfo ; quand rien ne change,
+    /// le bouton (inactif) dit pourquoi.
+    nonisolated static func buttonTitle(choice: ActivityChoice, isSame: Bool, unchanged: Bool, noEquipment: Bool) -> String {
+        if unchanged { return "C'est déjà la séance prévue" }
+        guard isSame, choice == .strength else { return "Valider" }
         return noEquipment ? "Faire sans matériel" : "Faire avec matériel"
     }
 
