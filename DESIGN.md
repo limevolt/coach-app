@@ -221,6 +221,10 @@ repos et « Prêt ? », chiffre blanc sur fond carte.
 Le but : **ne jamais réinventer un élément**. Avant de dessiner ou de coder quoi que ce soit, chercher
 ici. S'il manque quelque chose, on l'ajoute au catalogue (et à cette liste), puis on l'utilise partout.
 
+Une page de référence visuelle (privée au propriétaire) montre les jetons et les composants dessinés :
+https://claude.ai/artifact/SXnzRE61vrJ4j4hH3QcGJB. Quand un jeton ou un composant change ici, la mettre à jour.
+Le code reste la référence.
+
 ### Jetons (`Shared/DesignTokens.swift`, `Shared/Theme.swift`, `Shared/Typography.swift`)
 
 | Famille | Valeurs | Dans le code |
@@ -236,7 +240,8 @@ ici. S'il manque quelque chose, on l'ajoute au catalogue (et à cette liste), pu
 - **Rayons concentriques** : un élément collé au bord d'une carte ou d'un cadre (écart de 8 au plus) a un
   rayon = rayon du cadre − marge. Exemple : `SegmentedChoice`, cadre 16, marge 4, option 12. Un bouton
   posé dans une carte garde son propre rayon (16).
-- **Désactivé** : jamais une simple transparence. Un bouton indisponible = fond `card2`, texte `muted` lisible (#45) :
+- **Désactivé** : jamais une simple transparence. Un bouton indisponible = fond `card2`, texte `muted` lisible (#45,
+  confirmé par le propriétaire le 24/11/2026 : « la lisibilité est clé ») :
   `.buttonStyle(.coachPrimary(enabled: false))` **et** `.disabled(true)`. Un bouton bloqué le temps d'un envoi
   garde son aspect actif (`enabled: true`) et montre un chargement.
 - **Appuyé** : les boutons s'enfoncent (`Theme.buttonPressedScale` / `buttonPressedOpacity`) ; les boutons du
