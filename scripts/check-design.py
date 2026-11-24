@@ -31,8 +31,14 @@ NUM = r"[0-9]+(?:\.[0-9]+)?"
 RULES = [
     ("couleur en dur", re.compile(r"Color\(hex:|Color\.(white|black|red|green|blue|gray|orange|yellow|purple|pink)\b")),
     ("taille de texte en dur", re.compile(r"\.coach\(size:\s*" + NUM + r"|\.system\(size:\s*" + NUM)),
+    # Un style d'Apple (.footnote, .caption…) donne une taille hors de l'échelle : utiliser un rôle
+    # (Font.text, .detail, .label, .number…). Seules les définitions de Theme/Typography y ont droit.
+    ("style de texte hors échelle", re.compile(r"\.coach\(\.[a-zA-Z0-9]+")),
     ("graisse très grasse (retirée par #40)", re.compile(r"weight:\s*\.(heavy|black)\b")),
-    ("rayon en dur", re.compile(r"cornerRadius:\s*" + NUM)),
+    ("rayon en dur", re.compile(r"cornerRadius:\s*" + NUM + r"|\.card\([^)]*radius:\s*" + NUM)),
+    ("marge de carte en dur", re.compile(r"\.card\([^)]*padding:\s*" + NUM)),
+    ("hauteur minimale en dur", re.compile(r"minHeight:\s*" + NUM)),
+    ("matière ou ombre hors thème", re.compile(r"\.(regular|thin|ultraThin|thick)Material|\.shadow\(")),
     ("marge en dur", re.compile(r"\.padding\((?:\.[a-zA-Z]+,\s*|\[[^\]]*\],\s*)?(?!0\))" + NUM + r"\)")),
     ("espace en dur", re.compile(r"spacing:\s*(?!0\b)" + NUM)),
 ]
@@ -66,6 +72,8 @@ def main():
     print(f"Design : {len(findings)} valeur(s) en dur dans les vues (utiliser les jetons du thème).")
     for label, count in sorted(totals.items(), key=lambda kv: -kv[1]):
         print(f"  {count:4d}  {label}")
+    phone = sum(1 for f in findings if not f[1].startswith("CoachWatch/"))
+    print(f"  iPhone et Shared : {phone} · Montre : {len(findings) - phone}")
     print()
     for label, rel, number, line in findings:
         print(f"{rel}:{number}: {label} : {line[:110]}")

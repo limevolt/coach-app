@@ -104,7 +104,7 @@ struct PlanView: View {
                 } else if busy {
                     ProgressView("Envoi vers la montre…")
                         .padding()
-                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: Radius.m))
                 }
             }
         }
@@ -156,7 +156,7 @@ struct PlanView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     Eyebrow(text: "À venir")
                         .accessibilityAddTraits(.isHeader)
-                        .padding(.bottom, 4)
+                        .padding(.bottom, Space.xs)
                     ForEach(Array(week.upcoming.enumerated()), id: \.element.id) { i, session in
                         NavigationLink(value: session) {
                             PlanLine(session: session.effective, trailing: session.upcomingLabel(),
@@ -173,7 +173,7 @@ struct PlanView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     Eyebrow(text: "En plus cette semaine")
                         .accessibilityAddTraits(.isHeader)
-                        .padding(.bottom, 4)
+                        .padding(.bottom, Space.xs)
                     ForEach(Array(week.extras.enumerated()), id: \.element.id) { i, activity in
                         NavigationLink(value: activity) {
                             ExtraActivityLine(activity: activity, showsSeparator: i < week.extras.count - 1)
@@ -186,7 +186,7 @@ struct PlanView: View {
             // Objectifs et consignes, repliés
             if let goals = plan.goals, !goals.isEmpty {
                 CollapsibleCard(title: goals.count > 1 ? "Objectifs" : "Objectif", plain: true) {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Space.xs) {
                         ForEach(goals) { goal in
                             HStack {
                                 Text(goal.title)
@@ -203,7 +203,7 @@ struct PlanView: View {
                         }
                     }
                 } content: {
-                    VStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: Space.l) {
                         ForEach(Array(goals.enumerated()), id: \.element.id) { i, goal in
                             if i > 0 {
                                 Rectangle().fill(Theme.separator).frame(height: 1)
@@ -240,16 +240,16 @@ struct PlanView: View {
             }
         }
         .padding(.horizontal, Theme.screenMargin)
-        .padding(.top, 8)
-        .padding(.bottom, 24)
+        .padding(.top, Space.s)
+        .padding(.bottom, Space.xl)
     }
 
     private static let topAnchor = "haut-de-page"
 
     /// « Semaine 3 sur 20 · 17–23 nov. », « Cette semaine » et le bouton ••• .
     private func header(_ week: WeekOverview) -> some View {
-        HStack(alignment: .bottom, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
+        HStack(alignment: .bottom, spacing: Space.m) {
+            VStack(alignment: .leading, spacing: Space.xs) {
                 Text(Self.weekLine(week))
                     .font(.detail)
                     .foregroundStyle(Theme.muted)
@@ -323,8 +323,8 @@ struct PlanView: View {
         Text(week.title)
             .font(.detail)
             .foregroundStyle(Theme.muted)
-            .padding(.top, 16)
-            .padding(.bottom, 4)
+            .padding(.top, Space.l)
+            .padding(.bottom, Space.xs)
         ForEach(week.sessions) { session in
             NavigationLink(value: session) {
                 SessionRow(session: session, done: store.isDone(session.id))
@@ -350,7 +350,7 @@ struct PlanView: View {
                 .foregroundStyle(Theme.text)
                 .accessibilityAddTraits(.isHeader)
             Spacer(minLength: Theme.blockSpacing)
-            VStack(spacing: 12) {
+            VStack(spacing: Space.m) {
                 Image(systemName: "flag.fill")
                     .font(Theme.iconFont)
                     .foregroundStyle(Theme.accent)
@@ -360,7 +360,7 @@ struct PlanView: View {
                 Text("Aucun plan pour l'instant")
                     .font(.number)
                     .foregroundStyle(Theme.text)
-                    .padding(.top, 8)
+                    .padding(.top, Space.s)
                 Text("Le coach crée ton plan sur ton iPhone, à partir de ton objectif, de tes disciplines et de tes disponibilités.")
                     .font(.detail)
                     .foregroundStyle(Theme.muted)
@@ -368,11 +368,11 @@ struct PlanView: View {
             }
             .frame(maxWidth: .infinity)
             Spacer(minLength: Theme.blockSpacing)
-            VStack(spacing: 12) {
+            VStack(spacing: Space.m) {
                 Button { showWizard = true } label: {
-                    Text("Créer mon plan").primaryActionStyle()
+                    Text("Créer mon plan")
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.coachPrimary())
                 Menu {
                     importItems
                 } label: {
@@ -382,7 +382,7 @@ struct PlanView: View {
             }
         }
         .padding(.horizontal, Theme.screenMargin)
-        .padding(.top, 8)
+        .padding(.top, Space.s)
         .padding(.bottom, Theme.blockSpacing)
         .containerRelativeFrame(.vertical, alignment: .top)
     }
@@ -490,13 +490,13 @@ struct SessionRow: View {
     }
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: Space.m) {
             Image(systemName: Theme.icon(for: session.type))
                 .font(Theme.smallIconFont)
                 .foregroundStyle(Theme.color(for: session.type))
                 .frame(width: 24)
                 .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: Space.hairline) {
                 Text(session.title)
                     .font(.text)
                     .foregroundStyle(Theme.text)
@@ -512,7 +512,7 @@ struct SessionRow: View {
                 .foregroundStyle(done ? Theme.accent : (missed ? Theme.warm : Theme.chevron))
                 .accessibilityHidden(true)
         }
-        .padding(.vertical, 10)
+        .padding(.vertical, Space.m)
         .frame(minHeight: Theme.rowHeight)
         .overlay(alignment: .bottom) { Rectangle().fill(Theme.separator).frame(height: 1) }
         .contentShape(Rectangle())
@@ -525,7 +525,7 @@ struct GoalCard: View {
     var embedded = false
 
     var body: some View {
-        let content = VStack(alignment: .leading, spacing: 10) {
+        let content = VStack(alignment: .leading, spacing: Space.m) {
             if !embedded {
                 Eyebrow(text: "Objectif", color: Theme.warm)
             }
@@ -551,7 +551,7 @@ struct GoalCard: View {
                 Text("Progression \(Int((progress * 100).rounded())) %")
                     .font(.coach(.caption)).foregroundStyle(Theme.muted)
             }
-            HStack(spacing: 8) {
+            HStack(spacing: Space.s) {
                 if let baseline = goal.baseline { stat("Départ", baseline) }
                 if let current = goal.current { stat("Actuel", current) }
                 if let target = goal.target { stat("Cible", target) }
@@ -569,12 +569,12 @@ struct GoalCard: View {
     }
 
     private func stat(_ label: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: Space.hairline) {
             Text(label.uppercased()).font(.coach(size: 10, weight: .semibold)).foregroundStyle(Theme.muted)
             Text(value).font(.coach(size: 13, weight: .semibold)).foregroundStyle(Theme.text).lineLimit(2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(embedded ? 0 : 8)
-        .background(embedded ? Color.clear : Theme.card2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background(embedded ? Color.clear : Theme.card2, in: RoundedRectangle(cornerRadius: Radius.xs, style: .continuous))
     }
 }

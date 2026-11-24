@@ -18,7 +18,7 @@ struct StartOnWatchButton: View {
     @State private var result: WatchStartResult?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: Space.m) {
             switch result {
             case .sent:
                 Label("En cours sur ta montre", systemImage: "applewatch")
@@ -30,7 +30,7 @@ struct StartOnWatchButton: View {
                                 in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
                     .transition(.opacity)
             case .failed(let reason):
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: Space.m) {
                     Label("Montre injoignable", systemImage: "exclamationmark.circle")
                         .font(size == .large ? .coach(.title3, weight: .semibold) : .text)
                         .foregroundStyle(Theme.text)
@@ -54,16 +54,15 @@ struct StartOnWatchButton: View {
     /// Bouton principal : pendant l'envoi, un indicateur remplace l'icône, à taille identique.
     private func sendButton(title: String, compact: Bool) -> some View {
         Button(action: send) {
-            HStack(spacing: 10) {
+            HStack(spacing: Space.m) {
                 ZStack {
                     Image(systemName: "play.fill").opacity(sending ? 0 : 1)
                     if sending { ProgressView().tint(Theme.accentDark) }
                 }
                 Text(sending ? "Envoi à la montre…" : title)
             }
-            .primaryActionStyle(compact: compact, large: !compact && size == .large)
         }
-        .buttonStyle(PressableButtonStyle())
+        .buttonStyle(.coachPrimary(compact: compact, large: !compact && size == .large))
         .disabled(sending)
         .accessibilityHint("La séance démarre sur ta montre")
     }
@@ -121,12 +120,3 @@ struct StartOnWatchIconButton: View {
     }
 }
 
-/// Retour au toucher : le bouton s'enfonce légèrement (iPhone).
-struct PressableButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .opacity(configuration.isPressed ? 0.9 : 1)
-            .animation(.snappy(duration: 0.15), value: configuration.isPressed)
-    }
-}

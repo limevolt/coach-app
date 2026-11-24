@@ -110,7 +110,7 @@ struct AdaptSessionView: View {
                         .foregroundStyle(Theme.text)
                     if canSwap {
                         Toggle(isOn: $swapDates) {
-                            VStack(alignment: .leading, spacing: 2) {
+                            VStack(alignment: .leading, spacing: Space.hairline) {
                                 Text("Échanger les jours")
                                 Text("« \(slot.title) » passe \(source.dateLabel.endingSentence)")
                                     .font(.coach(.caption))
@@ -130,9 +130,8 @@ struct AdaptSessionView: View {
                     Label(Self.buttonTitle(choice: choice, isSame: isSame, unchanged: unchanged,
                                            noEquipment: noEquipment),
                           systemImage: unchanged ? "equal.circle" : "checkmark")
-                        .primaryActionStyle(enabled: !unchanged)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.coachPrimary(enabled: !unchanged))
                 .disabled(unchanged)
             }
             .listRowSeparator(.hidden)   // un seul bloc, comme la maquette
@@ -195,11 +194,11 @@ struct AdaptSessionView: View {
                     Button {
                         run { await store.swap(slot.id, with: other.id) }
                     } label: {
-                        HStack(spacing: 12) {
+                        HStack(spacing: Space.m) {
                             Image(systemName: Theme.icon(for: other.type))
                                 .foregroundStyle(Theme.color(for: other.type))
                                 .frame(width: 24)
-                            VStack(alignment: .leading, spacing: 2) {
+                            VStack(alignment: .leading, spacing: Space.hairline) {
                                 Text(other.title)
                                     .font(.coach(.subheadline, weight: .semibold))
                                     .foregroundStyle(Theme.text)
@@ -238,7 +237,7 @@ struct AdaptSessionView: View {
                             Button {
                                 run { await store.move(slot.id, to: Day.key(day)) }
                             } label: {
-                                VStack(spacing: 3) {
+                                VStack(spacing: Space.hairline) {
                                     Text(day.formatted(.dateTime.weekday(.abbreviated)))
                                         .font(.label)
                                         .foregroundStyle(Theme.muted)
@@ -260,7 +259,7 @@ struct AdaptSessionView: View {
                                                 + (training ? ", jour d'entraînement" : ""))
                         }
                     }
-                    .padding(.vertical, 4)
+                    .padding(.vertical, Space.xs)
                 }
                 .coachRow()
             } header: {

@@ -14,11 +14,11 @@ struct CollapsibleCard<Summary: View, Content: View>: View {
     @State private var expanded = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: Space.m) {
             Button {
                 withAnimation(.easeInOut(duration: 0.2)) { expanded.toggle() }
             } label: {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: Space.s) {
                     HStack {
                         Eyebrow(text: title, color: color)
                         Spacer()
@@ -52,10 +52,10 @@ private struct CollapsibleBackground: ViewModifier {
     @ViewBuilder func body(content: Content) -> some View {
         if plain {
             content
-                .padding(.vertical, 14)
+                .padding(.vertical, Space.l)
                 .overlay(alignment: .bottom) { Rectangle().fill(Theme.separator).frame(height: 1) }
         } else {
-            content.card(padding: 14, radius: 18)
+            content.card(padding: Theme.cardPadding, radius: Radius.card)
         }
     }
 }
@@ -100,16 +100,16 @@ struct FormattedNotes: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.s) {
             ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
                 switch line {
                 case .heading(let t):
                     Text(markdown(t))
                         .font(.coach(size: size, weight: .bold))
                         .foregroundStyle(Theme.text)
-                        .padding(.top, 2)
+                        .padding(.top, Space.hairline)
                 case .bullet(let t):
-                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    HStack(alignment: .firstTextBaseline, spacing: Space.s) {
                         Text("•").bold().foregroundStyle(Theme.accent)
                         Text(markdown(t))
                     }

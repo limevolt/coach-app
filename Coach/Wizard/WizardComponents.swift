@@ -13,7 +13,7 @@ struct SelectChip: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 6) {
+            HStack(spacing: Space.s) {
                 if isOn {
                     Image(systemName: "checkmark")
                         .font(Theme.chevronFont)
@@ -80,7 +80,7 @@ struct DayGrid: View {
     static let short = ["Lu", "Ma", "Me", "Je", "Ve", "Sa", "Di"]
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Space.s) {
             ForEach(days, id: \.self) { day in
                 let on = selection.contains(day)
                 Button {
@@ -106,7 +106,7 @@ struct WizardProgress: View {
     let step: WizardStep
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Space.s) {
             ForEach(WizardStep.allCases, id: \.self) { s in
                 Capsule()
                     .fill(s.rawValue <= step.rawValue ? Theme.accent : Theme.line)
@@ -126,7 +126,7 @@ struct WizardSection<Content: View>: View {
     @ViewBuilder let content: Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: Space.m) {
             Eyebrow(text: title)
             content
             if let footer {
@@ -165,18 +165,18 @@ struct RadioRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(alignment: .top, spacing: 14) {
+            HStack(alignment: .top, spacing: Space.l) {
                 Image(systemName: isOn ? "largecircle.fill.circle" : "circle")
                     .font(Theme.iconFont)
                     .foregroundStyle(isOn ? Theme.accent : Theme.muted)
                     .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: Space.xs) {
                     // Très grand texte : les barres passent sous le titre (maquette #57).
                     if typeSize.isAccessibilitySize {
                         titleLine
                         if let bars { IntensityBars(level: bars) }
                     } else {
-                        HStack(spacing: 10) {
+                        HStack(spacing: Space.m) {
                             titleLine
                             Spacer(minLength: 8)
                             if let bars { IntensityBars(level: bars) }
@@ -191,12 +191,12 @@ struct RadioRow: View {
                         } icon: {
                             Image(systemName: "info.circle").font(.detail).foregroundStyle(Theme.muted)
                         }
-                        .padding(.top, 4)
+                        .padding(.top, Space.xs)
                     }
                 }
                 Spacer(minLength: 0)
             }
-            .padding(.vertical, 16)
+            .padding(.vertical, Space.l)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -204,11 +204,11 @@ struct RadioRow: View {
     }
 
     private var titleLine: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Space.s) {
             Text(title).font(.coach(.body, weight: .semibold)).foregroundStyle(Theme.text)
             if let tag {
                 Text(tag).font(.label).foregroundStyle(Theme.text)
-                    .padding(.horizontal, 7).padding(.vertical, 2)
+                    .padding(.horizontal, Space.s).padding(.vertical, Space.hairline)
                     .overlay(RoundedRectangle(cornerRadius: Theme.tagRadius).strokeBorder(Theme.line, lineWidth: Theme.quietStroke))
             }
         }

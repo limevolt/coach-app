@@ -28,7 +28,7 @@ private struct CoachToggleRow: View {
             withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) { configuration.isOn.toggle() }
             taps += 1
         } label: {
-            HStack(alignment: .center, spacing: 12) {
+            HStack(alignment: .center, spacing: Space.m) {
                 configuration.label
                     .frame(maxWidth: .infinity, alignment: .leading)
                 CoachSwitch(isOn: configuration.isOn)

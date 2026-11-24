@@ -1,6 +1,6 @@
 // WatchButtons.swift — les styles de boutons de la montre, les mêmes partout.
 // - principal : fond citron vert, texte vert foncé, icône à gauche, centré (Commencer, Série faite, Enregistrer)
-// - secondaire : fond gris discret (aide, passer, +30 s, terminer)
+// - discret (`.coachQuiet`, même rôle que sur l'iPhone) : fond gris discret (aide, passer, +30 s, terminer)
 // - pointillés : accès discret à une liste (Entraînement libre)
 
 import SwiftUI
@@ -28,7 +28,7 @@ struct CoachPrimaryButtonStyle: ButtonStyle {
     }
 }
 
-struct CoachSecondaryButtonStyle: ButtonStyle {
+struct CoachQuietButtonStyle: ButtonStyle {
     var tint: Color = Theme.text
 
     func makeBody(configuration: Configuration) -> some View {
@@ -66,9 +66,9 @@ extension ButtonStyle where Self == CoachPrimaryButtonStyle {
     static var coachPrimary: CoachPrimaryButtonStyle { CoachPrimaryButtonStyle() }
 }
 
-extension ButtonStyle where Self == CoachSecondaryButtonStyle {
-    static var coachSecondary: CoachSecondaryButtonStyle { CoachSecondaryButtonStyle() }
-    static var coachDestructive: CoachSecondaryButtonStyle { CoachSecondaryButtonStyle(tint: Theme.danger) }
+extension ButtonStyle where Self == CoachQuietButtonStyle {
+    static var coachQuiet: CoachQuietButtonStyle { CoachQuietButtonStyle() }
+    static var coachDestructive: CoachQuietButtonStyle { CoachQuietButtonStyle(tint: Theme.danger) }
 }
 
 extension ButtonStyle where Self == CoachDashedButtonStyle {

@@ -60,7 +60,7 @@ private struct WizardStepView: View {
         ScrollViewReader { proxy in
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.blockSpacing) {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: Space.s) {
                     Text(step.title)
                         .font(.screenTitle)
                         .foregroundStyle(Theme.text)
@@ -73,7 +73,7 @@ private struct WizardStepView: View {
                 content
             }
             .padding(.horizontal, Theme.screenMargin)
-            .padding(.top, 8)
+            .padding(.top, Space.s)
             .padding(.bottom, Theme.blockSpacing)
         }
         .scrollDismissesKeyboard(.interactively)
@@ -91,7 +91,7 @@ private struct WizardStepView: View {
         .safeAreaInset(edge: .top, spacing: 0) {
             WizardProgress(step: step)
                 .padding(.horizontal, Theme.screenMargin)
-                .padding(.vertical, 8)
+                .padding(.vertical, Space.s)
                 .frame(maxWidth: .infinity)
                 .background(Theme.bg)
         }
@@ -132,7 +132,7 @@ private struct WizardStepView: View {
 
     private var bottomBar: some View {
         let issue = draft.blockingIssue(at: step)
-        return VStack(spacing: 10) {
+        return VStack(spacing: Space.m) {
             if let createError {
                 Text(createError).font(.detail).foregroundStyle(Theme.danger)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -148,14 +148,13 @@ private struct WizardStepView: View {
             } label: {
                 // Pendant la création, l'écran d'attente recouvre ce bouton (#68).
                 Text(step == .summary ? (store.plan == nil ? "Créer le plan" : "Remplacer mon plan") : "Continuer")
-                    .primaryActionStyle(enabled: issue == nil)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.coachPrimary(enabled: issue == nil))
             .disabled(issue != nil || creating)
         }
         .padding(.horizontal, Theme.screenMargin)
-        .padding(.top, 12)
-        .padding(.bottom, 8)
+        .padding(.top, Space.m)
+        .padding(.bottom, Space.s)
         .background(Theme.bg)
         // Fondu au-dessus du bouton (maquette #45 / #57) : la dernière ligne n'est pas coupée net.
         .background(alignment: .top) {
@@ -317,14 +316,14 @@ private struct DisciplinesStep: View {
 
     @ViewBuilder private func moduleRow(_ module: CoachModuleID) -> some View {
         let on = draft.isActive(module)
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Space.m) {
             Button {
                 // Accordéon : les variantes se déplient en douceur (simple fondu si « Réduire les animations »).
                 withAnimation(reduceMotion ? .easeInOut(duration: 0.15) : .snappy(duration: 0.25)) {
                     draft.toggle(module)
                 }
             } label: {
-                HStack(spacing: 12) {
+                HStack(spacing: Space.m) {
                     Image(systemName: Theme.icon(for: module.sessionType))
                         .font(Theme.tintedIconFont)
                         .foregroundStyle(Theme.onTint)
@@ -344,7 +343,7 @@ private struct DisciplinesStep: View {
             .accessibilityHint(on ? "Décocher replie les choix" : "Cocher affiche les choix")
 
             if on {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: Space.m) {
                     ChipFlow {
                         ForEach(module.variants, id: \.self) { variant in
                             SelectChip(title: variant.label, isOn: draft.modules[module]?.variants.contains(variant) == true) {
@@ -355,7 +354,7 @@ private struct DisciplinesStep: View {
                     if module == .martialCross && draft.modules[.martialCross]?.hasClass == true { classRows }
                 }
                 .padding(.leading, Theme.dayDot + 8)
-                .padding(.bottom, 16)
+                .padding(.bottom, Space.l)
                 .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)))
             }
         }
@@ -430,7 +429,7 @@ private struct AvailabilityStep: View {
                             }
                         }
                     } label: {
-                        HStack(spacing: 8) {
+                        HStack(spacing: Space.s) {
                             Text("Sortie longue jusqu'à").font(.text).foregroundStyle(Theme.text)
                             Spacer(minLength: 8)
                             Text(Self.label(draft.longRunMinutes ?? draft.settings().defaultLongRunMinutes))
@@ -455,7 +454,7 @@ private struct AvailabilityStep: View {
             }
             WizardSection(title: "Organisation") {
                 Toggle(isOn: $draft.allowTwoSessionsPerDay) {
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: Space.hairline) {
                         Text("Deux séances le même jour").font(.text).foregroundStyle(Theme.text)
                         Text("Le coach peut placer un renfo juste après une course.")
                             .font(.detail).foregroundStyle(Theme.muted)
@@ -714,8 +713,8 @@ private struct SummaryStep: View {
         let s = draft.settings()
         let top = hero(s)
         VStack(alignment: .leading, spacing: Theme.blockSpacing) {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(alignment: .firstTextBaseline, spacing: 10) {
+            VStack(alignment: .leading, spacing: Space.s) {
+                HStack(alignment: .firstTextBaseline, spacing: Space.m) {
                     Text(top.value).font(.hero).foregroundStyle(Theme.text).monospacedDigit()
                     Text(top.unit).font(.text).foregroundStyle(Theme.muted)
                 }
@@ -802,7 +801,7 @@ private struct SummaryStep: View {
             // Revient à l'étape choisie ; « Continuer » ramène ensuite jusqu'ici.
             path = WizardStep.allCases.filter { $0.rawValue > WizardStep.objective.rawValue && $0.rawValue <= step.rawValue }
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: Space.m) {
                 Text(title).font(.text).foregroundStyle(Theme.text)
                 Spacer(minLength: 8)
                 Text(value).font(.detail).foregroundStyle(Theme.muted).multilineTextAlignment(.trailing)

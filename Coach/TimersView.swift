@@ -11,11 +11,11 @@ struct TimersView: View {
             List {
                 Section {
                     ForEach(store.templates) { template in
-                        HStack(spacing: 8) {
+                        HStack(spacing: Space.s) {
                             Button {
                                 editing = template
                             } label: {
-                                VStack(alignment: .leading, spacing: 2) {
+                                VStack(alignment: .leading, spacing: Space.hairline) {
                                     Text(template.name).font(.coach(size: 16, weight: .bold)).foregroundStyle(Theme.text)
                                     Text("\(IntervalTemplate.activityLabel(template.activity)) · \(template.summary)")
                                         .font(.coach(.caption))
@@ -163,7 +163,7 @@ private struct SegmentEditor: View {
     @Binding var segment: TimerSegment
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.s) {
             SegmentedChoice("Type", selection: $segment.kind,
                             options: [("work", "Travail"), ("rest", "Repos")])
             TextField(segment.kind == "work" ? "Libellé (ex. Squat, Côte…)" : "Libellé (facultatif)",
@@ -172,7 +172,7 @@ private struct SegmentEditor: View {
                 .font(.coach(.callout))
             DurationPicker(title: "Durée", seconds: $segment.seconds)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, Space.xs)
         .listRowBackground(segment.kind == "work" ? Color.green.opacity(0.08) : Color.blue.opacity(0.08))
     }
 }

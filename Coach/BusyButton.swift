@@ -61,7 +61,7 @@ struct LongTextPreview: View {
     var body: some View {
         let head = Self.head(of: text, lines: maxLines)
         let total = Self.lineCount(text)
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.s) {
             Text(head)
                 .font(.system(.caption2, design: .monospaced))
                 .foregroundStyle(Theme.muted)
