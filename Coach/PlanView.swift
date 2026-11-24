@@ -273,7 +273,7 @@ struct PlanView: View {
     private var planMenu: some View {
         Menu {
             Button("Créer un nouveau plan", systemImage: "sparkles") { showWizard = true }
-            Button("Importer un plan", systemImage: "folder") { showImporter = true }
+            Button("Importer un plan", systemImage: "doc") { showImporter = true }
             if let plan = store.plan {
                 Divider()
                 Button("Exporter le plan", systemImage: "square.and.arrow.up") { export(plan) }

@@ -39,7 +39,7 @@ enum TrainingDays {
         return n.dropLast().joined(separator: ", ") + " et " + n.last!
     }
 
-    /// Ligne ajoutée au suivi et à la demande de plan, pour que Claude en tienne compte.
+    /// Ligne ajoutée au suivi, pour que l'IA en tienne compte.
     static var exportLine: String? {
         let days = current
         guard !days.isEmpty, days.count < 7 else { return nil }
