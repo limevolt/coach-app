@@ -11,15 +11,23 @@ final class WatchSyncQueueTests: XCTestCase {
     @MainActor private final class FakeWatch {
         var calls = 0
         var delay: Duration = .zero
+        /// « début n » / « fin n » / « retrait » : sert à vérifier que deux opérations ne se chevauchent pas.
+        var events: [String] = []
     }
 
     private func makeStore(_ watch: FakeWatch) -> PlanStore {
         let store = PlanStore()
         store.runSync = { @MainActor _ in
             watch.calls += 1
-            if watch.delay > .zero { try? await Task.sleep(for: watch.delay) }
-            return "ok \(watch.calls)"
+            let n = watch.calls
+            watch.events.append("début \(n)")
+            // Un appel déjà parti va jusqu'au bout, même annulé (comme WorkoutKit).
+            if watch.delay > .zero { await Task { try? await Task.sleep(for: watch.delay) }.value }
+            watch.events.append("fin \(n)")
+            return "ok \(n)"
         }
+        store.runRemoveAll = { @MainActor in watch.events.append("retrait") }
+        addTeardownBlock { @MainActor in store.cancelScheduledRunSync() }
         store.plan = TrainingPlan(schemaVersion: 1, planId: "demo-sync", version: 1, title: "Plan de démo",
                                   notes: nil, goals: nil,
                                   sessions: ["a", "b"].map {
@@ -63,5 +71,41 @@ final class WatchSyncQueueTests: XCTestCase {
         XCTAssertFalse(store.isSyncing)
         await store.waitForScheduledRunSync()
         XCTAssertEqual(store.status, "ok 1")
+    }
+
+    // Revue #71 : la mise à jour suivante attend la fin réelle de la précédente (sinon doublon ou course perdue).
+    func testUpdatesNeverOverlap() async {
+        let watch = FakeWatch()
+        watch.delay = .milliseconds(300)
+        let store = makeStore(watch)
+        store.scheduleRunSync(after: .zero)
+        try? await Task.sleep(for: .milliseconds(50))
+        store.scheduleRunSync(after: .zero)
+        await store.waitForScheduledRunSync()
+        XCTAssertEqual(watch.events, ["début 1", "fin 1", "début 2", "fin 2"])
+        XCTAssertEqual(store.status, "ok 2")
+    }
+
+    // Revue #71 : réinitialiser pendant une mise à jour lente retire tout après elle.
+    func testResetWaitsForTheRunningUpdateThenRemoves() async {
+        let watch = FakeWatch()
+        watch.delay = .milliseconds(300)
+        let store = makeStore(watch)
+        store.scheduleRunSync(after: .zero)
+        try? await Task.sleep(for: .milliseconds(50))
+        await store.resetPlan()
+        XCTAssertEqual(watch.events, ["début 1", "fin 1", "retrait"])
+        XCTAssertNil(store.status)
+    }
+
+    // Revue #71 : une modification efface « déjà synchronisé aujourd'hui » jusqu'à ce que la montre soit à jour.
+    func testEditKeepsTheDailySyncDueUntilDone() async {
+        let watch = FakeWatch()
+        let store = makeStore(watch)
+        UserDefaults.standard.set(Day.key(.now), forKey: "lastSyncDay")
+        await store.move("a", to: "2030-01-08")
+        XCTAssertNil(UserDefaults.standard.string(forKey: "lastSyncDay"))
+        await store.waitForScheduledRunSync()
+        XCTAssertEqual(UserDefaults.standard.string(forKey: "lastSyncDay"), Day.key(.now))
     }
 }

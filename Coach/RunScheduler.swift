@@ -51,7 +51,12 @@ enum RunScheduler {
         let existing = await scheduler.scheduledWorkouts
         if Task.isCancelled { return "" }
         let current = existing.map { ScheduleItem(key: ScheduleKey($0.date), workout: $0.plan.workout) }
-        let changes = scheduleChanges(current: current, wanted: wanted)
+        var changes = scheduleChanges(current: current, wanted: wanted)
+        if !current.isEmpty, changes.remove.count == current.count {
+            // Rien à garder (ou courses relues jamais reconnues identiques) : un seul appel au lieu de N.
+            await scheduler.removeAllWorkouts()
+            changes.remove = []
+        }
         for index in changes.remove {
             if Task.isCancelled { return "" }
             await scheduler.remove(existing[index].plan, at: existing[index].date)
