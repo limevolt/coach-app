@@ -1,21 +1,74 @@
 commit: ea6dcefa3a2f00d9b6dc221a2fa5adcfcce8ac47
-version TestFlight: 2
-archive: success
-envoi: success
+branche: testflight
+ios: success
+watch: success
+tests: success
 
-===== PROFILS =====
-Certificat trouvé (DISTRIBUTION)
-Profil prêt : Coach TestFlight com.limevolt.coachapp
-Création de l'identifiant com.limevolt.coachapp.watchkitapp
-Activation de HealthKit
-Profil prêt : Coach TestFlight com.limevolt.coachapp.watchkitapp
+===== ERREURS / AVERTISSEMENTS iOS =====
 
-===== ARCHIVE =====
-** ARCHIVE SUCCEEDED **
+===== ERREURS / AVERTISSEMENTS MONTRE =====
 
-===== ENVOI =====
-** EXPORT SUCCEEDED **
-2026-11-24 21:14:40.811 xcodebuild[4662:17037] Progress 100%: Uploaded package is processing.
-2026-11-24 21:14:40.823 xcodebuild[4662:17037] Progress 100%: Upload succeeded.
-Uploaded Coach
-warning: exportArchive App Store Connect Warning. SDK version issue. This app was built with the iOS 26.5 SDK. Starting April 2027, iOS and iPadOS apps must be built with the iOS 27 SDK or later, included in Xcode 27 or later, in order to be uploaded to App Store Connect or submitted for distribution.
+===== TESTS UNITAIRES =====
+Test Case '-[CoachTests.PlanSettingsTests testVariantsBelongToTheirModule]' passed (0.002 seconds).
+Test Case '-[CoachTests.PlanSettingsTests testWarnings]' passed (0.001 seconds).
+	 Executed 26 tests, with 0 failures (0 unexpected) in 1.143 (1.217) seconds
+Test Case '-[CoachTests.ReplacementPlannerTests testApplyThenUndoRestoresPlan]' passed (0.007 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testDayAfterEasySportUntouched]' passed (0.003 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testDayAfterHardSportIsLightened]' passed (0.014 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testEasyRunCountedDone]' passed (0.001 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testHIITHardByDefault]' passed (0.627 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testIntensityFromEffortThenFamily]' passed (0.001 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testLightCircuitHasNoIntensity]' passed (0.001 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testLightRunIsEasyAndShorter]' passed (0.001 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testLongLegsEnduranceProtectsNextDay]' passed (0.001 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testLongRunNotRedoneNextOneDoesNotGrow]' passed (0.001 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testLongRunsResumeFromReplacedDuration]' passed (0.001 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testModerateSportDoesNotBlockNextDay]' passed (0.001 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testNeverIntoNextWeek]' passed (0.002 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testOldActivityFileStillReads]' passed (0.613 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testOnlyTrainingDays]' passed (0.001 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testQualityNotRescheduledNextToHardDays]' passed (0.001 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testQualityRedoneOnFirstFreeDay]' passed (0.001 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testQualityWaits48hAfterHardSport]' passed (0.401 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testRoles]' passed (0.001 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testSentenceAnnouncesChanges]' passed (0.001 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testStrengthLegsNotAroundKeySession]' passed (0.001 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testStrengthNeverMakesThreeHardDays]' passed (0.003 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testUndoKeepsDoneCopyAndLaterEdits]' passed (0.001 seconds).
+	 Executed 23 tests, with 0 failures (0 unexpected) in 1.683 (3.738) seconds
+Test Case '-[CoachTests.ReportPreviewTests testPreviewKeepsOnlyFirstLines]' passed (0.002 seconds).
+Test Case '-[CoachTests.ReportPreviewTests testReportInputsChangeWithNewLogOrComment]' passed (0.001 seconds).
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.002 (0.003) seconds
+Test Case '-[CoachTests.WatchSyncQueueTests testBackgroundUpdateKeepsTheScreenUsable]' passed (0.321 seconds).
+Test Case '-[CoachTests.WatchSyncQueueTests testCloseChangesAreGrouped]' passed (1.030 seconds).
+Test Case '-[CoachTests.WatchSyncQueueTests testEditKeepsTheDailySyncDueUntilDone]' passed (1.211 seconds).
+Test Case '-[CoachTests.WatchSyncQueueTests testMovingASessionDoesNotWaitForTheWatch]' passed (0.011 seconds).
+Test Case '-[CoachTests.WatchSyncQueueTests testResetWaitsForTheRunningUpdateThenRemoves]' passed (0.315 seconds).
+Test Case '-[CoachTests.WatchSyncQueueTests testUpdatesNeverOverlap]' passed (0.615 seconds).
+	 Executed 6 tests, with 0 failures (0 unexpected) in 3.503 (3.507) seconds
+Test Case '-[CoachTests.WatchSyncTests testAdaptButtonTitleForStrength]' passed (0.002 seconds).
+Test Case '-[CoachTests.WatchSyncTests testAdaptButtonTitleForUnchangedRun]' passed (0.001 seconds).
+Test Case '-[CoachTests.WatchSyncTests testChangedContentIsReplaced]' passed (0.001 seconds).
+Test Case '-[CoachTests.WatchSyncTests testMovedRunOnlyChangesThatRun]' passed (0.030 seconds).
+Test Case '-[CoachTests.WatchSyncTests testRemovedAndDuplicateRuns]' passed (0.002 seconds).
+Test Case '-[CoachTests.WatchSyncTests testScheduleKeyIgnoresCalendarAndSeconds]' passed (0.001 seconds).
+Test Case '-[CoachTests.WatchSyncTests testUnchangedPlanTouchesNothing]' passed (0.001 seconds).
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.037 (0.041) seconds
+Test Case '-[CoachTests.WeekOverviewTests testPlanEnded]' passed (0.003 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testPlannedMinutes]' passed (0.003 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testPlannedMinutesUnits]' passed (0.002 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testRestDayShowsNextSessionAndUpcoming]' passed (0.003 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testSeveralSessionsSameDay]' passed (0.001 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testTodayToDoThenDone]' passed (0.004 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testUpcomingSkipsDoneSessions]' passed (0.002 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testWeekBeforePlanStarts]' passed (0.003 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testWeekHasSevenDaysWithStatuses]' passed (0.002 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testWeekLineAcrossMonths]' passed (1.825 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testWeekOutsidePlanHasNoNumber]' passed (0.002 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testWeekStartsOnMondayWhateverTheRegion]' passed (0.002 seconds).
+	 Executed 12 tests, with 0 failures (0 unexpected) in 1.850 (2.892) seconds
+	 Executed 203 tests, with 0 failures (0 unexpected) in 12.919 (18.558) seconds
+	 Executed 203 tests, with 0 failures (0 unexpected) in 12.919 (18.560) seconds
+
+===== FIN DU JOURNAL iOS =====
+** BUILD SUCCEEDED **
