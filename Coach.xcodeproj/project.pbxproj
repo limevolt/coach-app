@@ -92,6 +92,7 @@
 		B20C149DF8DF491979E4B855 /* ReportPreviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3AB0BC8DBCF21542FEDF213 /* ReportPreviewTests.swift */; };
 		B8C62810B0B39EB6184F3502 /* PlanSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AED266CE1CDFB0249DAA6BB1 /* PlanSettings.swift */; };
 		BC5EF199242F3CD6B4BC4119 /* PlanGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91216996909C0C840A8EA989 /* PlanGeneratorTests.swift */; };
+		C3DBDD053EA1A947866AA7A1 /* AdaptRunKindTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19AAA7125E9D98CC586824A9 /* AdaptRunKindTests.swift */; };
 		C41EB81B2413AEF3EC2FF805 /* DoneStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 734F29FDA42962E3833F9726 /* DoneStateTests.swift */; };
 		C747F3F670FB8E742B9EFA45 /* PlanFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5C68541DC7A6C6D335CADFF /* PlanFormat.swift */; };
 		C78B50FEB9B9AC274A641ADE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0AB28854C9073EAF6FBA2CB9 /* Assets.xcassets */; };
@@ -180,6 +181,7 @@
 		13CE692C78AF6FE152D49881 /* SessionAdjust.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionAdjust.swift; sourceTree = "<group>"; };
 		15D0FFCC8C4ABBBBAE1C1CC4 /* PlanDraft.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanDraft.swift; sourceTree = "<group>"; };
 		1918A0774BE3786CD7BA18EA /* DoneState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoneState.swift; sourceTree = "<group>"; };
+		19AAA7125E9D98CC586824A9 /* AdaptRunKindTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptRunKindTests.swift; sourceTree = "<group>"; };
 		1A98D9EE13E10A332EC287DF /* WorkoutManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutManager.swift; sourceTree = "<group>"; };
 		1C2AF906766BFC74E40B5658 /* PlanIntensityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanIntensityTests.swift; sourceTree = "<group>"; };
 		1F5A6F77FC2EA09B7D407281 /* ExerciseLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLibrary.swift; sourceTree = "<group>"; };
@@ -320,6 +322,7 @@
 		7505100CBDA2A00408EDF26C /* CoachTests */ = {
 			isa = PBXGroup;
 			children = (
+				19AAA7125E9D98CC586824A9 /* AdaptRunKindTests.swift */,
 				66DFA61A687F2307C03169AA /* DeadlineTests.swift */,
 				734F29FDA42962E3833F9726 /* DoneStateTests.swift */,
 				5CCD9F7E305075A4B543DCC4 /* FeedbackPlannerTests.swift */,
@@ -798,6 +801,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C3DBDD053EA1A947866AA7A1 /* AdaptRunKindTests.swift in Sources */,
 				D850C7ADB4742224D28B4E7C /* DeadlineTests.swift in Sources */,
 				C41EB81B2413AEF3EC2FF805 /* DoneStateTests.swift in Sources */,
 				E41992555F3D17F143761864 /* FeedbackPlannerTests.swift in Sources */,
