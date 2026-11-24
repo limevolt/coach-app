@@ -11,12 +11,11 @@ name: Compilation
 on:
   push:
     branches: ["**"]
-    # Pas de compilation pour la doc seule… sauf PLAN_FORMAT.md, embarqué dans l'app (#37).
+    # Pas de compilation pour la doc seule.
     paths:
       - "**"
       - "!docs/**"
       - "!**.md"
-      - "docs/PLAN_FORMAT.md"
   workflow_dispatch:
 
 concurrency:

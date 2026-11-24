@@ -1,4 +1,4 @@
-// TrainingDays.swift — jours où je peux m'entraîner (réglage, rangement du plan, export pour Claude)
+// TrainingDays.swift — jours où je peux m'entraîner (réglage, rangement du plan)
 
 import SwiftUI
 

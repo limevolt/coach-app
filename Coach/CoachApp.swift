@@ -7,6 +7,10 @@ struct CoachApp: App {
     @State private var store = PlanStore()
     @Environment(\.scenePhase) private var scenePhase
 
+    init() {
+        LegacySettings.clean()
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()

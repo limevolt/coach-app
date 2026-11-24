@@ -268,8 +268,6 @@ struct ExerciseGuideView: View {
             Text("Pas encore d'animation pour cet exercice.")
                 .font(.coach(size: 15, weight: .semibold))
                 .foregroundStyle(Theme.text)
-            Text("Demande à Claude d'ajouter le champ « animation » ou une vidéo de démo.")
-                .font(.coach(.caption)).foregroundStyle(Theme.muted).multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, Space.xxl)
