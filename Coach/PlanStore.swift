@@ -155,6 +155,21 @@ final class PlanStore {
         Task { await sync(quiet: true) }
     }
 
+    /// Nouvelle version du même plan dont seules les semaines à venir changent (intensité, #46).
+    /// La semaine en cours et le passé sont gardés tels quels, avec leurs séances adaptées et la possibilité
+    /// de revenir à l'original ; les séances recalculées repartent du moteur.
+    func applyUpcoming(_ newPlan: TrainingPlan, keeping keptIds: Set<String>) async throws {
+        guard let current = plan, current.planId == newPlan.planId else { throw PlanError.invalid("Autre plan.") }
+        archiveCurrentPlan()
+        try Coding.encoder.encode(newPlan).write(to: planURL, options: .atomic)
+        plan = newPlan
+        originals = originals.filter { keptIds.contains($0.key) }
+        persistOriginals()
+        status = nil
+        cancelScheduledRunSync()
+        Task { await sync(quiet: true) }
+    }
+
     /// Archive le plan actuel (historique local).
     private func archiveCurrentPlan() {
         guard let old = plan, let oldData = try? Coding.encoder.encode(old) else { return }
@@ -1048,5 +1063,31 @@ enum Day {
     static func key(_ date: Date) -> String {
         let c = Calendar.current.dateComponents([.year, .month, .day], from: date)
         return String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
+    }
+}
+
+// MARK: - Intensité en cours de plan (#46)
+
+extension PlanStore {
+    /// Le coach du plan affiché, s'il a été créé dans l'app (nil pour un plan importé ou en mode démo).
+    /// Ancien plan sans point de départ enregistré : relu dans Santé, sur les 8 semaines avant son début.
+    func intensityPlanner() async -> IntensityChangePlanner? {
+        guard let settings = CoachStorage.loadSettings(), let plan, plan.planId == settings.id else { return nil }
+        var start = settings.startingPoint ?? .unknown
+        if settings.startingPoint == nil, settings.startLevel == .health, let day = StrictDate.date(settings.startDate) {
+            let reader = HealthReader()
+            async let runMinutes = reader.averageRunMinutesPerWeek(ending: day)
+            async let sessions = reader.averageSessionsPerWeek(ending: day)
+            let (minutes, perWeek) = await (runMinutes, sessions)
+            start = StartingPoint(runMinutesPerWeek: minutes, sessionsPerWeek: perWeek)
+        }
+        return IntensityChangePlanner(settings: settings, profile: CoachStorage.loadProfile(),
+                                      memory: CoachStorage.loadMemory(), start: start)
+    }
+
+    /// Enregistre l'intensité choisie (réglages d'abord, comme à la création), puis le plan recalculé.
+    func applyIntensityChange(_ result: IntensityChangeResult) async throws {
+        try CoachStorage.save(settings: result.settings)
+        try await applyUpcoming(result.plan, keeping: result.keptIds)
     }
 }

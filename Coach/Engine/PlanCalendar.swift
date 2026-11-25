@@ -150,15 +150,22 @@ enum PlanCalendar {
     /// +`weeklyIncrease` au plus par semaine de progression, jamais au-dessus de `capacity` ;
     /// semaine allégée à 65 %, puis reprise au niveau d'avant (pas au-dessus) ; affûtage à 60 % puis 50 % du pic ;
     /// entretien sans hausse.
-    static func runMinutes(weeks: [PlanWeek], start: Double, weeklyIncrease: Double, capacity: Double) -> [Double] {
-        let increase = min(CoachMemory.maxWeeklyIncrease, max(0, weeklyIncrease))
+    /// `increaseByWeek` (une valeur par semaine) : hausse permise semaine par semaine, quand l'intensité change
+    /// en cours de plan (#46) ; sinon `weeklyIncrease` pour toutes.
+    static func runMinutes(weeks: [PlanWeek], start: Double, weeklyIncrease: Double, capacity: Double,
+                           increaseByWeek: [Double]? = nil) -> [Double] {
+        func allowed(_ i: Int) -> Double {
+            let value = increaseByWeek.flatMap { $0.indices.contains(i) ? $0[i] : nil } ?? weeklyIncrease
+            return min(CoachMemory.maxWeeklyIncrease, max(0, value))
+        }
         var result: [Double] = []
         var lastBuild = min(start, capacity)
         var built = false
         var afterDeload = false
         let taperWeeks = weeks.filter { $0.phase == .taper }.count
         var taperSeen = 0
-        for week in weeks {
+        for (i, week) in weeks.enumerated() {
+            let increase = allowed(i)
             switch week.phase {
             case .taper:
                 taperSeen += 1

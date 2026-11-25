@@ -123,7 +123,7 @@ final class PlanDraft {
         gymDays = s.gymDays
         allowTwoSessionsPerDay = s.allowTwoSessionsPerDay
         startLevel = s.startLevel
-        chosenIntensity = s.intensity
+        chosenIntensity = s.currentIntensity
         name = s.name
         nameEdited = true
         notes = s.description ?? ""
@@ -198,6 +198,8 @@ final class PlanDraft {
         s.longRunMinutes = modules[.run] == nil ? nil : longRunMinutes
         s.allowTwoSessionsPerDay = allowTwoSessionsPerDay
         if s.name.isEmpty { s.name = s.suggestedName }
+        // Gardé pour recalculer plus tard les semaines à venir à l'identique (#46).
+        if startLevel == .health { s.startingPoint = startingPoint }
         return s
     }
 

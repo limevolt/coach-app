@@ -35,11 +35,11 @@ final class HealthReader {
         await HealthPermissions.readWasRequested(store)
     }
 
-    /// Coach local (#45) : minutes de course par semaine, en moyenne sur les `weeks` dernières semaines.
+    /// Coach local (#45) : minutes de course par semaine, en moyenne sur les `weeks` semaines avant `end`
+    /// (aujourd'hui, ou le début du plan pour recalculer un ancien plan, #46).
     /// nil si Santé n'est pas disponible, refusé ou sans aucune course (le plan part alors d'une séance test).
-    func averageRunMinutesPerWeek(weeks: Int = 8) async -> Double? {
+    func averageRunMinutesPerWeek(weeks: Int = 8, ending end: Date = .now) async -> Double? {
         guard HKHealthStore.isHealthDataAvailable() else { return nil }
-        let end = Date.now
         guard let start = Calendar.current.date(byAdding: .day, value: -7 * weeks, to: end),
               let list = try? await workouts(from: start, to: end) else { return nil }
         let runs = list.filter { $0.activity == .running }
@@ -49,9 +49,8 @@ final class HealthReader {
 
     /// Séances par semaine, toutes disciplines sauf la marche et les activités calmes (yoga, étirements…),
     /// en moyenne sur `weeks` semaines : sert à conseiller l'intensité du plan (#57). Nil si rien n'est trouvé.
-    func averageSessionsPerWeek(weeks: Int = 8) async -> Double? {
+    func averageSessionsPerWeek(weeks: Int = 8, ending end: Date = .now) async -> Double? {
         guard HKHealthStore.isHealthDataAvailable() else { return nil }
-        let end = Date.now
         guard let start = Calendar.current.date(byAdding: .day, value: -7 * weeks, to: end),
               let list = try? await workouts(from: start, to: end) else { return nil }
         let calm: Set<HKWorkoutActivityType> = [.walking, .yoga, .mindAndBody, .flexibility, .cooldown,

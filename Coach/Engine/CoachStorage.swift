@@ -32,6 +32,12 @@ enum CoachStorage {
         try write(profile, to: profileURL)
     }
 
+    /// Réglages seuls (intensité changée en cours de plan, #46).
+    static func save(settings: PlanSettings) throws {
+        guard !DemoMode.isOn else { return }
+        try write(settings, to: settingsURL)
+    }
+
     /// Jours choisis dans Réglages (#106) : reportés dans les réglages du plan, s'il y en a.
     /// Réglages absents ou illisibles : rien n'est écrit.
     static func update(trainingDays days: Set<Int>) {

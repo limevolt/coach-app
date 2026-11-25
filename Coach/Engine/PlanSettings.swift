@@ -38,6 +38,12 @@ struct PlanSettings: Codable, Equatable {
     var intensity: PlanIntensity = .moderate
     /// Date de début du plan ("AAAA-MM-JJ").
     var startDate: String
+    /// Intensité changée en cours de plan (#46) : chaque changement vaut à partir de son lundi.
+    /// `intensity` reste le niveau choisi à la création (semaines d'avant le premier changement).
+    var intensityChanges: [IntensityChange] = []
+    /// Point de départ lu dans Santé à la création : le moteur recalcule les semaines à venir
+    /// sans changer les semaines passées (#46). Absent pour les plans créés avant ce réglage.
+    var startingPoint: StartingPoint? = nil
 
     static let sessionMinuteChoices = [30, 45, 60, 90]
     static let longRunMinuteChoices = [60, 90, 120, 150, 180]
@@ -105,6 +111,8 @@ extension PlanSettings {
         startLevel = (try? c.decodeIfPresent(StartLevelSource.self, forKey: .startLevel)) ?? .test
         intensity = (try? c.decodeIfPresent(PlanIntensity.self, forKey: .intensity)) ?? .moderate
         startDate = try c.decodeIfPresent(String.self, forKey: .startDate) ?? ""
+        intensityChanges = (try? c.decodeIfPresent([IntensityChange].self, forKey: .intensityChanges)) ?? []
+        startingPoint = try? c.decodeIfPresent(StartingPoint.self, forKey: .startingPoint)
     }
 }
 
