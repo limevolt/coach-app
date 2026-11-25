@@ -367,6 +367,16 @@ extension PlanGoal {
         guard let deadline else { return nil }
         return Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: .now), to: deadline).day
     }
+
+    /// Quelque chose à montrer en plus du nom et de l'échéance (progression, départ, actuel, cible) :
+    /// sinon la ligne « Objectif » de l'accueil ne se déplie pas (#109).
+    var hasDetails: Bool {
+        if progress != nil { return true }
+        return [baseline, current, target].contains { value in
+            guard let value else { return false }
+            return !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+    }
 }
 
 enum Pace {
