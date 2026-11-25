@@ -95,11 +95,30 @@ struct IntensityChangePlanner {
     }
 
     /// Première semaine touchée par un changement fait `today` (nil : plus de semaine à venir).
-    private func effectWeek(today: Date) -> (week: PlanWeek, isLast: Bool)? {
+    func effectWeek(today: Date) -> (week: PlanWeek, isLast: Bool)? {
         let key = PlanCalendar.string(Self.effectiveMonday(today: today))
         let all = weeks
         guard let i = all.firstIndex(where: { PlanCalendar.string($0.monday) >= key }) else { return nil }
         return (all[i], i == all.count - 1)
+    }
+
+    /// Niveau suivi cette semaine (« Actuel »).
+    func levelInForce(today: Date = .now) -> PlanIntensity {
+        settings.intensity(forWeek: PlanCalendar.monday(of: today))
+    }
+
+    /// Changement déjà choisi pour une semaine à venir (« Prévu lundi »), s'il y en a un.
+    func pendingChange(today: Date = .now) -> IntensityChange? {
+        let next = PlanCalendar.string(Self.effectiveMonday(today: today))
+        guard let change = settings.intensityChanges.filter({ $0.from >= next }).max(by: { $0.from < $1.from }),
+              change.level != levelInForce(today: today) else { return nil }
+        return change
+    }
+
+    /// Garde-fou affiché sous le niveau choisi : la semaine prochaine sera plus calme que ce niveau (nil sinon).
+    func note(for level: PlanIntensity, today: Date = .now) -> String? {
+        guard let week = effectWeek(today: today)?.week else { return nil }
+        return note(level, week: week)
     }
 
     /// Monter se compte depuis le niveau en vigueur cette semaine : deux changements dans la même semaine

@@ -27,6 +27,9 @@ struct PlanView: View {
     /// Ré-appui sur l'onglet Plan (#64) : retour à l'accueil, puis en haut de la page.
     @Environment(\.tabReselect) private var reselect
     @State private var path = NavigationPath()
+    /// Réglages du plan créé par le coach (#46) : nil pour un plan importé.
+    @State private var intensityPlanner: IntensityChangePlanner?
+    @State private var showIntensity = false
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -54,6 +57,10 @@ struct PlanView: View {
             .navigationDestination(for: PlannedSession.self) { SessionDetailView(session: $0).tabBarSpace() }
             .navigationDestination(for: HealthActivity.self) { ActivityDetailView(activity: $0).tabBarSpace() }
             .task(id: now) { await store.refreshActivities(now: now) }
+            .task(id: store.plan?.key) { intensityPlanner = await store.intensityPlanner() }
+            .sheet(isPresented: $showIntensity) {
+                if let intensityPlanner { IntensitySheet(planner: intensityPlanner).environment(store) }
+            }
             // Nouveau jour ou autre semaine : la carte revient à aujourd'hui.
             .onChange(of: Calendar.current.startOfDay(for: now)) { selectedDay = nil }
             .toolbar(.hidden, for: .navigationBar)
@@ -220,6 +227,19 @@ struct PlanView: View {
                         .lineLimit(2)
                 } content: {
                     FormattedNotes(text: notes)
+                }
+            }
+
+            // Réglages du plan (#46, maquette validée) : l'intensité se change en cours de plan.
+            if let intensityPlanner {
+                VStack(alignment: .leading, spacing: 0) {
+                    Eyebrow(text: "Réglages du plan")
+                        .accessibilityAddTraits(.isHeader)
+                        .padding(.bottom, Space.xs)
+                    Button { showIntensity = true } label: {
+                        PlanLine(title: "Intensité", trailing: intensityPlanner.rowValue(today: now), showsSeparator: false)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
 

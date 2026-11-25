@@ -11,8 +11,11 @@ enum CoachStorage {
     private static var profileURL: URL { folder.appending(path: "coach-profile.json") }
     private static var memoryURL: URL { folder.appending(path: "coach-memory.json") }
 
+    /// Mode démo (captures) : les réglages du plan créé par l'assistant restent en mémoire, jamais sur l'appareil.
+    nonisolated(unsafe) private static var demoSettings: PlanSettings?
+
     static func loadSettings() -> PlanSettings? {
-        guard !DemoMode.isOn else { return nil }
+        guard !DemoMode.isOn else { return demoSettings }
         return load(PlanSettings.self, from: settingsURL)
     }
 
@@ -27,14 +30,14 @@ enum CoachStorage {
     }
 
     static func save(settings: PlanSettings, profile: AthleteProfile) throws {
-        guard !DemoMode.isOn else { return }
+        guard !DemoMode.isOn else { demoSettings = settings; return }
         try write(settings, to: settingsURL)
         try write(profile, to: profileURL)
     }
 
     /// Réglages seuls (intensité changée en cours de plan, #46).
     static func save(settings: PlanSettings) throws {
-        guard !DemoMode.isOn else { return }
+        guard !DemoMode.isOn else { demoSettings = settings; return }
         try write(settings, to: settingsURL)
     }
 

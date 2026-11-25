@@ -283,6 +283,22 @@ final class CoachCaptures: XCTestCase {
                 if waiting.exists { note("Création du plan : toujours en attente après 20 s") }
                 Thread.sleep(forTimeInterval: 1.5)
                 shot("29c-plan-cree")
+                // Intensité en cours de plan (#46) : Réglages du plan › Intensité, puis baisser d'un cran.
+                if tap("Intensité", in: app) {
+                    Thread.sleep(forTimeInterval: 0.6)
+                    shot("29d-intensite-en-cours")
+                    audit("Intensité du plan", app)
+                    if tap("Modéré", in: app) {
+                        Thread.sleep(forTimeInterval: 0.4)
+                        shot("29e-intensite-choix")
+                        if tap("Appliquer", in: app) {
+                            Thread.sleep(forTimeInterval: 2)
+                            _ = tap("Intensité", in: app)
+                            Thread.sleep(forTimeInterval: 0.6)
+                            shot("29f-intensite-prevue")
+                        }
+                    }
+                }
             } else {
                 note("Bouton « Créer le plan » introuvable")
             }

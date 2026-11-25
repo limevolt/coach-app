@@ -1074,7 +1074,7 @@ extension PlanStore {
     func intensityPlanner() async -> IntensityChangePlanner? {
         guard let settings = CoachStorage.loadSettings(), let plan, plan.planId == settings.id else { return nil }
         var start = settings.startingPoint ?? .unknown
-        if settings.startingPoint == nil, settings.startLevel == .health, let day = StrictDate.date(settings.startDate) {
+        if settings.startingPoint == nil, settings.startLevel == .health, !DemoMode.isOn, let day = StrictDate.date(settings.startDate) {
             let reader = HealthReader()
             async let runMinutes = reader.averageRunMinutesPerWeek(ending: day)
             async let sessions = reader.averageSessionsPerWeek(ending: day)

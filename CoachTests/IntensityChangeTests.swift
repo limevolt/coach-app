@@ -188,6 +188,18 @@ final class IntensityChangeTests: XCTestCase {
         }
     }
 
+    func testRowShowsPlannedChange() {
+        var s = settings(.moderate)
+        XCTAssertEqual(planner(s).rowValue(today: midPlan), "Modéré")
+        s.intensityChanges = [IntensityChange(from: cut, level: .firm)]
+        XCTAssertEqual(planner(s).levelInForce(today: midPlan), .moderate, "« Actuel » : cette semaine")
+        XCTAssertEqual(planner(s).pendingChange(today: midPlan)?.level, .firm, "« Prévu lundi »")
+        XCTAssertTrue(planner(s).rowValue(today: midPlan).hasPrefix("Modéré → Soutenu"))
+        let later = Calendar.current.date(from: DateComponents(year: 2030, month: 2, day: 13, hour: 12))!
+        XCTAssertNil(planner(s).pendingChange(today: later), "une fois lundi passé, le changement est en cours")
+        XCTAssertEqual(planner(s).rowValue(today: later), "Soutenu")
+    }
+
     // MARK: Garde-fous du moteur
 
     func testWithoutHistoryRaiseStopsAtFirm() throws {
