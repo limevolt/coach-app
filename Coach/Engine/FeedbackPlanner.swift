@@ -138,7 +138,8 @@ enum FeedbackPlanner {
         func change(_ s: PlannedSession, _ new: PlannedSession) {
             // Déjà changée par le coach (autre retour, sport à la place) : pas d'allègement par-dessus.
             // Changement annulé à la main : pas refait.
-            guard d.changed[s.id] == nil, s.coachNote == nil, !declined.contains(s.id) else { return }
+            // « Sans progression (semaine chargée) » est plus faible : il peut être remplacé (#115).
+            guard d.changed[s.id] == nil, s.coachNote == nil || s.hasSoftCoachChange, !declined.contains(s.id) else { return }
             d.changed[s.id] = new
         }
         func within(_ s: PlannedSession, days: Int) -> Bool {

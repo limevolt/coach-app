@@ -1,14 +1,18 @@
 // LoadPlanner.swift — coach adaptatif, lot C2 (#115) : charge d'entraînement, tous sports compris.
-// Règles validées dans #115 (25/11). Fonctions pures, une règle = un test (LoadPlannerTests).
+// Règles validées dans #115 (25/11), précisées après les relectures (voir l'issue).
+// Fonctions pures, une règle = un test (LoadPlannerTests).
 //
 // - Charge d'une séance = durée (min) × ressenti (méthode « RPE de séance »).
-//   Sans ressenti : effort prévu de la séance (#44) ; sport fait ailleurs : 8 dur, 6 modéré, 3 facile.
-// - Charge de la semaine = les 7 derniers jours, comparée à la moyenne des 4 dernières semaines.
-//   Rapport > 1,3 : la course de la semaine suivante ne progresse pas.
-//   Rapport > 1,5 : en plus, la prochaine séance dure ou clé est allégée.
-//   Pas de règle sans au moins 3 semaines de données.
-// - Niveau de course : courses d'au moins 20 min avec distance (Coach ou autre app), 6 dernières semaines :
-//   allure habituelle (médiane) et meilleure allure sur 5 km ou plus.
+//   Sans ressenti : effort prévu de la séance du plan (#44) ; autre sport : 8 dur, 6 modéré, 3 facile.
+// - Une fois par semaine, sur la dernière semaine terminée (lundi → dimanche) : sa charge comparée à la
+//   moyenne des semaines couvertes parmi les 4 dernières. Données dans au moins 3 semaines, sinon rien.
+//   Rapport > 1,3 : la course de cette semaine ne progresse pas (même rôle, même séance de qualité).
+//   Rapport > 1,5 : en plus, la première séance dure ou clé à venir de la semaine est allégée.
+// - Changement le plus faible : « Sans progression ». Une règle plus forte (douleur, fatigue, sport dur)
+//   peut le remplacer. Une séance déjà changée, refusée ou faite n'est pas reprise (ni remplacée par une autre).
+// - Niveau de course : footings et sorties longues d'au moins 20 min avec distance (Coach ou autre app),
+//   6 dernières semaines, allures entre 2:30 et 15:00 au km : allure habituelle (médiane) et meilleure
+//   allure sur 5 km ou plus.
 // Aucune règle ne dépend de l'app d'origine.
 
 import Foundation
@@ -23,7 +27,7 @@ struct LoadItem: Equatable {
 }
 
 struct LoadDecision: Equatable {
-    /// Charge des 7 derniers jours / moyenne hebdomadaire des 28 derniers jours (nil : pas assez de données).
+    /// Charge de la dernière semaine terminée / moyenne des semaines couvertes (nil : pas assez de données).
     var ratio: Double?
     var changed: [String: PlannedSession] = [:]
 }
@@ -35,17 +39,29 @@ struct RunLevel: Equatable {
     var bestPaceSecPerKm: Double?
 }
 
+extension PlannedSession {
+    /// Changement du coach le plus faible (« Sans progression ») : une règle plus forte peut le remplacer.
+    var hasSoftCoachChange: Bool { coachNote?.hasPrefix(LoadPlanner.softPrefix) == true }
+
+    /// Libre pour une règle du coach : pas de changement, ou seulement « Sans progression »,
+    /// ou séance refaite par le coach.
+    var isFreeForCoach: Bool { coachNote == nil || hasSoftCoachChange || isCoachCopy }
+}
+
 enum LoadPlanner {
     static let keyPrefix = "load:"
+    static let softPrefix = "Sans progression"
     static let noProgressionRatio = 1.3
     static let lightenRatio = 1.5
-    static let minHistoryDays = 21
-    static let historyDays = 28
+    static let minWeeksWithData = 3
+    static let weeks = 4
     static let levelDays = 42
     static let minRunMinutes = 20
     static let minBestRunKm = 5.0
-    /// Renfo sans durée prévue : estimation à partir des séries, sinon cette valeur.
+    static let paceBounds = 150.0...900.0
+    /// Durée par défaut d'une séance sans durée connue, et allure d'estimation d'une course à la distance.
     static let defaultMinutes = 45.0
+    static let estimatePaceMinPerKm = 6.0
 
     // MARK: Charge d'une séance
 
@@ -58,9 +74,23 @@ enum LoadPlanner {
         }
     }
 
-    /// Durée d'une séance du plan, en minutes (renfo : séries, répétitions et repos).
+    /// Durée d'une séance du plan, en minutes : temps prévu ; course à la distance estimée à 6:00/km ;
+    /// renfo estimé à partir des séries (3 s par répétition, repos prévu ou 60 s).
     static func minutes(of s: PlannedSession) -> Double {
         if let m = s.plannedMinutes { return Double(m) }
+        if let run = s.run {
+            let steps = [run.warmup, run.cooldown].compactMap { $0 }.map { ($0, 1) }
+                + run.blocks.flatMap { b in b.steps.map { ($0, max(1, b.iterations)) } }
+            var total = 0.0
+            for (step, times) in steps {
+                let g = step.goal
+                if let sec = g.seconds { total += sec / 60 * Double(times) }
+                else if g.type == "distance", let v = g.value {
+                    total += (g.unit == "m" ? v / 1000 : v) * estimatePaceMinPerKm * Double(times)
+                }
+            }
+            return total > 0 ? total : defaultMinutes
+        }
         if let w = s.strength, !w.exercises.isEmpty {
             let sec = w.exercises.reduce(0.0) { total, e in
                 let sets = Double(max(1, e.sets ?? 1))
@@ -78,9 +108,10 @@ enum LoadPlanner {
                  effort: Double(log.rpe ?? session.role.expectedEffort))
     }
 
-    /// Séance faite avec une autre app : reliée au plan (`session`) ou sport en plus.
-    static func item(activity: HealthActivity, effort: Int?, session: PlannedSession?) -> LoadItem {
-        let fallback = session.map { Double($0.role.expectedEffort) }
+    /// Séance faite avec une autre app. `plannedAs` : séance du plan qu'elle a rendue faite d'elle-même
+    /// (même type) ; un autre sport choisi comme séance du jour garde l'effort de sa famille.
+    static func item(activity: HealthActivity, effort: Int?, plannedAs: PlannedSession?) -> LoadItem {
+        let fallback = plannedAs.map { Double($0.role.expectedEffort) }
             ?? defaultEffort(ReplacementPlanner.intensity(of: activity, effort: nil))
         return LoadItem(date: activity.start, minutes: activity.durationSec / 60,
                         effort: effort.map(Double.init) ?? fallback)
@@ -88,47 +119,65 @@ enum LoadPlanner {
 
     // MARK: Charge de la semaine
 
-    /// Charge des 7 derniers jours rapportée à la moyenne des 4 dernières semaines (nil : moins de 3 semaines).
-    static func ratio(_ items: [LoadItem], now: Date) -> Double? {
-        let day: Double = 86_400
-        let recent = items.filter { $0.date <= now && $0.date > now.addingTimeInterval(-Double(historyDays) * day) }
-        guard let oldest = recent.map(\.date).min(),
-              oldest <= now.addingTimeInterval(-Double(minHistoryDays) * day) else { return nil }
-        let acute = recent.filter { $0.date > now.addingTimeInterval(-7 * day) }.reduce(0) { $0 + $1.load }
-        let chronic = recent.reduce(0) { $0 + $1.load } / Double(historyDays / 7)
-        guard chronic > 0 else { return nil }
-        return acute / chronic
+    /// Charge de la semaine qui précède `weekStart`, rapportée à la moyenne des semaines couvertes parmi
+    /// les 4 qui précèdent `weekStart` (nil : données dans moins de 3 de ces semaines).
+    static func ratio(_ items: [LoadItem], weekStart: Date) -> Double? {
+        let week: Double = 7 * 86_400
+        var byWeek = [Double](repeating: 0, count: weeks)
+        var seen = Set<Int>()
+        for i in items {
+            let back = weekStart.timeIntervalSince(i.date)
+            guard back > 0 else { continue }
+            let w = Int(back / week)
+            guard w < weeks else { continue }
+            byWeek[w] += i.load
+            seen.insert(w)
+        }
+        guard seen.count >= minWeeksWithData, let oldest = seen.max() else { return nil }
+        let average = byWeek.reduce(0, +) / Double(oldest + 1)
+        guard average > 0 else { return nil }
+        return byWeek[0] / average
     }
 
-    /// Ce que le coach change quand la semaine est trop chargée.
+    /// Ce que le coach change cette semaine si la semaine dernière a été trop chargée.
     /// `declined` : séances dont un changement a été annulé à la main.
     static func decide(items: [LoadItem], sessions: [PlannedSession], isDone: (String) -> Bool,
                        declined: Set<String> = [], now: Date = .now) -> LoadDecision {
-        var d = LoadDecision(ratio: ratio(items, now: now))
-        guard let r = d.ratio, r > noProgressionRatio else { return d }
         let cal = PlanWeeks.calendar(timeZone: Calendar.current.timeZone)
+        guard let thisWeek = cal.dateInterval(of: .weekOfYear, for: now) else { return LoadDecision() }
+        var d = LoadDecision(ratio: ratio(items, weekStart: thisWeek.start))
+        guard let r = d.ratio, r > noProgressionRatio else { return d }
         let today = cal.startOfDay(for: now)
-        let future = sessions
-            .filter { s in
-                guard let day = s.dayStart, day >= today, !isDone(s.id), !declined.contains(s.id) else { return false }
-                return s.coachNote == nil || s.isCoachCopy
-            }
+        func inWeek(_ s: PlannedSession, _ w: DateInterval) -> Bool { s.dayStart.map { w.contains($0) } ?? false }
+        let upcoming = sessions
+            .filter { s in inWeek(s, thisWeek) && (s.dayStart ?? .distantPast) >= today }
             .sorted { ($0.startDate ?? .distantPast) < ($1.startDate ?? .distantPast) }
+        func free(_ s: PlannedSession) -> Bool { !isDone(s.id) && !declined.contains(s.id) && s.isFreeForCoach }
 
-        if r > lightenRatio, let hard = future.first(where: { $0.countsAsHard || $0.isKey }) {
+        // Très chargée : la première séance dure ou clé à venir, et seulement elle.
+        if r > lightenRatio, let hard = upcoming.first(where: { $0.countsAsHard || $0.isKey }),
+           free(hard) {
             d.changed[hard.id] = hard.lightened(note: "Allégée par le coach (semaine très chargée)")
         }
-        // La course de la semaine suivante ne dépasse pas celle de cette semaine (même rôle).
-        if let thisWeek = cal.dateInterval(of: .weekOfYear, for: today),
-           let nextEnd = cal.date(byAdding: .day, value: 7, to: thisWeek.end) {
-            let current = sessions.filter { s in s.dayStart.map { thisWeek.contains($0) } ?? false }
-            for s in future where s.type == .run && d.changed[s.id] == nil && s.role != .quality
-                && (s.dayStart ?? .distantPast) >= thisWeek.end && (s.dayStart ?? .distantFuture) < nextEnd {
-                let same = current.filter { $0.type == .run && $0.role == s.role }.compactMap(\.plannedMinutes).max()
-                if let same, let planned = s.plannedMinutes, planned > same {
-                    d.changed[s.id] = s.lightened(factor: Double(same) / Double(planned),
-                                                  note: "Sans progression (semaine chargée)")
+        // La course de cette semaine ne dépasse pas celle de la semaine dernière (séances non changées).
+        guard let lastStart = cal.date(byAdding: .day, value: -7, to: thisWeek.start) else { return d }
+        let lastWeek = DateInterval(start: lastStart, end: thisWeek.start)
+        let reference = sessions.filter { $0.type == .run && inWeek($0, lastWeek) && $0.coachNote == nil }
+        for s in upcoming where s.type == .run && d.changed[s.id] == nil && free(s) && s.coachNote == nil {
+            guard let planned = s.plannedMinutes else { continue }
+            if s.role == .quality {
+                // Escaliers, intervalles : même contenu que la même séance de la semaine dernière.
+                if let same = reference.first(where: { $0.role == .quality && $0.title == s.title }),
+                   let before = same.plannedMinutes, planned > before {
+                    var copy = s
+                    copy.run = same.run
+                    copy.coachNote = "\(softPrefix) (semaine chargée)"
+                    d.changed[s.id] = copy
                 }
+            } else if let before = reference.filter({ $0.role == s.role }).compactMap(\.plannedMinutes).max(),
+                      planned > before {
+                d.changed[s.id] = s.lightened(factor: Double(before) / Double(planned),
+                                              note: "\(softPrefix) (semaine chargée)")
             }
         }
         return d
@@ -136,13 +185,14 @@ enum LoadPlanner {
 
     // MARK: Ressenti d'un sport fait ailleurs (« trop dur » / « trop facile », #44)
 
-    /// Séance fictive qui porte l'effort par défaut de la famille du sport : dur 8, modéré 6, facile 4.
-    static func feedbackEntry(activity a: HealthActivity, rpe: Int) -> FeedbackEntry {
+    /// Séance fictive qui porte l'effort par défaut de la famille du sport : dur 8, modéré 6.
+    /// Un sport calme (marche, yoga…) ne compte pas : il ne dit rien de la course ni du renfo.
+    static func feedbackEntry(activity a: HealthActivity, rpe: Int) -> FeedbackEntry? {
         let type: SessionType
         switch ReplacementPlanner.intensity(of: a, effort: nil) {
         case .hard: type = .circuit      // séance de qualité : effort prévu 8
         case .moderate: type = .strength // renfo : effort prévu 6
-        case .easy: type = .run          // footing : effort prévu 4
+        case .easy: return nil
         }
         let session = PlannedSession(id: ExtraActivityPlanner.key(a.id), date: Day.key(a.start), type: type,
                                      title: a.info.label)
@@ -153,18 +203,20 @@ enum LoadPlanner {
 
     // MARK: Niveau de course
 
-    static func runLevel(_ activities: [HealthActivity], now: Date) -> RunLevel {
+    /// `excluded` : courses reliées à une séance de qualité (escaliers, intervalles), pas représentatives.
+    static func runLevel(_ activities: [HealthActivity], excluded: Set<String> = [], now: Date) -> RunLevel {
         let from = now.addingTimeInterval(-Double(levelDays) * 86_400)
-        let runs = activities.filter { a in
-            a.info.family == .run && a.start >= from && a.start <= now && a.minutes >= minRunMinutes
-                && (a.distanceKm ?? 0) > 0.5
+        let runs = activities.compactMap { a -> (pace: Double, km: Double)? in
+            guard a.info.family == .run, !excluded.contains(a.id), a.start >= from, a.start <= now,
+                  a.minutes >= minRunMinutes, let km = a.distanceKm, km > 0 else { return nil }
+            let pace = a.durationSec / km
+            return paceBounds.contains(pace) ? (pace, km) : nil
         }
-        let paces = runs.map { $0.durationSec / ($0.distanceKm ?? 1) }.sorted()
+        let paces = runs.map(\.pace).sorted()
         guard !paces.isEmpty else { return RunLevel() }
         let mid = paces.count / 2
         let median = paces.count % 2 == 1 ? paces[mid] : (paces[mid - 1] + paces[mid]) / 2
-        let best = runs.filter { ($0.distanceKm ?? 0) >= minBestRunKm }
-            .map { $0.durationSec / ($0.distanceKm ?? 1) }.min()
+        let best = runs.filter { $0.km >= minBestRunKm }.map(\.pace).min()
         return RunLevel(typicalPaceSecPerKm: median.rounded(), bestPaceSecPerKm: best?.rounded())
     }
 }
