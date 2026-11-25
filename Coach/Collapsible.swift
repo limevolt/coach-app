@@ -47,11 +47,7 @@ struct CollapsibleCard<Summary: View, Content: View>: View {
                 Eyebrow(text: title, color: color)
                 Spacer()
                 if expandable {
-                    Image(systemName: "chevron.right")
-                        .font(Theme.chevronFont)
-                        .foregroundStyle(Theme.chevron)
-                        .rotationEffect(.degrees(expanded ? 90 : 0))
-                        .accessibilityHidden(true)
+                    RowChevron(expanded: expanded)
                 }
             }
             // Une ligne devenue non dépliable alors qu'elle était ouverte (nouveau plan importé)
@@ -64,6 +60,47 @@ struct CollapsibleCard<Summary: View, Content: View>: View {
 }
 
 /// Fond d'une carte repliable : carte pleine, ou ligne simple avec un séparateur dessous.
+/// Chevron de fin de ligne, le même partout (#109, #113) : vers la droite,
+/// vers le bas quand la ligne est dépliée. Décoratif, masqué pour VoiceOver.
+struct RowChevron: View {
+    var expanded = false
+
+    var body: some View {
+        Image(systemName: "chevron.right")
+            .font(Theme.chevronFont)
+            .foregroundStyle(Theme.chevron)
+            .rotationEffect(.degrees(expanded ? 90 : 0))
+            .accessibilityHidden(true)
+    }
+}
+
+/// `DisclosureGroup` au style des lignes (« Tout le plan ») : titre à gauche, `RowChevron` à droite,
+/// au lieu de la flèche système plus grande et plus claire (#113).
+struct RowDisclosureStyle: DisclosureGroupStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) { configuration.isExpanded.toggle() }
+            } label: {
+                HStack {
+                    configuration.label
+                    Spacer()
+                    RowChevron(expanded: configuration.isExpanded)
+                }
+                .frame(minHeight: Theme.rowHeight)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityValue(configuration.isExpanded ? "Déplié" : "Replié")
+
+            if configuration.isExpanded {
+                configuration.content
+                    .transition(.opacity)
+            }
+        }
+    }
+}
+
 private struct CollapsibleBackground: ViewModifier {
     let plain: Bool
 

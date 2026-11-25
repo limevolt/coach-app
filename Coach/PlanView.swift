@@ -234,7 +234,7 @@ struct PlanView: View {
                     Eyebrow(text: "Tout le plan")
                         .accessibilityAddTraits(.isHeader)
                 }
-                .tint(Theme.muted)
+                .disclosureGroupStyle(RowDisclosureStyle())
             }
         }
         .padding(.horizontal, Theme.screenMargin)
