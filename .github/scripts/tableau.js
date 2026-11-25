@@ -20,18 +20,23 @@ const COL = {
 
 const STATUT = `projectItems(first: 10) { nodes { id project { id }
   fieldValueByName(name: "Status") { ... on ProjectV2ItemFieldSingleSelectValue { optionId } } } }`;
-const FRAG = `__typename
-  ... on Issue { id number state labels(first: 20) { nodes { name } }
-    closedByPullRequestsReferences(first: 5, includeClosedPrs: false) { nodes { state } }
-    ${STATUT} }
-  ... on PullRequest { id number state isDraft labels(first: 20) { nodes { name } }
-    closingIssuesReferences(first: 10) { nodes { number } }
-    ${STATUT} }`;
+// Champs lus pour une issue et pour une pull request. Une liste d'issues ne peut
+// contenir que des issues : on n'y demande que les champs d'issue (et inversement).
+// L'état d'une PR est lu sous le nom prState : GitHub refuse deux champs « state »
+// de types différents dans la même requête (issue ou PR).
+const ISSUE = `__typename id number state labels(first: 20) { nodes { name } }
+  closedByPullRequestsReferences(first: 5, includeClosedPrs: false) { nodes { state } }
+  ${STATUT}`;
+const PR = `__typename id number prState: state isDraft labels(first: 20) { nodes { name } }
+  closingIssuesReferences(first: 10) { nodes { number } }
+  ${STATUT}`;
+const CHAMPS = { issues: ISSUE, pullRequests: PR };
+const LES_DEUX = `... on Issue { ${ISSUE} } ... on PullRequest { ${PR} }`;
 
 function colonne(n) {
   const labels = n.labels.nodes.map((l) => l.name.toLowerCase());
   if (n.__typename === 'PullRequest') {
-    if (n.state !== 'OPEN') return 'done';
+    if (n.prState !== 'OPEN') return 'done';
     return n.isDraft ? 'doing' : 'merge';
   }
   if (n.state === 'CLOSED' || labels.includes('obsolète')) return 'done';
@@ -90,7 +95,7 @@ module.exports = async ({ github, context, core }) => {
   async function un(numero) {
     const r = await github.graphql(
       `query($o: String!, $r: String!, $n: Int!) { repository(owner: $o, name: $r) {
-        issueOrPullRequest(number: $n) { ${FRAG} } } }`,
+        issueOrPullRequest(number: $n) { ${LES_DEUX} } } }`,
       { o: owner, r: repo, n: numero }
     );
     return r.repository.issueOrPullRequest;
@@ -102,7 +107,7 @@ module.exports = async ({ github, context, core }) => {
     do {
       const r = await github.graphql(
         `query($o: String!, $r: String!, $a: String) { repository(owner: $o, name: $r) {
-          ${champ}(first: 50, after: $a, ${filtre}) { pageInfo { hasNextPage endCursor } nodes { ${FRAG} } } } }`,
+          ${champ}(first: 50, after: $a, ${filtre}) { pageInfo { hasNextPage endCursor } nodes { ${CHAMPS[champ]} } } } }`,
         { o: owner, r: repo, a: apres }
       );
       const c = r.repository[champ];
