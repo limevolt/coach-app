@@ -164,23 +164,46 @@ enum LoadPlanner {
         let lastWeek = DateInterval(start: lastStart, end: thisWeek.start)
         let reference = sessions.filter { $0.type == .run && inWeek($0, lastWeek) && $0.coachNote == nil }
         for s in upcoming where s.type == .run && d.changed[s.id] == nil && free(s) && s.coachNote == nil {
-            guard let planned = s.plannedMinutes else { continue }
             if s.role == .quality {
-                // Escaliers, intervalles : même contenu que la même séance de la semaine dernière.
+                // Escaliers, intervalles : même contenu (et même consigne) que la même séance de la semaine
+                // dernière, si celle-ci a plus de répétitions ou plus de temps d'effort (montées libres comprises).
                 if let same = reference.first(where: { $0.role == .quality && $0.title == s.title }),
-                   let before = same.plannedMinutes, planned > before {
+                   let run = s.run, let before = same.run, workAmount(run) > workAmount(before) {
                     var copy = s
                     copy.run = same.run
+                    copy.notes = same.notes
                     copy.coachNote = "\(softPrefix) (semaine chargée)"
                     d.changed[s.id] = copy
                 }
-            } else if let before = reference.filter({ $0.role == s.role }).compactMap(\.plannedMinutes).max(),
+            } else if let planned = s.plannedMinutes,
+                      let before = reference.filter({ $0.role == s.role }).compactMap(\.plannedMinutes).max(),
                       planned > before {
                 d.changed[s.id] = s.lightened(factor: Double(before) / Double(planned),
                                               note: "\(softPrefix) (semaine chargée)")
             }
         }
         return d
+    }
+
+    /// Travail d'une séance de qualité : répétitions d'effort, puis secondes d'effort au temps.
+    /// Une montée « libre » (on appuie en haut) compte comme une répétition, sans durée.
+    struct WorkAmount: Comparable {
+        let reps: Int
+        let seconds: Double
+        static func < (a: WorkAmount, b: WorkAmount) -> Bool { (a.reps, a.seconds) < (b.reps, b.seconds) }
+    }
+
+    static func workAmount(_ run: RunWorkout) -> WorkAmount {
+        var reps = 0
+        var seconds = 0.0
+        for b in run.blocks {
+            for step in b.steps where step.purpose == "work" {
+                let n = max(1, b.iterations)
+                reps += n
+                seconds += (step.goal.seconds ?? 0) * Double(n)
+            }
+        }
+        return WorkAmount(reps: reps, seconds: seconds)
     }
 
     // MARK: Ressenti d'un sport fait ailleurs (« trop dur » / « trop facile », #44)

@@ -126,6 +126,24 @@ final class LoadPlannerTests: XCTestCase {
         XCTAssertEqual(d.changed["q"]?.coachNote, "Sans progression (semaine chargée)")
     }
 
+    /// Escalier court : montées libres (durée inconnue), comme le moteur les crée.
+    private func stairs(_ id: String, _ day: Date, climbs: Int) -> PlannedSession {
+        var s = PlannedSession(id: id, date: date(day), type: .run, title: "Escaliers",
+                               run: RunWorkout(warmup: step(15, zone: 2), blocks: [RunBlock(iterations: climbs, steps: [
+                                   RunStep(purpose: "work", goal: StepGoal(type: "open")),
+                                   step(1.5, zone: 1, purpose: "recovery")])], cooldown: step(10, zone: 1)))
+        s.notes = "- \(climbs) montées rapides"
+        return s
+    }
+
+    func testStairsWithFreeClimbsDoNotProgress() {
+        let items = lastWeek(extra: 50)
+        let d = LoadPlanner.decide(items: items, sessions: [stairs("s0", ago(0, 3), climbs: 6), stairs("s", at(9), climbs: 8)],
+                                   isDone: { _ in false }, now: now)
+        XCTAssertEqual(d.changed["s"]?.run?.blocks.first?.iterations, 6, "6 montées comme la semaine dernière")
+        XCTAssertEqual(d.changed["s"]?.notes, "- 6 montées rapides", "la consigne suit le contenu")
+    }
+
     func testVeryHeavyWeekLightensOnlyFirstHardSession() {
         let items = lastWeek(extra: 160)  // 2030 / 1070 ≈ 1,9
         XCTAssertGreaterThan(LoadPlanner.ratio(items, weekStart: monday) ?? 0, 1.5)
