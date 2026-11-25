@@ -45,6 +45,13 @@ final class HealthLinkingTests: XCTestCase {
         XCTAssertNil(boxing.bySession["s1"], "boxe : seulement si choisie comme séance du jour")
     }
 
+    /// #115 : une séance HIIT d'une autre app rend le renfo du jour fait.
+    func testHIITCountsForStrength() {
+        let links = resolve([session("s1", "2030-03-04", .strength)], [activity("a1", "2030-03-04", "hiit", minutes: 30)])
+        XCTAssertEqual(links.bySession["s1"]?.activity.id, "a1")
+        XCTAssertTrue(links.extras.isEmpty)
+    }
+
     func testDecoratedShowsReplacementAndExtras() {
         let cal = Calendar.current
         let today = cal.startOfDay(for: .now)
