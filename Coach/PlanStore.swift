@@ -673,8 +673,9 @@ final class PlanStore {
         if DemoMode.isOn || !connectsToWatch { return }
         let reader = HealthReader()
         guard await reader.wasReadRequested() else { return }
-        let monday = PlanWeeks.start(of: now)
-        let from = Calendar.current.date(byAdding: .day, value: -7, to: monday) ?? monday
+        // 6 semaines : charge des 4 dernières semaines et niveau de course (#115).
+        let from = Calendar.current.date(byAdding: .day, value: -LoadPlanner.levelDays,
+                                         to: Calendar.current.startOfDay(for: now)) ?? now
         let list = await reader.activities(from: from, to: now)
         // La période relue remplace ce qu'on avait (séances supprimées de Santé comprises) ; le reste est gardé.
         let merged = (healthActivities.filter { $0.start < from } + list).sorted { $0.start < $1.start }
@@ -683,8 +684,21 @@ final class PlanStore {
             persistActivityFile()
             pushToWatch()
         }
+        updateRunLevel(now: now)
         // Sports faits avec une autre app : le plan s'ajuste (#115). Sans effet si rien n'a changé.
         await enqueueAdaptation { await self.readaptExtras(now: now) }
+    }
+
+    /// Niveau de course appris de toutes les courses, faites dans Coach ou ailleurs (#115).
+    private func updateRunLevel(now: Date) {
+        let level = LoadPlanner.runLevel(healthActivities, now: now)
+        guard level.typicalPaceSecPerKm != nil else { return }
+        var memory = CoachStorage.loadMemory()
+        guard memory.runTypicalPaceSecPerKm != level.typicalPaceSecPerKm
+                || memory.runBestPaceSecPerKm != level.bestPaceSecPerKm else { return }
+        memory.runTypicalPaceSecPerKm = level.typicalPaceSecPerKm
+        memory.runBestPaceSecPerKm = level.bestPaceSecPerKm ?? memory.runBestPaceSecPerKm
+        try? CoachStorage.save(memory: memory)
     }
 
     /// Autre plan ou plan réinitialisé : les choix (« Séance principale du jour »…) ne passent pas au suivant.
@@ -742,8 +756,64 @@ final class PlanStore {
         guard let before = plan else { return }
         let (current, choices) = ExtraActivityPlanner.reconcile(plan: before, choices: activityChoices,
                                                                 extras: healthLinks.extras, isDone: isDone, now: now)
-        guard choices != activityChoices || current != before else { return }
-        activityChoices = choices
+        if choices != activityChoices || current != before {
+            activityChoices = choices
+            persistActivityFile()
+            if current != before { await saveEdits(current) }
+        }
+        await readaptLoad(now: now)
+    }
+
+    // MARK: Charge de la semaine, lot C2 (#115)
+
+    /// Séances faites (Coach et autres apps) pour le calcul de charge.
+    func loadItems() -> [LoadItem] {
+        let sessions = Dictionary((plan?.sessions ?? []).map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        let efforts = activityChoices.efforts
+        var items: [LoadItem] = logs
+            .filter { $0.archivedAt == nil && $0.kind == nil }
+            .compactMap { l in sessions[l.sessionId].map { LoadPlanner.item(session: $0, log: l) } }
+        let links = healthLinks
+        for (sessionId, link) in links.bySession {
+            items.append(LoadPlanner.item(activity: link.activity, effort: efforts[link.activity.id],
+                                          session: sessions[sessionId]))
+        }
+        for a in links.extras {
+            items.append(LoadPlanner.item(activity: a, effort: efforts[a.id], session: nil))
+        }
+        // Avant un nouveau plan : les séances d'autres apps comptent toujours (pas celles écrites par Coach).
+        if let reset = lastReset, let own = Bundle.main.bundleIdentifier {
+            for a in healthActivities where a.start < reset && !a.sourceBundleId.hasPrefix(own) {
+                items.append(LoadPlanner.item(activity: a, effort: efforts[a.id], session: nil))
+            }
+        }
+        return items
+    }
+
+    /// Semaine trop chargée : course sans progression, prochaine séance dure allégée.
+    /// Le changement de la semaine en cours est recalculé ; ceux des semaines passées restent.
+    private func readaptLoad(now: Date = .now) async {
+        guard let before = plan else { return }
+        let key = LoadPlanner.keyPrefix + Day.key(PlanWeeks.start(of: now))
+        let existing = activityChoices.byFeedback[key]
+        if let existing, existing.originals.contains(where: { isDone($0.id) }) { return }
+        var current = existing.map { ReplacementPlanner.undo($0, in: before, isDone: isDone) } ?? before
+        let declined = Set(activityChoices.feedbackDeclined.compactMap { pair -> String? in
+            let parts = pair.split(separator: "|", maxSplits: 1)
+            return parts.count == 2 ? String(parts[1]) : nil
+        })
+        let d = LoadPlanner.decide(items: loadItems(), sessions: current.sessions, isDone: isDone,
+                                   declined: declined, now: now)
+        var adaptation = ActivityChoices.Adaptation()
+        for (id, new) in d.changed.sorted(by: { $0.key < $1.key }) {
+            guard let i = current.sessions.firstIndex(where: { $0.id == id }) else { continue }
+            adaptation.originals.append(current.sessions[i])
+            adaptation.lightNotes[id] = new.coachNote
+            current.sessions[i] = new
+        }
+        let stored: ActivityChoices.Adaptation? = adaptation.isEmpty ? nil : adaptation
+        guard stored != existing || current != before else { return }
+        activityChoices.byFeedback[key] = stored
         persistActivityFile()
         if current != before { await saveEdits(current) }
     }
@@ -875,11 +945,17 @@ final class PlanStore {
     /// Séances faites avec un retour, dans l'ordre (sans `exceptLog`).
     private func feedbackHistory(excluding exceptLog: UUID, before date: Date) -> [FeedbackEntry] {
         let sessions = Dictionary((plan?.sessions ?? []).map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
-        return logs
+        let entries = logs
             .filter { $0.id != exceptLog && $0.archivedAt == nil && $0.kind == nil && $0.completedAt <= date }
             .filter { $0.rpe != nil || $0.pain != nil || $0.doneFraction != nil }
             .sorted { $0.completedAt < $1.completedAt }
             .compactMap { l in sessions[l.sessionId].map { FeedbackEntry(session: $0, log: l) } }
+            + healthLinks.extras.compactMap { a -> FeedbackEntry? in
+                // Sport fait ailleurs avec un ressenti noté : compte pour « trop dur » / « trop facile » (#115).
+                guard let rpe = activityChoices.efforts[a.id], a.start <= date else { return nil }
+                return LoadPlanner.feedbackEntry(activity: a, rpe: rpe)
+            }
+        return entries.sorted { $0.log.completedAt < $1.log.completedAt }
     }
 
     /// Ce que le coach changera avec ce retour (bloc « Ce que le coach va changer », avant d'enregistrer).
