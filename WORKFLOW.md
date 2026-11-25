@@ -19,21 +19,36 @@
 
 - Tout bug, toute idée et toute décision vit dans une issue, pas dans un document à part.
 - Avant de créer une issue, chercher si elle existe déjà. Si oui, ajouter un commentaire avec ce qui est nouveau.
-- Étiquettes : `bug` ou `enhancement`, plus `iPhone`, `Montre` ou `Design`. Ajouter `priorité haute` quand un problème empêche de faire une séance, et `à retester` quand un bug est peut-être déjà corrigé.
+- Étiquettes : `bug` ou `enhancement`, plus `iPhone`, `Montre` ou `Design`. Ajouter `priorité haute` quand un problème empêche de faire une séance, `en cours` quand le travail a commencé, et `à retester` quand un bug est peut-être déjà corrigé.
 - `obsolète` : issue déjà corrigée, remplacée par une autre ou en double. Claude ajoute l'étiquette et un commentaire court (pourquoi, avec le lien vers la PR ou l'issue qui la remplace), sans fermer l'issue : c'est le propriétaire qui la ferme.
 - Une issue de bug dit toujours : ce qui s'est passé, ce qui était attendu, et comment le reproduire. Sans données personnelles (voir `CLAUDE.md`).
 
-## Tableau de bord : la page « Coach · tableau de bord » [générique]
+## Tableau de bord [générique]
 
-- Une page claude.ai, privée au propriétaire, montre où en est l'app d'un coup d'œil, sur téléphone : https://claude.ai/artifact/P8tSx7QD6HQc5EeKWXzr2D. Elle résume les issues sans les remplacer : le détail reste dans chaque issue.
-- En haut, un compteur par colonne, avec un point par carte (citron vert : quelque chose attend le propriétaire ; contour orange : `priorité haute`). En dessous, cinq colonnes : **À faire**, **En cours**, **À tester par moi**, **À fusionner**, **Fait** (issues `obsolète` que le propriétaire doit fermer). Chaque issue ouverte et chaque pull request ouverte y a une carte, et une seule.
-- Chaque carte : numéro, titre court, puis « À toi » (ce que le propriétaire doit faire, ou « Rien. ») et « Fait » (ce qui a été fait). Phrases courtes, sans jargon.
-- **Chaque conversation met à jour les cartes touchées avant de finir** : déplacer, ajouter, retirer une carte fermée, réécrire les deux lignes, changer la date `maj`. Les données sont dans le bloc `<script id="data">` de la page, une carte par ligne (`n`, `col` = todo / doing / test / merge / done, `t`, `toi`, `fait`, et au besoin `pr`, `kind` = bug / idee / a11y, `on`, `haute`, `later`). Modifier ces lignes avec l'outil d'artefact (`edit_version`, après `get_artifact` pour la version), sans toucher au reste de la page.
-- **Vue « Conversations »** (deuxième onglet de la page) : une ligne par conversation du projet, « Attend ta réponse » ou « Terminée », avec « À toi » (ce que le propriétaire doit répondre ou faire) et « Fait » (ce qu'elle a produit). Données dans le même bloc, liste `convs` : `u` (lien de la conversation), `t` (titre), `d` (date AAAA-MM-JJ), `st` (`wait` ou `done`), `toi`, `fait`.
-- **Chaque conversation met aussi sa propre ligne à jour avant de finir** (l'ajoute si elle n'y est pas). `wait` si elle se termine sur une question ou une validation attendue (maquette, PR à fusionner, essai), `done` sinon. Quand elle règle ce qu'une autre conversation attendait, elle passe aussi la ligne de l'autre en `done`.
-- Sans accès aux artefacts (conversation vocale, par exemple) : donner à la fin les cartes et la ligne de conversation à changer, à coller dans une conversation écrite.
+Deux endroits, chacun mis à jour sans effort manuel.
+
+### Tickets : le tableau GitHub « Coach App »
+
+- Tableau GitHub Projects (privé) relié au dépôt. Colonnes : **À faire**, **En cours**, **À tester par moi**, **À fusionner**, **Fait**.
+- Les cartes se rangent toutes seules grâce à l'action `.github/workflows/tableau.yml` (script `.github/scripts/tableau.js`, jeton `PROJECT_TOKEN` dans les secrets du dépôt), d'après l'état et les étiquettes, la première règle qui s'applique gagnant :
+  1. pull request ouverte → À fusionner (brouillon → En cours) ; fermée ou fusionnée → Fait ;
+  2. issue fermée ou `obsolète` → Fait (le propriétaire ferme les `obsolète`) ;
+  3. `à retester` → À tester par moi ;
+  4. `en cours`, ou une PR ouverte qui la ferme → En cours ;
+  5. sinon → À faire.
+- Les conversations Claude n'ont pas accès au tableau lui-même (permission séparée du dépôt) : pour déplacer une carte, Claude change l'étiquette. Une carte déplacée à la main peut revenir à sa place au prochain changement de son issue.
+- Lancement manuel (onglet Actions → « Tableau GitHub » → Run workflow) : range tout le tableau d'un coup.
+- Automatismes intégrés du tableau (menu Workflows) : garder « Auto-add to project », « Item closed », « Item reopened », « Pull request linked to issue », « Pull request merged » ; éteindre « Item added to project » et « Auto-close issue ».
+- Le détail reste dans chaque issue : ce que le propriétaire doit faire y est écrit en commentaire.
+
+### Conversations : la page « Coach · tableau de bord »
+
+- Page claude.ai privée au propriétaire : https://claude.ai/artifact/P8tSx7QD6HQc5EeKWXzr2D, onglet « Conversations ». Une ligne par conversation du projet, « Attend ta réponse » ou « Terminée », avec « À toi » (ce que le propriétaire doit répondre ou faire) et « Fait » (ce qu'elle a produit).
+- Données dans le bloc `<script id="data">` de la page, liste `convs` : `u` (lien), `t` (titre), `d` (date AAAA-MM-JJ), `st` (`wait` ou `done`), `toi`, `fait`. Modifier ces lignes avec l'outil d'artefact (`edit_version`, après lecture de la version), sans toucher au reste de la page.
+- **Mise à jour automatique** : une tâche programmée (« Tableau de bord : conversations ») repasse chaque soir à 20 h 57 sur les conversations du jour et met la liste à jour.
+- En plus, chaque conversation met sa propre ligne à jour avant de finir quand elle le peut. `wait` si elle se termine sur une question ou une validation attendue (maquette, PR à fusionner, essai), `done` sinon. Quand elle règle ce qu'une autre conversation attendait, elle passe aussi la ligne de l'autre en `done`.
+- L'onglet « Tickets » de la page est retiré une fois le tableau GitHub en place.
 - Même règle de vie privée que partout : décrire l'app, jamais la vie du propriétaire.
-- Pourquoi pas GitHub Projects : les conversations Claude n'ont accès qu'au dépôt, pas aux tableaux Projects ; elles ne pourraient pas le tenir à jour.
 
 ## Après chaque séance : le retour [générique]
 
@@ -46,7 +61,7 @@
 
 ## Cycle de développement [générique]
 
-1. **Choisir un lot** : quelques issues liées, en commençant par `priorité haute`.
+1. **Choisir un lot** : quelques issues liées, en commençant par `priorité haute`. Leur mettre l'étiquette `en cours`.
 2. **Pour un écran** : maquette en amont du code (détail dans `DESIGN.md`) :
    1. Claude propose une maquette selon `DESIGN.md` ;
    2. l'agent `design-reviewer` la critique (mode « maquette ») comme un designer Apple expérimenté ;
@@ -59,7 +74,7 @@
    - `design-reviewer` (mode « conformité ») : vérifie seulement que les captures correspondent à la maquette validée et que le rendu réel tient (texte coupé, grand texte, petits écrans, contraste). Pas de nouvelle critique du design.
    - `coach-reviewer` [Coach], dès qu'un lot touche le moteur de coaching (`Coach/Engine/`) : relit les décisions d'entraînement comme un entraîneur (sécurité, règles décidées, sportifs fictifs) et propose des règles pour améliorer le coach.
 6. **Pull request** : ce qui change, les issues fermées, le résultat des relectures et ce que le propriétaire doit tester.
-7. **Fusion sur `main`** : la version part sur TestFlight (workflow « TestFlight », #89), et les issues sont fermées ou passées en `à retester`.
+7. **Fusion sur `main`** : la version part sur TestFlight (workflow « TestFlight », #89), et les issues sont fermées ou passées en `à retester` (retirer `en cours`).
 
 ## Économiser les compilations [générique]
 
@@ -67,7 +82,7 @@
 - `[skip ci]` pour les changements qui ne touchent que la doc ou les règles.
 - `[captures]` seulement quand l'interface change, une fois le code prêt.
 - Ne pas pousser pendant que des captures tournent.
-- Le dépôt est public depuis le 18/11/2026 : les compilations sont gratuites, mais restent longues. Grouper reste la règle.
+- Le dépôt est public depuis le 18/11/2026 : les compilations sont gratuites, mais restent longues. Grouper reste la règle. (L'action du tableau est un petit travail de quelques secondes, sans compilation.)
 
 ## Avant le sport : vérification en deux minutes [Coach]
 
@@ -78,9 +93,10 @@
 
 ## Début et fin de conversation [générique]
 
-- **Au début** : relire `WORKFLOW.md`, `CLAUDE.md` et `DESIGN.md`, regarder le tableau de bord et les issues ouvertes `priorité haute`, et rappeler en une phrase où on en est.
-- **À la fin** : mettre à jour les issues touchées, **puis leurs cartes et la ligne de cette conversation dans le tableau de bord**, et noter ici toute nouvelle décision sur la façon de travailler.
+- **Au début** : relire `WORKFLOW.md`, `CLAUDE.md` et `DESIGN.md`, regarder les issues ouvertes `priorité haute` et l'onglet Conversations, et rappeler en une phrase où on en est.
+- **À la fin** : mettre à jour les issues touchées et leurs étiquettes (le tableau GitHub suit), puis la ligne de cette conversation dans l'onglet Conversations, et noter ici toute nouvelle décision sur la façon de travailler.
 
 ## En attente [générique]
 
+- Tableau GitHub : action fusionnée (#103) et étiquette `en cours` créée. Reste au propriétaire : vérifier le secret `PROJECT_TOKEN`, lancer le premier rangement (onglet Actions → « Tableau GitHub » → Run workflow), puis retirer l'onglet Tickets de la page.
 - Exporter ce workflow en modèle réutilisable (dépôt modèle + skill « nouvelle app »), une fois la méthode stable.
