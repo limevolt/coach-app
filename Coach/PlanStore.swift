@@ -98,7 +98,7 @@ final class PlanStore {
             self?.saveTemplate(template)
         }
         // La montre redemande le plan (ouverture, réinstallation, de nouveau joignable) : renvoyé tout de suite (#107).
-        PhoneConnectivity.shared.onNeedsData = { [weak self] in self?.pushToWatch() }
+        PhoneConnectivity.shared.onNeedsData = { [weak self] in self?.answerWatchRequest() }
         PhoneConnectivity.shared.activate()
     }
 
@@ -472,7 +472,7 @@ final class PlanStore {
     }
 
     /// `force: false` = une seule fois par jour (au lancement de l'app), en arrière-plan.
-    /// `quiet: true` = en arrière-plan, sans griser l'écran (#71) ; « Resynchroniser » reste visible.
+    /// `quiet: true` = en arrière-plan, sans griser l'écran (#71).
     func sync(force: Bool = true, quiet: Bool = false) async {
         if DemoMode.isOn { return }
         pushToWatch()
@@ -535,6 +535,23 @@ final class PlanStore {
         PhoneConnectivity.shared.sendWatchData(sessions: sessions, timers: timers,
                                                doneIds: doneIdsForWatch,
                                                resetAt: lastReset)
+    }
+
+    /// Dernier envoi demandé par la montre : plusieurs demandes rapprochées (ouverture, retour au premier
+    /// plan, de nouveau joignable) = un seul envoi (#107).
+    @ObservationIgnored private var lastWatchAnswer: Date?
+
+    func answerWatchRequest(now: Date = .now) {
+        guard Self.shouldAnswerWatch(last: lastWatchAnswer, now: now) else { return }
+        lastWatchAnswer = now
+        pushToWatch()
+    }
+
+    static let watchAnswerInterval: TimeInterval = 10
+
+    static func shouldAnswerWatch(last: Date?, now: Date) -> Bool {
+        guard let last else { return true }
+        return now.timeIntervalSince(last) >= watchAnswerInterval || now < last
     }
 
     // MARK: Démarrer sur la montre (#5)
@@ -655,7 +672,7 @@ final class PlanStore {
     func refreshActivities(now: Date = .now) async {
         if DemoMode.isOn || !connectsToWatch { return }
         let reader = HealthReader()
-        guard await reader.wasAuthorizationRequested() else { return }
+        guard await reader.wasReadRequested() else { return }
         let monday = PlanWeeks.start(of: now)
         let from = Calendar.current.date(byAdding: .day, value: -7, to: monday) ?? monday
         let list = await reader.activities(from: from, to: now)

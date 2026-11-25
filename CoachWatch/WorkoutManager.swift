@@ -90,8 +90,6 @@ final class WorkoutManager {
             activeCalories = 42
             return
         }
-        // Au moment utile, pas à l'ouverture de l'app (#108) ; rien n'est affiché si l'iPhone l'a déjà demandé.
-        await requestAuthorization()
         let config = HKWorkoutConfiguration()
         config.activityType = activity
         config.locationType = location

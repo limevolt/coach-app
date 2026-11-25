@@ -16,4 +16,9 @@ final class HealthPermissionsTests: XCTestCase {
         let read = Set(HealthPermissions.read.map(\.identifier))
         XCTAssertTrue(read.isSuperset(of: share), "chaque mesure enregistrée est aussi lisible (affichage, coach)")
     }
+
+    // Revue #108 : avant, l'iPhone ne demandait que la lecture ; c'est ce que la montre redemandait.
+    func testIPhoneRequestIncludesWriting() {
+        XCTAssertFalse(HealthPermissions.share.isEmpty, "l'iPhone demande aussi les écritures de la montre")
+    }
 }

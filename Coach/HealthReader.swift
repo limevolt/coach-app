@@ -29,6 +29,12 @@ final class HealthReader {
         return await !HealthPermissions.needsRequest(store)
     }
 
+    /// Lecture seule déjà demandée : suffit pour relire les séances (#54), même si les écritures
+    /// ajoutées pour la montre (#108) n'ont pas encore été demandées.
+    func wasReadRequested() async -> Bool {
+        await HealthPermissions.readWasRequested(store)
+    }
+
     /// Coach local (#45) : minutes de course par semaine, en moyenne sur les `weeks` dernières semaines.
     /// nil si Santé n'est pas disponible, refusé ou sans aucune course (le plan part alors d'une séance test).
     func averageRunMinutesPerWeek(weeks: Int = 8) async -> Double? {

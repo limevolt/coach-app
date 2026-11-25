@@ -34,6 +34,13 @@ enum HealthPermissions {
         return status != .unnecessary
     }
 
+    /// Lecture déjà demandée (même sans les écritures ajoutées par #108) : le coach peut relire Santé.
+    static func readWasRequested(_ store: HKHealthStore) async -> Bool {
+        guard HKHealthStore.isHealthDataAvailable() else { return false }
+        let status = try? await store.statusForAuthorizationRequest(toShare: [], read: read)
+        return status == .unnecessary
+    }
+
     /// Une seule demande, avec tous les types ; rien si elle a déjà été faite.
     static func request(_ store: HKHealthStore) async throws {
         guard await needsRequest(store) else { return }

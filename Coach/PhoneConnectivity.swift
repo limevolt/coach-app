@@ -49,16 +49,22 @@ final class PhoneConnectivity: NSObject, WCSessionDelegate {
     /// Envoie les séances, les minuteurs libres et la liste des séances faites à la montre.
     /// Le contexte remplace entièrement le précédent : tout part à chaque fois.
     func sendWatchData(sessions: Data, timers: Data, doneIds: [String], resetAt: Date?) {
-        // `sentAt` : chaque envoi est nouveau, même si le plan n'a pas changé (montre réinstallée, #107).
+        pending = Self.context(sessions: sessions, timers: timers, doneIds: doneIds, resetAt: resetAt,
+                               start: startRequest, now: .now)
+        flush()
+    }
+
+    /// Contenu envoyé à la montre. `sentAt` : chaque envoi est nouveau, même si le plan n'a pas changé
+    /// (montre réinstallée, #107). La demande « Démarrer » reste tant qu'elle est récente.
+    static func context(sessions: Data, timers: Data, doneIds: [String], resetAt: Date?,
+                        start: StartRequest?, now: Date) -> [String: Any] {
         var context: [String: Any] = ["sessions": sessions, "timers": timers, "done": doneIds,
-                                      "sentAt": Date.now.timeIntervalSince1970]
+                                      "sentAt": now.timeIntervalSince1970]
         if let resetAt { context["resetAt"] = resetAt.timeIntervalSince1970 }
-        if let startRequest, startRequest.isFresh(now: .now),
-           let data = try? Coding.compactEncoder.encode(startRequest) {
+        if let start, start.isFresh(now: now), let data = try? Coding.compactEncoder.encode(start) {
             context["start"] = data
         }
-        pending = context
-        flush()
+        return context
     }
 
     /// Lance la séance sur la montre (#5) :
@@ -106,10 +112,9 @@ final class PhoneConnectivity: NSObject, WCSessionDelegate {
     private func ensureWorkoutSharing() async -> String? {
         guard HKHealthStore.isHealthDataAvailable() else { return "Santé n'est pas disponible sur cet iPhone." }
         let workout = HKObjectType.workoutType()
-        // Même demande que partout ailleurs (#108) : la montre n'aura plus rien à demander.
-        if healthStore.authorizationStatus(for: workout) == .notDetermined {
-            try? await HealthPermissions.request(healthStore)
-        }
+        // Même demande que partout ailleurs (#108), y compris pour qui avait déjà autorisé les entraînements :
+        // la montre n'aura plus rien à demander. Rien ne s'affiche si tout a déjà reçu une réponse.
+        try? await HealthPermissions.request(healthStore)
         guard healthStore.authorizationStatus(for: workout) == .sharingAuthorized else {
             return "Autorise Coach à enregistrer tes entraînements : Réglages › Santé › Accès aux données et appareils › Coach."
         }
@@ -154,15 +159,8 @@ final class PhoneConnectivity: NSObject, WCSessionDelegate {
     nonisolated func sessionWatchStateDidChange(_ session: WCSession) {
         let installed = session.isWatchAppInstalled
         Task { @MainActor in
-            self.flush()
-            if installed { self.onNeedsData?() }
+            if installed { self.onNeedsData?() } else { self.flush() }
         }
-    }
-
-    /// Montre de nouveau joignable : le plan repart, au cas où un envoi n'aurait pas abouti (#107).
-    nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
-        guard session.isReachable else { return }
-        Task { @MainActor in self.onNeedsData?() }
     }
 
     /// Demande « needData » de la montre (à son ouverture, #107).
