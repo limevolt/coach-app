@@ -138,7 +138,8 @@ enum FeedbackPlanner {
         func change(_ s: PlannedSession, _ new: PlannedSession) {
             // Déjà changée par le coach (autre retour, sport à la place) : pas d'allègement par-dessus.
             // Changement annulé à la main : pas refait.
-            guard d.changed[s.id] == nil, s.coachNote == nil, !declined.contains(s.id) else { return }
+            // « Sans progression (semaine chargée) » est plus faible : il peut être remplacé (#115).
+            guard d.changed[s.id] == nil, s.coachNote == nil || s.hasSoftCoachChange, !declined.contains(s.id) else { return }
             d.changed[s.id] = new
         }
         func within(_ s: PlannedSession, days: Int) -> Bool {
@@ -197,7 +198,7 @@ enum FeedbackPlanner {
         // Trop dur (ressenti ou séances raccourcies deux fois de suite).
         let lastTwo = recent.suffix(2)
         let tooHard = lastTwo.count == 2 && lastTwo.allSatisfy { e in
-            e.session.coachNote == nil
+            (e.session.coachNote == nil || e.session.hasSoftCoachChange)
                 && ((e.log.rpe ?? 0) >= e.session.role.expectedEffort + 2 || (e.log.doneFraction ?? 1) < 1)
         }
         if tooHard {
@@ -224,7 +225,7 @@ enum FeedbackPlanner {
         // Séances allégées par le coach exclues, et rien dans les 14 jours après une douleur.
         let painRecently = recent.contains { $0.log.pain != nil }
         d.proposeHarder = !painRecently && lastThree.count == 3 && lastThree.allSatisfy { e in
-            e.session.coachNote == nil && (e.log.rpe ?? 10) <= e.session.role.expectedEffort - 2
+            (e.session.coachNote == nil || e.session.hasSoftCoachChange) && (e.log.rpe ?? 10) <= e.session.role.expectedEffort - 2
                 && (e.log.doneFraction ?? 1) >= 1
         }
 

@@ -193,7 +193,7 @@ enum ReplacementPlanner {
             let next = shift(sportDay, 1)
             // Déjà changée par le coach (sport en plus, retour) : pas d'allègement par-dessus (#115).
             for s in onDay(next) where !isDone(s.id) && (s.countsAsHard || s.isKey)
-                && (s.coachNote == nil || s.isCoachCopy) {
+                && s.isFreeForCoach {
                 lightened[s.id] = s.lightened(note: "Allégée par le coach (\(sportName) la veille)")
             }
         }
@@ -359,6 +359,7 @@ enum ReplacementPlanner {
             restored.run = original.run
             restored.strength = original.strength
             restored.circuit = original.circuit
+            restored.notes = original.notes
             restored.coachNote = original.coachNote
             newPlan.sessions[i] = restored
         }
