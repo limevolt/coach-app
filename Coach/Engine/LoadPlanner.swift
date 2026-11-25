@@ -41,7 +41,7 @@ struct RunLevel: Equatable {
 
 extension PlannedSession {
     /// Changement du coach le plus faible (« Sans progression ») : une règle plus forte peut le remplacer.
-    var hasSoftCoachChange: Bool { coachNote?.hasPrefix(LoadPlanner.softPrefix) == true }
+    var hasSoftCoachChange: Bool { coachNote == LoadPlanner.softNote }
 
     /// Libre pour une règle du coach : pas de changement, ou seulement « Sans progression »,
     /// ou séance refaite par le coach.
@@ -50,7 +50,8 @@ extension PlannedSession {
 
 enum LoadPlanner {
     static let keyPrefix = "load:"
-    static let softPrefix = "Sans progression"
+    /// Seule la note de la charge est « faible » (celles du retour après séance restent suivies par #44).
+    static let softNote = "Sans progression (semaine chargée)"
     static let noProgressionRatio = 1.3
     static let lightenRatio = 1.5
     static let minWeeksWithData = 3
@@ -172,14 +173,14 @@ enum LoadPlanner {
                     var copy = s
                     copy.run = same.run
                     copy.notes = same.notes
-                    copy.coachNote = "\(softPrefix) (semaine chargée)"
+                    copy.coachNote = softNote
                     d.changed[s.id] = copy
                 }
             } else if let planned = s.plannedMinutes,
                       let before = reference.filter({ $0.role == s.role }).compactMap(\.plannedMinutes).max(),
                       planned > before {
                 d.changed[s.id] = s.lightened(factor: Double(before) / Double(planned),
-                                              note: "\(softPrefix) (semaine chargée)")
+                                              note: softNote)
             }
         }
         return d

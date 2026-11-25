@@ -693,9 +693,17 @@ final class PlanStore {
     /// Niveau de course appris des footings et sorties longues, faits dans Coach ou ailleurs (#115).
     private func updateRunLevel(now: Date) {
         let sessions = Dictionary((plan?.sessions ?? []).map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
-        let quality = Set(healthLinks.bySession.compactMap { id, link in
+        var quality = Set(healthLinks.bySession.compactMap { id, link in
             sessions[id]?.role == .quality ? link.activity.id : nil
         })
+        // Escaliers et fractionné faits avec Coach (enregistrés par la montre, jamais reliés) : exclus aussi.
+        let qualityLogs = logs.filter { l in l.archivedAt == nil && l.kind == nil && sessions[l.sessionId]?.role == .quality }
+        let margin: TimeInterval = 15 * 60
+        for a in healthActivities where qualityLogs.contains(where: { l in
+            l.completedAt >= a.start.addingTimeInterval(-margin) && l.completedAt <= a.end.addingTimeInterval(margin)
+        }) {
+            quality.insert(a.id)
+        }
         let level = LoadPlanner.runLevel(healthActivities, excluded: quality, now: now)
         var memory = CoachStorage.loadMemory()
         guard memory.runTypicalPaceSecPerKm != level.typicalPaceSecPerKm
@@ -748,8 +756,8 @@ final class PlanStore {
         if activityChoices.mainFor[activity.id] != nil {
             Task { await enqueueAdaptation { await self.readapt(activity) } }
         } else if let later = logs.filter({ $0.archivedAt == nil && $0.kind == nil && $0.completedAt >= activity.start })
-                    .max(by: { $0.completedAt < $1.completedAt }) {
-            // Retour Coach déjà saisi après ce sport : « trop dur » est réévalué avec ce ressenti (#115).
+                    .min(by: { $0.completedAt < $1.completedAt }) {
+            // Retour Coach déjà saisi après ce sport : le premier est réévalué avec ce ressenti (#115).
             // (readaptFeedback recalcule aussi les sports en plus et la charge.)
             let id = later.id
             Task { await enqueueAdaptation { await self.readaptFeedback(id) } }

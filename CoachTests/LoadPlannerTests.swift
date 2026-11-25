@@ -142,6 +142,21 @@ final class LoadPlannerTests: XCTestCase {
                                    isDone: { _ in false }, now: now)
         XCTAssertEqual(d.changed["s"]?.run?.blocks.first?.iterations, 6, "6 montées comme la semaine dernière")
         XCTAssertEqual(d.changed["s"]?.notes, "- 6 montées rapides", "la consigne suit le contenu")
+        // Annulé : contenu et consigne reviennent ensemble.
+        let original = stairs("s", at(9), climbs: 8)
+        var plan = TrainingPlan(schemaVersion: 1, planId: "fictif", version: 1, title: "Fictif", sessions: [d.changed["s"]!])
+        var a = ActivityChoices.Adaptation()
+        a.originals = [original]
+        a.lightNotes["s"] = LoadPlanner.softNote
+        plan = ReplacementPlanner.undo(a, in: plan, isDone: { _ in false })
+        XCTAssertEqual(plan.sessions[0].run?.blocks.first?.iterations, 8)
+        XCTAssertEqual(plan.sessions[0].notes, "- 8 montées rapides")
+    }
+
+    func testFeedbackSoftNoteIsNotReplaceable() {
+        var s = quality("q", at(8))
+        s.coachNote = "Sans progression (séance raccourcie)"
+        XCTAssertFalse(s.isFreeForCoach, "seule la note de la charge est faible")
     }
 
     func testVeryHeavyWeekLightensOnlyFirstHardSession() {

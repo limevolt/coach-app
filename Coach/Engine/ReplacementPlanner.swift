@@ -359,6 +359,7 @@ enum ReplacementPlanner {
             restored.run = original.run
             restored.strength = original.strength
             restored.circuit = original.circuit
+            restored.notes = original.notes
             restored.coachNote = original.coachNote
             newPlan.sessions[i] = restored
         }
