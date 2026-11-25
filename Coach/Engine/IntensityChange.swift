@@ -34,6 +34,8 @@ enum IntensityOption: Equatable {
     case tooHigh
     /// Affûtage ou semaine de l'épreuve la semaine prochaine : pas de hausse.
     case endOfPlan
+    /// Dernière hausse trop récente : au moins `PlanIntensity.weeksPerStep` semaines à un niveau avant de monter.
+    case tooSoon(weeksLeft: Int)
     /// Plus de semaine à venir dans le plan.
     case planOver
 }
@@ -131,6 +133,13 @@ struct IntensityChangePlanner {
         if level.level > inForce.level + 1 { return .tooHigh }
         let isEventWeek = settings.objective.eventDate != nil && effect.isLast
         if effect.week.phase == .taper || isEventWeek { return .endOfPlan }
+        // Comme la montée progressive (#57) : un cran toutes les 3 semaines au plus, depuis le dernier changement.
+        let effectKey = PlanCalendar.string(effect.week.monday)
+        if let last = settings.intensityChanges.filter({ $0.from < effectKey }).max(by: { $0.from < $1.from }),
+           let since = weeks.first(where: { PlanCalendar.string($0.monday) == last.from }) {
+            let done = effect.week.index - since.index
+            if done < PlanIntensity.weeksPerStep { return .tooSoon(weeksLeft: PlanIntensity.weeksPerStep - done) }
+        }
         return .allowed
     }
 
@@ -152,8 +161,10 @@ struct IntensityChangePlanner {
         // Ancien plan : le point de départ relu dans Santé est gardé, pour que les prochains calculs soient identiques.
         if newSettings.startingPoint == nil && settings.startLevel == .health { newSettings.startingPoint = start }
 
-        // Le plan est recalculé comme au premier jour, pour que les semaines à venir suivent la même progression.
-        let generator = PlanGenerator(settings: newSettings, profile: profile, memory: memory, start: start)
+        // Le plan est recalculé comme au premier jour, pour que les semaines à venir suivent la même progression ;
+        // le placeur part du week-end réellement prévu (séances déplacées, allégées).
+        let generator = PlanGenerator(settings: newSettings, profile: profile, memory: memory, start: start,
+                                      boundary: Self.boundary(of: plan, before: week.monday))
         let generated: GeneratedPlan
         do {
             generated = try generator.generate(today: startDay)
@@ -177,6 +188,19 @@ struct IntensityChangePlanner {
         let preview = Self.preview(before: plan, after: newPlan, monday: week.monday,
                                    applied: appliedLevel(level, week: week), note: note(level, week: week))
         return IntensityChangeResult(plan: newPlan, settings: newSettings, keptIds: keptIds, preview: preview)
+    }
+
+    /// Charge du samedi et du dimanche gardés, juste avant le lundi `monday`.
+    static func boundary(of plan: TrainingPlan, before monday: Date) -> WeekBoundary {
+        let cal = PlanCalendar.calendar
+        func load(_ offset: Int) -> DayLoad {
+            let day = PlanCalendar.string(cal.date(byAdding: .day, value: offset, to: monday) ?? monday)
+            let s = plan.sessions.filter { $0.date == day }
+            return DayLoad(hard: s.contains(where: \.countsAsHard),
+                           legs: s.contains { $0.role == .longRun || ($0.countsAsHard && $0.loadsLegs) },
+                           key: s.contains(where: \.isKey))
+        }
+        return WeekBoundary(monday: PlanCalendar.string(monday), saturday: load(-2), sunday: load(-1))
     }
 
     // MARK: Aperçu

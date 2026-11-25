@@ -200,6 +200,55 @@ final class IntensityChangeTests: XCTestCase {
         XCTAssertEqual(planner(s).rowValue(today: later), "Soutenu")
     }
 
+    func testRaisesAreSpacedByThreeWeeks() {
+        var s = settings(.moderate)
+        s.intensityChanges = [IntensityChange(from: cut, level: .firm)]
+        let nextWeek = Calendar.current.date(from: DateComponents(year: 2030, month: 2, day: 13, hour: 12))!
+        XCTAssertEqual(planner(s).option(for: .intense, today: nextWeek), .tooSoon(weeksLeft: 2),
+                       "au moins 3 semaines en Soutenu avant Intense")
+        XCTAssertEqual(planner(s).option(for: .gentle, today: nextWeek), .allowed, "baisser reste possible")
+        let threeWeeksLater = Calendar.current.date(from: DateComponents(year: 2030, month: 2, day: 27, hour: 12))!
+        XCTAssertEqual(planner(s).option(for: .intense, today: threeWeeksLater), .allowed)
+    }
+
+    func testRealWeekendGuidesNextMonday() throws {
+        let s = settings(.moderate)
+        var before = try plan(s)
+        // Une séance dure déplacée au dimanche de la semaine en cours.
+        let i = try XCTUnwrap(before.sessions.firstIndex { $0.date < cut && $0.date >= "2030-02-04" && $0.countsAsHard })
+        before.sessions[i].originalDate = before.sessions[i].date
+        before.sessions[i].date = "2030-02-10"
+        let boundary = IntensityChangePlanner.boundary(of: before, before: PlanDate.date(cut)!)
+        XCTAssertTrue(boundary.sunday.hard)
+        let after = try planner(s).change(to: .firm, plan: before, today: midPlan).plan
+        XCTAssertFalse(after.sessions.contains { $0.date == cut && $0.countsAsHard },
+                       "pas de séance dure le lundi après un dimanche dur gardé")
+    }
+
+    // MARK: Enregistrement
+
+    func testStoreKeepsCurrentWeekAdjustments() async throws {
+        let isolated = try IsolatedStore(self)
+        let store = isolated.store
+        func session(_ id: String, _ date: String) -> PlannedSession {
+            PlannedSession(id: id, date: date, time: nil, type: .run, title: "Footing démo", notes: nil, run: nil,
+                           strength: nil, circuit: nil, equipment: nil, originalDate: nil, replaces: nil)
+        }
+        let v1 = TrainingPlan(schemaVersion: 1, planId: "demo", version: 1, title: "Plan de démo", notes: nil,
+                              goals: nil, sessions: [session("a", "2030-02-06"), session("b", "2030-02-12")])
+        try await store.apply(v1)
+        await store.move("a", to: "2030-02-07")
+        await store.move("b", to: "2030-02-13")
+        var v2 = try XCTUnwrap(store.plan)
+        v2.version = 2
+        v2.sessions[1] = session("b", "2030-02-14")
+        try await store.applyUpcoming(v2, keeping: ["a"])
+        XCTAssertEqual(store.plan?.version, 2)
+        XCTAssertEqual(store.plan?.planId, "demo")
+        XCTAssertNotNil(store.original(for: "a"), "semaine en cours : on peut toujours revenir en arrière")
+        XCTAssertNil(store.original(for: "b"), "séance recalculée : plus d'ancienne version")
+    }
+
     // MARK: Garde-fous du moteur
 
     func testWithoutHistoryRaiseStopsAtFirm() throws {

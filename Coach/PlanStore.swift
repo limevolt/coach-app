@@ -167,6 +167,13 @@ final class PlanStore {
         persistOriginals()
         status = nil
         cancelScheduledRunSync()
+        // Ce que le coach a changé après un retour (douleur, trop dur, #44) ou un sport en plus (#115) vaut
+        // aussi pour les séances recalculées : il est réappliqué avant d'envoyer le plan à la montre.
+        let feedbackLogs = activityChoices.byFeedback.keys.compactMap(UUID.init(uuidString:))
+        await enqueueAdaptation {
+            for logId in feedbackLogs { await self.readaptFeedback(logId) }
+            await self.readaptExtras()
+        }
         Task { await sync(quiet: true) }
     }
 
@@ -767,6 +774,8 @@ final class PlanStore {
 
     /// Une adaptation à la fois : chaque demande attend la précédente (pas de séances en double).
     @ObservationIgnored private var adaptationChain: Task<Void, Never>?
+    /// Point de départ relu dans Santé pour un ancien plan (#46), par plan.
+    @ObservationIgnored private var startCache: [String: StartingPoint] = [:]
 
     private func enqueueAdaptation(_ work: @escaping @MainActor () async -> Void) async {
         let previous = adaptationChain
@@ -1069,17 +1078,20 @@ enum Day {
 // MARK: - Intensité en cours de plan (#46)
 
 extension PlanStore {
-    /// Le coach du plan affiché, s'il a été créé dans l'app (nil pour un plan importé ou en mode démo).
-    /// Ancien plan sans point de départ enregistré : relu dans Santé, sur les 8 semaines avant son début.
+    /// Le coach du plan affiché, s'il a été créé dans l'app (nil pour un plan importé).
+    /// Ancien plan sans point de départ enregistré : relu dans Santé, sur les 8 semaines avant son début
+    /// (une fois par plan, gardé ensuite dans les réglages au premier changement).
     func intensityPlanner() async -> IntensityChangePlanner? {
         guard let settings = CoachStorage.loadSettings(), let plan, plan.planId == settings.id else { return nil }
-        var start = settings.startingPoint ?? .unknown
-        if settings.startingPoint == nil, settings.startLevel == .health, !DemoMode.isOn, let day = StrictDate.date(settings.startDate) {
+        var start = settings.startingPoint ?? startCache[settings.id] ?? .unknown
+        if settings.startingPoint == nil, startCache[settings.id] == nil, settings.startLevel == .health,
+           !DemoMode.isOn, let day = StrictDate.date(settings.startDate) {
             let reader = HealthReader()
             async let runMinutes = reader.averageRunMinutesPerWeek(ending: day)
             async let sessions = reader.averageSessionsPerWeek(ending: day)
             let (minutes, perWeek) = await (runMinutes, sessions)
             start = StartingPoint(runMinutesPerWeek: minutes, sessionsPerWeek: perWeek)
+            startCache[settings.id] = start
         }
         return IntensityChangePlanner(settings: settings, profile: CoachStorage.loadProfile(),
                                       memory: CoachStorage.loadMemory(), start: start)

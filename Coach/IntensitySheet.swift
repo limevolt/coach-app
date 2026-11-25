@@ -101,6 +101,9 @@ struct IntensitySheet: View {
         case .tooHigh: return "Un cran à la fois : passe d'abord en \(inForce.next.label)."
         case .endOfPlan: return "Pas de hausse pendant l'affûtage : les dernières semaines préparent la course."
         case .planOver: return "Le plan est terminé."
+        case .tooSoon(let weeks):
+            return weeks > 1 ? "Un cran à la fois : encore \(weeks) semaines en \(inForce.label) avant de monter."
+                             : "Un cran à la fois : encore une semaine en \(inForce.label) avant de monter."
         case .current, .allowed: return nil
         }
     }
@@ -141,13 +144,17 @@ struct IntensitySheet: View {
         guard !working else { return }
         working = true
         errorMessage = nil
-        let planner = planner
-        let today = today
         Task {
             defer { working = false }
-            guard let plan = store.plan else { return }
+            // Réglages, profil et mémoire relus maintenant (ils ont pu changer depuis l'ouverture de l'écran Plan),
+            // et la date aussi : après minuit un dimanche, le lundi d'effet n'est plus le même.
+            guard let plan = store.plan, let fresh = await store.intensityPlanner() else {
+                errorMessage = Self.message(for: IntensityChangeError.notCoachPlan)
+                return
+            }
+            let now = Date.now
             let result = await Task.detached(priority: .userInitiated) {
-                Result { try planner.change(to: level, plan: plan, today: today) }
+                Result { try fresh.change(to: level, plan: plan, today: now) }
             }.value
             do {
                 try await store.applyIntensityChange(try result.get())
@@ -173,7 +180,7 @@ struct IntensitySheet: View {
 // MARK: - Ligne « Intensité » de l'écran Plan
 
 extension IntensityChangePlanner {
-    /// « Modéré », ou « Modéré → Soutenu lun. 30 nov. » quand un changement est prévu.
+    /// « Modéré », ou « Modéré → Soutenu lun. 7 janv. » quand un changement est prévu.
     func rowValue(today: Date = .now) -> String {
         let now = levelInForce(today: today)
         guard let pending = pendingChange(today: today), let monday = StrictDate.date(pending.from) else { return now.label }

@@ -75,11 +75,21 @@ enum PlanGeneratorError: Error, Equatable {
     case invalidSettings([PlanSettingsIssue])
 }
 
+/// Fin réelle de la semaine gardée quand on recalcule les semaines à venir (#46) : le placeur part du samedi
+/// et du dimanche vraiment prévus (séance déplacée, allégée…), pas de ceux du plan recalculé.
+struct WeekBoundary: Equatable {
+    /// Lundi de la première semaine recalculée ("AAAA-MM-JJ").
+    var monday: String
+    var saturday: DayLoad
+    var sunday: DayLoad
+}
+
 struct PlanGenerator {
     var settings: PlanSettings
     var profile: AthleteProfile
     var memory: CoachMemory = CoachMemory()
     var start: StartingPoint = .unknown
+    var boundary: WeekBoundary? = nil
 
     /// Niveau inconnu : départ prudent, au plus 90 min de course la première semaine (et pas plus d'une séance
     /// par course), sortie longue de la durée d'une séance ; ensuite +10 % au plus.
@@ -147,6 +157,10 @@ struct PlanGenerator {
         let classDay = settings.choice(for: .martialCross).flatMap { $0.hasClass ? $0.classDay : nil }
 
         for (i, week) in weeks.enumerated() {
+            if let boundary, PlanCalendar.string(week.monday) == boundary.monday {
+                previousSaturday = boundary.saturday
+                previousSunday = boundary.sunday
+            }
             let isEventWeek = eventDate != nil && i == weeks.count - 1
             // Sans historique, la montée s'arrête à « Soutenu » tant que les retours de séance ne sont pas lus (#44).
             let weekChosen = chosenByWeek[i]
