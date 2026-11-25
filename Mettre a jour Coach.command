@@ -3,7 +3,8 @@
 # 1. récupère la dernière version (branche main)
 # 2. compile l'app iPhone + montre avec ton compte Apple (celui connecté dans Xcode)
 # 3. l'installe sur ton iPhone et ta montre (câble ou même Wi-Fi)
-# À refaire au moins une fois par semaine : avec le compte gratuit, l'app expire après 7 jours.
+# Avec le compte développeur payant, l'app reste valable un an ; TestFlight fait la même chose sans Mac.
+# Le premier lancement enregistre ton iPhone et ta montre sur ton compte (iPhone branché, déverrouillé).
 
 cd "$(dirname "$0")" || exit 1
 set -o pipefail
@@ -32,22 +33,7 @@ MISSING=$(find Coach CoachWatch Shared -name '*.swift' -exec basename {} \; | wh
 done)
 [ -z "$MISSING" ] || fail "La nouvelle version est encore en préparation sur GitHub (fichier(s) : $MISSING). Réessaie dans 5 minutes."
 
-echo "▶︎ 2/3 Compilation (1 à 3 minutes)…"
-mkdir -p build
-rm -rf build/Build/Products
-xcodebuild build \
-  -project Coach.xcodeproj -scheme Coach -configuration Debug \
-  -destination 'generic/platform=iOS' \
-  -derivedDataPath build \
-  -allowProvisioningUpdates \
-  > build/compilation.log 2>&1 \
-  || { grep -E "error:|Signing|No Account|provisioning" build/compilation.log | sort -u | head -15; fail "La compilation a échoué (journal complet : build/compilation.log)."; }
-
-PHONE_APP="build/Build/Products/Debug-iphoneos/Coach.app"
-WATCH_APP="build/Build/Products/Debug-watchos/CoachWatch.app"
-[ -d "$PHONE_APP" ] || fail "App iPhone introuvable après la compilation."
-
-echo "▶︎ 3/3 Installation…"
+echo "▶︎ Recherche de ton iPhone et de ta montre…"
 xcrun devicectl list devices --json-output /tmp/coach-devices.json >/dev/null 2>&1 \
   || fail "Impossible de lister tes appareils."
 
@@ -72,6 +58,34 @@ EOF
 
 echo "  Appareils trouvés :"
 echo "$DEVICES" | awk '{printf "   - %s (%s, %s)\n", $4, $1, $3}'
+echo "$DEVICES" | grep -q '^iOS ' || fail "Aucun iPhone appairé. Branche-le au Mac avec le câble et réessaie."
+PHONE_ID=$(echo "$DEVICES" | awk '$1=="iOS"{print $2; exit}')
+WATCH_ID=$(echo "$DEVICES" | awk '$1=="watchOS"{print $2; exit}')
+
+echo "▶︎ 2/3 Compilation (1 à 3 minutes)…"
+mkdir -p build
+rm -rf build/Build/Products
+# La montre d'abord (si elle est là) : Xcode l'enregistre sur ton compte, puis l'iPhone.
+if [ -n "$WATCH_ID" ]; then
+  xcodebuild build \
+    -project Coach.xcodeproj -scheme CoachWatch -configuration Debug \
+    -destination "id=$WATCH_ID" -derivedDataPath build \
+    -allowProvisioningUpdates -allowProvisioningDeviceRegistration \
+    > build/compilation-montre.log 2>&1 || echo "  (montre : enregistrement impossible pour l'instant, on continue)"
+fi
+xcodebuild build \
+  -project Coach.xcodeproj -scheme Coach -configuration Debug \
+  -destination "id=$PHONE_ID" \
+  -derivedDataPath build \
+  -allowProvisioningUpdates -allowProvisioningDeviceRegistration \
+  > build/compilation.log 2>&1 \
+  || { grep -E "error:|Signing|No Account|provisioning" build/compilation.log | sort -u | head -15; fail "La compilation a échoué (journal complet : build/compilation.log)."; }
+
+PHONE_APP="build/Build/Products/Debug-iphoneos/Coach.app"
+WATCH_APP="build/Build/Products/Debug-watchos/CoachWatch.app"
+[ -d "$PHONE_APP" ] || fail "App iPhone introuvable après la compilation."
+
+echo "▶︎ 3/3 Installation…"
 
 # Essaie chaque appareil d'une plateforme jusqu'à ce que l'installation réussisse.
 install_on() { # $1 = plateforme, $2 = app
@@ -83,8 +97,6 @@ install_on() { # $1 = plateforme, $2 = app
   done
   return $ok
 }
-
-echo "$DEVICES" | grep -q '^iOS ' || fail "Aucun iPhone appairé. Branche-le au Mac avec le câble et réessaie."
 
 install_on iOS "$PHONE_APP" \
   || { tail -5 /tmp/coach-install.log; fail "Installation sur l'iPhone impossible. Branche-le avec le câble (déverrouillé), ou active Xcode › Window › Devices and Simulators › « Connect via network »."; }
