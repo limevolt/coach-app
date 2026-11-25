@@ -23,8 +23,8 @@ final class ExtraActivityPlannerTests: XCTestCase {
                        run: RunWorkout(blocks: [RunBlock(iterations: 1, steps: [step(40, zone: 2)])]))
     }
 
-    private func quality(_ id: String, _ day: Int) -> PlannedSession {
-        PlannedSession(id: id, date: key(day), type: .run, title: "Fractionné",
+    private func quality(_ id: String, _ day: Int, time: String? = nil) -> PlannedSession {
+        PlannedSession(id: id, date: key(day), time: time, type: .run, title: "Fractionné",
                        run: RunWorkout(warmup: step(15, zone: 2),
                                        blocks: [RunBlock(iterations: 6, steps: [step(3, zone: 4),
                                                                                 step(2, zone: 1, purpose: "recovery")])],
@@ -36,8 +36,9 @@ final class ExtraActivityPlannerTests: XCTestCase {
                        strength: StrengthWorkout(exercises: [Exercise(name: "Squat", sets: 4, reps: 10)]))
     }
 
-    private func sport(_ kind: String, day: Int, minutes: Double = 45) -> HealthActivity {
-        HealthActivity(id: "a-\(kind)", start: at(day), end: at(day).addingTimeInterval(minutes * 60), kind: kind,
+    private func sport(_ kind: String, day: Int, minutes: Double = 45, hour: Int = 12) -> HealthActivity {
+        HealthActivity(id: "a-\(kind)", start: at(day, hour: hour), end: at(day, hour: hour).addingTimeInterval(minutes * 60),
+                       kind: kind,
                        durationSec: minutes * 60, distanceKm: nil, avgHR: nil, sourceName: "Autre app",
                        sourceBundleId: "com.example.autre")
     }
@@ -52,7 +53,7 @@ final class ExtraActivityPlannerTests: XCTestCase {
         let week = [quality("q", 6), strength("r", 6)]
         let changed = decide(sport("hiit", day: 5), week)
         XCTAssertEqual(Set(changed.keys), ["q", "r"], "HIIT sans ressenti : dur, le lendemain est allégé")
-        XCTAssertEqual(changed["q"]?.coachNote, "Allégée par le coach (hiit la veille)")
+        XCTAssertEqual(changed["q"]?.coachNote, "Allégée par le coach (HIIT la veille)")
         XCTAssertLessThan(changed["q"]?.plannedMinutes ?? 99, quality("q", 6).plannedMinutes ?? 0)
     }
 
@@ -96,5 +97,94 @@ final class ExtraActivityPlannerTests: XCTestCase {
         other.sourceName = "Une autre app"
         other.sourceBundleId = "org.example.encore"
         XCTAssertEqual(decide(other, [quality("q", 6)]).keys.sorted(), decide(sport("hiit", day: 5), [quality("q", 6)]).keys.sorted())
+    }
+
+    // MARK: Ajouts après la relecture coach (#115)
+
+    func testSameDayLaterSessionLightened() {
+        let changed = decide(sport("hiit", day: 6, hour: 7), [quality("q", 6, time: "18:00")])
+        XCTAssertEqual(changed["q"]?.coachNote, "Allégée par le coach (HIIT plus tôt)", "HIIT le matin, fractionné le soir")
+        XCTAssertTrue(decide(sport("hiit", day: 6, hour: 19), [quality("q", 6, time: "07:00")]).isEmpty,
+                      "séance du matin, sport le soir : rien")
+    }
+
+    func testCoachCopyIsLightened() {
+        var copy = quality("q-r", 6)
+        copy.coachNote = ReplacementPlanner.movedPrefix + " (tennis lundi)"
+        XCTAssertEqual(Set(decide(sport("boxing", day: 5), [copy]).keys), ["q-r"], "séance refaite par le coach : allégée")
+    }
+
+    func testLongRunElsewhereLightensKeySession() {
+        XCTAssertEqual(Set(decide(sport("running", day: 5, minutes: 90), [quality("q", 6), strength("r", 6)]).keys), ["q"])
+        XCTAssertTrue(decide(sport("running", day: 5, minutes: 40), [quality("q", 6)]).isEmpty, "footing ailleurs : rien")
+    }
+
+    func testStrengthElsewhereLightensKeySession() {
+        XCTAssertEqual(Set(decide(sport("strength", day: 5), [quality("q", 6), strength("r", 6)]).keys), ["q"],
+                       "renfo ailleurs : séance clé du lendemain allégée, par prudence pour les jambes")
+        XCTAssertTrue(decide(sport("core", day: 5), [quality("q", 6)]).isEmpty, "gainage : rien")
+    }
+
+    // MARK: Recalcul (annuler puis réappliquer), relecture du code (#115)
+
+    private func plan(_ sessions: [PlannedSession]) -> TrainingPlan {
+        TrainingPlan(schemaVersion: 1, planId: "fictif", version: 1, title: "Fictif", sessions: sessions)
+    }
+
+    private func reconcile(_ p: TrainingPlan, _ c: ActivityChoices, _ extras: [HealthActivity],
+                           done: Set<String> = [], now: Int = 5) -> (TrainingPlan, ActivityChoices) {
+        ExtraActivityPlanner.reconcile(plan: p, choices: c, extras: extras, isDone: { done.contains($0) },
+                                       now: at(now, hour: 20))
+    }
+
+    func testReconcileAppliesOnceAndIsStable() {
+        let hiit = sport("hiit", day: 5)
+        let (p1, c1) = reconcile(plan([quality("q", 6)]), ActivityChoices(), [hiit])
+        XCTAssertEqual(p1.sessions[0].coachNote, "Allégée par le coach (HIIT la veille)")
+        XCTAssertNotNil(c1.byFeedback[ExtraActivityPlanner.key(hiit.id)])
+        let (p2, c2) = reconcile(p1, c1, [hiit])
+        XCTAssertEqual(p2, p1, "relancé : même résultat, pas d'allègement par-dessus")
+        XCTAssertEqual(c2, c1)
+    }
+
+    func testReconcileUndoesWhenSportNoLongerExtra() {
+        let original = plan([quality("q", 6)])
+        let (p1, c1) = reconcile(original, ActivityChoices(), [sport("hiit", day: 5)])
+        let (p2, c2) = reconcile(p1, c1, [])
+        XCTAssertEqual(p2, original, "sport supprimé, relié au plan ou choisi comme séance du jour : comme avant")
+        XCTAssertTrue(c2.byFeedback.isEmpty)
+    }
+
+    func testReconcileFollowsEffort() {
+        let hiit = sport("hiit", day: 5)
+        let original = plan([quality("q", 6)])
+        let (p1, c0) = reconcile(original, ActivityChoices(), [hiit])
+        var c1 = c0
+        c1.efforts[hiit.id] = 4
+        let (p2, _) = reconcile(p1, c1, [hiit])
+        XCTAssertEqual(p2, original, "ressenti facile noté ensuite : plus d'allègement")
+    }
+
+    func testReconcileKeepsPastOrDoneChanges() {
+        let (p1, c1) = reconcile(plan([quality("q", 6)]), ActivityChoices(), [sport("hiit", day: 5)])
+        XCTAssertEqual(reconcile(p1, c1, [], now: 7).0, p1, "changement passé : gardé tel quel")
+        XCTAssertEqual(reconcile(p1, c1, [], done: ["q"]).0, p1, "séance allégée déjà faite : gardée")
+    }
+
+    func testReconcileRespectsManualUndo() {
+        var c = ActivityChoices()
+        c.feedbackDeclined.insert("autre-cle|q")
+        XCTAssertTrue(reconcile(plan([quality("q", 6)]), c, [sport("hiit", day: 5)]).1.byFeedback.isEmpty,
+                      "un changement du coach annulé à la main sur cette séance : plus touchée")
+    }
+
+    func testReplacementDoesNotStackOnExtraLightening() {
+        var lightened = quality("q", 6).lightened(note: "Allégée par le coach (HIIT la veille)")
+        lightened.id = "q"
+        let tennis = sport("tennis", day: 5)
+        let d = ReplacementPlanner.decide(activity: tennis, effort: nil, replaced: easy("e", 5),
+                                          sessions: [easy("e", 5), lightened], isDone: { _ in false },
+                                          trainingDays: [], now: at(5, hour: 20))
+        XCTAssertNil(d.lightened["q"], "déjà allégée par le coach : pas une deuxième fois")
     }
 }

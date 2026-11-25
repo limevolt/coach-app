@@ -135,8 +135,6 @@ final class PlanStore {
             defaults.set(now.timeIntervalSince1970, forKey: "lastReset")
             forgetActivityChoices()
         }
-        // Le nouveau plan tient déjà compte des sports faits en plus : le coach ne les réapplique pas (#115).
-        activityChoices.frozen.formUnion(healthLinks.extras.map(\.id))
         archiveCurrentPlan()
         try Coding.encoder.encode(newPlan).write(to: planURL, options: .atomic)
         plan = newPlan
@@ -707,8 +705,12 @@ final class PlanStore {
         activityChoices.detached.remove(activity.id)
         activityChoices.frozen.remove(activity.id)
         persistActivityChoices()
-        await enqueueAdaptation { await self.readapt(activity) }
-        await enqueueAdaptation { await self.readaptExtras() }
+        // D'abord retirer ce que ce sport faisait « en plus », puis appliquer la séance du jour :
+        // sinon le lendemain serait allégé deux fois, puis remis complet (relecture coach, #115).
+        await enqueueAdaptation {
+            await self.readaptExtras()
+            await self.readapt(activity)
+        }
     }
 
     /// « Ce n'est plus la séance du jour » / « Ce n'était pas cette séance » : redevient une activité en plus,
@@ -718,7 +720,6 @@ final class PlanStore {
         activityChoices.detached.insert(activity.id)
         persistActivityChoices()
         await enqueueAdaptation { await self.readapt(activity) }
-        await enqueueAdaptation { await self.readaptExtras() }
     }
 
     func setEffort(_ rpe: Int, for activity: HealthActivity) {
@@ -736,50 +737,11 @@ final class PlanStore {
     // MARK: Sport fait avec une autre app, lot C1 (#115)
 
     /// Recalcule ce que les sports en plus changent au plan, en une seule écriture.
-    /// Un changement dont toutes les séances sont passées reste tel quel.
+    /// Appelé à l'intérieur d'une adaptation (jamais via `enqueueAdaptation` depuis une autre).
     private func readaptExtras(now: Date = .now) async {
         guard let before = plan else { return }
-        let prefix = ExtraActivityPlanner.keyPrefix
-        let today = Calendar.current.startOfDay(for: now)
-        let extras = Dictionary(healthLinks.extras.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
-        let stored = activityChoices.byFeedback.keys.filter { $0.hasPrefix(prefix) }.map { String($0.dropFirst(prefix.count)) }
-        var choices = activityChoices
-        var current = before
-
-        func isPast(_ a: ActivityChoices.Adaptation) -> Bool {
-            !a.originals.isEmpty && a.originals.allSatisfy { ($0.dayStart ?? .distantFuture) < today }
-        }
-        // 1. Ce qui peut encore bouger revient comme avant.
-        var open: [String] = []
-        for id in Set(stored).union(extras.keys).sorted() {
-            let key = ExtraActivityPlanner.key(id)
-            if let existing = choices.byFeedback[key] {
-                if isPast(existing) { continue }
-                current = ReplacementPlanner.undo(existing, in: current, isDone: isDone)
-                choices.byFeedback[key] = nil
-            }
-            open.append(id)
-        }
-        // 2. Puis chaque sport en plus encore présent est réappliqué.
-        for id in open {
-            guard let activity = extras[id], !choices.frozen.contains(id) else { continue }
-            let key = ExtraActivityPlanner.key(id)
-            let declined = Set(choices.feedbackDeclined.compactMap { pair -> String? in
-                let parts = pair.split(separator: "|", maxSplits: 1)
-                return parts.count == 2 && parts[0] == key ? String(parts[1]) : nil
-            })
-            let changed = ExtraActivityPlanner.decide(activity: activity, effort: choices.efforts[id],
-                                                      sessions: current.sessions, isDone: isDone,
-                                                      declined: declined, now: now)
-            var adaptation = ActivityChoices.Adaptation()
-            for (sid, new) in changed.sorted(by: { $0.key < $1.key }) {
-                guard let i = current.sessions.firstIndex(where: { $0.id == sid }) else { continue }
-                adaptation.originals.append(current.sessions[i])
-                adaptation.lightNotes[sid] = new.coachNote
-                current.sessions[i] = new
-            }
-            if !adaptation.isEmpty { choices.byFeedback[key] = adaptation }
-        }
+        let (current, choices) = ExtraActivityPlanner.reconcile(plan: before, choices: activityChoices,
+                                                                extras: healthLinks.extras, isDone: isDone, now: now)
         guard choices != activityChoices || current != before else { return }
         activityChoices = choices
         persistActivityFile()
@@ -841,10 +803,13 @@ final class PlanStore {
             adaptation.redoneOn = existing?.redoneOn
         }
         let stored: ActivityChoices.Adaptation? = adaptation.isEmpty ? nil : adaptation
-        guard stored != existing || current != before else { return }
-        activityChoices.adaptations[activity.id] = stored
-        persistActivityFile()
-        if current != before { await saveEdits(current) }
+        if stored != existing || current != before {
+            activityChoices.adaptations[activity.id] = stored
+            persistActivityFile()
+            if current != before { await saveEdits(current) }
+        }
+        // Une séance remise comme avant peut de nouveau être allégée par un sport en plus (#115).
+        await readaptExtras()
     }
 
     /// Les séances faites ont peut-être changé : fichier et montre à jour.
@@ -952,10 +917,12 @@ final class PlanStore {
             }
         }
         let stored: ActivityChoices.Adaptation? = adaptation.isEmpty ? nil : adaptation
-        guard stored != existing || current != before else { return }
-        activityChoices.byFeedback[key] = stored
-        persistActivityFile()
-        if current != before { await saveEdits(current) }
+        if stored != existing || current != before {
+            activityChoices.byFeedback[key] = stored
+            persistActivityFile()
+            if current != before { await saveEdits(current) }
+        }
+        await readaptExtras()
     }
 
     /// Retour qui a changé cette séance, et la version d'avant.
@@ -992,6 +959,7 @@ final class PlanStore {
             self.activityChoices.feedbackDeclined.insert("\(key)|\(sessionId)")
             self.persistActivityFile()
             await self.saveEdits(restored)
+            await self.readaptExtras()
         }
     }
 
