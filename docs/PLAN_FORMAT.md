@@ -1,6 +1,7 @@
 # Format du plan — app Coach (schemaVersion 1)
 
-> Format d'un fichier de plan à importer dans l'app (menu ••• › « Importer un plan »).
+> Format d'un fichier de plan à importer dans l'app. L'import de fichier est masqué pour le moment
+> (le plan se construit dans l'app) ; il reviendra plus tard.
 > Les plans créés par le coach de l'app suivent le même format.
 
 ## Consigne pour l'IA

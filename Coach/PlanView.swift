@@ -273,7 +273,6 @@ struct PlanView: View {
     private var planMenu: some View {
         Menu {
             Button("Créer un nouveau plan", systemImage: "sparkles") { showWizard = true }
-            Button("Importer un plan", systemImage: "doc") { showImporter = true }
             if let plan = store.plan {
                 Divider()
                 Button("Exporter le plan", systemImage: "square.and.arrow.up") { export(plan) }
@@ -329,7 +328,7 @@ struct PlanView: View {
     }
 
     /// Aucun plan (#45, maquette validée) : titre « Plan », message au centre, « Créer mon plan » (coach local)
-    /// en bas, à portée de pouce. « Importer un plan » retiré de cet écran pour le moment.
+    /// en bas, à portée de pouce. « Importer un plan » masqué pour le moment (ici et dans le menu •••).
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Plan")
