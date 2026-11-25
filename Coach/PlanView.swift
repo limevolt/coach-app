@@ -280,9 +280,6 @@ struct PlanView: View {
             if let plan = store.plan {
                 Divider()
                 Button("Exporter le plan", systemImage: "square.and.arrow.up") { export(plan) }
-                Button("Resynchroniser la montre", systemImage: "arrow.triangle.2.circlepath") {
-                    perform { await store.sync() }
-                }
                 Divider()
                 DestructiveButton("Réinitialiser le plan", systemImage: "trash") {
                     confirmReset = true
