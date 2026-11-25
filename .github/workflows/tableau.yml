@@ -1,0 +1,34 @@
+name: Tableau GitHub
+
+# Range les cartes du tableau « Coach App » à chaque changement d'issue ou de PR.
+# Lancement manuel (onglet Actions → Tableau GitHub → Run workflow) : range tout le tableau.
+# Besoin du secret PROJECT_TOKEN (jeton classique avec la case « project »).
+
+on:
+  issues:
+    types: [opened, reopened, closed, labeled, unlabeled]
+  pull_request:
+    types: [opened, reopened, closed, ready_for_review, converted_to_draft, edited]
+  workflow_dispatch:
+
+concurrency:
+  group: tableau
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  ranger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+      - uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.PROJECT_TOKEN }}
+          script: |
+            const ranger = require('./.github/scripts/tableau.js');
+            await ranger({ github, context, core });
