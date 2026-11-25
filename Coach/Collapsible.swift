@@ -59,7 +59,6 @@ struct CollapsibleCard<Summary: View, Content: View>: View {
     }
 }
 
-/// Fond d'une carte repliable : carte pleine, ou ligne simple avec un séparateur dessous.
 /// Chevron de fin de ligne, le même partout (#109, #113) : vers la droite,
 /// vers le bas quand la ligne est dépliée. Décoratif, masqué pour VoiceOver.
 struct RowChevron: View {
@@ -101,6 +100,7 @@ struct RowDisclosureStyle: DisclosureGroupStyle {
     }
 }
 
+/// Fond d'une carte repliable : carte pleine, ou ligne simple avec un séparateur dessous.
 private struct CollapsibleBackground: ViewModifier {
     let plain: Bool
 
