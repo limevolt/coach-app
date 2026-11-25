@@ -97,6 +97,8 @@ final class PlanStore {
             guard let template = try? Coding.decoder.decode(IntervalTemplate.self, from: data) else { return }
             self?.saveTemplate(template)
         }
+        // La montre redemande le plan (ouverture, réinstallation, de nouveau joignable) : renvoyé tout de suite (#107).
+        PhoneConnectivity.shared.onNeedsData = { [weak self] in self?.pushToWatch() }
         PhoneConnectivity.shared.activate()
     }
 

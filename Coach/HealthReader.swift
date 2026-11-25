@@ -16,27 +16,17 @@ final class HealthReader {
 
     static var bpm: HKUnit { HKUnit.count().unitDivided(by: .minute()) }
 
-    /// Données lues par l'app (rien n'est écrit depuis l'iPhone).
-    static var readTypes: Set<HKObjectType> {
-        [
-            HKObjectType.workoutType(),
-            HKQuantityType(.heartRate),
-            HKQuantityType(.distanceWalkingRunning),
-            HKQuantityType(.activeEnergyBurned)
-        ]
-    }
-
+    /// Demande l'accès à Santé une seule fois, avec les types de la montre (#108) : lecture pour le
+    /// coach, écriture pour les séances enregistrées par la montre.
     func requestAuthorization() async throws {
-        guard HKHealthStore.isHealthDataAvailable() else { return }
-        try await store.requestAuthorization(toShare: [], read: Self.readTypes)
+        try await HealthPermissions.request(store)
     }
 
     /// L'accès à Santé a-t-il déjà été demandé ? HealthKit ne dit pas ce qui a été autorisé en
     /// lecture (vie privée), seulement si la demande a été faite (#36).
     func wasAuthorizationRequested() async -> Bool {
         guard HKHealthStore.isHealthDataAvailable() else { return false }
-        let status = try? await store.statusForAuthorizationRequest(toShare: [], read: Self.readTypes)
-        return status == .unnecessary
+        return await !HealthPermissions.needsRequest(store)
     }
 
     /// Coach local (#45) : minutes de course par semaine, en moyenne sur les `weeks` dernières semaines.

@@ -33,23 +33,11 @@ final class WorkoutManager {
         delegate = LiveDataDelegate()
     }
 
+    /// Mêmes types que l'iPhone (#108) : si l'accès a déjà été donné sur l'iPhone, rien n'est redemandé ici.
     func requestAuthorization() async {
         if DemoMode.isOn { return }
-        // Écriture : la séance + les échantillons associés (calories, FC, distance)
-        let share: Set<HKSampleType> = [
-            HKObjectType.workoutType(),
-            HKQuantityType(.activeEnergyBurned),
-            HKQuantityType(.heartRate),
-            HKQuantityType(.distanceWalkingRunning)
-        ]
-        let read: Set<HKObjectType> = [
-            HKObjectType.workoutType(),
-            HKQuantityType(.heartRate),
-            HKQuantityType(.activeEnergyBurned),
-            HKQuantityType(.distanceWalkingRunning)
-        ]
         do {
-            try await store.requestAuthorization(toShare: share, read: read)
+            try await HealthPermissions.request(store)
         } catch {
             lastError = error.localizedDescription
         }
@@ -102,6 +90,8 @@ final class WorkoutManager {
             activeCalories = 42
             return
         }
+        // Au moment utile, pas à l'ouverture de l'app (#108) ; rien n'est affiché si l'iPhone l'a déjà demandé.
+        await requestAuthorization()
         let config = HKWorkoutConfiguration()
         config.activityType = activity
         config.locationType = location

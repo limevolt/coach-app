@@ -79,7 +79,6 @@ struct SessionListView: View {
                 IntervalRunView(config: .template(route.template), autoStart: route.autoStart, tint: Theme.teal)
             }
         }
-        .task { await workout.requestAuthorization() }
         // Filet de sécurité : si une séance tourne encore en revenant à l'accueil, on l'arrête.
         .onAppear {
             if workout.isActive && !workout.sessionInProgress { Task { await workout.end() } }
