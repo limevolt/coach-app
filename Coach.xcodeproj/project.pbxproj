@@ -103,6 +103,7 @@
 		D0A89CAF948B13E4DDCA9020 /* ReplacementPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6A4697715F38F491E76EB29 /* ReplacementPlannerTests.swift */; };
 		D5A7F2B738731E74D199738F /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 469890DB7F1BA9D23EB804D4 /* Theme.swift */; };
 		D850C7ADB4742224D28B4E7C /* DeadlineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66DFA61A687F2307C03169AA /* DeadlineTests.swift */; };
+		D9FB553C937BC7C3890514F8 /* GoalDetailsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7E0C2F99B88BF3C787D961 /* GoalDetailsTests.swift */; };
 		DA461C2AC9A24A5958F3D3E6 /* CoachWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05EED4368A1C5978F355FC97 /* CoachWatchApp.swift */; };
 		DC1A7431F21498BDEDE51F96 /* PlanWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7036F3629CF7F334C43828FE /* PlanWizardView.swift */; };
 		DD164B74B9D4B53CA1728B62 /* ExerciseAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AD7181E658FD44CEBD338B0 /* ExerciseAnimation.swift */; };
@@ -271,6 +272,7 @@
 		EAEAC8B7EFE1AEA3EEB3B30A /* DestructiveButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DestructiveButton.swift; sourceTree = "<group>"; };
 		EC3901BC32E255487A17210E /* LegacySettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacySettingsTests.swift; sourceTree = "<group>"; };
 		EE47BC020D48C59C20C4FAAA /* WatchSyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSyncTests.swift; sourceTree = "<group>"; };
+		EE7E0C2F99B88BF3C787D961 /* GoalDetailsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalDetailsTests.swift; sourceTree = "<group>"; };
 		EEE5665EC92A631AFA09DBCE /* Collapsible.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Collapsible.swift; sourceTree = "<group>"; };
 		EFB32011DD22151450EEEB28 /* WatchButtons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchButtons.swift; sourceTree = "<group>"; };
 		EFCD52B3FF61A80EF853190A /* Outfit-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Outfit-Bold.ttf"; sourceTree = "<group>"; };
@@ -329,6 +331,7 @@
 				66DFA61A687F2307C03169AA /* DeadlineTests.swift */,
 				734F29FDA42962E3833F9726 /* DoneStateTests.swift */,
 				5CCD9F7E305075A4B543DCC4 /* FeedbackPlannerTests.swift */,
+				EE7E0C2F99B88BF3C787D961 /* GoalDetailsTests.swift */,
 				04294D002204A3F5456A6755 /* HealthLinkingTests.swift */,
 				75D32B2E1AE803293D894E70 /* HealthPermissionsTests.swift */,
 				2387D0711A96968259E2BAB7 /* IsolatedStore.swift */,
@@ -807,6 +810,7 @@
 				D850C7ADB4742224D28B4E7C /* DeadlineTests.swift in Sources */,
 				C41EB81B2413AEF3EC2FF805 /* DoneStateTests.swift in Sources */,
 				E41992555F3D17F143761864 /* FeedbackPlannerTests.swift in Sources */,
+				D9FB553C937BC7C3890514F8 /* GoalDetailsTests.swift in Sources */,
 				FDE3D875C107FD568B80F574 /* HealthLinkingTests.swift in Sources */,
 				EBFFD90A0182F9F90E8671A1 /* HealthPermissionsTests.swift in Sources */,
 				B13AD6ACE9B0441EB55CB474 /* IsolatedStore.swift in Sources */,
