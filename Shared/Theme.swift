@@ -15,8 +15,8 @@ enum Theme {
     static let line = Color(hex: 0x2A313C)
     /// Séparateur entre deux lignes d'une liste.
     static let separator = Color(hex: 0x141920)
-    /// Chevron de fin de ligne (décoratif).
-    static let chevron = Color(hex: 0x4A5462)
+    /// Chevron de fin de ligne : au moins 3:1 sur `bg`, `card` et `card2` (#113).
+    static let chevron = Color(hex: 0x64707F)
     /// Contour d'un interrupteur ou d'une case non cochés (au moins 3:1 sur le fond, #45).
     static let controlStroke = Color(hex: 0x707A8A)
     /// Activité en plus (autre app, #54) : pastille grise.

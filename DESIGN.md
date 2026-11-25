@@ -62,7 +62,7 @@ le canevas « Coach — nouvelle ambiance ». Valeurs dans `Shared/Theme.swift`.
 ### Couleurs
 - Fond presque noir `Theme.bg` #06080B.
 - **Une seule carte pleine** par écran (`Theme.card` #11151B, rayon 24, **sans bordure**) : l'action
-  du moment. Le reste en **lignes simples** séparées par `Theme.separator`, avec un chevron `Theme.chevron`.
+  du moment. Le reste en **lignes simples** séparées par `Theme.separator`, avec un chevron `RowChevron` (`Theme.chevron` #64707F, au moins 3:1 sur les fonds).
 - `Theme.card2` #1A2029 : tuile dans une carte, bouton sélectionné. `Theme.line` #2A313C : contour
   d'un bouton discret, tiret d'un jour de repos.
 - Texte : `Theme.text` pour l'essentiel, `Theme.muted` pour le secondaire et les petits titres.
@@ -287,6 +287,7 @@ Le code reste la référence.
 | | `CollapsibleCard`, `BottomBar` | contenu replié, barre d'action fixée en bas |
 | | `.selectableStyle(isOn:)`, `.fieldStyle()` | fond d'un choix, champ de saisie |
 | Lignes | `PlanLine`, `SessionRow`, `ExtraActivityLine` | une ligne de liste de 52, séparateur et chevron |
+| | `RowChevron`, `.disclosureGroupStyle(RowDisclosureStyle())` | le chevron de toutes les lignes (vers le bas une fois déplié), une ligne dépliable au même style |
 | Données | `Eyebrow` | petit titre en capitales grises |
 | | `StatValue` | chiffre + unité + libellé |
 | | `Chip` | étiquette (muscles, niveau) |

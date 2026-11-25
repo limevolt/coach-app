@@ -12,6 +12,10 @@ struct CoachMemory: Codable, Equatable {
     /// Course : allure seuil estimée (secondes par km) et VMA (km/h).
     var runThresholdPaceSecPerKm: Double?
     var runVMAKmh: Double?
+    /// Course : allure habituelle et meilleure allure sur 5 km ou plus (6 dernières semaines,
+    /// courses faites dans Coach ou avec une autre app, #115). Secondes par km.
+    var runTypicalPaceSecPerKm: Double?
+    var runBestPaceSecPerKm: Double?
     /// Escaliers : meilleure montée complète chronométrée, par escalier (`Staircase.id`), en secondes.
     var staircaseBestClimbSec: [String: Int] = [:]
     /// Renfo : charge de travail actuelle par exercice (nom de l'exercice → kg).
@@ -58,6 +62,8 @@ struct CoachMemory: Codable, Equatable {
         schemaVersion = try c.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
         runThresholdPaceSecPerKm = try c.decodeIfPresent(Double.self, forKey: .runThresholdPaceSecPerKm)
         runVMAKmh = try c.decodeIfPresent(Double.self, forKey: .runVMAKmh)
+        runTypicalPaceSecPerKm = try c.decodeIfPresent(Double.self, forKey: .runTypicalPaceSecPerKm)
+        runBestPaceSecPerKm = try c.decodeIfPresent(Double.self, forKey: .runBestPaceSecPerKm)
         staircaseBestClimbSec = (try? c.decodeIfPresent([String: Int].self, forKey: .staircaseBestClimbSec)) ?? [:]
         exerciseLoadsKg = (try? c.decodeIfPresent([String: Double].self, forKey: .exerciseLoadsKg)) ?? [:]
         martialCrossRounds = try c.decodeIfPresent(Int.self, forKey: .martialCrossRounds)

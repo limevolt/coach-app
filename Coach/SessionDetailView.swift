@@ -308,8 +308,7 @@ struct SessionDetailView: View {
                                 .font(.detail).foregroundStyle(Theme.muted)
                         }
                         Spacer(minLength: Space.s)
-                        Image(systemName: "chevron.right").font(Theme.chevronFont).foregroundStyle(Theme.chevron)
-                            .accessibilityHidden(true)
+                        RowChevron()
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .card()
@@ -379,8 +378,7 @@ struct SessionDetailView: View {
                                     .font(.detail).foregroundStyle(Theme.muted)
                             }
                             Spacer(minLength: Space.s)
-                            Image(systemName: "chevron.right").font(Theme.chevronFont).foregroundStyle(Theme.chevron)
-                                .accessibilityHidden(true)
+                            RowChevron()
                         }
                         .padding(.vertical, Space.m)
                         .frame(maxWidth: .infinity, alignment: .leading)

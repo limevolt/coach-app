@@ -483,10 +483,7 @@ struct PlanLine: View {
             Text(trailing)
                 .font(.coach(.subheadline))
                 .foregroundStyle(Theme.muted)
-            Image(systemName: "chevron.right")
-                .font(Theme.chevronFont)
-                .foregroundStyle(Theme.chevron)
-                .accessibilityHidden(true)
+            RowChevron()
         }
         .padding(.vertical, Space.s)
         .frame(minHeight: Theme.rowHeight)

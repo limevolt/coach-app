@@ -52,7 +52,7 @@ enum ExtraActivityPlanner {
         var result: [String: PlannedSession] = [:]
         for s in sessions {
             guard let start = s.startDate, let sDay = s.dayStart, sDay >= today, !isDone(s.id),
-                  s.coachNote == nil || s.isCoachCopy, !declined.contains(s.id) else { continue }
+                  s.isFreeForCoach, !declined.contains(s.id) else { continue }
             let sameDayAfter = cal.isDate(sDay, inSameDayAs: day) && start >= activity.end
             let nextDay = cal.isDate(sDay, inSameDayAs: next)
             guard sameDayAfter || nextDay else { continue }
