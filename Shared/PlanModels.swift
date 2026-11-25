@@ -367,6 +367,23 @@ extension PlanGoal {
         guard let deadline else { return nil }
         return Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: .now), to: deadline).day
     }
+
+    /// Départ, actuel et cible à afficher : une valeur vide ou faite d'espaces ne compte pas.
+    var shownBaseline: String? { Self.filled(baseline) }
+    var shownCurrent: String? { Self.filled(current) }
+    var shownTarget: String? { Self.filled(target) }
+
+    /// Quelque chose à montrer en plus du nom et de l'échéance (progression, départ, actuel, cible) :
+    /// sinon la ligne « Objectif » de l'accueil ne se déplie pas (#109).
+    var hasDetails: Bool {
+        progress != nil || shownBaseline != nil || shownCurrent != nil || shownTarget != nil
+    }
+
+    private static func filled(_ value: String?) -> String? {
+        guard let value else { return nil }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
 }
 
 enum Pace {

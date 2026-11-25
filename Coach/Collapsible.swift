@@ -3,45 +3,63 @@
 import SwiftUI
 
 /// Carte repliée par défaut : un titre, un court aperçu, et le contenu complet au tap.
+/// Flèche vers la droite comme les autres lignes, qui pivote vers le bas à l'ouverture (#109).
 struct CollapsibleCard<Summary: View, Content: View>: View {
     let title: String
     /// Petit titre gris par défaut (#40).
     var color: Color = Theme.muted
     /// `true` : ligne repliable sans fond, avec un séparateur (accueil, une seule carte pleine par écran).
     var plain = false
+    /// `false` : rien de plus à montrer que l'aperçu, la ligne reste simple, sans flèche ni dépliage (#109).
+    var expandable = true
     @ViewBuilder let summary: () -> Summary
     @ViewBuilder let content: () -> Content
     @State private var expanded = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.m) {
-            Button {
-                withAnimation(.easeInOut(duration: 0.2)) { expanded.toggle() }
-            } label: {
-                VStack(alignment: .leading, spacing: Space.s) {
-                    HStack {
-                        Eyebrow(text: title, color: color)
-                        Spacer()
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(Theme.muted)
-                            .rotationEffect(.degrees(expanded ? 180 : 0))
-                    }
-                    if !expanded {
-                        summary().transition(.opacity)
-                    }
+            if expandable {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { expanded.toggle() }
+                } label: {
+                    header
+                        .contentShape(Rectangle())
                 }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
+                .buttonStyle(.plain)
+                .accessibilityValue(expanded ? "Déplié" : "Replié")
 
-            if expanded {
-                content()
-                    .transition(.opacity)
+                if expanded {
+                    content()
+                        .transition(.opacity)
+                }
+            } else {
+                header
+                    .accessibilityElement(children: .combine)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .modifier(CollapsibleBackground(plain: plain))
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: Space.s) {
+            HStack {
+                Eyebrow(text: title, color: color)
+                Spacer()
+                if expandable {
+                    Image(systemName: "chevron.right")
+                        .font(Theme.chevronFont)
+                        .foregroundStyle(Theme.chevron)
+                        .rotationEffect(.degrees(expanded ? 90 : 0))
+                        .accessibilityHidden(true)
+                }
+            }
+            // Une ligne devenue non dépliable alors qu'elle était ouverte (nouveau plan importé)
+            // garde son aperçu.
+            if !(expandable && expanded) {
+                summary().transition(.opacity)
+            }
+        }
     }
 }
 

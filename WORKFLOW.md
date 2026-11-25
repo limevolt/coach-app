@@ -10,8 +10,8 @@
 
 ## Qui fait quoi [générique]
 
-- **Le propriétaire de l'app** teste l'app pendant ses séances, donne ses retours et valide les maquettes et les pull requests.
-- **Claude en conversation écrite** a accès au dépôt. Il crée les issues, code, ouvre et fusionne les pull requests.
+- **Le propriétaire de l'app** teste l'app pendant ses séances, donne ses retours et valide les maquettes. Il ne relit pas le code.
+- **Claude en conversation écrite** a accès au dépôt. Il crée les issues, code, ouvre les pull requests et les fusionne lui-même (choix du propriétaire, 25/11/2026).
 - **Claude en vocal** n'a pas toujours accès à GitHub. Il recueille les retours, les classe et prépare un texte à coller dans une conversation écrite.
 - Il n'y a pas d'autre outil : tout passe par les conversations Claude du projet.
 
@@ -74,7 +74,8 @@ Deux endroits, chacun mis à jour sans effort manuel.
    - `design-reviewer` (mode « conformité ») : vérifie seulement que les captures correspondent à la maquette validée et que le rendu réel tient (texte coupé, grand texte, petits écrans, contraste). Pas de nouvelle critique du design.
    - `coach-reviewer` [Coach], dès qu'un lot touche le moteur de coaching (`Coach/Engine/`) : relit les décisions d'entraînement comme un entraîneur (sécurité, règles décidées, sportifs fictifs) et propose des règles pour améliorer le coach.
 6. **Pull request** : ce qui change, les issues fermées, le résultat des relectures et ce que le propriétaire doit tester.
-7. **Fusion sur `main`** : la version part sur TestFlight (workflow « TestFlight », #89), et les issues sont fermées ou passées en `à retester` (retirer `en cours`).
+7. **Fusion sur `main` par Claude**, sans attendre le propriétaire (choix du 25/11/2026 : il ne relit pas le code), dès que la compilation est verte et que les remarques bloquantes des relectures sont corrigées. Seule exception : un écran dont la maquette n'a pas été validée, ou un doute sur la vie privée → on attend le propriétaire. Les issues passent en `à retester` (retirer `en cours`).
+8. **Prévenir le propriétaire** quand la version est sur TestFlight (workflow « TestFlight », #89) : la version est prête, quoi tester, et sur quelle issue répondre.
 
 ## Économiser les compilations [générique]
 
