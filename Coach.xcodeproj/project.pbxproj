@@ -24,6 +24,7 @@
 		26E2466C37150EDF5A9B2B4A /* LegacySettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6535819649A52831F59E1B7 /* LegacySettings.swift */; };
 		26F64655FC5491630F1F26D0 /* exemple-plan.json in Resources */ = {isa = PBXBuildFile; fileRef = C4C696570245BF16A3413FEB /* exemple-plan.json */; };
 		27E0873184F27FD11300FE3D /* Outfit-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E2ED3110F4831A88C21CB891 /* Outfit-SemiBold.ttf */; };
+		28CF63EFBD4C0E308E310771 /* LoadPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 508C84681B4154274EE8C62F /* LoadPlannerTests.swift */; };
 		294F0DEA3F6FF74A5BD4EC75 /* DoneState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1918A0774BE3786CD7BA18EA /* DoneState.swift */; };
 		29F5E25112DCAEDF6319B32F /* DoneState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1918A0774BE3786CD7BA18EA /* DoneState.swift */; };
 		2AC214B24E8F9170F7397EE8 /* WorkoutKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1321A0C4A4FA8CAB6096AC8D /* WorkoutKind.swift */; };
@@ -32,6 +33,7 @@
 		2E0BB307FBC1F0B713414A52 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FE9B13CEEDBF92FBEAEC23A /* Typography.swift */; };
 		2E1144022454E7717EB8AE43 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276E7638F419A5D3A0590E11 /* SettingsView.swift */; };
 		2E2F80F454BE69994307A352 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 469890DB7F1BA9D23EB804D4 /* Theme.swift */; };
+		31C8C476F1DF6AF1317FB7C8 /* LoadPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200F4B786F75BE43FAC7929B /* LoadPlanner.swift */; };
 		323273B63571A108DFB0959B /* PlanTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F7CC45AA5631D89F50FAE4 /* PlanTools.swift */; };
 		32858CFBD77803091E3ECDBD /* PlanDraft.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15D0FFCC8C4ABBBBAE1C1CC4 /* PlanDraft.swift */; };
 		34D490917ADCECB31226691D /* StrengthRunView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06DC198093FF72A80A0765C0 /* StrengthRunView.swift */; };
@@ -191,6 +193,7 @@
 		1A98D9EE13E10A332EC287DF /* WorkoutManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutManager.swift; sourceTree = "<group>"; };
 		1C2AF906766BFC74E40B5658 /* PlanIntensityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanIntensityTests.swift; sourceTree = "<group>"; };
 		1F5A6F77FC2EA09B7D407281 /* ExerciseLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLibrary.swift; sourceTree = "<group>"; };
+		200F4B786F75BE43FAC7929B /* LoadPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadPlanner.swift; sourceTree = "<group>"; };
 		2387D0711A96968259E2BAB7 /* IsolatedStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IsolatedStore.swift; sourceTree = "<group>"; };
 		274FB8C9CA43AFA77F3E3430 /* NavigationBarStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationBarStyle.swift; sourceTree = "<group>"; };
 		276E7638F419A5D3A0590E11 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -209,6 +212,7 @@
 		4D3E65D02A73AC0CA8236C13 /* CoachWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CoachWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4E54238CA3796A3D428E0F5B /* WeekOverview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeekOverview.swift; sourceTree = "<group>"; };
 		4E6C06F91F59B047799297AF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		508C84681B4154274EE8C62F /* LoadPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadPlannerTests.swift; sourceTree = "<group>"; };
 		55CC634D74040B9A1862DFB4 /* Coach.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Coach.entitlements; sourceTree = "<group>"; };
 		56FEFFD9C39F28F9938C9D07 /* WorkoutScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutScreens.swift; sourceTree = "<group>"; };
 		59CBCEC04B1895240D53C3F1 /* CoachTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachTabBar.swift; sourceTree = "<group>"; };
@@ -341,6 +345,7 @@
 				75D32B2E1AE803293D894E70 /* HealthPermissionsTests.swift */,
 				2387D0711A96968259E2BAB7 /* IsolatedStore.swift */,
 				EC3901BC32E255487A17210E /* LegacySettingsTests.swift */,
+				508C84681B4154274EE8C62F /* LoadPlannerTests.swift */,
 				9945A4A769C10E083F4822CB /* PlanDraftTests.swift */,
 				91216996909C0C840A8EA989 /* PlanGeneratorTests.swift */,
 				1C2AF906766BFC74E40B5658 /* PlanIntensityTests.swift */,
@@ -448,6 +453,7 @@
 				E43E9868B60F306D446C6E70 /* DayPlacer.swift */,
 				0297432F0DC3AE501B127968 /* ExtraActivityPlanner.swift */,
 				4A535570E01A094C3E524720 /* FeedbackPlanner.swift */,
+				200F4B786F75BE43FAC7929B /* LoadPlanner.swift */,
 				7243736ADAC582E44CBEB46D /* PlanCalendar.swift */,
 				62A1A0756297FC10211EEB95 /* PlanGenerator.swift */,
 				D2FFC5675FEFBC94118CE135 /* PlanIntensity.swift */,
@@ -739,6 +745,7 @@
 				9DE8E796EC1E88D558090CEF /* HealthReader.swift in Sources */,
 				3B1B88D7CB6ABAC1DFAD6330 /* HomeWeek.swift in Sources */,
 				26E2466C37150EDF5A9B2B4A /* LegacySettings.swift in Sources */,
+				31C8C476F1DF6AF1317FB7C8 /* LoadPlanner.swift in Sources */,
 				8118CA7306E3723EE11F4722 /* NavigationBarStyle.swift in Sources */,
 				7F240FBB125630B4B79B89B5 /* PhoneConnectivity.swift in Sources */,
 				5ED922B6D4F1954261DE2B75 /* PlanCalendar.swift in Sources */,
@@ -823,6 +830,7 @@
 				EBFFD90A0182F9F90E8671A1 /* HealthPermissionsTests.swift in Sources */,
 				B13AD6ACE9B0441EB55CB474 /* IsolatedStore.swift in Sources */,
 				45D2EA33D7B1FA5088557310 /* LegacySettingsTests.swift in Sources */,
+				28CF63EFBD4C0E308E310771 /* LoadPlannerTests.swift in Sources */,
 				3F6CC9E499FC5CAF6599E731 /* PlanDraftTests.swift in Sources */,
 				BC5EF199242F3CD6B4BC4119 /* PlanGeneratorTests.swift in Sources */,
 				8FC240EDCFC733F308904E55 /* PlanIntensityTests.swift in Sources */,
