@@ -329,7 +329,7 @@ struct PlanView: View {
     }
 
     /// Aucun plan (#45, maquette validée) : titre « Plan », message au centre, « Créer mon plan » (coach local)
-    /// et « Importer un plan » en bas, à portée de pouce.
+    /// en bas, à portée de pouce. « Importer un plan » retiré de cet écran pour le moment.
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Plan")
@@ -360,10 +360,6 @@ struct PlanView: View {
                     Text("Créer mon plan")
                 }
                 .buttonStyle(.coachPrimary())
-                Button { showImporter = true } label: {
-                    Label("Importer un plan", systemImage: "doc")
-                }
-                .buttonStyle(.coachQuiet())
             }
         }
         .padding(.horizontal, Theme.screenMargin)
