@@ -526,9 +526,9 @@ struct GoalCard: View {
                     .font(.coach(.caption)).foregroundStyle(Theme.muted)
             }
             HStack(spacing: Space.s) {
-                if let baseline = goal.baseline { stat("Départ", baseline) }
-                if let current = goal.current { stat("Actuel", current) }
-                if let target = goal.target { stat("Cible", target) }
+                if let baseline = goal.shownBaseline { stat("Départ", baseline) }
+                if let current = goal.shownCurrent { stat("Actuel", current) }
+                if let target = goal.shownTarget { stat("Cible", target) }
             }
             if let deadline = goal.deadline {
                 Text("Échéance : \(deadline.formatted(date: .long, time: .omitted))")

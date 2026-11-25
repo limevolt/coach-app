@@ -54,7 +54,9 @@ struct CollapsibleCard<Summary: View, Content: View>: View {
                         .accessibilityHidden(true)
                 }
             }
-            if !expanded {
+            // Une ligne devenue non dépliable alors qu'elle était ouverte (nouveau plan importé)
+            // garde son aperçu.
+            if !(expandable && expanded) {
                 summary().transition(.opacity)
             }
         }

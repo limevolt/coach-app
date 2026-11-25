@@ -24,4 +24,17 @@ final class GoalDetailsTests: XCTestCase {
         XCTAssertTrue(goal(current: "niveau fictif").hasDetails)
         XCTAssertTrue(goal(target: "cible fictive").hasDetails)
     }
+
+    func testShownValuesAreTrimmedAndBlankOnesHidden() {
+        let g = goal(baseline: "  départ fictif ", current: "", target: nil)
+        XCTAssertEqual(g.shownBaseline, "départ fictif")
+        XCTAssertNil(g.shownCurrent)
+        XCTAssertNil(g.shownTarget)
+    }
+
+    func testOneGoalWithDetailsIsEnoughToExpand() {
+        let goals = [goal(), goal(target: "cible fictive")]
+        XCTAssertTrue(goals.contains(where: \.hasDetails))
+        XCTAssertFalse([goal(), goal()].contains(where: \.hasDetails))
+    }
 }
