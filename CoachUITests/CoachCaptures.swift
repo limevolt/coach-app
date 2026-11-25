@@ -369,7 +369,14 @@ final class CoachCaptures: XCTestCase {
         let matches = app.buttons.containing(NSPredicate(format: "label CONTAINS[c] %@", text))
         guard matches.count > 1 else { return true }
         let row = matches.element(boundBy: 1)
-        guard row.waitForExistence(timeout: 3), row.isHittable else {
+        // Petit iPhone (#95) : la ligne de séance peut être sous le bord de l'écran ; on fait défiler jusqu'à elle.
+        if row.waitForExistence(timeout: 3) {
+            for _ in 0..<4 where !row.isHittable {
+                app.swipeUp(velocity: .slow)
+                Thread.sleep(forTimeInterval: 0.3)
+            }
+        }
+        guard row.exists, row.isHittable else {
             note("Ligne de séance introuvable : « \(text) »")
             return false
         }

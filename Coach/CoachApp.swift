@@ -9,6 +9,7 @@ struct CoachApp: App {
 
     init() {
         LegacySettings.clean()
+        TrainingDays.fillIfEmpty(from: CoachStorage.loadSettings())
     }
 
     var body: some Scene {
