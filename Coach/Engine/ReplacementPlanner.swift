@@ -191,7 +191,9 @@ enum ReplacementPlanner {
         // Lendemain d'un sport dur : séance dure ou clé allégée (un footing facile reste tel quel).
         if sportHard {
             let next = shift(sportDay, 1)
-            for s in onDay(next) where !isDone(s.id) && (s.countsAsHard || s.isKey) {
+            // Déjà changée par le coach (sport en plus, retour) : pas d'allègement par-dessus (#115).
+            for s in onDay(next) where !isDone(s.id) && (s.countsAsHard || s.isKey)
+                && (s.coachNote == nil || s.isCoachCopy) {
                 lightened[s.id] = s.lightened(note: "Allégée par le coach (\(sportName) la veille)")
             }
         }

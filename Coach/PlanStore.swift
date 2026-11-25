@@ -683,6 +683,8 @@ final class PlanStore {
             persistActivityFile()
             pushToWatch()
         }
+        // Sports faits avec une autre app : le plan s'ajuste (#115). Sans effet si rien n'a changé.
+        await enqueueAdaptation { await self.readaptExtras(now: now) }
     }
 
     /// Autre plan ou plan réinitialisé : les choix (« Séance principale du jour »…) ne passent pas au suivant.
@@ -703,7 +705,12 @@ final class PlanStore {
         activityChoices.detached.remove(activity.id)
         activityChoices.frozen.remove(activity.id)
         persistActivityChoices()
-        await enqueueAdaptation { await self.readapt(activity) }
+        // D'abord retirer ce que ce sport faisait « en plus », puis appliquer la séance du jour :
+        // sinon le lendemain serait allégé deux fois, puis remis complet (relecture coach, #115).
+        await enqueueAdaptation {
+            await self.readaptExtras()
+            await self.readapt(activity)
+        }
     }
 
     /// « Ce n'est plus la séance du jour » / « Ce n'était pas cette séance » : redevient une activité en plus,
@@ -721,7 +728,24 @@ final class PlanStore {
         // Séance du jour : le plan s'ajuste au ressenti noté (#44).
         if activityChoices.mainFor[activity.id] != nil {
             Task { await enqueueAdaptation { await self.readapt(activity) } }
+        } else {
+            // Sport en plus : l'allègement suit le ressenti (#115).
+            Task { await enqueueAdaptation { await self.readaptExtras() } }
         }
+    }
+
+    // MARK: Sport fait avec une autre app, lot C1 (#115)
+
+    /// Recalcule ce que les sports en plus changent au plan, en une seule écriture.
+    /// Appelé à l'intérieur d'une adaptation (jamais via `enqueueAdaptation` depuis une autre).
+    private func readaptExtras(now: Date = .now) async {
+        guard let before = plan else { return }
+        let (current, choices) = ExtraActivityPlanner.reconcile(plan: before, choices: activityChoices,
+                                                                extras: healthLinks.extras, isDone: isDone, now: now)
+        guard choices != activityChoices || current != before else { return }
+        activityChoices = choices
+        persistActivityFile()
+        if current != before { await saveEdits(current) }
     }
 
     // MARK: Coach adaptatif, lot B1 (#44)
@@ -779,10 +803,13 @@ final class PlanStore {
             adaptation.redoneOn = existing?.redoneOn
         }
         let stored: ActivityChoices.Adaptation? = adaptation.isEmpty ? nil : adaptation
-        guard stored != existing || current != before else { return }
-        activityChoices.adaptations[activity.id] = stored
-        persistActivityFile()
-        if current != before { await saveEdits(current) }
+        if stored != existing || current != before {
+            activityChoices.adaptations[activity.id] = stored
+            persistActivityFile()
+            if current != before { await saveEdits(current) }
+        }
+        // Une séance remise comme avant peut de nouveau être allégée par un sport en plus (#115).
+        await readaptExtras()
     }
 
     /// Les séances faites ont peut-être changé : fichier et montre à jour.
@@ -890,10 +917,12 @@ final class PlanStore {
             }
         }
         let stored: ActivityChoices.Adaptation? = adaptation.isEmpty ? nil : adaptation
-        guard stored != existing || current != before else { return }
-        activityChoices.byFeedback[key] = stored
-        persistActivityFile()
-        if current != before { await saveEdits(current) }
+        if stored != existing || current != before {
+            activityChoices.byFeedback[key] = stored
+            persistActivityFile()
+            if current != before { await saveEdits(current) }
+        }
+        await readaptExtras()
     }
 
     /// Retour qui a changé cette séance, et la version d'avant.
@@ -930,6 +959,7 @@ final class PlanStore {
             self.activityChoices.feedbackDeclined.insert("\(key)|\(sessionId)")
             self.persistActivityFile()
             await self.saveEdits(restored)
+            await self.readaptExtras()
         }
     }
 

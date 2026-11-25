@@ -85,6 +85,7 @@
 		8E4351C368E6F423D0DB1415 /* DemoPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A605DA9E42746D6AAD11D4 /* DemoPlan.swift */; };
 		8F148A94BA426F56B6317A92 /* CoachModules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D82669D91ECEDFA1646C365 /* CoachModules.swift */; };
 		8FC240EDCFC733F308904E55 /* PlanIntensityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C2AF906766BFC74E40B5658 /* PlanIntensityTests.swift */; };
+		8FFC3B6BAE2FDB27CC68A514 /* ExtraActivityPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C97289243940E2B96242B26A /* ExtraActivityPlannerTests.swift */; };
 		905EE1E54683208A4CFDF3E8 /* Deadline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DA20173CFDA2D84BE4F9D1C /* Deadline.swift */; };
 		9161B4E2AA2D3B4A7293D7BD /* WatchSyncQueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F5D2E14E9042E95E3A6888B /* WatchSyncQueueTests.swift */; };
 		93B36E4537D6BA45FD7E6B60 /* Outfit-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3D495D87289FD2F14C06D471 /* Outfit-Black.ttf */; };
@@ -122,6 +123,7 @@
 		F467BCB7E0A11950097F8ADE /* WatchSyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE47BC020D48C59C20C4FAAA /* WatchSyncTests.swift */; };
 		F533457EF39F3BE7E1DE96C1 /* SessionDoneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31857B518B57159858C98E18 /* SessionDoneView.swift */; };
 		F5A2AE37FD052F65299898C6 /* WatchStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA085961E84987A69F4FA339 /* WatchStore.swift */; };
+		FA22CF1DFF78FBC0648C30C4 /* ExtraActivityPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0297432F0DC3AE501B127968 /* ExtraActivityPlanner.swift */; };
 		FB0D2D64C67351495CB834FF /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE446A4EDFE26F62C24A7DEF /* Haptics.swift */; };
 		FCC04B15F68D6F665D314BE2 /* exemple-plan.json in Resources */ = {isa = PBXBuildFile; fileRef = C4C696570245BF16A3413FEB /* exemple-plan.json */; };
 		FDE3D875C107FD568B80F574 /* HealthLinkingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04294D002204A3F5456A6755 /* HealthLinkingTests.swift */; };
@@ -173,6 +175,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0297432F0DC3AE501B127968 /* ExtraActivityPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtraActivityPlanner.swift; sourceTree = "<group>"; };
 		04294D002204A3F5456A6755 /* HealthLinkingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthLinkingTests.swift; sourceTree = "<group>"; };
 		05EED4368A1C5978F355FC97 /* CoachWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachWatchApp.swift; sourceTree = "<group>"; };
 		06DC198093FF72A80A0765C0 /* StrengthRunView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthRunView.swift; sourceTree = "<group>"; };
@@ -255,6 +258,7 @@
 		C4C696570245BF16A3413FEB /* exemple-plan.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "exemple-plan.json"; sourceTree = "<group>"; };
 		C5CF7AC31F6D6F52356127F2 /* HealthPermissions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthPermissions.swift; sourceTree = "<group>"; };
 		C8267B20E1E74B1EB1864AF5 /* WatchCaptures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchCaptures.swift; sourceTree = "<group>"; };
+		C97289243940E2B96242B26A /* ExtraActivityPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtraActivityPlannerTests.swift; sourceTree = "<group>"; };
 		CBD1FAEC2DEACF2FC8226ED6 /* CoachButtons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachButtons.swift; sourceTree = "<group>"; };
 		D10CC75E5364452A24F61B34 /* DesignTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignTokens.swift; sourceTree = "<group>"; };
 		D190944DFF559848C7487069 /* ActivityDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityDetailView.swift; sourceTree = "<group>"; };
@@ -330,6 +334,7 @@
 				19AAA7125E9D98CC586824A9 /* AdaptRunKindTests.swift */,
 				66DFA61A687F2307C03169AA /* DeadlineTests.swift */,
 				734F29FDA42962E3833F9726 /* DoneStateTests.swift */,
+				C97289243940E2B96242B26A /* ExtraActivityPlannerTests.swift */,
 				5CCD9F7E305075A4B543DCC4 /* FeedbackPlannerTests.swift */,
 				EE7E0C2F99B88BF3C787D961 /* GoalDetailsTests.swift */,
 				04294D002204A3F5456A6755 /* HealthLinkingTests.swift */,
@@ -441,6 +446,7 @@
 				2D82669D91ECEDFA1646C365 /* CoachModules.swift */,
 				E56D00CF919BDFFFD3935AD2 /* CoachStorage.swift */,
 				E43E9868B60F306D446C6E70 /* DayPlacer.swift */,
+				0297432F0DC3AE501B127968 /* ExtraActivityPlanner.swift */,
 				4A535570E01A094C3E524720 /* FeedbackPlanner.swift */,
 				7243736ADAC582E44CBEB46D /* PlanCalendar.swift */,
 				62A1A0756297FC10211EEB95 /* PlanGenerator.swift */,
@@ -726,6 +732,7 @@
 				DD164B74B9D4B53CA1728B62 /* ExerciseAnimation.swift in Sources */,
 				1E20496EC9E94FA4A73CAD8F /* ExerciseGuideView.swift in Sources */,
 				4BB5B6D42C271A74F444F734 /* ExerciseLibrary.swift in Sources */,
+				FA22CF1DFF78FBC0648C30C4 /* ExtraActivityPlanner.swift in Sources */,
 				85F5E5B8D6CC550C96E2E5A3 /* FeedbackPlanner.swift in Sources */,
 				EBB1A3D5F4A480FF807A67FF /* HealthActivities.swift in Sources */,
 				80146B299CFAC8BDBC5EAD55 /* HealthPermissions.swift in Sources */,
@@ -809,6 +816,7 @@
 				C3DBDD053EA1A947866AA7A1 /* AdaptRunKindTests.swift in Sources */,
 				D850C7ADB4742224D28B4E7C /* DeadlineTests.swift in Sources */,
 				C41EB81B2413AEF3EC2FF805 /* DoneStateTests.swift in Sources */,
+				8FFC3B6BAE2FDB27CC68A514 /* ExtraActivityPlannerTests.swift in Sources */,
 				E41992555F3D17F143761864 /* FeedbackPlannerTests.swift in Sources */,
 				D9FB553C937BC7C3890514F8 /* GoalDetailsTests.swift in Sources */,
 				FDE3D875C107FD568B80F574 /* HealthLinkingTests.swift in Sources */,
