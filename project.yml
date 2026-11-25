@@ -17,7 +17,7 @@ settings:
     MARKETING_VERSION: "1.0"
     CURRENT_PROJECT_VERSION: "1"
     # Équipe de signature (compte Apple du propriétaire).
-    DEVELOPMENT_TEAM: FD598HBBW4
+    DEVELOPMENT_TEAM: QG4XL95P47
     CODE_SIGN_STYLE: Automatic
     # Réglages recommandés par Xcode 26
     DEAD_CODE_STRIPPING: YES
@@ -45,6 +45,8 @@ targets:
         UIUserInterfaceStyle: Dark
         # Barres au style de Coach, sans Liquid Glass (#64, DESIGN.md) : à revoir avant Xcode 27.
         UIDesignRequiresCompatibility: true
+        # Pas de chiffrement propre à l'app (HTTPS du système seulement) : TestFlight ne pose plus la question.
+        ITSAppUsesNonExemptEncryption: false
         UIAppFonts:
           - Outfit-Regular.ttf
           - Outfit-Medium.ttf
@@ -68,7 +70,9 @@ targets:
         com.apple.developer.healthkit.access: []
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.limevolt.coach
+        PRODUCT_BUNDLE_IDENTIFIER: com.limevolt.coachapp
+        # Profil TestFlight, fourni seulement par le workflow « TestFlight » (vide ailleurs).
+        PROVISIONING_PROFILE_SPECIFIER: $(COACH_PROFILE)
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -89,7 +93,8 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         WKApplication: true
-        WKCompanionAppBundleIdentifier: com.limevolt.coach
+        ITSAppUsesNonExemptEncryption: false
+        WKCompanionAppBundleIdentifier: com.limevolt.coachapp
         NSHealthShareUsageDescription: Coach lit ta fréquence cardiaque et tes calories pendant la séance.
         NSHealthUpdateUsageDescription: Coach enregistre tes séances (durée, calories, fréquence cardiaque) dans Santé.
         WKBackgroundModes:
@@ -108,7 +113,8 @@ targets:
         com.apple.developer.healthkit.access: []
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.limevolt.coach.watchkitapp
+        PRODUCT_BUNDLE_IDENTIFIER: com.limevolt.coachapp.watchkitapp
+        PROVISIONING_PROFILE_SPECIFIER: $(WATCH_PROFILE)
         TARGETED_DEVICE_FAMILY: "4"
         GENERATE_INFOPLIST_FILE: NO
         SKIP_INSTALL: YES
@@ -125,7 +131,7 @@ targets:
       - target: Coach
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.limevolt.coach.tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.limevolt.coachapp.tests
         GENERATE_INFOPLIST_FILE: YES
         TEST_HOST: $(BUILT_PRODUCTS_DIR)/Coach.app/Coach
         BUNDLE_LOADER: $(TEST_HOST)
@@ -145,7 +151,7 @@ targets:
       - target: Coach
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.limevolt.coach.uitests
+        PRODUCT_BUNDLE_IDENTIFIER: com.limevolt.coachapp.uitests
         GENERATE_INFOPLIST_FILE: YES
         TEST_TARGET_NAME: Coach
         TARGETED_DEVICE_FAMILY: "1"
@@ -162,7 +168,7 @@ targets:
       - target: CoachWatch
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.limevolt.coach.watchkitapp.uitests
+        PRODUCT_BUNDLE_IDENTIFIER: com.limevolt.coachapp.watchkitapp.uitests
         GENERATE_INFOPLIST_FILE: YES
         TEST_TARGET_NAME: CoachWatch
         TARGETED_DEVICE_FAMILY: "4"

@@ -24,3 +24,4 @@ prive/
 private/
 *.env
 .env*
+__pycache__/

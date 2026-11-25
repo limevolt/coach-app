@@ -5,6 +5,13 @@ Tout reste en local : plan, journaux et données Santé ne quittent pas l'iPhone
 
 ## Installer sur ton iPhone et ta montre
 
+**Avec TestFlight (recommandé, sans Mac)** : chaque fusion sur `main` envoie une nouvelle version
+sur TestFlight (workflow « TestFlight »). Installe l'app TestFlight, puis Coach › « Installer » ;
+la montre suit. Il faut un compte Apple Developer payant et la clé App Store Connect dans les
+Secrets GitHub (`ASC_ISSUER_ID`, `ASC_KEY_ID`, `ASC_KEY_P8`).
+
+**Avec Xcode (compte gratuit)** :
+
 1. **Xcode › Integrate › Clone…** puis colle `https://github.com/limevolt/coach-app`.
 2. Ouvre `Coach.xcodeproj`.
 3. Cible **Coach**, puis cible **CoachWatch** : onglet *Signing & Capabilities* › *Team* = ton identifiant Apple.
