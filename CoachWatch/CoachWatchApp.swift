@@ -7,6 +7,7 @@ import WatchKit
 @main
 struct CoachWatchApp: App {
     @WKApplicationDelegateAdaptor private var appDelegate: CoachWatchDelegate
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
@@ -16,6 +17,10 @@ struct CoachWatchApp: App {
                 .tint(Theme.accent)
                 .font(.coach(.body))
                 .dynamicTypeSize(...DynamicTypeSize.large)
+        }
+        // Montre à jour sans bouton (#107) : à chaque retour au premier plan, le plan est redemandé.
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { appDelegate.store.refresh() }
         }
     }
 }

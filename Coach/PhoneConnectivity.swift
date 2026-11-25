@@ -32,6 +32,8 @@ final class PhoneConnectivity: NSObject, WCSessionDelegate {
     var onLog: ((Data) -> Void)?
     /// Minuteur favori créé sur la montre (JSON d'un IntervalTemplate).
     var onTemplate: ((Data) -> Void)?
+    /// La montre a besoin du plan (app ouverte, réinstallée, de nouveau joignable) : l'iPhone le renvoie (#107).
+    var onNeedsData: (() -> Void)?
 
     private var pending: [String: Any]?
     /// Dernière demande « Démarrer sur la montre », gardée dans le contexte tant qu'elle est récente.
@@ -47,14 +49,22 @@ final class PhoneConnectivity: NSObject, WCSessionDelegate {
     /// Envoie les séances, les minuteurs libres et la liste des séances faites à la montre.
     /// Le contexte remplace entièrement le précédent : tout part à chaque fois.
     func sendWatchData(sessions: Data, timers: Data, doneIds: [String], resetAt: Date?) {
-        var context: [String: Any] = ["sessions": sessions, "timers": timers, "done": doneIds]
+        pending = Self.context(sessions: sessions, timers: timers, doneIds: doneIds, resetAt: resetAt,
+                               start: startRequest, now: .now)
+        flush()
+    }
+
+    /// Contenu envoyé à la montre. `sentAt` : chaque envoi est nouveau, même si le plan n'a pas changé
+    /// (montre réinstallée, #107). La demande « Démarrer » reste tant qu'elle est récente.
+    static func context(sessions: Data, timers: Data, doneIds: [String], resetAt: Date?,
+                        start: StartRequest?, now: Date) -> [String: Any] {
+        var context: [String: Any] = ["sessions": sessions, "timers": timers, "done": doneIds,
+                                      "sentAt": now.timeIntervalSince1970]
         if let resetAt { context["resetAt"] = resetAt.timeIntervalSince1970 }
-        if let startRequest, startRequest.isFresh(now: .now),
-           let data = try? Coding.compactEncoder.encode(startRequest) {
+        if let start, start.isFresh(now: now), let data = try? Coding.compactEncoder.encode(start) {
             context["start"] = data
         }
-        pending = context
-        flush()
+        return context
     }
 
     /// Lance la séance sur la montre (#5) :
@@ -102,9 +112,9 @@ final class PhoneConnectivity: NSObject, WCSessionDelegate {
     private func ensureWorkoutSharing() async -> String? {
         guard HKHealthStore.isHealthDataAvailable() else { return "Santé n'est pas disponible sur cet iPhone." }
         let workout = HKObjectType.workoutType()
-        if healthStore.authorizationStatus(for: workout) == .notDetermined {
-            try? await healthStore.requestAuthorization(toShare: [workout], read: [])
-        }
+        // Même demande que partout ailleurs (#108), y compris pour qui avait déjà autorisé les entraînements :
+        // la montre n'aura plus rien à demander. Rien ne s'affiche si tout a déjà reçu une réponse.
+        try? await HealthPermissions.request(healthStore)
         guard healthStore.authorizationStatus(for: workout) == .sharingAuthorized else {
             return "Autorise Coach à enregistrer tes entraînements : Réglages › Santé › Accès aux données et appareils › Coach."
         }
@@ -145,8 +155,25 @@ final class PhoneConnectivity: NSObject, WCSessionDelegate {
         session.activate()
     }
 
+    /// App installée (ou réinstallée) sur la montre : elle repart sans plan, on le renvoie (#107).
     nonisolated func sessionWatchStateDidChange(_ session: WCSession) {
-        Task { @MainActor in self.flush() }
+        let installed = session.isWatchAppInstalled
+        Task { @MainActor in
+            if installed { self.onNeedsData?() } else { self.flush() }
+        }
+    }
+
+    /// Demande « needData » de la montre (à son ouverture, #107).
+    nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
+        guard message["needData"] != nil else { return }
+        Task { @MainActor in self.onNeedsData?() }
+    }
+
+    nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any],
+                             replyHandler: @escaping ([String: Any]) -> Void) {
+        replyHandler(["ok": true])
+        guard message["needData"] != nil else { return }
+        Task { @MainActor in self.onNeedsData?() }
     }
 
     nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {

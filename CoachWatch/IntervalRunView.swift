@@ -150,7 +150,10 @@ struct IntervalRunView: View {
             // Sortie de l'écran (séance enregistrée ou abandonnée) : plus de séance affichée.
             if phase == .ready || phase == .feedback || isBeforeStart { workout.sessionInProgress = false }
         }
+        // Santé demandée à l'ouverture de l'écran, avant « Commencer » et le « Prêt ? » (#108) :
+        // rien ne s'affiche si l'accès a déjà été donné (sur l'iPhone ou ici).
         .task {
+            await workout.requestAuthorization()
             if autoStart, phase == .ready { beginStart() }
         }
         .confirmationDialog("Terminer la séance ?", isPresented: $confirmStop) {

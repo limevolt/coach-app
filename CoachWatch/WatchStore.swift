@@ -102,6 +102,12 @@ final class WatchStore {
         if startRequest == request { startRequest = nil }
     }
 
+    /// App de nouveau au premier plan : demande le plan à jour à l'iPhone (#107).
+    func refresh() {
+        if DemoMode.isOn { return }
+        bridge.requestData()
+    }
+
     /// Séance (du plan) demandée par l'iPhone, si elle est connue de la montre.
     func session(id: String) -> PlannedSession? { sessions.first { $0.id == id } }
     func template(id: String) -> IntervalTemplate? { templates.first { $0.id.uuidString == id } }
@@ -150,6 +156,15 @@ final class WatchBridge: NSObject, WCSessionDelegate {
         WCSession.default.activate()
     }
 
+    /// Demande le plan à l'iPhone (#107) : à l'ouverture de l'app et quand l'iPhone redevient joignable.
+    /// Message direct seulement : s'il n'est pas joignable, l'iPhone renverra le plan de lui-même.
+    func requestData() {
+        guard WCSession.isSupported() else { return }
+        let session = WCSession.default
+        guard session.activationState == .activated, session.isReachable else { return }
+        session.sendMessage(["needData": true], replyHandler: nil, errorHandler: nil)
+    }
+
     /// File d'attente garantie : arrive sur l'iPhone même si l'app y est fermée.
     func send(_ info: [String: Data]) {
         guard WCSession.isSupported() else { return }
@@ -158,6 +173,12 @@ final class WatchBridge: NSObject, WCSessionDelegate {
 
     nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
         receive(session.receivedApplicationContext)
+        Task { @MainActor in self.requestData() }
+    }
+
+    nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
+        guard session.isReachable else { return }
+        Task { @MainActor in self.requestData() }
     }
 
     nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
