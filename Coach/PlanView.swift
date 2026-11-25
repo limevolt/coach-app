@@ -234,7 +234,7 @@ struct PlanView: View {
                     Eyebrow(text: "Tout le plan")
                         .accessibilityAddTraits(.isHeader)
                 }
-                .tint(Theme.muted)
+                .disclosureGroupStyle(RowDisclosureStyle())
             }
         }
         .padding(.horizontal, Theme.screenMargin)
@@ -478,10 +478,14 @@ struct SessionRow: View {
                     .lineLimit(2)
             }
             Spacer(minLength: Space.xs)
-            Image(systemName: done ? "checkmark.circle.fill" : (missed ? "exclamationmark.circle" : "chevron.right"))
-                .font(done || missed ? Theme.iconFont : Theme.chevronFont)
-                .foregroundStyle(done ? Theme.accent : (missed ? Theme.warm : Theme.chevron))
-                .accessibilityHidden(true)
+            if done || missed {
+                Image(systemName: done ? "checkmark.circle.fill" : "exclamationmark.circle")
+                    .font(Theme.iconFont)
+                    .foregroundStyle(done ? Theme.accent : Theme.warm)
+                    .accessibilityHidden(true)
+            } else {
+                RowChevron()
+            }
         }
         .padding(.vertical, Space.m)
         .frame(minHeight: Theme.rowHeight)

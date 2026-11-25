@@ -832,8 +832,7 @@ private struct SummaryStep: View {
                 Text(title).font(.text).foregroundStyle(Theme.text)
                 Spacer(minLength: Space.s)
                 Text(value).font(.detail).foregroundStyle(Theme.muted).multilineTextAlignment(.trailing)
-                Image(systemName: "chevron.right").font(Theme.chevronFont).foregroundStyle(Theme.chevron)
-                    .accessibilityHidden(true)
+                RowChevron()
             }
             .frame(minHeight: Theme.rowHeight)
             // Séparateur horizontal (un Divider dans une HStack serait vertical).
