@@ -38,7 +38,7 @@ final class PlanStore {
     /// Dossier des fichiers (plan, journaux…) et réglages : ceux de l'app, ou temporaires dans les tests (#80).
     private let directory: URL
     private let defaults: UserDefaults
-    /// Faux dans les tests : pas de lien avec la montre (#80).
+    /// Faux dans les tests (#80) : ni montre, ni WorkoutKit, ni Santé, ni profil du coach.
     private let connectsToWatch: Bool
 
     /// `directory`, `defaults`, `connectsToWatch` : seulement pour les tests, qui ne doivent jamais toucher
@@ -47,6 +47,11 @@ final class PlanStore {
         self.directory = directory
         self.defaults = defaults
         self.connectsToWatch = connectsToWatch
+        if !connectsToWatch {
+            // Tests : jamais WorkoutKit, même si un test oublie de remplacer ces deux fonctions.
+            runSync = { _ in "" }
+            runRemoveAll = {}
+        }
         if DemoMode.isOn {
             // Captures automatiques : plan de démo en mémoire, rien d'autre.
             plan = DemoMode.plan
@@ -541,7 +546,7 @@ final class PlanStore {
     /// (sauf la course, qui s'ouvre prête dans l'app Exercice).
     func startOnWatch(_ session: PlannedSession) async -> WatchStartResult {
         // Captures automatiques : pas de montre, on montre l'état « en cours ».
-        if DemoMode.isOn { return .sent }
+        if DemoMode.isOn || !connectsToWatch { return .sent }
         pushToWatch()
         let request = StartRequest(id: session.id, isTimer: false, sentAt: .now, autoStart: true)
         return await PhoneConnectivity.shared.startOnWatch(request, configuration: session.workoutConfiguration)
@@ -549,6 +554,7 @@ final class PlanStore {
 
     /// Même chose pour un minuteur libre.
     func startOnWatch(_ template: IntervalTemplate) async -> WatchStartResult {
+        if !connectsToWatch { return .sent }
         pushToWatch()
         let request = StartRequest(id: template.id.uuidString, isTimer: true, sentAt: .now, autoStart: true)
         return await PhoneConnectivity.shared.startOnWatch(request, configuration: template.workoutConfiguration)
@@ -645,7 +651,7 @@ final class PlanStore {
 
     /// Relit les séances Santé de la semaine (depuis le lundi précédent), sans jamais demander l'accès ici.
     func refreshActivities(now: Date = .now) async {
-        if DemoMode.isOn { return }
+        if DemoMode.isOn || !connectsToWatch { return }
         let reader = HealthReader()
         guard await reader.wasAuthorizationRequested() else { return }
         let monday = PlanWeeks.start(of: now)
@@ -933,7 +939,7 @@ final class PlanStore {
     /// « Ménager le genou » : la zone est ménagée dans les prochains plans créés par le coach.
     func spareZone(_ zone: String, advice logId: String) {
         dismissAdvice(logId)
-        guard let z = BodyZone(rawValue: zone) else { return }
+        guard connectsToWatch, let z = BodyZone(rawValue: zone) else { return }
         var profile = CoachStorage.loadProfile()
         profile.sparedZones.insert(z)
         try? CoachStorage.save(profile: profile)

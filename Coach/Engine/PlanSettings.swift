@@ -58,6 +58,15 @@ struct PlanSettings: Codable, Equatable {
         return days
     }
 
+    /// Jours choisis dans Réglages (#106), qui affiche `effectiveTrainingDays`. Le jour d'un cours collectif
+    /// ne devient pas un jour d'entraînement ordinaire : il reste lié au cours (déplacer le cours le déplace).
+    func choosingTrainingDays(_ days: Set<Int>) -> PlanSettings {
+        var copy = self
+        let classOnly = effectiveTrainingDays.subtracting(trainingDays)
+        copy.trainingDays = days.filter { (1...7).contains($0) }.subtracting(classOnly)
+        return copy
+    }
+
     /// Plafond de la sortie longue : le réglage, sinon le double d'une séance, entre 60 et 120 min.
     var defaultLongRunMinutes: Int {
         longRunMinutes ?? min(120, max(60, sessionMinutes * 2))

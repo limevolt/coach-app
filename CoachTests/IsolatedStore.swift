@@ -1,5 +1,6 @@
-// IsolatedStore.swift — un PlanStore de test qui ne touche jamais aux fichiers ni aux réglages de l'app,
-// ni à la montre (#80). Dossier et réglages temporaires, effacés à la fin du test.
+// IsolatedStore.swift — un PlanStore de test qui ne touche ni aux fichiers ni aux réglages de l'app,
+// ni à la montre, WorkoutKit, Santé ou au profil du coach (#80). Dossier et réglages temporaires,
+// effacés à la fin du test. Seule lecture restante : `TrainingDays.current` (réglage de l'app, lecture seule).
 
 import XCTest
 @testable import Coach
@@ -41,9 +42,11 @@ final class IsolatedStoreTests: XCTestCase {
         isolated.store.runSync = { _ in "ok" }
         isolated.store.runRemoveAll = {}
         try await isolated.store.apply(plan)
+        XCTAssertEqual(try? Data(contentsOf: real), before, "le plan de l'app n'est pas remplacé")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: isolated.directory.appending(path: "plan.json").path))
         await isolated.store.resetPlan()
 
-        XCTAssertEqual(try? Data(contentsOf: real), before, "le plan de l'app n'est pas touché")
+        XCTAssertEqual(try? Data(contentsOf: real), before, "ni supprimé")
         XCTAssertTrue(FileManager.default.fileExists(atPath: isolated.directory.appending(path: "logs.json").path))
         XCTAssertNotNil(isolated.defaults.object(forKey: "lastReset"), "réglages écrits dans le domaine du test")
     }

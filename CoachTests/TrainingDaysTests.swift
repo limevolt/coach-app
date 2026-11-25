@@ -49,4 +49,21 @@ final class TrainingDaysTests: XCTestCase {
         TrainingDays.fillIfEmpty(from: nil, defaults: defaults)
         XCTAssertTrue(stored.isEmpty, "sans plan créé par l'assistant, rien ne change")
     }
+
+    // Revue #106 : changer les jours dans Réglages ne transforme pas le jour du cours en jour ordinaire.
+    func testSettingsChangeKeepsTheClassDayApart() {
+        let modules = [ModuleChoice(module: .run),
+                       ModuleChoice(module: .martialCross, martialCrossMode: .group, classDay: 4, classTime: "19:00")]
+        let plan = settings(days: [1, 6], modules: modules)
+        let changed = plan.choosingTrainingDays([1, 4, 6, 7]) // Réglages affiche Lu Je Sa, on ajoute Di
+        XCTAssertEqual(changed.trainingDays, [1, 6, 7])
+        XCTAssertEqual(changed.effectiveTrainingDays, [1, 4, 6, 7])
+
+        var moved = changed
+        moved.modules[1].classDay = 2
+        XCTAssertEqual(moved.effectiveTrainingDays, [1, 2, 6, 7], "cours déplacé : le jeudi n'est plus un jour d'entraînement")
+
+        let regular = settings(days: [1, 4], modules: [ModuleChoice(module: .run)]).choosingTrainingDays([2, 4, 9])
+        XCTAssertEqual(regular.trainingDays, [2, 4], "sans cours, les jours choisis sont repris tels quels")
+    }
 }
