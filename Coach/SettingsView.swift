@@ -49,9 +49,6 @@ struct SettingsView: View {
                             }
                         }
                     }
-                    Button("Resynchroniser la montre") {
-                        Task { await store.sync() }
-                    }
                     if let healthMessage {
                         Text(healthMessage).font(.coach(.footnote)).foregroundStyle(.secondary)
                     }

@@ -484,7 +484,7 @@ final class PlanStore {
         case .done(let message):
             status = message
         case .timedOut:
-            status = "La montre n'a pas répondu : les courses ne sont pas encore programmées. Réessaie avec ••• > « Resynchroniser la montre »."
+            status = "La montre n'a pas répondu : les courses ne sont pas encore programmées. Coach réessaiera à la prochaine ouverture."
             return
         case .replaced:
             return
