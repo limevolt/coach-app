@@ -23,11 +23,11 @@ final class PlanStore {
     /// Séances adaptées dans l'app : leur version d'origine (pour pouvoir y revenir).
     private(set) var originals: [String: SessionOriginal] = [:]
 
-    private var planURL: URL { URL.documentsDirectory.appending(path: "plan.json") }
-    private var logsURL: URL { URL.documentsDirectory.appending(path: "logs.json") }
-    private var templatesURL: URL { URL.documentsDirectory.appending(path: "timers.json") }
-    private var originalsURL: URL { URL.documentsDirectory.appending(path: "originals.json") }
-    private var activitiesURL: URL { URL.documentsDirectory.appending(path: "activities.json") }
+    private var planURL: URL { directory.appending(path: "plan.json") }
+    private var logsURL: URL { directory.appending(path: "logs.json") }
+    private var templatesURL: URL { directory.appending(path: "timers.json") }
+    private var originalsURL: URL { directory.appending(path: "originals.json") }
+    private var activitiesURL: URL { directory.appending(path: "activities.json") }
 
     /// Séances Santé de la semaine affichée (#54), et les choix de l'utilisateur à leur sujet.
     /// Gardées sur l'iPhone (`activities.json`) : une séance faite avec une autre app reste faite,
@@ -35,7 +35,23 @@ final class PlanStore {
     private(set) var healthActivities: [HealthActivity] = [] { didSet { linksCache = nil } }
     private(set) var activityChoices = ActivityChoices() { didSet { linksCache = nil } }
 
-    init() {
+    /// Dossier des fichiers (plan, journaux…) et réglages : ceux de l'app, ou temporaires dans les tests (#80).
+    private let directory: URL
+    private let defaults: UserDefaults
+    /// Faux dans les tests (#80) : ni montre, ni WorkoutKit, ni Santé, ni profil du coach.
+    private let connectsToWatch: Bool
+
+    /// `directory`, `defaults`, `connectsToWatch` : seulement pour les tests, qui ne doivent jamais toucher
+    /// au plan réel ni à la montre (#80).
+    init(directory: URL = .documentsDirectory, defaults: UserDefaults = .standard, connectsToWatch: Bool = true) {
+        self.directory = directory
+        self.defaults = defaults
+        self.connectsToWatch = connectsToWatch
+        if !connectsToWatch {
+            // Tests : jamais WorkoutKit, même si un test oublie de remplacer ces deux fonctions.
+            runSync = { _ in "" }
+            runRemoveAll = {}
+        }
         if DemoMode.isOn {
             // Captures automatiques : plan de démo en mémoire, rien d'autre.
             plan = DemoMode.plan
@@ -71,6 +87,7 @@ final class PlanStore {
         } else {
             templates = IntervalTemplate.defaults
         }
+        guard connectsToWatch else { return }
         PhoneConnectivity.shared.onLog = { [weak self] data in
             guard let self, let log = try? Coding.decoder.decode(SessionLog.self, from: data) else { return }
             // Fait avant une réinitialisation mais arrivé après : il reste à l'ancien plan (#14).
@@ -113,7 +130,7 @@ final class PlanStore {
             let now = Date.now
             logs = DoneState.archiving(logs, at: now)
             persistLogs()
-            UserDefaults.standard.set(now.timeIntervalSince1970, forKey: "lastReset")
+            defaults.set(now.timeIntervalSince1970, forKey: "lastReset")
             forgetActivityChoices()
         }
         archiveCurrentPlan()
@@ -139,7 +156,7 @@ final class PlanStore {
     /// Archive le plan actuel (historique local).
     private func archiveCurrentPlan() {
         guard let old = plan, let oldData = try? Coding.encoder.encode(old) else { return }
-        let archive = URL.documentsDirectory.appending(path: "archive-\(old.planId)-v\(old.version).json")
+        let archive = directory.appending(path: "archive-\(old.planId)-v\(old.version).json")
         try? oldData.write(to: archive, options: .atomic)
     }
 
@@ -153,14 +170,14 @@ final class PlanStore {
         let now = Date.now
         logs = DoneState.archiving(logs, at: now)
         persistLogs()
-        UserDefaults.standard.set(now.timeIntervalSince1970, forKey: "lastReset")
+        defaults.set(now.timeIntervalSince1970, forKey: "lastReset")
         forgetActivityChoices()
         try? FileManager.default.removeItem(at: planURL)
         plan = nil
         originals = [:]
         persistOriginals()
         status = nil
-        UserDefaults.standard.removeObject(forKey: "lastSyncDay")
+        defaults.removeObject(forKey: "lastSyncDay")
         cancelScheduledRunSync()
         let removeAll = runRemoveAll
         _ = await onWatch { await removeAll() }
@@ -384,7 +401,7 @@ final class PlanStore {
         plan = newPlan
         // Courses à refaire tant que la mise à jour n'a pas abouti : si l'app est fermée avant,
         // la synchro du retour au premier plan la relance (#71, revue).
-        UserDefaults.standard.removeObject(forKey: "lastSyncDay")
+        defaults.removeObject(forKey: "lastSyncDay")
         pushToWatch()
         scheduleRunSync()
     }
@@ -459,7 +476,7 @@ final class PlanStore {
         pushToWatch()
         guard let plan else { return }
         let today = Day.key(.now)
-        if !force, UserDefaults.standard.string(forKey: "lastSyncDay") == today { return }
+        if !force, defaults.string(forKey: "lastSyncDay") == today { return }
         let runSync = self.runSync
         switch await onWatch(counted: force && !quiet, { await runSync(plan) }) {
         case .done(let message):
@@ -470,7 +487,7 @@ final class PlanStore {
         case .replaced:
             return
         }
-        UserDefaults.standard.set(today, forKey: "lastSyncDay")
+        defaults.set(today, forKey: "lastSyncDay")
     }
 
     /// Ce qui programme les courses dans l'app Exercice ; remplaçable dans les tests.
@@ -508,7 +525,7 @@ final class PlanStore {
     /// Toutes les séances (course comprise, lancée via l'app Exercice) et minuteurs libres → app Coach de la montre.
     /// Avec la liste des séances faites : la montre remplace la sienne (l'iPhone est la référence).
     func pushToWatch() {
-        if DemoMode.isOn { return }
+        if DemoMode.isOn || !connectsToWatch { return }
         // Variante sans matériel déjà appliquée : la montre affiche ce qu'il faut vraiment faire.
         let watchSessions = (plan?.sessions ?? []).map(\.effective)
         guard let sessions = try? Coding.compactEncoder.encode(watchSessions),
@@ -529,7 +546,7 @@ final class PlanStore {
     /// (sauf la course, qui s'ouvre prête dans l'app Exercice).
     func startOnWatch(_ session: PlannedSession) async -> WatchStartResult {
         // Captures automatiques : pas de montre, on montre l'état « en cours ».
-        if DemoMode.isOn { return .sent }
+        if DemoMode.isOn || !connectsToWatch { return .sent }
         pushToWatch()
         let request = StartRequest(id: session.id, isTimer: false, sentAt: .now, autoStart: true)
         return await PhoneConnectivity.shared.startOnWatch(request, configuration: session.workoutConfiguration)
@@ -537,6 +554,7 @@ final class PlanStore {
 
     /// Même chose pour un minuteur libre.
     func startOnWatch(_ template: IntervalTemplate) async -> WatchStartResult {
+        if !connectsToWatch { return .sent }
         pushToWatch()
         let request = StartRequest(id: template.id.uuidString, isTimer: true, sentAt: .now, autoStart: true)
         return await PhoneConnectivity.shared.startOnWatch(request, configuration: template.workoutConfiguration)
@@ -574,7 +592,7 @@ final class PlanStore {
 
     /// Dernière réinitialisation du plan.
     private var lastReset: Date? {
-        (UserDefaults.standard.object(forKey: "lastReset") as? Double).map(Date.init(timeIntervalSince1970:))
+        (defaults.object(forKey: "lastReset") as? Double).map(Date.init(timeIntervalSince1970:))
     }
 
     /// Journal qui rend la séance « faite » (les journaux archivés et les minuteurs libres ne comptent pas).
@@ -633,7 +651,7 @@ final class PlanStore {
 
     /// Relit les séances Santé de la semaine (depuis le lundi précédent), sans jamais demander l'accès ici.
     func refreshActivities(now: Date = .now) async {
-        if DemoMode.isOn { return }
+        if DemoMode.isOn || !connectsToWatch { return }
         let reader = HealthReader()
         guard await reader.wasAuthorizationRequested() else { return }
         let monday = PlanWeeks.start(of: now)
@@ -921,7 +939,7 @@ final class PlanStore {
     /// « Ménager le genou » : la zone est ménagée dans les prochains plans créés par le coach.
     func spareZone(_ zone: String, advice logId: String) {
         dismissAdvice(logId)
-        guard let z = BodyZone(rawValue: zone) else { return }
+        guard connectsToWatch, let z = BodyZone(rawValue: zone) else { return }
         var profile = CoachStorage.loadProfile()
         profile.sparedZones.insert(z)
         try? CoachStorage.save(profile: profile)

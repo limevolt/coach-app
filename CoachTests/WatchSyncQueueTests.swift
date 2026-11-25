@@ -15,8 +15,13 @@ final class WatchSyncQueueTests: XCTestCase {
         var events: [String] = []
     }
 
-    private func makeStore(_ watch: FakeWatch) -> PlanStore {
-        let store = PlanStore()
+    /// Réglages du dernier magasin créé (temporaires, #80).
+    private var defaults: UserDefaults!
+
+    private func makeStore(_ watch: FakeWatch) throws -> PlanStore {
+        let isolated = try IsolatedStore(self)
+        defaults = isolated.defaults
+        let store = isolated.store
         store.runSync = { @MainActor _ in
             watch.calls += 1
             let n = watch.calls
@@ -39,19 +44,19 @@ final class WatchSyncQueueTests: XCTestCase {
     }
 
     // Avant #71 : déplacer une séance attendait la montre (jusqu'à 45 s).
-    func testMovingASessionDoesNotWaitForTheWatch() async {
+    func testMovingASessionDoesNotWaitForTheWatch() async throws {
         let watch = FakeWatch()
         watch.delay = .seconds(5)
-        let store = makeStore(watch)
+        let store = try makeStore(watch)
         let start = ContinuousClock.now
         await store.move("a", to: "2030-01-08")
         XCTAssertLessThan(ContinuousClock.now - start, .milliseconds(500), "l'écran se ferme tout de suite")
         XCTAssertEqual(store.plan?.sessions.first { $0.id == "a" }?.date, "2030-01-08")
     }
 
-    func testCloseChangesAreGrouped() async {
+    func testCloseChangesAreGrouped() async throws {
         let watch = FakeWatch()
-        let store = makeStore(watch)
+        let store = try makeStore(watch)
         await store.move("a", to: "2030-01-08")
         await store.move("b", to: "2030-01-09")
         await store.move("a", to: "2030-01-10")
@@ -61,10 +66,10 @@ final class WatchSyncQueueTests: XCTestCase {
     }
 
     // La mise à jour en arrière-plan ne grise pas l'écran (isSyncing désactive des boutons).
-    func testBackgroundUpdateKeepsTheScreenUsable() async {
+    func testBackgroundUpdateKeepsTheScreenUsable() async throws {
         let watch = FakeWatch()
         watch.delay = .milliseconds(300)
-        let store = makeStore(watch)
+        let store = try makeStore(watch)
         store.scheduleRunSync(after: .zero)
         try? await Task.sleep(for: .milliseconds(100))
         XCTAssertEqual(watch.calls, 1)
@@ -74,10 +79,10 @@ final class WatchSyncQueueTests: XCTestCase {
     }
 
     // Revue #71 : la mise à jour suivante attend la fin réelle de la précédente (sinon doublon ou course perdue).
-    func testUpdatesNeverOverlap() async {
+    func testUpdatesNeverOverlap() async throws {
         let watch = FakeWatch()
         watch.delay = .milliseconds(300)
-        let store = makeStore(watch)
+        let store = try makeStore(watch)
         store.scheduleRunSync(after: .zero)
         try? await Task.sleep(for: .milliseconds(50))
         store.scheduleRunSync(after: .zero)
@@ -87,10 +92,10 @@ final class WatchSyncQueueTests: XCTestCase {
     }
 
     // Revue #71 : réinitialiser pendant une mise à jour lente retire tout après elle.
-    func testResetWaitsForTheRunningUpdateThenRemoves() async {
+    func testResetWaitsForTheRunningUpdateThenRemoves() async throws {
         let watch = FakeWatch()
         watch.delay = .milliseconds(300)
-        let store = makeStore(watch)
+        let store = try makeStore(watch)
         store.scheduleRunSync(after: .zero)
         try? await Task.sleep(for: .milliseconds(50))
         await store.resetPlan()
@@ -99,13 +104,13 @@ final class WatchSyncQueueTests: XCTestCase {
     }
 
     // Revue #71 : une modification efface « déjà synchronisé aujourd'hui » jusqu'à ce que la montre soit à jour.
-    func testEditKeepsTheDailySyncDueUntilDone() async {
+    func testEditKeepsTheDailySyncDueUntilDone() async throws {
         let watch = FakeWatch()
-        let store = makeStore(watch)
-        UserDefaults.standard.set(Day.key(.now), forKey: "lastSyncDay")
+        let store = try makeStore(watch)
+        defaults.set(Day.key(.now), forKey: "lastSyncDay")
         await store.move("a", to: "2030-01-08")
-        XCTAssertNil(UserDefaults.standard.string(forKey: "lastSyncDay"))
+        XCTAssertNil(defaults.string(forKey: "lastSyncDay"))
         await store.waitForScheduledRunSync()
-        XCTAssertEqual(UserDefaults.standard.string(forKey: "lastSyncDay"), Day.key(.now))
+        XCTAssertEqual(defaults.string(forKey: "lastSyncDay"), Day.key(.now))
     }
 }

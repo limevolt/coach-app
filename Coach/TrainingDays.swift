@@ -7,7 +7,6 @@ enum TrainingDays {
     static let key = "trainingDays"
 
     static let names = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
-    static let initials = ["L", "M", "M", "J", "V", "S", "D"]
 
     static func parse(_ raw: String) -> Set<Int> {
         Set(raw.split(separator: ",").compactMap { Int($0.trimmingCharacters(in: .whitespaces)) }.filter { (1...7).contains($0) })
@@ -20,6 +19,21 @@ enum TrainingDays {
     /// Jours choisis (vide = tous les jours conviennent).
     static var current: Set<Int> {
         parse(UserDefaults.standard.string(forKey: key) ?? "")
+    }
+
+    /// Un plan vient d'être créé avec l'assistant : ses jours deviennent les jours d'entraînement (#106).
+    /// Le jour d'un cours collectif compte (`effectiveTrainingDays`).
+    static func adopt(_ settings: PlanSettings, defaults: UserDefaults = .standard) {
+        let days = settings.effectiveTrainingDays
+        guard !days.isEmpty else { return }
+        defaults.set(encode(days), forKey: key)
+    }
+
+    /// Au lancement : un plan créé avant #106 n'avait pas rempli le réglage. On le reprend des réglages
+    /// du plan, sans écraser un choix déjà fait dans Réglages.
+    static func fillIfEmpty(from settings: PlanSettings?, defaults: UserDefaults = .standard) {
+        guard let settings, parse(defaults.string(forKey: key) ?? "").isEmpty else { return }
+        adopt(settings, defaults: defaults)
     }
 
     /// 1 = lundi … 7 = dimanche
@@ -40,32 +54,20 @@ enum TrainingDays {
     }
 }
 
-// MARK: - Sélecteur de jours (7 pastilles)
+// MARK: - Sélecteur de jours (Réglages)
 
+/// Mêmes pastilles que l'assistant (`DayGrid`, 2 lettres). Une modification est aussi enregistrée dans
+/// les réglages du plan, pour que « Modifier mon plan » reparte des mêmes jours (#106).
 struct TrainingDaysPicker: View {
     @AppStorage(TrainingDays.key) private var raw = ""
 
     var body: some View {
-        let days = TrainingDays.parse(raw)
-        HStack(spacing: Space.s) {
-            ForEach(1...7, id: \.self) { day in
-                let on = days.contains(day)
-                Button {
-                    var next = days
-                    if on { next.remove(day) } else { next.insert(day) }
-                    raw = TrainingDays.encode(next)
-                } label: {
-                    Text(TrainingDays.initials[day - 1])
-                        .font(.coach(size: 15, weight: .bold))
-                        .foregroundStyle(on ? Theme.accentDark : Theme.muted)
-                        .frame(maxWidth: .infinity, minHeight: Theme.minTap)
-                        .background(on ? Theme.accent : Theme.line.opacity(0.6), in: Circle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(TrainingDays.names[day - 1])
-                .accessibilityAddTraits(on ? .isSelected : [])
-            }
-        }
+        DayGrid(selection: Binding(
+            get: { TrainingDays.parse(raw) },
+            set: { days in
+                raw = TrainingDays.encode(days)
+                CoachStorage.update(trainingDays: days)
+            }))
         .padding(.vertical, Space.xs)
     }
 }

@@ -32,6 +32,13 @@ enum CoachStorage {
         try write(profile, to: profileURL)
     }
 
+    /// Jours choisis dans Réglages (#106) : reportés dans les réglages du plan, s'il y en a.
+    /// Réglages absents ou illisibles : rien n'est écrit.
+    static func update(trainingDays days: Set<Int>) {
+        guard !DemoMode.isOn, let settings = loadSettings() else { return }
+        try? write(settings.choosingTrainingDays(days), to: settingsURL)
+    }
+
     /// Profil seul (« Ménager le genou », #44). Présent mais illisible : on n'écrase pas.
     static func save(profile: AthleteProfile) throws {
         guard !DemoMode.isOn else { return }

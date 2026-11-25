@@ -212,6 +212,8 @@ private struct WizardStepView: View {
                 let generated = try result.get()
                 // Réglages et profil d'abord : en cas d'échec, le plan actuel n'est pas remplacé.
                 try CoachStorage.save(settings: settings, profile: profile)
+                // Réglages › Mes jours d'entraînement affiche les jours choisis ici (#106).
+                if !DemoMode.isOn { TrainingDays.adopt(settings) }
                 let waited = ContinuousClock.now - started
                 if waited < Self.minimumWaiting { try? await Task.sleep(for: Self.minimumWaiting - waited) }
                 // La montre est mise à jour en arrière-plan : on n'attend pas sa réponse ici.
@@ -235,8 +237,11 @@ private struct WizardStepView: View {
 private struct ObjectiveStep: View {
     @Bindable var draft: PlanDraft
     @State private var showCalendar = false
+    @FocusState private var nameFocused: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
+        ScrollViewReader { proxy in
         VStack(alignment: .leading, spacing: Theme.blockSpacing) {
             SegmentedChoice("Type d'objectif", selection: $draft.hasEvent,
                             options: [(true, "Une date à viser"), (false, "Être en forme")])
@@ -245,10 +250,14 @@ private struct ObjectiveStep: View {
                 WizardSection(title: "Événement") {
                     TextField("Nom de la course ou de l'épreuve", text: $draft.eventName)
                         .textInputAutocapitalization(.sentences)
+                        .focused($nameFocused)
+                        .submitLabel(.next)
+                        // « Suivant » sur le clavier : on passe directement à la date (#99).
+                        .onSubmit { toggleCalendar(open: true, proxy: proxy) }
                         .fieldStyle()
                 }
                 WizardSection(title: "Date") {
-                    Button { withAnimation { showCalendar.toggle() } } label: {
+                    Button { toggleCalendar(open: !showCalendar, proxy: proxy) } label: {
                         HStack {
                             Text(draft.eventDate.formatted(.dateTime.weekday(.wide).day().month(.wide).year()).capitalizingFirst)
                                 .foregroundStyle(Theme.text)
@@ -265,6 +274,7 @@ private struct ObjectiveStep: View {
                                    displayedComponents: .date)
                             .datePickerStyle(.graphical)
                             .tint(Theme.accent)
+                            .id(Self.calendarID)
                     }
                 }
                 if let warning = draft.settings().warnings().first(where: { $0 == .shortPlan || $0 == .maintenanceOnly }) {
@@ -277,6 +287,23 @@ private struct ObjectiveStep: View {
                     .font(.text)
                     .foregroundStyle(Theme.text)
             }
+        }
+        }
+    }
+
+    private static let calendarID = "calendrier"
+
+    /// Toucher « Date » avec le clavier ouvert (#99) : le calendrier s'ouvrait sous le clavier, invisible.
+    /// On ferme d'abord le clavier, puis on fait défiler jusqu'au calendrier.
+    private func toggleCalendar(open: Bool, proxy: ScrollViewProxy) {
+        let keyboardWasOpen = nameFocused
+        nameFocused = false
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) { showCalendar = open }
+        guard open else { return }
+        Task { @MainActor in
+            // Le temps que le clavier se ferme et que le calendrier s'affiche.
+            try? await Task.sleep(for: .milliseconds(keyboardWasOpen ? 350 : 100))
+            withAnimation(reduceMotion ? nil : .snappy(duration: 0.3)) { proxy.scrollTo(Self.calendarID, anchor: .bottom) }
         }
     }
 

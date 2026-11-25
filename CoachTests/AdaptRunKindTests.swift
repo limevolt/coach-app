@@ -76,8 +76,8 @@ final class AdaptRunKindTests: XCTestCase {
 
 @MainActor
 final class AdaptRunKindStoreTests: XCTestCase {
-    private func makeStore() -> PlanStore {
-        let store = PlanStore()
+    private func makeStore() throws -> PlanStore {
+        let store = try IsolatedStore(self).store
         store.runSync = { _ in "ok" }
         addTeardownBlock { @MainActor in store.cancelScheduledRunSync() }
         func run(_ id: String, _ title: String, _ date: String) -> PlannedSession {
@@ -91,8 +91,8 @@ final class AdaptRunKindStoreTests: XCTestCase {
         return store
     }
 
-    func testStairsReplacedByTheClosestClassicRun() async {
-        let store = makeStore()
+    func testStairsReplacedByTheClosestClassicRun() async throws {
+        let store = try makeStore()
         guard let slot = store.plan?.sessions.first(where: { $0.id == "stairs" }) else { return XCTFail() }
         XCTAssertEqual(store.contentSource(for: slot, choice: .run)?.id, "easy")
         await store.adapt(slotId: "stairs", to: .run, withoutEquipment: true, swap: false)
@@ -103,14 +103,14 @@ final class AdaptRunKindStoreTests: XCTestCase {
     }
 
     // Revue #73 : escaliers choisis sur une séance d'escaliers = rien ne change.
-    func testStairsOnAStairsSessionIsTheSameSession() {
-        let store = makeStore()
+    func testStairsOnAStairsSessionIsTheSameSession() throws {
+        let store = try makeStore()
         guard let slot = store.plan?.sessions.first(where: { $0.id == "stairs" }) else { return XCTFail() }
         XCTAssertEqual(store.contentSource(for: slot, choice: .stairs)?.id, "stairs")
     }
 
-    func testClassicRunReplacedByStairs() async {
-        let store = makeStore()
+    func testClassicRunReplacedByStairs() async throws {
+        let store = try makeStore()
         await store.adapt(slotId: "easy", to: .stairs, withoutEquipment: false, swap: false)
         let replaced = store.plan?.sessions.first { $0.id == "easy" }
         XCTAssertTrue(replaced?.isStairs ?? false)
