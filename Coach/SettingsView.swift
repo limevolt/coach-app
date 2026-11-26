@@ -4,6 +4,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(PlanStore.self) private var store
+    @Environment(\.tabVisible) private var tabVisible
     @State private var healthMessage: String?
     @State private var confirmReset = false
     /// nil = pas encore vérifié ; true = l'accès à Santé a déjà été demandé (#36).
@@ -115,7 +116,10 @@ struct SettingsView: View {
             .tabBarSpace()
             .navigationTitle("Réglages")
             .shareFileSheet($exportFile)
-            .task { healthRequested = await HealthReader().wasAuthorizationRequested() }
+            // À chaque retour sur l'onglet (#69) : l'assistant du plan a pu demander l'accès entre-temps.
+            .task(id: tabVisible) {
+                if tabVisible { healthRequested = await HealthReader().wasAuthorizationRequested() }
+            }
             .task(id: store.plan?.key) { changePlanner = await store.planChangePlanner() }
             .planChangeSheet($changeSheet, planner: changePlanner, store: store)
         }

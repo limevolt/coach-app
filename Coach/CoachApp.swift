@@ -38,6 +38,8 @@ struct ContentView: View {
     @State private var tab = AppTab.plan
     /// Appui sur l'onglet déjà choisi (#64) : compteur transmis à l'onglet (`tabReselect`).
     @State private var reselects: [AppTab: Int] = [:]
+    /// Onglets déjà ouverts : un onglet n'est créé qu'à sa première visite, puis gardé en mémoire.
+    @State private var visited: Set<AppTab> = [.plan]
     /// Séance de la montre suivie sur l'iPhone (#130, étape 3) ; `closedMirror` : fermée sur l'iPhone,
     /// on ne la rouvre pas tant qu'elle continue sur la montre.
     @State private var mirrorSession: PlannedSession?
@@ -67,6 +69,7 @@ struct ContentView: View {
             tabContent(.settings) { SettingsView() }
         }
         .overlay(alignment: .bottom) { bar }
+        .onChange(of: tab) { _, new in visited.insert(new) }
         // Une séance de circuit tourne sur la montre : l'iPhone ouvert l'affiche en grand.
         // Vérifié à chaque message (toutes les 5 s) : l'iPhone ouvert en pleine séance la rattrape.
         .onChange(of: GuidedMirror.shared.messages, initial: true) { _, _ in presentMirrorIfNeeded() }
@@ -104,14 +107,18 @@ extension ContentView {
     }
 
     /// Un onglet : toujours là (état gardé), visible et actif seulement s'il est choisi.
+    @ViewBuilder
     private func tabContent(_ id: AppTab, @ViewBuilder _ content: () -> some View) -> some View {
         let shown = tab == id
-        return content()
-            .environment(\.tabReselect, reselects[id, default: 0])
-            .opacity(shown ? 1 : 0)
-            .allowsHitTesting(shown)
-            .accessibilityHidden(!shown)
-            .zIndex(shown ? 1 : 0)
+        if shown || visited.contains(id) {
+            content()
+                .environment(\.tabReselect, reselects[id, default: 0])
+                .environment(\.tabVisible, shown)
+                .opacity(shown ? 1 : 0)
+                .allowsHitTesting(shown)
+                .accessibilityHidden(!shown)
+                .zIndex(shown ? 1 : 0)
+        }
     }
 
     private var bar: some View {

@@ -123,6 +123,9 @@ extension EnvironmentValues {
     /// Compteur de ré-appuis sur l'onglet affiché : chaque onglet y réagit à sa façon
     /// (Plan : retour à l'accueil, puis en haut de la page).
     @Entry var tabReselect = 0
+    /// L'onglet est celui affiché (#69 : les onglets restent en mémoire, cachés) : relance ce qui se
+    /// relançait quand on revenait sur l'onglet.
+    @Entry var tabVisible = true
 }
 
 /// Place réservée sous un écran pour la barre d'onglets, posée par-dessus (ContentView).
