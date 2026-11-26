@@ -6,6 +6,7 @@ import Combine
 
 struct PlanView: View {
     @Environment(PlanStore.self) private var store
+    @Environment(\.tabVisible) private var tabVisible
     /// « Séance libre » (jour de repos) : ouvre l'onglet Libre.
     var openTimers: () -> Void = {}
     @State private var showImporter = false
@@ -56,7 +57,10 @@ struct PlanView: View {
             .background(Theme.bg.ignoresSafeArea())
             .navigationDestination(for: PlannedSession.self) { SessionDetailView(session: $0).tabBarSpace() }
             .navigationDestination(for: HealthActivity.self) { ActivityDetailView(activity: $0).tabBarSpace() }
-            .task(id: now) { await store.refreshActivities(now: now) }
+            // Aussi au retour sur l'onglet (#69 : l'onglet reste en mémoire, caché).
+            .task(id: [now.timeIntervalSince1970, tabVisible ? 1 : 0]) {
+                if tabVisible { await store.refreshActivities(now: now) }
+            }
             .task(id: store.plan?.key) { changePlanner = await store.planChangePlanner() }
             .planChangeSheet($changeSheet, planner: changePlanner, store: store)
             // Nouveau jour ou autre semaine : la carte revient à aujourd'hui.
