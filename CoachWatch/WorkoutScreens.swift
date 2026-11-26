@@ -164,11 +164,6 @@ struct StartCountdownStage: View {
     }
 }
 
-/// Durée du compte à rebours avant chaque départ.
-enum StartCountdown {
-    static let seconds = 5
-}
-
 // MARK: - Commandes (page de gauche)
 
 /// Page de commandes, comme dans l'app Exercice : on y arrive en glissant vers la droite.

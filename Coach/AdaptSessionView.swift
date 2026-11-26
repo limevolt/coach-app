@@ -84,7 +84,9 @@ struct AdaptSessionView: View {
         let source = store.contentSource(for: slot, choice: choice)
         let isSame = source?.id == slot.id
         let canSwap = source.map { !isSame && store.isAvailable($0) } ?? false
-        let unchanged = isSame && (choice != .strength || noEquipment == slot.withoutEquipment)
+        // Martial cross : seulement s'il y a des exercices au sac (pas sur un cours collectif).
+        let equipmentChoice = choice == .strength || (choice == .martial && (source?.hasHomeVariant ?? true))
+        let unchanged = isSame && (!equipmentChoice || noEquipment == slot.withoutEquipment)
 
         Section {
             Group {
@@ -93,14 +95,15 @@ struct AdaptSessionView: View {
                     SegmentedChoice("Activité", selection: tab,
                                     options: ActivityChoice.tabs.map { (value: $0, label: $0.label) })
                     switch choice {
-                    case .strength:
-                        subChoice("Matériel", selection: $noEquipment,
-                                  options: [(false, "Avec matériel"), (true, "Sans matériel")])
+                    case .strength, .martial:
+                        // Martial cross aussi : à la maison, les exercices au sac passent en shadow boxing.
+                        if equipmentChoice {
+                            subChoice("Matériel", selection: $noEquipment,
+                                      options: [(false, "Avec matériel"), (true, "Sans matériel")])
+                        }
                     case .run, .stairs:
                         // Toujours les deux : on peut changer de genre de course dans les deux sens (#73).
                         subChoice("Genre de course", selection: $choice, options: ActivityChoice.runKinds)
-                    case .martial:
-                        EmptyView()
                     }
                 }
 
@@ -128,7 +131,7 @@ struct AdaptSessionView: View {
                     }
                 } label: {
                     Label(Self.buttonTitle(choice: choice, isSame: isSame, unchanged: unchanged,
-                                           noEquipment: noEquipment),
+                                           noEquipment: noEquipment && equipmentChoice),
                           systemImage: unchanged ? "equal.circle" : "checkmark")
                 }
                 .buttonStyle(.coachPrimary(enabled: !unchanged))
@@ -139,7 +142,8 @@ struct AdaptSessionView: View {
         } header: {
             Text("Faire autre chose à la place")
         } footer: {
-            let notes = Self.activityNotes(choice: choice, isSame: isSame, noEquipment: noEquipment,
+            let notes = Self.activityNotes(choice: choice, isSame: isSame,
+                                           noEquipment: noEquipment && (choice != .martial || (source?.hasHomeVariant ?? true)),
                                            madeTitle: source == nil
                                                ? DefaultSessions.make(choice, id: "", date: slot.date, time: nil).title
                                                : nil)
@@ -168,19 +172,22 @@ struct AdaptSessionView: View {
         }
         if !isSame {
             if choice == .stairs { notes.append("Il faut un escalier.") }
-            if choice == .martial { notes.append("Il faut un sac de frappe.") }
+            if choice == .martial && !noEquipment { notes.append("Il faut un sac de frappe.") }
         }
         if choice == .strength && noEquipment {
             notes.append("Chaque exercice avec charge est remplacé par une variante maison (ex. squat lesté → squat sauté, rowing haltères → rowing sac à dos).")
         }
+        if choice == .martial && noEquipment {
+            notes.append("Les exercices au sac passent en shadow boxing, même durée.")
+        }
         return notes.joined(separator: " ")
     }
 
-    /// Libellé du bouton (#72) : « avec / sans matériel » seulement pour le renfo ; quand rien ne change,
+    /// Libellé du bouton (#72) : « avec / sans matériel » pour le renfo et le martial cross ; quand rien ne change,
     /// le bouton (inactif) dit pourquoi.
     nonisolated static func buttonTitle(choice: ActivityChoice, isSame: Bool, unchanged: Bool, noEquipment: Bool) -> String {
         if unchanged { return "C'est déjà la séance prévue" }
-        guard isSame, choice == .strength else { return "Remplacer" }
+        guard isSame, choice.hasEquipmentChoice else { return "Remplacer" }
         return noEquipment ? "Faire sans matériel" : "Faire avec matériel"
     }
 

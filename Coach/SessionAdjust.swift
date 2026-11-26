@@ -14,6 +14,10 @@ enum ActivityChoice: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// Choix « Avec / Sans matériel » possible dans « Adapter » (renfo, et martial cross si la séance
+    /// a des exercices au sac : voir `PlannedSession.hasHomeVariant`).
+    var hasEquipmentChoice: Bool { self == .strength || self == .martial }
+
     var label: String {
         switch self {
         case .run: return "Course"
@@ -53,6 +57,14 @@ extension PlannedSession {
         return ["martial", "boxe", "sac de frappe", "frappe"].contains { t.contains($0) }
     }
 
+    /// « Sans matériel » a un sens : renfo, ou martial cross avec des exercices au sac ou sur tapis
+    /// (pas un cours collectif, dont le contenu est celui du cours).
+    var hasHomeVariant: Bool {
+        if type == .strength { return true }
+        guard isMartial, let circuit else { return false }
+        return circuit.exercises.contains { Bodyweight.isBagExercise($0) || $0.name.localizedCaseInsensitiveContains("ou tapis") }
+    }
+
     var activity: ActivityChoice {
         if isMartial { return .martial }
         if isStairs || isHillsOrStairs { return .stairs }
@@ -64,14 +76,20 @@ extension PlannedSession {
         guard withoutEquipment else { return self }
         var s = self
         s.title = Bodyweight.homeTitle(title)
-        let header = "- **Version maison, sans matériel** : les exercices avec charge sont remplacés."
-        s.notes = [header, notes.map(Bodyweight.homeText)].compactMap { $0 }.joined(separator: "\n")
+        let header = isMartial
+            ? "- **Version maison, sans matériel** : les exercices au sac passent en shadow boxing."
+            : "- **Version maison, sans matériel** : les exercices avec charge sont remplacés."
+        let home = notes.map(Bodyweight.homeText).map { isMartial ? Bodyweight.shadowText($0) : $0 }
+        s.notes = [header, home].compactMap { $0 }.joined(separator: "\n")
         if var strength = s.strength {
             strength.exercises = strength.exercises.map(Bodyweight.convert)
             s.strength = strength
         }
         if var circuit = s.circuit {
-            circuit.exercises = circuit.exercises.map(Bodyweight.convert)
+            // Martial cross seulement : « au sac » = sac de frappe (pas un sac à dos ou un sac lesté de renfo).
+            circuit.exercises = circuit.exercises.map { e in
+                (isMartial ? Bodyweight.shadowBoxing(e) : nil) ?? Bodyweight.convert(e)
+            }
             s.circuit = circuit
         }
         return s
@@ -128,6 +146,13 @@ enum Bodyweight {
 
     /// Ordre important : la première règle qui correspond l'emporte.
     private static let rules: [Rule] = [
+        // Avant la règle des machines : « Course sur place ou tapis » ne doit plus parler de tapis.
+        Rule(keys: ["ou tapis"],
+             name: "Course sur place", animation: nil,
+             instructions: ["Alterne sprint sur place, montées de genoux et petits pas rapides.",
+                            "Reste sur l'avant du pied, bras actifs.",
+                            "Garde un rythme que tu tiens jusqu'au bout de l'atelier."],
+             always: true, cardio: true),
         Rule(keys: ["rameur", "tapis de course", "elliptique", "ski erg", "skierg", "assault", "airbike", "air bike",
                     "stepper", "velo d'appart", "velo stationnaire", "spinning"],
              name: "Cardio maison : jumping jacks et montées de genoux", animation: "jumpingJack",
@@ -241,6 +266,40 @@ enum Bodyweight {
         } else {
             out.name = e.name + " (sans charge)"
         }
+        out.notes = "Sans matériel (au lieu de « \(e.name) »)"
+        return out
+    }
+}
+
+extension Bodyweight {
+    /// « Jab-cross au sac » → « Jab-cross en shadow boxing » : mêmes séries, même durée, consignes adaptées.
+    private static let bagPattern = "(?i)\\s+(au|dans le) sac( de frappe)?\\b(?!\\s*(à|a) dos|\\s*lest)"
+
+    static func isBagExercise(_ e: Exercise) -> Bool {
+        e.name.range(of: bagPattern, options: .regularExpression) != nil
+    }
+
+    /// Notes d'une séance de martial cross en version maison : plus de sac de frappe.
+    static func shadowText(_ text: String) -> String {
+        [("(?i)il faut un (\\*\\*)?sac de frappe(\\*\\*)?\\.?", "Sans sac : **shadow boxing**."),
+         (bagPattern, " en shadow boxing")].reduce(text) { t, r in
+            t.replacingOccurrences(of: r.0, with: r.1, options: .regularExpression)
+        }
+    }
+
+    static func shadowBoxing(_ e: Exercise) -> Exercise? {
+        guard e.noEquipment == nil else { return nil }   // la variante prévue par le coach l'emporte
+        let pattern = bagPattern
+        guard isBagExercise(e) else { return nil }
+        var out = e
+        out.name = e.name.replacingOccurrences(of: pattern, with: " en shadow boxing", options: .regularExpression)
+        out.weightKg = nil
+        out.videoURL = nil
+        out.instructions = ["Même enchaînement qu'au sac, dans le vide, face à un adversaire imaginaire.",
+                            "Garde haute, menton rentré, bouge sur l'avant des pieds.",
+                            "Frappe vite mais sans verrouiller le coude ni le genou.",
+                            "Reviens en garde après chaque coup."]
+        out.mistakes = nil
         out.notes = "Sans matériel (au lieu de « \(e.name) »)"
         return out
     }

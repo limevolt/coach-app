@@ -236,9 +236,11 @@ final class PlanStore {
     func adapt(slotId: String, to choice: ActivityChoice, withoutEquipment: Bool, swap: Bool) async {
         guard var newPlan = plan, let i = newPlan.sessions.firstIndex(where: { $0.id == slotId }) else { return }
         let slot = newPlan.sessions[i]
-        let equipment = (choice == .strength && withoutEquipment) ? "none" : nil
+        let source = contentSource(for: slot, choice: choice)
+        let homeVariant = choice == .strength || (choice == .martial && (source?.hasHomeVariant ?? true))
+        let equipment = (homeVariant && withoutEquipment) ? "none" : nil
 
-        if let source = contentSource(for: slot, choice: choice) {
+        if let source {
             if source.id == slot.id {
                 remember(slot)
                 newPlan.sessions[i].equipment = equipment

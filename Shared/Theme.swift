@@ -122,6 +122,12 @@ enum Theme {
     static let screenMargin: CGFloat = 20
     /// Espace entre deux blocs d'un écran.
     static let blockSpacing: CGFloat = Space.xl  // 24 (choix du propriétaire, 24/11/2026, #76)
+    /// Vignettes d'exercices du détail de séance (maquette validée) : hauteur de l'image,
+    /// espace entre deux colonnes, symbole quand l'exercice n'a pas encore d'illustration.
+    static let exerciseTileHeight: CGFloat = 160
+    static let tileSpacing: CGFloat = Space.m
+    static let tileSymbolFont = Font.system(size: 34, weight: .semibold)
+    static let exerciseFallbackSymbol = "figure.strengthtraining.functional"
     /// Écran « Le coach prépare ton plan » : petit coureur (réduit en très grand texte) et barre d'avancement.
     static let creationFigure: CGFloat = 180
     static let creationFigureCompact: CGFloat = 120

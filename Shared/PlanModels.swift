@@ -498,9 +498,17 @@ extension CircuitWorkout {
         return "\(rounds) tours · \(workSec) s effort / \(restSec) s repos\(roundRest)"
     }
 
+    /// Durée d'un tour : efforts + repos entre les exercices.
+    var roundSeconds: Int {
+        exercises.reduce(0) { $0 + ($1.durationSec ?? workSec) } + restSec * Swift.max(0, exercises.count - 1)
+    }
+
+    /// Durée de l'effort, sans le compte à rebours de départ (affichée en minutes rondes).
+    var workoutSeconds: Int {
+        roundSeconds * rounds + (roundRestSec ?? restSec) * Swift.max(0, rounds - 1)
+    }
+
     var totalSeconds: Int {
-        let perRound = exercises.reduce(0) { $0 + ($1.durationSec ?? workSec) } + restSec * Swift.max(0, exercises.count - 1)
-        let between = (roundRestSec ?? restSec) * Swift.max(0, rounds - 1)
-        return Swift.max(prepareSec ?? 5, 5) + perRound * rounds + between
+        Swift.max(prepareSec ?? 5, 5) + workoutSeconds
     }
 }
