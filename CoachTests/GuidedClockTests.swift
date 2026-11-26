@@ -66,6 +66,31 @@ final class GuidedClockTests: XCTestCase {
         XCTAssertFalse(clock.isPaused)
     }
 
+    // Relecture : « revenir » depuis le 1er exercice ne relance pas le « Prêt ? ».
+    func testPreviousNeverGoesBackToGetReady() {
+        var clock = GuidedClock()
+        clock.start(segments, at: t0)
+        clock.previous(segments, at: t0.addingTimeInterval(1))       // pendant « Prêt ? » : on y reste
+        XCTAssertEqual(clock.index, 0)
+        clock.skip(segments, at: t0.addingTimeInterval(2))           // → 1er exercice
+        clock.previous(segments, at: t0.addingTimeInterval(20))      // il recommence
+        XCTAssertEqual(clock.index, 1)
+        XCTAssertEqual(clock.remaining(at: t0.addingTimeInterval(20)), 40, accuracy: 0.001)
+    }
+
+    func testEdgeCases() {
+        var clock = GuidedClock()
+        clock.start(segments, at: t0)
+        XCTAssertFalse(clock.tick(segments, at: t0.addingTimeInterval(1)), "rien ne change avant la fin de l'étape")
+        clock.togglePause(at: t0.addingTimeInterval(2))
+        clock.add(30)
+        XCTAssertEqual(clock.remaining(at: t0.addingTimeInterval(99)), 38, accuracy: 0.001, "+30 s pendant la pause")
+        for _ in segments { clock.skip(segments, at: t0.addingTimeInterval(3)) }
+        XCTAssertTrue(clock.finished, "passer la dernière étape termine la séance")
+        clock.togglePause(at: t0.addingTimeInterval(4))
+        XCTAssertFalse(clock.isPaused, "plus de pause une fois la séance finie")
+    }
+
     func testClockCanBeSentToTheOtherDevice() throws {
         var clock = GuidedClock()
         clock.start(segments, at: t0)

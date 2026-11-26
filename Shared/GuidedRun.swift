@@ -149,15 +149,17 @@ struct GuidedClock: Codable, Equatable {
         moveTo(index + 1, segments, startingAt: now)
     }
 
-    /// Étape précédente : le début de l'exercice d'avant (les repos sont sautés), ou le début de celui-ci.
+    /// Étape précédente : le début de l'exercice d'avant (les repos sont sautés). Une fois le « Prêt ? »
+    /// passé, on n'y revient jamais (la séance Santé est déjà lancée) : depuis le 1er exercice, il recommence.
     mutating func previous(_ segments: [TimedSegment], at now: Date) {
         guard started, !finished else { return }
+        let first = segments.first?.kind == .prepare && index > 0 ? 1 : 0
         var target = index - 1
-        while target > 0, segments.indices.contains(target), segments[target].kind == .rest { target -= 1 }
-        moveTo(max(0, target), segments, startingAt: now)
+        while target > first, segments.indices.contains(target), segments[target].kind == .rest { target -= 1 }
+        moveTo(max(first, target), segments, startingAt: now)
     }
 
-    /// +30 s sur l'étape en cours (repos un peu plus long).
+    /// +30 s sur l'étape en cours. L'écran ne le propose que pendant un repos, comme sur la montre.
     mutating func add(_ seconds: TimeInterval) {
         if let end = segmentEnd { segmentEnd = end.addingTimeInterval(seconds) }
         else if let remaining = pausedRemaining { pausedRemaining = remaining + seconds }
