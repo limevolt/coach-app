@@ -34,6 +34,8 @@ struct IntervalRunView: View {
     @State private var rpe = 7
     @State private var saving = false
     @State private var confirmStop = false
+    /// « Abandonner » en cours (#118) : plus aucune action, plus de minuteur.
+    @State private var abandoning = false
     /// « Commencer » déjà appuyé (bloque un second appui pendant le démarrage).
     @State private var starting = false
     /// Déroulé figé au « Commencer » : une mise à jour venue de l'iPhone ne le change pas en cours de route.
@@ -81,10 +83,12 @@ struct IntervalRunView: View {
             if autoStart, phase == .ready { beginStart() }
         }
         .confirmationDialog("Terminer la séance ?", isPresented: $confirmStop) {
-            Button("Terminer", role: .destructive) { finishEarly() }
+            Button("Terminer") { if !abandoning { finishEarly() } }
+            // #118 : laisser tomber la séance sans rien enregistrer.
+            Button("Abandonner", role: .destructive) { abandon() }
             Button("Continuer", role: .cancel) {}
         } message: {
-            Text("Les efforts déjà faits sont gardés.")
+            Text("Terminer garde ce qui est fait. Abandonner n'enregistre rien.")
         }
         // Fin de séance : on coupe tout de suite le chrono et la séance Santé.
         .onChange(of: phase) { _, newPhase in
@@ -274,6 +278,19 @@ struct IntervalRunView: View {
     private func finishEarly() {
         segmentEnd = nil
         phase = .feedback
+    }
+
+    /// Séance abandonnée (#118) : ni Santé, ni suivi.
+    private func abandon() {
+        guard !abandoning else { return }
+        abandoning = true
+        segmentEnd = nil
+        pausedRemaining = nil
+        Task {
+            await workout.discard()
+            workout.sessionInProgress = false
+            dismiss()
+        }
     }
 
     private func finish() async {

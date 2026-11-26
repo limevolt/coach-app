@@ -3,15 +3,11 @@
 
 import SwiftUI
 
-/// Gros bouton de la séance ; puis « En cours sur ta montre », ou la raison de l'échec + « Réessayer ».
+/// Bouton de la séance ; puis « En cours sur ta montre », ou la raison de l'échec + « Réessayer ».
 /// Pendant l'envoi, le bouton affiche un indicateur, sans que la mise en page bouge (#20).
 struct StartOnWatchButton: View {
-    enum Size { case regular, large }
-
     /// Un seul libellé partout : « Démarrer » (#40).
     var title = "Démarrer"
-    /// `.regular` dans la carte du jour de l'accueil, `.large` sur l'écran d'une séance.
-    var size: Size = .large
     let start: () async -> WatchStartResult
 
     @State private var sending = false
@@ -22,17 +18,17 @@ struct StartOnWatchButton: View {
             switch result {
             case .sent:
                 Label("En cours sur ta montre", systemImage: "applewatch")
-                    .font(.coach(size == .large ? .title3 : .body, weight: .bold))
+                    .font(.coach(.body, weight: .bold))
                     .foregroundStyle(Theme.accent)
                     .frame(maxWidth: .infinity,
-                           minHeight: size == .large ? Theme.largeButtonHeight : Theme.primaryButtonHeight)
+                           minHeight: Theme.primaryButtonHeight)
                     .background(Theme.accent.opacity(0.15),
                                 in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
                     .transition(.opacity)
             case .failed(let reason):
                 VStack(alignment: .leading, spacing: Space.m) {
                     Label("Montre injoignable", systemImage: "exclamationmark.circle")
-                        .font(size == .large ? .coach(.title3, weight: .semibold) : .text)
+                        .font(.text)
                         .foregroundStyle(Theme.text)
                     Text(reason)
                         .font(.coach(.subheadline))
@@ -41,11 +37,18 @@ struct StartOnWatchButton: View {
                     sendButton(title: "Réessayer", compact: true)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .card(radius: Theme.heroCardRadius, fill: size == .large ? Theme.card : Theme.card2,
+                .card(radius: Theme.heroCardRadius, fill: Theme.card2,
                       stroke: Theme.warm.opacity(0.5))
             case nil:
                 sendButton(title: title, compact: false)
             }
+        }
+        // « En cours sur ta montre » ne reste pas indéfiniment : une séance abandonnée sur la montre
+        // n'envoie rien à l'iPhone (#118). Après la durée de vie d'un départ (10 min), le bouton revient.
+        .task(id: result) {
+            guard result == .sent else { return }
+            try? await Task.sleep(for: .seconds(Self.sentLifetime))
+            if !Task.isCancelled { withAnimation(.snappy) { result = nil } }
         }
         .sensoryFeedback(.success, trigger: result) { _, new in new == .sent }
         .sensoryFeedback(.error, trigger: result) { _, new in new.map { !$0.isSent } ?? false }
@@ -62,10 +65,12 @@ struct StartOnWatchButton: View {
                 Text(sending ? "Envoi à la montre…" : title)
             }
         }
-        .buttonStyle(.coachPrimary(compact: compact, large: !compact && size == .large))
+        .buttonStyle(.coachPrimary(compact: compact))
         .disabled(sending)
         .accessibilityHint("La séance démarre sur ta montre")
     }
+
+    static let sentLifetime: TimeInterval = 600
 
     private func send() {
         guard !sending else { return }

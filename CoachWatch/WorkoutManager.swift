@@ -19,6 +19,8 @@ final class WorkoutManager {
     var sessionInProgress = false
     /// « Commencer » en cours de traitement : bloque un second appel et une préparation concurrente.
     private var isStarting = false
+    /// « Abandonner » demandé pendant `start()` : appliqué dès la fin du démarrage (#118).
+    private var discardRequested = false
     /// Début et fin de la séance Santé (pour la durée affichée en fin de séance).
     var startedAt: Date?
     var endedAt: Date?
@@ -115,12 +117,48 @@ final class WorkoutManager {
             let startDate = Date()
             newSession.startActivity(with: startDate)
             try await newBuilder.beginCollection(at: startDate)
+            // Abandon validé pendant le démarrage : on jette tout au lieu de passer « actif ».
+            if discardRequested || session !== newSession {
+                discardRequested = false
+                if session === newSession { session = nil; builder = nil }
+                newSession.end()
+                try? await newBuilder.endCollection(at: Date())
+                newBuilder.discardWorkout()
+                return
+            }
             isActive = true
             activeCalories = 0
             startedAt = startDate
             endedAt = nil
         } catch {
             lastError = error.localizedDescription
+        }
+    }
+
+    /// « Abandonner » (#118) : la séance s'arrête et rien n'est enregistré, ni dans Santé ni dans le suivi.
+    func discard() async {
+        if isStarting { discardRequested = true }
+        activeCalories = 0
+        if DemoMode.isOn {
+            isActive = false
+            startedAt = nil
+            endedAt = nil
+            heartRate = 0
+            return
+        }
+        let session = self.session
+        let builder = self.builder
+        self.session = nil
+        self.builder = nil
+        isActive = false
+        isPrepared = false
+        startedAt = nil
+        endedAt = nil
+        heartRate = 0
+        session?.end()
+        if let builder {
+            try? await builder.endCollection(at: Date())
+            builder.discardWorkout()
         }
     }
 
