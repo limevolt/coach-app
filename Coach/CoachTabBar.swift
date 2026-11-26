@@ -1,7 +1,7 @@
 // CoachTabBar.swift — barre d'onglets au style de Coach (#64, maquette validée « option B »).
 // Remplace la barre native (Liquid Glass) : fond de l'app, trait gris en haut ; onglet choisi =
 // petit trait citron vert collé en haut, icône et libellé citron vert, libellé semi-gras.
-// La TabView native reste dessous (état de chaque onglet, apparitions) ; seule sa barre est masquée.
+// Plus de TabView native (#69) : ContentView garde les onglets en mémoire et pose cette barre une fois.
 // Ré-appui sur l'onglet affiché : `tabReselect` change, l'onglet revient à son premier écran
 // sans rien effacer (texte saisi, export en cours).
 
@@ -125,7 +125,7 @@ extension EnvironmentValues {
     @Entry var tabReselect = 0
 }
 
-/// Place réservée sous un écran pour la barre d'onglets, posée par-dessus (`coachTabBar`).
+/// Place réservée sous un écran pour la barre d'onglets, posée par-dessus (ContentView).
 /// Se replie quand le clavier est ouvert, comme la barre.
 private struct TabBarSpacer: View {
     @State private var keyboardShown = false
@@ -145,13 +145,6 @@ private struct TabBarSpacer: View {
 }
 
 extension View {
-    /// Racine d'un onglet : barre native masquée, barre de Coach posée en bas, au-dessus de tous
-    /// les écrans de cet onglet.
-    func coachTabBar(_ bar: some View) -> some View {
-        toolbar(.hidden, for: .tabBar)
-            .overlay(alignment: .bottom) { bar }
-    }
-
     /// À mettre sur chaque écran d'un onglet (racine et écrans ouverts depuis elle) : le bas de la
     /// page et ses boutons fixés en bas restent au-dessus de la barre d'onglets. Un écran poussé ne
     /// reçoit pas la marge de son onglet : il faut la lui donner lui-même.

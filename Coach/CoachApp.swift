@@ -58,20 +58,15 @@ struct ContentView: View {
     }
 
     var body: some View {
-        TabView(selection: $tab) {
-            PlanView(openTimers: { tab = .timers })
-                .environment(\.tabReselect, reselects[.plan, default: 0])
-                .coachTabBar(bar)
-                .tag(AppTab.plan)
-            TimersView()
-                .environment(\.tabReselect, reselects[.timers, default: 0])
-                .coachTabBar(bar)
-                .tag(AppTab.timers)
-            SettingsView()
-                .environment(\.tabReselect, reselects[.settings, default: 0])
-                .coachTabBar(bar)
-                .tag(AppTab.settings)
+        // #69 : plus de TabView native (sa barre, même masquée, réservait sa place un instant à chaque
+        // changement d'onglet : le contenu sautait). Les trois onglets restent en mémoire (leur état est
+        // gardé), un seul est visible ; la barre de Coach est posée une seule fois, au-dessus.
+        ZStack {
+            tabContent(.plan) { PlanView(openTimers: { tab = .timers }) }
+            tabContent(.timers) { TimersView() }
+            tabContent(.settings) { SettingsView() }
         }
+        .overlay(alignment: .bottom) { bar }
         // Une séance de circuit tourne sur la montre : l'iPhone ouvert l'affiche en grand.
         // Vérifié à chaque message (toutes les 5 s) : l'iPhone ouvert en pleine séance la rattrape.
         .onChange(of: GuidedMirror.shared.messages, initial: true) { _, _ in presentMirrorIfNeeded() }
@@ -106,6 +101,17 @@ extension ContentView {
               let session = store.plan?.sessions.first(where: { $0.id == live.sessionId })?.effective,
               session.circuit != nil else { return }
         mirrorSession = session
+    }
+
+    /// Un onglet : toujours là (état gardé), visible et actif seulement s'il est choisi.
+    private func tabContent(_ id: AppTab, @ViewBuilder _ content: () -> some View) -> some View {
+        let shown = tab == id
+        return content()
+            .environment(\.tabReselect, reselects[id, default: 0])
+            .opacity(shown ? 1 : 0)
+            .allowsHitTesting(shown)
+            .accessibilityHidden(!shown)
+            .zIndex(shown ? 1 : 0)
     }
 
     private var bar: some View {
