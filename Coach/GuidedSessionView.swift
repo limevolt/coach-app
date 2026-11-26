@@ -263,7 +263,8 @@ struct GuidedSessionView: View {
     private func upcoming(_ next: TimedSegment) -> some View {
         VStack(alignment: .leading, spacing: Space.m) {
             Eyebrow(text: "Ensuite")
-            visual(for: next.exercise, height: Theme.guidedNextVisualHeight, animated: true)
+            // Repos et « Prêt ? » sont sur fond carte : l'aperçu prend le gris plus clair pour rester visible.
+            visual(for: next.exercise, height: Theme.guidedNextVisualHeight, animated: true, fill: Theme.card2)
             HStack(alignment: .firstTextBaseline) {
                 Text(next.title).font(.number).foregroundStyle(Theme.text)
                 Spacer(minLength: Space.s)
@@ -309,9 +310,10 @@ struct GuidedSessionView: View {
 
     /// Visuel de l'exercice : personnage animé (pose fixe si « Réduire les animations »),
     /// sinon les étapes écrites en grand (maquette « exercice sans visuel »).
-    @ViewBuilder private func visual(for exercise: Exercise?, height: CGFloat, animated: Bool) -> some View {
+    @ViewBuilder private func visual(for exercise: Exercise?, height: CGFloat, animated: Bool,
+                                     fill: Color = Theme.card) -> some View {
         ZStack {
-            RoundedRectangle(cornerRadius: Radius.card, style: .continuous).fill(Theme.card)
+            RoundedRectangle(cornerRadius: Radius.card, style: .continuous).fill(fill)
             if let exercise, let animation = ExerciseLibrary.animation(for: exercise) {
                 if animated && !reduceMotion {
                     AnimatedExerciseFigure(animation: animation, shadow: false).padding(Space.l)
