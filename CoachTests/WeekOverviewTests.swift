@@ -54,6 +54,29 @@ final class WeekOverviewTests: XCTestCase {
         XCTAssertEqual(done.days[2].status, .done)
     }
 
+    /// #125 : un jour passé fait garde la carte qu'il avait ce jour-là (même séance que `Today.done`).
+    func testPastDoneDayKeepsItsCard() {
+        let week = WeekOverview.make(plan: demoPlan(), isDone: { $0 == "lun" }, now: now)
+        XCTAssertEqual(week.days[0].doneCard?.id, "lun", "lundi fait : carte « faite »")
+        XCTAssertNil(week.days[1].doneCard, "mardi pas fait : liste du jour")
+        XCTAssertNil(week.days[3].doneCard, "jour de repos : liste du jour")
+
+        // Aujourd'hui fait : c'est la carte du jour, pas celle d'un autre jour.
+        let today = WeekOverview.make(plan: demoPlan(), isDone: { $0 == "mer" }, now: now)
+        XCTAssertNil(today.days[2].doneCard)
+    }
+
+    func testDoneLabelNamesTheDay() {
+        let cal = Calendar(identifier: .gregorian)
+        let yesterday = cal.date(byAdding: .day, value: -1, to: now)!
+        let monday = cal.date(byAdding: .day, value: -2, to: now)!
+        XCTAssertEqual(TodayCard.doneLabel(for: nil, now: now, calendar: cal), "Fait aujourd'hui")
+        XCTAssertEqual(TodayCard.doneLabel(for: now, now: now, calendar: cal), "Fait aujourd'hui")
+        XCTAssertEqual(TodayCard.doneLabel(for: yesterday, now: now, calendar: cal), "Fait hier")
+        XCTAssertEqual(TodayCard.doneLabel(for: monday, now: now, calendar: cal),
+                       "Fait " + monday.formatted(.dateTime.weekday(.wide)).localizedLowercase)
+    }
+
     func testRestDayShowsNextSessionAndUpcoming() {
         let week = WeekOverview.make(plan: demoPlan(skip: ["mer"]), isDone: { _ in false }, now: now)
         guard case .rest(let next) = week.today else { return XCTFail("jour de repos attendu") }

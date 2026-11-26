@@ -36,6 +36,13 @@ struct WeekOverview {
         var replacement: HealthActivity? = nil
 
         var id: Date { date }
+
+        /// Autre jour entièrement fait : sa carte reste celle qu'il avait ce jour-là (#125),
+        /// avec la même séance que `Today.done` (la dernière du jour).
+        var doneCard: PlannedSession? {
+            guard !isToday, status == .done else { return nil }
+            return sessions.last
+        }
     }
 
     enum Status: Equatable {

@@ -178,11 +178,11 @@ struct DayDot: View {
 
 // MARK: - Carte d'un autre jour (#54)
 
-/// Jour touché dans la semaine : ses séances du plan et ses activités en plus, avec retour à aujourd'hui.
+/// Jour touché dans la semaine (pas entièrement fait) : ses séances du plan et ses activités en plus.
+/// Pas de bouton « Aujourd'hui » : toucher la pastille du jour suffit (#126).
 struct SelectedDayCard: View {
     @Environment(PlanStore.self) private var store
     let day: WeekOverview.Day
-    let backToToday: () -> Void
     @State private var effortFor: HealthActivity?
 
     /// « mardi 18 nov. · repos », « jeudi 20 nov. · course et renfo »
@@ -202,18 +202,6 @@ struct SelectedDayCard: View {
         return store.isMissed(session) ? "pas faite" : "prévue"
     }
 
-    private var todayButton: some View {
-        Button(action: backToToday) {
-            Text("Aujourd'hui")
-                .font(.coach(.subheadline, weight: .semibold))
-                .foregroundStyle(Theme.text)
-                .frame(minWidth: Theme.minTap, minHeight: Theme.minTap)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityHint("Revient à la séance du jour")
-    }
-
     /// Séances du jour faites avec une autre app sans ressenti noté.
     private var effortToNote: HealthActivity? {
         day.sessions.lazy.compactMap { store.healthLink(for: $0.id)?.activity }
@@ -222,18 +210,7 @@ struct SelectedDayCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.m) {
-            // Très grand texte : le lien passe sous la date au lieu de la tronquer.
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .center) {
-                    Eyebrow(text: Self.title(for: day)).fixedSize()
-                    Spacer(minLength: Space.s)
-                    todayButton
-                }
-                VStack(alignment: .leading, spacing: Space.xs) {
-                    Eyebrow(text: Self.title(for: day))
-                    todayButton
-                }
-            }
+            Eyebrow(text: Self.title(for: day))
             if day.sessions.isEmpty {
                 Text("Pas de séance du plan ce jour-là.").font(.detail).foregroundStyle(Theme.muted)
             }
@@ -286,8 +263,19 @@ struct TodayCard: View {
     let openTimers: () -> Void
     /// Plan terminé : « Créer un nouveau plan ».
     var newPlan: () -> Void = {}
+    /// Jour de la carte quand ce n'est pas aujourd'hui (jour passé touché dans la semaine, #125) :
+    /// même carte que ce jour-là, seul « aujourd'hui » devient « hier » ou le nom du jour.
+    var date: Date? = nil
     /// Séance d'une autre app dont on note le ressenti (#54).
     @State private var effortFor: HealthActivity?
+
+    /// « Fait aujourd'hui », « Fait hier », « Fait mardi ».
+    static func doneLabel(for date: Date?, now: Date = .now, calendar: Calendar = .current) -> String {
+        guard let date, !calendar.isDate(date, inSameDayAs: now) else { return "Fait aujourd'hui" }
+        if let yesterday = calendar.date(byAdding: .day, value: -1, to: now),
+           calendar.isDate(date, inSameDayAs: yesterday) { return "Fait hier" }
+        return "Fait " + date.formatted(.dateTime.weekday(.wide)).localizedLowercase
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.l) {
@@ -319,7 +307,7 @@ struct TodayCard: View {
                     }
                 } else {
                     VStack(alignment: .leading, spacing: Space.xs) {
-                        Label { Text("Fait aujourd'hui") } icon: { Image(systemName: "checkmark") }
+                        Label { Text(Self.doneLabel(for: date)) } icon: { Image(systemName: "checkmark") }
                             .labelStyle(EyebrowLabelStyle(color: Theme.accent))
                         Text(session.title).font(.number).foregroundStyle(Theme.text)
                             .fixedSize(horizontal: false, vertical: true)
