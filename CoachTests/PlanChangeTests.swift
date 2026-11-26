@@ -243,8 +243,26 @@ final class PlanChangeTests: XCTestCase {
         XCTAssertTrue(after.sessions.contains { $0.date == "2030-02-10" }, "dimanche de cette semaine : une séance")
         XCTAssertEqual(PlanRules.violations(loads(after, monday: thisMonday), countFrom: 1), [])
         XCTAssertLessThanOrEqual(runMinutes(after, from: thisMonday, to: nextMonday),
-                                 runMinutes(before, from: thisMonday, to: nextMonday) + 5,
+                                 runMinutes(before, from: thisMonday, to: nextMonday),
                                  "le volume de la semaine n'augmente pas en cours de route")
+    }
+
+    func testSameSessionIsRemovedFirst() {
+        let generator = PlanGenerator(settings: settings(.moderate), profile: AthleteProfile())
+        let week = [ComposedSession(kind: .shortIntervals, minutes: 40), ComposedSession(kind: .hillsOrStairs, minutes: 40),
+                    ComposedSession(kind: .easyRun, minutes: 40), ComposedSession(kind: .longRunEasy, minutes: 70)]
+        let current = CurrentWeek(monday: thisMonday, openDays: [4, 6, 7], keptLoads: [2: DayLoad(hard: true, legs: true)],
+                                  consumed: [.init(role: .quality, title: SessionKind.hillsOrStairs.label)],
+                                  keptHard: 1, keptRunMinutes: 40, plannedRunMinutes: 190)
+        let rest = generator.rest(of: week, current: current, intensity: .moderate, runVolume: 190)
+        XCTAssertFalse(rest.contains { $0.kind == .hillsOrStairs }, "escaliers faits : pas une deuxième fois")
+        XCTAssertTrue(rest.contains { $0.kind == .shortIntervals })
+        let short = generator.rest(of: week, current: CurrentWeek(monday: thisMonday, openDays: [6, 7], keptLoads: [:],
+                                                                   consumed: [], keptHard: 0, keptRunMinutes: 150,
+                                                                   plannedRunMinutes: 190),
+                                   intensity: .moderate, runVolume: 190)
+        XCTAssertLessThanOrEqual(short.filter { $0.kind.module == .run }.reduce(0) { $0 + $1.minutes }, 40,
+                                 "jamais plus que le volume qui reste")
     }
 
     func testLowerOnFridayAddsNoHardSession() throws {

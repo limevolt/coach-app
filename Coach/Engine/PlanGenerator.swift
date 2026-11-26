@@ -93,8 +93,14 @@ struct CurrentWeek: Equatable {
     var openDays: Set<Int>
     /// Charge des jours déjà pris (passés ou faits), ISO → charge : les règles d'enchaînement en tiennent compte.
     var keptLoads: [Int: DayLoad]
-    /// Rôles déjà faits ou passés cette semaine : retirés de la semaine recomposée (une séance par rôle).
-    var consumed: [SessionRole]
+    /// Séances déjà faites ou passées cette semaine : retirées de la semaine recomposée, la même séance
+    /// d'abord (titre), sinon une du même rôle.
+    var consumed: [Consumed]
+
+    struct Consumed: Equatable {
+        var role: SessionRole
+        var title: String
+    }
     /// Séances dures déjà faites ou passées : le plafond de l'intensité vaut pour toute la semaine.
     var keptHard: Int
     /// Minutes de course déjà faites ou passées.
@@ -473,14 +479,16 @@ struct PlanGenerator {
         }
     }
 
-    /// Garde les séances les plus importantes quand la semaine a moins de jours (début ou fin du plan).
     /// Reste de la semaine en cours (#122, #123) : sans ce qui est déjà fait ou passé (même rôle), sous le plafond
     /// de séances dures de l'intensité et sans dépasser le volume de course prévu pour la semaine.
     func rest(of slots: [ComposedSession], current: CurrentWeek, intensity: PlanIntensity,
               runVolume: Double) -> [ComposedSession] {
         var s = slots
-        for role in current.consumed {
-            if let i = s.firstIndex(where: { $0.fixedDay == nil && $0.kind.coachRole == role }) { s.remove(at: i) }
+        for done in current.consumed {
+            if let i = s.firstIndex(where: { $0.fixedDay == nil && $0.kind.label == done.title })
+                ?? s.firstIndex(where: { $0.fixedDay == nil && $0.kind.coachRole == done.role }) {
+                s.remove(at: i)
+            }
         }
         // Plafond de la semaine entière : on retire d'abord les séances dures qui ne sont pas clés.
         let cap = intensity.hardCap(sessions: s.count + current.consumed.count)
@@ -492,17 +500,23 @@ struct PlanGenerator {
         // Volume : ce qui reste de la semaine prévue ; footings raccourcis, puis retirés.
         let left = max(0, min(Int(runVolume.rounded()), current.plannedRunMinutes) - current.keptRunMinutes)
         func run() -> Int { s.filter { $0.kind.module == .run }.reduce(0) { $0 + $1.minutes } }
-        while run() > left, let i = s.indices.filter({ s[$0].kind.coachRole == .easyRun }).max(by: { s[$0].minutes < s[$1].minutes }) {
-            let excess = run() - left
-            if s[i].minutes - excess >= Self.minRunMinutes {
-                s[i].minutes -= excess
-            } else {
-                s.remove(at: i)
+        // Footings d'abord, puis la sortie longue, puis la qualité ; sous la durée minimale, la séance est retirée.
+        for role in [SessionRole.easyRun, .longRun, .quality] {
+            let minimum = role == .quality ? Self.minQualityMinutes : Self.minRunMinutes
+            while run() > left, let i = s.indices.filter({ s[$0].kind.module == .run && s[$0].kind.coachRole == role })
+                    .max(by: { s[$0].minutes < s[$1].minutes }) {
+                let excess = run() - left
+                if s[i].minutes - excess >= minimum {
+                    s[i].minutes -= excess
+                } else {
+                    s.remove(at: i)
+                }
             }
         }
         return s
     }
 
+    /// Garde les séances les plus importantes quand la semaine a moins de jours (début ou fin du plan).
     func trim(_ slots: [ComposedSession], toDays count: Int) -> [ComposedSession] {
         // Deux séances le même jour : seul un renfo peut suivre une course dure.
         let stackable = settings.allowTwoSessionsPerDay

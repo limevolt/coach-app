@@ -236,7 +236,7 @@ struct PlanChangePlanner {
         return CurrentWeek(monday: PlanCalendar.string(monday),
                            openDays: Set((todayIso...7).filter { loads[$0] == nil }),
                            keptLoads: loads,
-                           consumed: counted.map(slot),
+                           consumed: counted.map { CurrentWeek.Consumed(role: slot($0), title: $0.title) },
                            keptHard: kept.filter(\.countsAsHard).count,
                            keptRunMinutes: runMinutes(kept), plannedRunMinutes: runMinutes(planned))
     }

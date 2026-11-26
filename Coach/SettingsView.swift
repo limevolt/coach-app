@@ -26,29 +26,49 @@ struct SettingsView: View {
                     }
                 }
 
-                if isCoachPlan {
+                // Une seule section pour le plan (#122, #119) : ses réglages, puis ce qu'on fait du plan.
+                if let plan = store.plan {
                     Section {
-                        if let changePlanner {
-                            Button { changeSheet = .days } label: { settingRow("Jours", changePlanner.daysValue) }
-                                .accessibilityIdentifier("reglage-jours")
-                            Button { changeSheet = .intensity } label: { settingRow("Intensité", changePlanner.intensityValue) }
-                                .accessibilityIdentifier("reglage-intensite")
+                        if isCoachPlan {
+                            if let changePlanner {
+                                Button { changeSheet = .days } label: { settingRow("Jours", changePlanner.daysValue) }
+                                    .accessibilityIdentifier("reglage-jours")
+                                Button { changeSheet = .intensity } label: { settingRow("Intensité", changePlanner.intensityValue) }
+                                    .accessibilityIdentifier("reglage-intensite")
+                            } else {
+                                ProgressView().frame(maxWidth: .infinity)
+                            }
                         } else {
-                            ProgressView().frame(maxWidth: .infinity)
+                            // Plan importé : les jours servent seulement à ranger ses séances.
+                            TrainingDaysPicker()
                         }
+                        LabeledContent("Titre", value: plan.title)
+                        LabeledContent("Séances", value: "\(plan.sessions.count)")
+                        BusyButton("Exporter le plan", systemImage: "square.and.arrow.up",
+                                   busyTitle: "Préparation du fichier…", isRunning: $exporting) {
+                            do {
+                                exportFile = try await PlanExport.file(for: plan)
+                            } catch {
+                                healthMessage = "Export impossible : \(error.localizedDescription)"
+                            }
+                        }
+                        // Bulle attachée au bouton : elle s'affiche juste à côté (#33).
+                        Button("Réinitialiser le plan", role: .destructive) { confirmReset = true }
+                            .resetPlanConfirmation(isPresented: $confirmReset, store: store)
                     } header: {
                         Text("Mon plan")
                     } footer: {
-                        Text("Mêmes réglages que sur l'écran Plan.")
+                        if isCoachPlan {
+                            Text("Jours et intensité : mêmes réglages que sur l'écran Plan.")
+                        } else {
+                            Text("Jours : sur l'écran Plan, l'app propose de ranger les séances qui tombent un autre jour.")
+                        }
                     }
                 } else {
-                    // Plan importé : les jours servent seulement à ranger ses séances.
                     Section {
                         TrainingDaysPicker()
                     } header: {
                         Text("Mes jours d'entraînement")
-                    } footer: {
-                        Text("Sur l'écran Plan, l'app propose de ranger les séances qui tombent un autre jour.")
                     }
                 }
 
@@ -81,26 +101,6 @@ struct SettingsView: View {
                 } footer: {
                     if healthRequested == true {
                         Text("Ce que Coach peut lire se règle dans Santé : ton profil › Apps › Coach.")
-                    }
-                }
-
-                if let plan = store.plan {
-                    Section("Plan actuel") {
-                        LabeledContent("Titre", value: plan.title)
-                        LabeledContent("Version", value: "\(plan.planId) v\(plan.version)")
-                        LabeledContent("Séances", value: "\(plan.sessions.count)")
-                        LabeledContent("Journaux", value: "\(store.logs.count)")
-                        BusyButton("Exporter le plan", systemImage: "square.and.arrow.up",
-                                   busyTitle: "Préparation du fichier…", isRunning: $exporting) {
-                            do {
-                                exportFile = try await PlanExport.file(for: plan)
-                            } catch {
-                                healthMessage = "Export impossible : \(error.localizedDescription)"
-                            }
-                        }
-                        // Bulle attachée au bouton : elle s'affiche juste à côté (#33).
-                        Button("Réinitialiser le plan", role: .destructive) { confirmReset = true }
-                            .resetPlanConfirmation(isPresented: $confirmReset, store: store)
                     }
                 }
 
