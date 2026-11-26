@@ -91,6 +91,32 @@ final class GuidedClockTests: XCTestCase {
         XCTAssertFalse(clock.isPaused, "plus de pause une fois la séance finie")
     }
 
+    // Montre + iPhone (#130, étape 3) : l'état de la montre recopié sur l'iPhone donne le même écran.
+    func testMirrorFollowsTheWatch() throws {
+        let watch = GuidedClock(index: 3, segmentEnd: t0.addingTimeInterval(25), pausedRemaining: nil, finished: false)
+        let sync = GuidedSync(sessionId: "c", segmentCount: segments.count, clock: watch)
+        let data = try JSONEncoder().encode(sync)
+        let received = try JSONDecoder().decode(GuidedSync.self, from: data)
+        XCTAssertEqual(received, sync)
+        var phone = received.clock
+        XCTAssertTrue(phone.started)
+        XCTAssertEqual(phone.remaining(at: t0.addingTimeInterval(5)), 20, accuracy: 0.001)
+        // Entre deux messages, l'iPhone avance au même rythme que la montre.
+        phone.tick(segments, at: t0.addingTimeInterval(26))
+        XCTAssertEqual(phone.index, 4)
+        // Écran de suivi : ouvert tant que la montre envoie (moins de 60 s), pas si fini, abandonné ou autre plan.
+        XCTAssertTrue(sync.isLive(receivedAt: t0, now: t0.addingTimeInterval(30)))
+        XCTAssertFalse(sync.isLive(receivedAt: t0, now: t0.addingTimeInterval(61)))
+        var abandoned = sync
+        abandoned.abandoned = true
+        XCTAssertFalse(abandoned.isLive(receivedAt: t0, now: t0))
+        XCTAssertTrue(sync.matches(segments))
+        XCTAssertFalse(GuidedSync(sessionId: "c", segmentCount: 3, clock: watch).matches(segments))
+        let paused = GuidedClock(index: 2, segmentEnd: nil, pausedRemaining: 12, finished: false)
+        XCTAssertTrue(paused.isPaused)
+        XCTAssertEqual(paused.remaining(at: t0), 12, accuracy: 0.001)
+    }
+
     func testClockCanBeSentToTheOtherDevice() throws {
         var clock = GuidedClock()
         clock.start(segments, at: t0)

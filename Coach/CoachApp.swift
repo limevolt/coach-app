@@ -38,6 +38,12 @@ struct ContentView: View {
     @State private var tab = AppTab.plan
     /// Appui sur l'onglet déjà choisi (#64) : compteur transmis à l'onglet (`tabReselect`).
     @State private var reselects: [AppTab: Int] = [:]
+    /// Séance de la montre suivie sur l'iPhone (#130, étape 3) ; `closedMirror` : fermée sur l'iPhone,
+    /// on ne la rouvre pas tant qu'elle continue sur la montre.
+    @State private var mirrorSession: PlannedSession?
+    @State private var closedMirror: String?
+    /// Écran de suivi vraiment affiché (une autre feuille ouverte peut l'empêcher de s'afficher).
+    @State private var shownMirror: String?
 
     enum AppTab: Hashable { case plan, timers, settings }
 
@@ -66,6 +72,16 @@ struct ContentView: View {
                 .coachTabBar(bar)
                 .tag(AppTab.settings)
         }
+        // Une séance de circuit tourne sur la montre : l'iPhone ouvert l'affiche en grand.
+        // Vérifié à chaque message (toutes les 5 s) : l'iPhone ouvert en pleine séance la rattrape.
+        .onChange(of: GuidedMirror.shared.messages, initial: true) { _, _ in presentMirrorIfNeeded() }
+        .fullScreenCover(item: $mirrorSession, onDismiss: {
+            closedMirror = GuidedMirror.shared.live?.sessionId
+            shownMirror = nil
+        }) { session in
+            GuidedSessionView(session: session, mode: .mirror)
+                .onAppear { shownMirror = session.id }
+        }
         .alert("Coach",
                isPresented: Binding(get: { store.alertMessage != nil },
                                     set: { if !$0 { store.alertMessage = nil } })) {
@@ -77,6 +93,21 @@ struct ContentView: View {
 }
 
 extension ContentView {
+    /// Séance de circuit en cours sur la montre : l'écran de suivi s'ouvre (une fois par séance si on le ferme).
+    private func presentMirrorIfNeeded() {
+        guard let live = GuidedMirror.shared.live else {
+            closedMirror = nil
+            // Demandé mais jamais affiché (une autre feuille était ouverte) : on oublie.
+            if let pending = mirrorSession, shownMirror != pending.id { mirrorSession = nil }
+            return
+        }
+        if let pending = mirrorSession, shownMirror != pending.id, pending.id != live.sessionId { mirrorSession = nil }
+        guard mirrorSession == nil, closedMirror != live.sessionId,
+              let session = store.plan?.sessions.first(where: { $0.id == live.sessionId })?.effective,
+              session.circuit != nil else { return }
+        mirrorSession = session
+    }
+
     private var bar: some View {
         CoachTabBar(tabs: Self.tabs, selection: $tab) { reselected in
             reselects[reselected, default: 0] += 1

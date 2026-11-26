@@ -43,6 +43,10 @@ final class WatchStore {
         bridge.onSessions = { [weak self] data in self?.applySessions(data) }
         bridge.onTimers = { [weak self] data in self?.applyTimers(data) }
         bridge.onDone = { [weak self] ids, resetAt in self?.applyDone(ids, resetAt: resetAt) }
+        bridge.onGuidedCommand = { [weak self] command in
+            self?.guidedCommand = command
+            self?.guidedCommandId = UUID()
+        }
         bridge.onStart = { [weak self] data in self?.applyStart(data) }
         bridge.activate()
     }
@@ -63,6 +67,16 @@ final class WatchStore {
     var otherSessions: [PlannedSession] {
         let nextId = nextSession?.id
         return visibleSessions.filter { $0.id != nextId && !doneIds.contains($0.id) }
+    }
+
+    /// Dernière commande reçue de l'iPhone pendant une séance guidée (#130) ; `guidedCommandId` change à
+    /// chaque commande, même répétée, pour que l'écran de séance la voie.
+    private(set) var guidedCommand: GuidedCommand?
+    private(set) var guidedCommandId = UUID()
+
+    func sendGuided(_ sync: GuidedSync) {
+        guard let data = try? JSONEncoder().encode(sync) else { return }   // dates précises à la fraction de seconde
+        bridge.sendGuided(data)
     }
 
     func applySessions(_ data: Data) {
@@ -149,6 +163,7 @@ final class WatchBridge: NSObject, WCSessionDelegate {
     var onTimers: ((Data) -> Void)?
     var onDone: (([String], Date?) -> Void)?
     var onStart: ((Data) -> Void)?
+    var onGuidedCommand: ((GuidedCommand) -> Void)?
 
     func activate() {
         guard WCSession.isSupported() else { return }
@@ -163,6 +178,15 @@ final class WatchBridge: NSObject, WCSessionDelegate {
         let session = WCSession.default
         guard session.activationState == .activated, session.isReachable else { return }
         session.sendMessage(["needData": true], replyHandler: nil, errorHandler: nil)
+    }
+
+    /// Séance guidée en cours (#130) : message direct à l'iPhone, seulement s'il est joignable
+    /// (l'app ouverte au premier plan). Sinon rien : l'iPhone n'affiche simplement pas la séance.
+    func sendGuided(_ data: Data) {
+        guard WCSession.isSupported() else { return }
+        let session = WCSession.default
+        guard session.activationState == .activated, session.isReachable else { return }
+        session.sendMessage([GuidedSync.messageKey: data], replyHandler: nil, errorHandler: nil)
     }
 
     /// File d'attente garantie : arrive sur l'iPhone même si l'app y est fermée.
@@ -203,7 +227,9 @@ final class WatchBridge: NSObject, WCSessionDelegate {
         let done = context["done"] as? [String]
         let resetAt = (context["resetAt"] as? Double).map(Date.init(timeIntervalSince1970:))
         let start = context["start"] as? Data
+        let command = (context[GuidedSync.commandKey] as? String).flatMap(GuidedCommand.init(rawValue:))
         Task { @MainActor in
+            if let command { self.onGuidedCommand?(command) }
             // Les séances d'abord : la demande de démarrage doit trouver sa séance.
             if let sessions { self.onSessions?(sessions) }
             if let timers { self.onTimers?(timers) }

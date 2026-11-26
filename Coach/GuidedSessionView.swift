@@ -7,9 +7,14 @@ import AudioToolbox
 import SwiftUI
 
 struct GuidedSessionView: View {
+    /// `.alone` : l'iPhone mène la séance (sans montre). `.mirror` : la montre mène, l'iPhone affiche
+    /// la même séance et lui envoie ses boutons (#130, étape 3).
+    enum Mode { case alone, mirror }
+
     let session: PlannedSession
+    var mode: Mode = .alone
     /// Séance terminée et « Donner mon ressenti » : la feuille de retour s'ouvre derrière.
-    let onFeedback: () -> Void
+    var onFeedback: () -> Void = {}
 
     @Environment(PlanStore.self) private var store
     @Environment(\.dismiss) private var dismiss
@@ -28,6 +33,10 @@ struct GuidedSessionView: View {
     @State private var lastSkip = Date.distantPast
     @State private var confirmQuit = false
     @State private var guide: Exercise?
+    /// Miroir : la montre n'a pas le même plan (déroulé différent), l'iPhone ne suit pas.
+    @State private var mismatch = false
+    private var mirror: GuidedMirror { GuidedMirror.shared }
+    private var mirrored: Bool { mode == .mirror }
 
     private var segments: [TimedSegment] { config?.segments ?? [] }
     private var current: TimedSegment? { segments.indices.contains(clock.index) ? segments[clock.index] : nil }
@@ -40,14 +49,22 @@ struct GuidedSessionView: View {
             guard config == nil else { return }
             config = IntervalRunConfig.circuit(session)
             startedAt = .now
-            clock.start(segments, at: .now)
+            if mirrored {
+                if let sync = mirror.sync, sync.sessionId == session.id { follow(sync) }
+            } else {
+                clock.start(segments, at: .now)
+            }
             UIApplication.shared.isIdleTimerDisabled = true   // l'écran reste allumé pendant la séance
             await run()
+        }
+        // Miroir : chaque état reçu de la montre remplace l'horloge de l'iPhone.
+        .onChange(of: mirror.sync) { _, sync in
+            if mirrored, let sync, sync.sessionId == session.id { follow(sync) }
         }
         .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
         // L'app passe en arrière-plan (appel, autre app) : la séance se met en pause.
         .onChange(of: scenePhase) { _, phase in
-            if phase != .active, !clock.isPaused, !clock.finished { togglePause() }
+            if !mirrored, phase != .active, !clock.isPaused, !clock.finished { togglePause() }
         }
         .confirmationDialog("Quitter la séance ?", isPresented: $confirmQuit, titleVisibility: .visible) {
             Button("Terminer") { finish(early: true) }
@@ -63,14 +80,18 @@ struct GuidedSessionView: View {
     // MARK: Horloge
 
     /// Fait avancer la séance, bips 3-2-1 avant chaque changement (un iPhone posé au sol ne vibre pas assez).
+    /// En miroir, l'iPhone avance au même rythme que la montre entre deux messages ; la fin vient de la montre.
     private func run() async {
-        while !Task.isCancelled && !clock.finished {
+        while !Task.isCancelled {
+            if clock.finished && !mirrored { break }
             let now = Date.now
-            if clock.tick(segments, at: now) {
+            var next = clock
+            if next.tick(segments, at: now), !(mirrored && next.finished) {
+                clock = next
                 Self.play(.go)
                 lastBeep = nil
                 if clock.finished { completed(at: now) }
-            } else if !clock.isPaused {
+            } else if clock.started, !clock.isPaused, !clock.finished {
                 let left = Int(clock.remaining(at: now).rounded(.up))
                 if (1...3).contains(left), lastBeep != left {
                     lastBeep = left
@@ -91,10 +112,26 @@ struct GuidedSessionView: View {
         store.recordGuided(session, doneFraction: early && total > 0 && done < total ? Double(done) / Double(total) : nil)
     }
 
-    /// Séance allée jusqu'au bout : notée faite.
+    /// Séance allée jusqu'au bout : notée faite (en miroir, c'est la montre qui l'enregistre).
     private func completed(at date: Date) {
         endedAt = date
-        store.recordGuided(session, doneFraction: nil)
+        if !mirrored { store.recordGuided(session, doneFraction: nil) }
+    }
+
+    /// État reçu de la montre.
+    private func follow(_ sync: GuidedSync) {
+        if sync.abandoned { dismiss(); return }
+        guard sync.matches(segments) else { mismatch = true; return }
+        mismatch = false
+        let wasIndex = clock.index
+        clock = sync.clock
+        if sync.clock.finished, endedAt == nil { endedAt = .now }
+        if clock.index != wasIndex { lastBeep = nil }
+    }
+
+    /// Bouton de l'écran : en miroir, envoyé à la montre (qui renvoie le nouvel état) ; sinon appliqué ici.
+    private func act(_ command: GuidedCommand, local: () -> Void) {
+        if mirrored { mirror.send(command) } else { local() }
     }
 
     private func togglePause() {
@@ -123,6 +160,8 @@ struct GuidedSessionView: View {
     @ViewBuilder private func screen(now: Date) -> some View {
         if clock.finished {
             finishedScreen
+        } else if mirrored && (!clock.started || mismatch) {
+            waitingScreen
         } else if let seg = current {
             VStack(alignment: .leading, spacing: Space.l) {
                 header(seg)
@@ -154,17 +193,24 @@ struct GuidedSessionView: View {
 
     private func header(_ seg: TimedSegment) -> some View {
         HStack {
-            Button { confirmQuit = true } label: {
+            // Miroir : fermer l'écran de l'iPhone seulement, la séance continue sur la montre.
+            Button { if mirrored { dismiss() } else { confirmQuit = true } } label: {
                 Image(systemName: "xmark").font(Theme.guidedControlIcon)
                     .frame(width: Theme.minTap, height: Theme.minTap)
             }
             .accessibilityLabel("Quitter la séance")
             Spacer()
-            Text(roundLabel(seg)).font(.detail).foregroundStyle(Theme.muted).monospacedDigit()
+            if mirrored && mirror.isSilent(at: .now) {
+                Label("Montre injoignable", systemImage: "applewatch.slash")
+                    .font(.detail).foregroundStyle(Theme.warm)
+            } else {
+                Text(roundLabel(seg)).font(.detail).foregroundStyle(Theme.muted).monospacedDigit()
+            }
             Spacer()
             if seg.kind != .prepare, let ex = exercise(for: seg) {
                 Button {
-                    if !clock.isPaused { togglePause() }   // la fiche met la séance en pause
+                    // La fiche met la séance en pause (seule sur l'iPhone ; en miroir, la montre continue).
+                    if !mirrored, !clock.isPaused { togglePause() }
                     guide = ex
                 } label: {
                     Image(systemName: "questionmark.circle").font(Theme.guidedControlIcon)
@@ -226,10 +272,12 @@ struct GuidedSessionView: View {
             if paused {
                 Text(seg.title).font(.detail).foregroundStyle(Theme.muted)
                 Spacer(minLength: 0)
-                Button { togglePause() } label: { Label("Reprendre", systemImage: "play.fill") }
+                Button { act(.pause) { togglePause() } } label: { Label("Reprendre", systemImage: "play.fill") }
                     .buttonStyle(.coachPrimary())
-                Button("Terminer la séance") { confirmQuit = true }
-                    .buttonStyle(.coachQuiet())
+                if !mirrored {
+                    Button("Terminer la séance") { confirmQuit = true }
+                        .buttonStyle(.coachQuiet())
+                }
             } else {
                 if let next = nextWork(after: clock.index) {
                     Text("Ensuite : \(next.title) · \(Durations.label(next.seconds))")
@@ -253,7 +301,7 @@ struct GuidedSessionView: View {
             if let next = nextWork(after: clock.index) { upcoming(next) }
             Spacer(minLength: 0)
             HStack(spacing: Space.m) {
-                Button("+30 s") { clock.add(30) }.buttonStyle(.coachQuiet())
+                Button("+30 s") { act(.addRest) { clock.add(30) } }.buttonStyle(.coachQuiet())
                 Button("Passer le repos") { skip() }.buttonStyle(.coachQuiet())
             }
         }
@@ -275,9 +323,11 @@ struct GuidedSessionView: View {
 
     private var controls: some View {
         HStack {
-            roundButton("backward.end.fill", label: "Exercice précédent") { clock.previous(segments, at: .now); lastBeep = nil }
+            roundButton("backward.end.fill", label: "Exercice précédent") {
+                act(.previous) { clock.previous(segments, at: .now); lastBeep = nil }
+            }
             Spacer()
-            Button { togglePause() } label: {
+            Button { act(.pause) { togglePause() } } label: {
                 Image(systemName: "pause.fill").font(Theme.guidedMainIcon)
                     .foregroundStyle(Theme.accentDark)
                     .frame(width: Theme.guidedMainControl, height: Theme.guidedMainControl)
@@ -300,6 +350,7 @@ struct GuidedSessionView: View {
     }
 
     private func skip() {
+        if mirrored { mirror.send(.skip); return }
         let now = Date.now
         guard now.timeIntervalSince(lastSkip) > 0.5 else { return }
         lastSkip = now
@@ -364,16 +415,35 @@ struct GuidedSessionView: View {
                 StatValue(value: "\(workDone)", label: "Exercices")
             }
             Spacer(minLength: 0)
-            Button("Donner mon ressenti") {
-                onFeedback()
-                dismiss()
+            if mirrored {
+                // La montre enregistre la séance et demande le ressenti.
+                Button("Fermer") { dismiss() }.buttonStyle(.coachPrimary())
+            } else {
+                Button("Donner mon ressenti") {
+                    onFeedback()
+                    dismiss()
+                }
+                .buttonStyle(.coachPrimary())
+                Button("Plus tard") { dismiss() }.buttonStyle(.coachQuiet())
             }
-            .buttonStyle(.coachPrimary())
-            Button("Plus tard") { dismiss() }.buttonStyle(.coachQuiet())
         }
         .padding(.horizontal, Theme.screenMargin)
         .padding(.vertical, Space.xxl)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(Theme.bg.ignoresSafeArea())
+    }
+
+    /// Miroir ouvert avant le premier message de la montre.
+    private var waitingScreen: some View {
+        VStack(spacing: Space.l) {
+            ProgressView().tint(Theme.accent)
+            Text(mismatch ? "La montre n'a pas le même plan. Ouvre Coach sur la montre pour le recevoir."
+                          : "En attente de la montre")
+                .font(.text).foregroundStyle(Theme.muted).multilineTextAlignment(.center)
+            Button("Fermer") { dismiss() }.buttonStyle(.coachQuiet())
+        }
+        .padding(.horizontal, Theme.screenMargin)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.bg.ignoresSafeArea())
     }
 
