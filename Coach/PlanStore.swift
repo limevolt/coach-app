@@ -155,8 +155,8 @@ final class PlanStore {
         Task { await sync(quiet: true) }
     }
 
-    /// Nouvelle version du même plan dont seules les semaines à venir changent (intensité, #46).
-    /// La semaine en cours et le passé sont gardés tels quels, avec leurs séances adaptées et la possibilité
+    /// Nouvelle version du même plan dont seules les séances à venir changent (jours, intensité, #46).
+    /// Le passé et les séances faites sont gardés tels quels, avec leurs séances adaptées et la possibilité
     /// de revenir à l'original ; les séances recalculées repartent du moteur.
     func applyUpcoming(_ newPlan: TrainingPlan, keeping keptIds: Set<String>) async throws {
         guard let current = plan, current.planId == newPlan.planId else { throw PlanError.invalid("Autre plan.") }
@@ -1196,13 +1196,13 @@ enum Day {
     }
 }
 
-// MARK: - Intensité en cours de plan (#46)
+// MARK: - Plan en cours : jours et intensité (#46, #122, #123)
 
 extension PlanStore {
     /// Le coach du plan affiché, s'il a été créé dans l'app (nil pour un plan importé).
     /// Ancien plan sans point de départ enregistré : relu dans Santé, sur les 8 semaines avant son début
     /// (une fois par plan, gardé ensuite dans les réglages au premier changement).
-    func intensityPlanner() async -> IntensityChangePlanner? {
+    func planChangePlanner() async -> PlanChangePlanner? {
         guard let settings = CoachStorage.loadSettings(), let plan, plan.planId == settings.id else { return nil }
         var start = settings.startingPoint ?? startCache[settings.id] ?? .unknown
         if settings.startingPoint == nil, startCache[settings.id] == nil, settings.startLevel == .health,
@@ -1214,13 +1214,20 @@ extension PlanStore {
             start = StartingPoint(runMinutesPerWeek: minutes, sessionsPerWeek: perWeek)
             startCache[settings.id] = start
         }
-        return IntensityChangePlanner(settings: settings, profile: CoachStorage.loadProfile(),
-                                      memory: CoachStorage.loadMemory(), start: start)
+        return PlanChangePlanner(settings: settings, profile: CoachStorage.loadProfile(),
+                                 memory: CoachStorage.loadMemory(), start: start)
     }
 
-    /// Enregistre l'intensité choisie (réglages d'abord, comme à la création), puis le plan recalculé.
-    func applyIntensityChange(_ result: IntensityChangeResult) async throws {
+    /// Séances déjà faites : elles restent quand le plan est recalculé.
+    var doneSessionIds: Set<String> {
+        Set((plan?.sessions ?? []).map(\.id).filter(isDone))
+    }
+
+    /// Enregistre le changement (réglages d'abord, comme à la création), puis le plan recalculé.
+    /// Les jours de l'app (Réglages, « Déplacer à un jour libre ») suivent les réglages du plan (#106).
+    func applyPlanChange(_ result: PlanChangeResult) async throws {
         try CoachStorage.save(settings: result.settings)
+        if !DemoMode.isOn { TrainingDays.adopt(result.settings) }
         try await applyUpcoming(result.plan, keeping: result.keptIds)
     }
 }

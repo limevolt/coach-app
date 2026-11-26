@@ -75,6 +75,8 @@ struct DayPlacer {
     var previousSaturday: DayLoad = .rest
     /// Charge déjà connue du lundi suivant (cours collectif le lundi), sinon repos.
     var nextMonday: DayLoad = .rest
+    /// Jours déjà pris dans la semaine (séances passées ou faites, #122), ISO → charge.
+    var fixedLoads: [Int: DayLoad] = [:]
     /// Séance permise ce jour-là (ex. rien de dur dans les 3 derniers jours avant l'événement).
     var allowed: (SessionKind, Int) -> Bool = { _, _ in true }
     /// La séance doit-elle avoir lieu un jour à la salle ?
@@ -129,7 +131,8 @@ struct DayPlacer {
     }
 
     private func loads(_ plan: [Int: [ComposedSession]]) -> [DayLoad] {
-        [previousSaturday, previousSunday] + (1...7).map { DayLoad((plan[$0] ?? []).map(\.kind)) } + [nextMonday]
+        [previousSaturday, previousSunday]
+            + (1...7).map { DayLoad((plan[$0] ?? []).map(\.kind)).merged(fixedLoads[$0]) } + [nextMonday]
     }
 
     private func partialOK(_ plan: [Int: [ComposedSession]]) -> Bool {

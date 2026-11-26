@@ -11,24 +11,57 @@ struct SettingsView: View {
     @State private var exporting = false
     @State private var exportFile: SharedFile?
     @Environment(\.openURL) private var openURL
+    /// Plan créé par le coach (#122, #123) : jours et intensité ouvrent les mêmes feuilles que l'écran Plan.
+    @State private var changePlanner: PlanChangePlanner?
+    @State private var changeSheet: PlanChangeSheetKind?
 
     var body: some View {
         NavigationStack {
             Form {
-                Section {
-                    NavigationLink {
-                        ExerciseLibraryView().tabBarSpace()
-                    } label: {
-                        Label("Bibliothèque d'exercices animés", systemImage: "figure.strengthtraining.functional")
+                // Une seule section pour le plan (#122, #119) : ses réglages, puis ce qu'on fait du plan.
+                if let plan = store.plan {
+                    Section {
+                        if isCoachPlan {
+                            if let changePlanner {
+                                Button { changeSheet = .days } label: { settingRow("Jours", changePlanner.daysValue) }
+                                    .accessibilityIdentifier("reglage-jours")
+                                Button { changeSheet = .intensity } label: { settingRow("Intensité", changePlanner.intensityValue) }
+                                    .accessibilityIdentifier("reglage-intensite")
+                            } else {
+                                ProgressView().frame(maxWidth: .infinity)
+                            }
+                        } else {
+                            // Plan importé : les jours servent seulement à ranger ses séances.
+                            TrainingDaysPicker()
+                        }
+                        LabeledContent("Titre", value: plan.title)
+                        LabeledContent("Séances", value: "\(plan.sessions.count)")
+                        BusyButton("Exporter le plan", systemImage: "square.and.arrow.up",
+                                   busyTitle: "Préparation du fichier…", isRunning: $exporting) {
+                            do {
+                                exportFile = try await PlanExport.file(for: plan)
+                            } catch {
+                                healthMessage = "Export impossible : \(error.localizedDescription)"
+                            }
+                        }
+                        // Bulle attachée au bouton : elle s'affiche juste à côté (#33).
+                        Button("Réinitialiser le plan", role: .destructive) { confirmReset = true }
+                            .resetPlanConfirmation(isPresented: $confirmReset, store: store)
+                    } header: {
+                        Text("Mon plan")
+                    } footer: {
+                        if isCoachPlan {
+                            Text("Jours et intensité : mêmes réglages que sur l'écran Plan.")
+                        } else {
+                            Text("Jours : sur l'écran Plan, l'app propose de ranger les séances qui tombent un autre jour.")
+                        }
                     }
-                }
-
-                Section {
-                    TrainingDaysPicker()
-                } header: {
-                    Text("Mes jours d'entraînement")
-                } footer: {
-                    Text("Le coach place les séances ces jours-là. Sur l'écran Plan, l'app propose de ranger les séances qui tombent un autre jour.")
+                } else {
+                    Section {
+                        TrainingDaysPicker()
+                    } header: {
+                        Text("Mes jours d'entraînement")
+                    }
                 }
 
                 Section {
@@ -63,23 +96,12 @@ struct SettingsView: View {
                     }
                 }
 
-                if let plan = store.plan {
-                    Section("Plan actuel") {
-                        LabeledContent("Titre", value: plan.title)
-                        LabeledContent("Version", value: "\(plan.planId) v\(plan.version)")
-                        LabeledContent("Séances", value: "\(plan.sessions.count)")
-                        LabeledContent("Journaux", value: "\(store.logs.count)")
-                        BusyButton("Exporter le plan", systemImage: "square.and.arrow.up",
-                                   busyTitle: "Préparation du fichier…", isRunning: $exporting) {
-                            do {
-                                exportFile = try await PlanExport.file(for: plan)
-                            } catch {
-                                healthMessage = "Export impossible : \(error.localizedDescription)"
-                            }
-                        }
-                        // Bulle attachée au bouton : elle s'affiche juste à côté (#33).
-                        Button("Réinitialiser le plan", role: .destructive) { confirmReset = true }
-                            .resetPlanConfirmation(isPresented: $confirmReset, store: store)
+                // Pas la priorité : en bas, avant la note sur les données.
+                Section {
+                    NavigationLink {
+                        ExerciseLibraryView().tabBarSpace()
+                    } label: {
+                        Label("Bibliothèque d'exercices animés", systemImage: "figure.strengthtraining.functional")
                     }
                 }
 
@@ -94,7 +116,26 @@ struct SettingsView: View {
             .navigationTitle("Réglages")
             .shareFileSheet($exportFile)
             .task { healthRequested = await HealthReader().wasAuthorizationRequested() }
+            .task(id: store.plan?.key) { changePlanner = await store.planChangePlanner() }
+            .planChangeSheet($changeSheet, planner: changePlanner, store: store)
         }
+    }
+
+    /// Plan créé par le coach (lu tout de suite, sans attendre Santé) : jamais l'ancien sélecteur, qui ne recalcule pas.
+    private var isCoachPlan: Bool {
+        guard let plan = store.plan else { return false }
+        return CoachStorage.loadSettings()?.id == plan.planId
+    }
+
+    /// « Jours      Lu Ma Je Sa › »
+    private func settingRow(_ title: String, _ value: String) -> some View {
+        HStack(spacing: Space.m) {
+            Text(title).font(.text).foregroundStyle(Theme.text)
+            Spacer(minLength: Space.s)
+            Text(value).font(.detail).foregroundStyle(Theme.muted)
+            RowChevron()
+        }
+        .contentShape(Rectangle())
     }
 
     /// App Santé (où l'on règle ce que Coach peut lire) ; à défaut, la page de Coach dans Réglages.

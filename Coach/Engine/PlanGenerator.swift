@@ -84,12 +84,59 @@ struct WeekBoundary: Equatable {
     var sunday: DayLoad
 }
 
+/// Semaine en cours quand on change le plan en cours de route (#122, #123) : le moteur ne compose que
+/// le reste de la semaine, autour de ce qui est déjà passé ou fait.
+struct CurrentWeek: Equatable {
+    /// Lundi de la semaine ("AAAA-MM-JJ").
+    var monday: String
+    /// Jours (ISO) encore libres : à partir d'aujourd'hui, sans séance gardée.
+    var openDays: Set<Int>
+    /// Charge des jours déjà pris (passés ou faits), ISO → charge : les règles d'enchaînement en tiennent compte.
+    var keptLoads: [Int: DayLoad]
+    /// Séances déjà faites ou passées cette semaine : retirées de la semaine recomposée, la même séance
+    /// d'abord (titre), sinon une du même rôle.
+    var consumed: [Consumed]
+
+    struct Consumed: Equatable {
+        var role: SessionRole
+        var title: String
+    }
+    /// Séances dures déjà faites ou passées : le plafond de l'intensité vaut pour toute la semaine.
+    var keptHard: Int
+    /// Minutes de course déjà faites ou passées.
+    var keptRunMinutes: Int
+    /// Minutes de course prévues cette semaine avant le changement : la semaine n'en prend pas plus en cours
+    /// de route, et la semaine suivante part de là (+10 % au plus).
+    var plannedRunMinutes: Int
+}
+
+extension DayLoad {
+    /// Deux charges le même jour.
+    func merged(_ other: DayLoad?) -> DayLoad {
+        guard let other else { return self }
+        return DayLoad(hard: hard || other.hard, legs: legs || other.legs, key: key || other.key)
+    }
+}
+
+extension SessionKind {
+    /// Rôle pour le coach, comme `PlannedSession.role`.
+    var coachRole: SessionRole {
+        switch self {
+        case .longRunEasy, .longRunProgressive: return .longRun
+        default:
+            if module == .strength { return .strength }
+            return countsAsHard ? .quality : .easyRun
+        }
+    }
+}
+
 struct PlanGenerator {
     var settings: PlanSettings
     var profile: AthleteProfile
     var memory: CoachMemory = CoachMemory()
     var start: StartingPoint = .unknown
     var boundary: WeekBoundary? = nil
+    var currentWeek: CurrentWeek? = nil
 
     /// Niveau inconnu : départ prudent, au plus 90 min de course la première semaine (et pas plus d'une séance
     /// par course), sortie longue de la durée d'une séance ; ensuite +10 % au plus.
@@ -168,9 +215,11 @@ struct PlanGenerator {
             // Semaine allégée et affûtage : au plus les règles de « Modéré » (aucune paire de jours durs).
             var intensity = PlanIntensity.effective(chosen: target, ceiling: ceiling, weekIndex: i)
             if week.isDeload || week.phase == .taper { intensity = min(intensity, .moderate) }
+            let current = currentWeek.flatMap { $0.monday == PlanCalendar.string(week.monday) ? $0 : nil }
             let weekDays = days.filter { iso in
                 let date = PlanCalendar.day(iso, of: week.monday)
                 if date < firstDayStart { return false }
+                if let current, !current.openDays.contains(iso) { return false }
                 // La veille de l'événement : repos.
                 if let eventDate, date > PlanCalendar.lastTrainingDay(before: eventDate) { return false }
                 return true
@@ -195,6 +244,7 @@ struct PlanGenerator {
             // Cours collectif dont le jour n'existe pas cette semaine (début ou fin du plan) : retiré.
             composed.removeAll { $0.fixedDay.map { !weekDays.contains($0) } ?? false }
             composed = capIntensity(composed, intensity: intensity)
+            if let current { composed = rest(of: composed, current: current, intensity: intensity, runVolume: volumes[i]) }
             composed = trim(composed, toDays: weekDays.count)
             // Hausse réelle : comparée à la dernière semaine complète de progression, ou au point de départ.
             if !week.isDeload && week.phase != .taper && !isPartial {
@@ -208,7 +258,7 @@ struct PlanGenerator {
                                    allowTwoSessionsPerDay: settings.allowTwoSessionsPerDay,
                                    hardPairs: intensity.hardPairsPerWeek, legsPairAllowed: intensity.legsPairAllowed,
                                    previousSunday: previousSunday, previousSaturday: previousSaturday,
-                                   nextMonday: nextMonday,
+                                   nextMonday: nextMonday, fixedLoads: current?.keptLoads ?? [:],
                                    allowed: { kind, iso in
                                        guard let eventDate else { return true }
                                        let date = PlanCalendar.day(iso, of: monday)
@@ -255,6 +305,7 @@ struct PlanGenerator {
             if testPending && runCount > 0 && i == 0 { note("Séance test reportée à la semaine suivante.") }
 
             let weekRun = weekSessions.filter { $0.kind.module == .run }.reduce(0) { $0 + $1.minutes }
+                + (current?.keptRunMinutes ?? 0)
             generated.append(GeneratedWeek(week: week, runMinutes: weekRun, sessions: weekSessions, isPartial: isPartial))
             if week.phase != .taper && week.phase != .maintenance {
                 if week.isDeload {
@@ -268,8 +319,12 @@ struct PlanGenerator {
                     afterDeload = false
                 }
             }
-            previousSunday = DayLoad((placed[7] ?? []).map(\.kind))
-            previousSaturday = DayLoad((placed[6] ?? []).map(\.kind))
+            // Semaine changée en cours de route : la suivante progresse depuis ce qui était vraiment prévu.
+            if let current, !week.isDeload, week.phase != .taper, week.phase != .maintenance {
+                lastBuildRun = min(lastBuildRun ?? current.plannedRunMinutes, max(weekRun, current.plannedRunMinutes))
+            }
+            previousSunday = DayLoad((placed[7] ?? []).map(\.kind)).merged(current?.keptLoads[7])
+            previousSaturday = DayLoad((placed[6] ?? []).map(\.kind)).merged(current?.keptLoads[6])
         }
 
         var phases: [(phase: TrainingPhase, weeks: Int)] = []
@@ -422,6 +477,43 @@ struct PlanGenerator {
             let minimum = kind.countsAsHard ? Double(Self.minQualityMinutes) : Double(Self.minRunMinutes)
             return round5(min(sessionCap, max(minimum, other)))
         }
+    }
+
+    /// Reste de la semaine en cours (#122, #123) : sans ce qui est déjà fait ou passé (même rôle), sous le plafond
+    /// de séances dures de l'intensité et sans dépasser le volume de course prévu pour la semaine.
+    func rest(of slots: [ComposedSession], current: CurrentWeek, intensity: PlanIntensity,
+              runVolume: Double) -> [ComposedSession] {
+        var s = slots
+        for done in current.consumed {
+            if let i = s.firstIndex(where: { $0.fixedDay == nil && $0.kind.label == done.title })
+                ?? s.firstIndex(where: { $0.fixedDay == nil && $0.kind.coachRole == done.role }) {
+                s.remove(at: i)
+            }
+        }
+        // Plafond de la semaine entière : on retire d'abord les séances dures qui ne sont pas clés.
+        let cap = intensity.hardCap(sessions: s.count + current.consumed.count)
+        while s.filter({ $0.kind.countsAsHard }).count + current.keptHard > cap,
+              let i = s.lastIndex(where: { $0.kind.countsAsHard && $0.fixedDay == nil && !$0.kind.isKeySession })
+                ?? s.lastIndex(where: { $0.kind.countsAsHard && $0.fixedDay == nil }) {
+            s.remove(at: i)
+        }
+        // Volume : ce qui reste de la semaine prévue ; footings raccourcis, puis retirés.
+        let left = max(0, min(Int(runVolume.rounded()), current.plannedRunMinutes) - current.keptRunMinutes)
+        func run() -> Int { s.filter { $0.kind.module == .run }.reduce(0) { $0 + $1.minutes } }
+        // Footings d'abord, puis la sortie longue, puis la qualité ; sous la durée minimale, la séance est retirée.
+        for role in [SessionRole.easyRun, .longRun, .quality] {
+            let minimum = role == .quality ? Self.minQualityMinutes : Self.minRunMinutes
+            while run() > left, let i = s.indices.filter({ s[$0].kind.module == .run && s[$0].kind.coachRole == role })
+                    .max(by: { s[$0].minutes < s[$1].minutes }) {
+                let excess = run() - left
+                if s[i].minutes - excess >= minimum {
+                    s[i].minutes -= excess
+                } else {
+                    s.remove(at: i)
+                }
+            }
+        }
+        return s
     }
 
     /// Garde les séances les plus importantes quand la semaine a moins de jours (début ou fin du plan).
