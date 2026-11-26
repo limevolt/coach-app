@@ -635,28 +635,28 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1600;
+				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					34B5BC82ED07EEF47D7400E0 = {
-						DevelopmentTeam = FD598HBBW4;
+						DevelopmentTeam = QG4XL95P47;
 						ProvisioningStyle = Automatic;
 					};
 					4881B6FB9301586E33E2BDF1 = {
-						DevelopmentTeam = FD598HBBW4;
+						DevelopmentTeam = QG4XL95P47;
 						ProvisioningStyle = Automatic;
 						TestTargetID = 4BECFA71649467E4AB541CE0;
 					};
 					4BECFA71649467E4AB541CE0 = {
-						DevelopmentTeam = FD598HBBW4;
+						DevelopmentTeam = QG4XL95P47;
 						ProvisioningStyle = Automatic;
 					};
 					5C0819B6035C44C321E850F4 = {
-						DevelopmentTeam = FD598HBBW4;
+						DevelopmentTeam = QG4XL95P47;
 						ProvisioningStyle = Automatic;
 						TestTargetID = DA10145BF61449D0CBF68A40;
 					};
 					DA10145BF61449D0CBF68A40 = {
-						DevelopmentTeam = FD598HBBW4;
+						DevelopmentTeam = QG4XL95P47;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -947,7 +947,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = FD598HBBW4;
+				DEVELOPMENT_TEAM = QG4XL95P47;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -1171,7 +1171,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = FD598HBBW4;
+				DEVELOPMENT_TEAM = QG4XL95P47;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
