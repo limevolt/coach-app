@@ -75,6 +75,15 @@ final class WeekOverviewTests: XCTestCase {
         XCTAssertEqual(TodayCard.doneLabel(for: yesterday, now: now, calendar: cal), "Fait hier")
         XCTAssertEqual(TodayCard.doneLabel(for: monday, now: now, calendar: cal),
                        "Fait " + monday.formatted(.dateTime.weekday(.wide)).localizedLowercase)
+        XCTAssertEqual(TodayCard.replacementLabel(for: nil, now: now, calendar: cal), "Séance du jour")
+        XCTAssertEqual(TodayCard.replacementLabel(for: yesterday, now: now, calendar: cal), "Séance du jour · hier")
+    }
+
+    /// Jour futur fait en avance : pas de carte « Fait jeudi », la liste du jour reste.
+    func testFutureDoneDayHasNoDoneCard() {
+        let week = WeekOverview.make(plan: demoPlan(), isDone: { $0 == "ven" }, now: now)
+        XCTAssertEqual(week.days[4].status, .done)
+        XCTAssertNil(week.days[4].doneCard)
     }
 
     func testRestDayShowsNextSessionAndUpcoming() {

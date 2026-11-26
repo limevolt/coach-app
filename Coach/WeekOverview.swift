@@ -34,13 +34,15 @@ struct WeekOverview {
         var extras: [HealthActivity] = []
         /// Autre sport choisi comme « Séance principale du jour » pour la séance de la pastille.
         var replacement: HealthActivity? = nil
+        /// Jour avant aujourd'hui.
+        var isPast = false
 
         var id: Date { date }
 
-        /// Autre jour entièrement fait : sa carte reste celle qu'il avait ce jour-là (#125),
+        /// Jour passé entièrement fait : sa carte reste celle qu'il avait ce jour-là (#125),
         /// avec la même séance que `Today.done` (la dernière du jour).
         var doneCard: PlannedSession? {
-            guard !isToday, status == .done else { return nil }
+            guard isPast, status == .done else { return nil }
             return sessions.last
         }
     }
@@ -123,7 +125,8 @@ struct WeekOverview {
             } else {
                 status = date < today ? .missed : .planned
             }
-            return Day(date: date, sessions: sessions, isToday: date == today, main: main, status: status)
+            return Day(date: date, sessions: sessions, isToday: date == today, main: main, status: status,
+                       isPast: date < today)
         }
 
         let weekSessions = days.flatMap(\.sessions)

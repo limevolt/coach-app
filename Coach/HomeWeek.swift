@@ -269,12 +269,23 @@ struct TodayCard: View {
     /// Séance d'une autre app dont on note le ressenti (#54).
     @State private var effortFor: HealthActivity?
 
+    /// « aujourd'hui », « hier », « mardi ».
+    static func dayName(for date: Date?, now: Date = .now, calendar: Calendar = .current) -> String {
+        guard let date, !calendar.isDate(date, inSameDayAs: now) else { return "aujourd'hui" }
+        if let yesterday = calendar.date(byAdding: .day, value: -1, to: now),
+           calendar.isDate(date, inSameDayAs: yesterday) { return "hier" }
+        return date.formatted(.dateTime.weekday(.wide)).localizedLowercase
+    }
+
     /// « Fait aujourd'hui », « Fait hier », « Fait mardi ».
     static func doneLabel(for date: Date?, now: Date = .now, calendar: Calendar = .current) -> String {
-        guard let date, !calendar.isDate(date, inSameDayAs: now) else { return "Fait aujourd'hui" }
-        if let yesterday = calendar.date(byAdding: .day, value: -1, to: now),
-           calendar.isDate(date, inSameDayAs: yesterday) { return "Fait hier" }
-        return "Fait " + date.formatted(.dateTime.weekday(.wide)).localizedLowercase
+        "Fait " + dayName(for: date, now: now, calendar: calendar)
+    }
+
+    /// Autre sport en séance du jour : « Séance du jour », ou « Séance du jour · hier » un autre jour.
+    static func replacementLabel(for date: Date?, now: Date = .now, calendar: Calendar = .current) -> String {
+        guard let date, !calendar.isDate(date, inSameDayAs: now) else { return "Séance du jour" }
+        return "Séance du jour · " + dayName(for: date, now: now, calendar: calendar)
     }
 
     var body: some View {
@@ -297,7 +308,7 @@ struct TodayCard: View {
                 if let link, link.kind == .main {
                     // Autre sport choisi comme séance du jour (#54).
                     VStack(alignment: .leading, spacing: Space.xs) {
-                        Label { Text("Séance du jour") } icon: { Image(systemName: "checkmark") }
+                        Label { Text(Self.replacementLabel(for: date)) } icon: { Image(systemName: "checkmark") }
                             .labelStyle(EyebrowLabelStyle(color: Theme.accent))
                         Label { Text(link.activity.info.label) } icon: { Image(systemName: link.activity.info.symbol) }
                             .font(.number).foregroundStyle(Theme.text)
