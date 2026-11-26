@@ -1,4 +1,4 @@
-commit: f5e7fd3d0c5442508811c0a3c4f8ee65bb8eaa77
+commit: d1215d51ff7c2e228fec32c975c571b4fd9191ec
 branche: lot/seance-guidee-iphone
 ios: success
 watch: success
@@ -9,66 +9,66 @@ tests: success
 ===== ERREURS / AVERTISSEMENTS MONTRE =====
 
 ===== TESTS UNITAIRES =====
-Test Case '-[CoachTests.ReplacementPlannerTests testEasyRunCountedDone]' passed (0.001 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testEasyRunCountedDone]' passed (0.280 seconds).
 Test Case '-[CoachTests.ReplacementPlannerTests testHIITHardByDefault]' passed (0.001 seconds).
 Test Case '-[CoachTests.ReplacementPlannerTests testIntensityFromEffortThenFamily]' passed (0.001 seconds).
-Test Case '-[CoachTests.ReplacementPlannerTests testLightCircuitHasNoIntensity]' passed (0.002 seconds).
-Test Case '-[CoachTests.ReplacementPlannerTests testLightRunIsEasyAndShorter]' passed (0.002 seconds).
-Test Case '-[CoachTests.ReplacementPlannerTests testLongLegsEnduranceProtectsNextDay]' passed (0.002 seconds).
-Test Case '-[CoachTests.ReplacementPlannerTests testLongRunNotRedoneNextOneDoesNotGrow]' passed (0.001 seconds).
-Test Case '-[CoachTests.ReplacementPlannerTests testLongRunsResumeFromReplacedDuration]' passed (0.005 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testLightCircuitHasNoIntensity]' passed (0.001 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testLightRunIsEasyAndShorter]' passed (0.001 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testLongLegsEnduranceProtectsNextDay]' passed (0.001 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testLongRunNotRedoneNextOneDoesNotGrow]' passed (0.003 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testLongRunsResumeFromReplacedDuration]' passed (0.001 seconds).
 Test Case '-[CoachTests.ReplacementPlannerTests testModerateSportDoesNotBlockNextDay]' passed (0.001 seconds).
-Test Case '-[CoachTests.ReplacementPlannerTests testNeverIntoNextWeek]' passed (0.000 seconds).
-Test Case '-[CoachTests.ReplacementPlannerTests testOldActivityFileStillReads]' passed (0.001 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testNeverIntoNextWeek]' passed (0.001 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testOldActivityFileStillReads]' passed (0.004 seconds).
 Test Case '-[CoachTests.ReplacementPlannerTests testOnlyTrainingDays]' passed (0.001 seconds).
 Test Case '-[CoachTests.ReplacementPlannerTests testQualityNotRescheduledNextToHardDays]' passed (0.001 seconds).
 Test Case '-[CoachTests.ReplacementPlannerTests testQualityRedoneOnFirstFreeDay]' passed (0.001 seconds).
 Test Case '-[CoachTests.ReplacementPlannerTests testQualityWaits48hAfterHardSport]' passed (0.001 seconds).
 Test Case '-[CoachTests.ReplacementPlannerTests testRoles]' passed (0.001 seconds).
-Test Case '-[CoachTests.ReplacementPlannerTests testSentenceAnnouncesChanges]' passed (0.002 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testSentenceAnnouncesChanges]' passed (0.001 seconds).
 Test Case '-[CoachTests.ReplacementPlannerTests testStrengthLegsNotAroundKeySession]' passed (0.001 seconds).
 Test Case '-[CoachTests.ReplacementPlannerTests testStrengthNeverMakesThreeHardDays]' passed (0.001 seconds).
-Test Case '-[CoachTests.ReplacementPlannerTests testUndoKeepsDoneCopyAndLaterEdits]' passed (0.001 seconds).
-	 Executed 23 tests, with 0 failures (0 unexpected) in 0.066 (0.128) seconds
-Test Case '-[CoachTests.SessionDetailTests testCircuitDetail]' passed (0.002 seconds).
-Test Case '-[CoachTests.SessionDetailTests testKeyPoseIsTheHardestPosition]' passed (0.001 seconds).
-Test Case '-[CoachTests.SessionDetailTests testRoundLineMatchesTheTotal]' passed (0.002 seconds).
+Test Case '-[CoachTests.ReplacementPlannerTests testUndoKeepsDoneCopyAndLaterEdits]' passed (0.093 seconds).
+	 Executed 23 tests, with 0 failures (0 unexpected) in 0.404 (0.595) seconds
+Test Case '-[CoachTests.SessionDetailTests testCircuitDetail]' passed (0.006 seconds).
+Test Case '-[CoachTests.SessionDetailTests testKeyPoseIsTheHardestPosition]' passed (0.003 seconds).
+Test Case '-[CoachTests.SessionDetailTests testRoundLineMatchesTheTotal]' passed (0.003 seconds).
 Test Case '-[CoachTests.SessionDetailTests testStrengthDetail]' passed (0.001 seconds).
-	 Executed 4 tests, with 0 failures (0 unexpected) in 0.005 (0.018) seconds
-Test Case '-[CoachTests.TrainingDaysTests testClassDayCounts]' passed (0.006 seconds).
-Test Case '-[CoachTests.TrainingDaysTests testLaunchFillsOnlyWhenEmpty]' passed (0.005 seconds).
-Test Case '-[CoachTests.TrainingDaysTests testPlanCreationFillsTrainingDays]' passed (0.003 seconds).
-Test Case '-[CoachTests.TrainingDaysTests testSettingsChangeKeepsTheClassDayApart]' passed (0.001 seconds).
-	 Executed 4 tests, with 0 failures (0 unexpected) in 0.014 (0.022) seconds
-Test Case '-[CoachTests.WatchSyncQueueTests testBackgroundUpdateKeepsTheScreenUsable]' passed (0.314 seconds).
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.013 (0.055) seconds
+Test Case '-[CoachTests.TrainingDaysTests testClassDayCounts]' passed (0.008 seconds).
+Test Case '-[CoachTests.TrainingDaysTests testLaunchFillsOnlyWhenEmpty]' passed (0.013 seconds).
+Test Case '-[CoachTests.TrainingDaysTests testPlanCreationFillsTrainingDays]' passed (0.006 seconds).
+Test Case '-[CoachTests.TrainingDaysTests testSettingsChangeKeepsTheClassDayApart]' passed (0.002 seconds).
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.029 (0.034) seconds
+Test Case '-[CoachTests.WatchSyncQueueTests testBackgroundUpdateKeepsTheScreenUsable]' passed (0.319 seconds).
 Test Case '-[CoachTests.WatchSyncQueueTests testCloseChangesAreGrouped]' passed (1.037 seconds).
 Test Case '-[CoachTests.WatchSyncQueueTests testEditKeepsTheDailySyncDueUntilDone]' passed (1.033 seconds).
-Test Case '-[CoachTests.WatchSyncQueueTests testMovingASessionDoesNotWaitForTheWatch]' passed (0.017 seconds).
-Test Case '-[CoachTests.WatchSyncQueueTests testResetWaitsForTheRunningUpdateThenRemoves]' passed (0.331 seconds).
-Test Case '-[CoachTests.WatchSyncQueueTests testUpdatesNeverOverlap]' passed (0.625 seconds).
-	 Executed 6 tests, with 0 failures (0 unexpected) in 3.356 (3.361) seconds
-Test Case '-[CoachTests.WatchSyncTests testCloseRequestsAreAnsweredOnce]' passed (0.001 seconds).
-Test Case '-[CoachTests.WatchSyncTests testEachSendIsNew]' passed (0.003 seconds).
-Test Case '-[CoachTests.WatchSyncTests testRecentStartRequestIsKept]' passed (0.006 seconds).
-	 Executed 3 tests, with 0 failures (0 unexpected) in 0.010 (0.012) seconds
-Test Case '-[CoachTests.WeekOverviewTests testDoneLabelNamesTheDay]' passed (0.004 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testFutureDoneDayHasNoDoneCard]' passed (0.002 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testPastDoneDayKeepsItsCard]' passed (0.004 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testPlanEnded]' passed (0.013 seconds).
+Test Case '-[CoachTests.WatchSyncQueueTests testMovingASessionDoesNotWaitForTheWatch]' passed (0.020 seconds).
+Test Case '-[CoachTests.WatchSyncQueueTests testResetWaitsForTheRunningUpdateThenRemoves]' passed (0.305 seconds).
+Test Case '-[CoachTests.WatchSyncQueueTests testUpdatesNeverOverlap]' passed (0.616 seconds).
+	 Executed 6 tests, with 0 failures (0 unexpected) in 3.330 (3.359) seconds
+Test Case '-[CoachTests.WatchSyncTests testCloseRequestsAreAnsweredOnce]' passed (0.002 seconds).
+Test Case '-[CoachTests.WatchSyncTests testEachSendIsNew]' passed (0.001 seconds).
+Test Case '-[CoachTests.WatchSyncTests testRecentStartRequestIsKept]' passed (0.004 seconds).
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.007 (0.009) seconds
+Test Case '-[CoachTests.WeekOverviewTests testDoneLabelNamesTheDay]' passed (0.003 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testFutureDoneDayHasNoDoneCard]' passed (0.003 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testPastDoneDayKeepsItsCard]' passed (0.003 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testPlanEnded]' passed (0.004 seconds).
 Test Case '-[CoachTests.WeekOverviewTests testPlannedMinutes]' passed (0.001 seconds).
 Test Case '-[CoachTests.WeekOverviewTests testPlannedMinutesUnits]' passed (0.001 seconds).
 Test Case '-[CoachTests.WeekOverviewTests testRestDayShowsNextSessionAndUpcoming]' passed (0.001 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testSeveralSessionsSameDay]' passed (0.004 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testTodayToDoThenDone]' passed (0.013 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testUpcomingSkipsDoneSessions]' passed (0.001 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testWeekBeforePlanStarts]' passed (0.002 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testSeveralSessionsSameDay]' passed (0.002 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testTodayToDoThenDone]' passed (0.003 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testUpcomingSkipsDoneSessions]' passed (0.003 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testWeekBeforePlanStarts]' passed (0.003 seconds).
 Test Case '-[CoachTests.WeekOverviewTests testWeekHasSevenDaysWithStatuses]' passed (0.001 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testWeekLineAcrossMonths]' passed (0.007 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testWeekOutsidePlanHasNoNumber]' passed (0.002 seconds).
-Test Case '-[CoachTests.WeekOverviewTests testWeekStartsOnMondayWhateverTheRegion]' passed (0.003 seconds).
-	 Executed 15 tests, with 0 failures (0 unexpected) in 0.058 (0.068) seconds
-	 Executed 300 tests, with 0 failures (0 unexpected) in 13.305 (16.791) seconds
-	 Executed 300 tests, with 0 failures (0 unexpected) in 13.305 (16.796) seconds
+Test Case '-[CoachTests.WeekOverviewTests testWeekLineAcrossMonths]' passed (0.002 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testWeekOutsidePlanHasNoNumber]' passed (0.001 seconds).
+Test Case '-[CoachTests.WeekOverviewTests testWeekStartsOnMondayWhateverTheRegion]' passed (0.052 seconds).
+	 Executed 15 tests, with 0 failures (0 unexpected) in 0.083 (0.217) seconds
+	 Executed 300 tests, with 0 failures (0 unexpected) in 12.368 (23.398) seconds
+	 Executed 300 tests, with 0 failures (0 unexpected) in 12.368 (23.400) seconds
 
 ===== DESIGN SYSTÈME (valeurs en dur) =====
 Design : 161 valeur(s) en dur dans les vues (utiliser les jetons du thème).
