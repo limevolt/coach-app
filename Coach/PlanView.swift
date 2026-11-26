@@ -132,10 +132,15 @@ struct PlanView: View {
                 set: { selectedDay = Calendar.current.isDate($0, inSameDayAs: now) ? nil : $0 })) { sessionMenu($0) }
 
             if let selectedDay, let day = week.days.first(where: { Calendar.current.isDate($0.date, inSameDayAs: selectedDay) }) {
-                SelectedDayCard(day: day) {
-                    withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) { self.selectedDay = nil }
+                if let done = day.doneCard {
+                    // Jour fait : la même carte que ce jour-là (#125).
+                    TodayCard(today: .done(done), openTimers: openTimers, date: day.date)
+                        .id(day.date)
+                        .transition(.opacity)
+                } else {
+                    SelectedDayCard(day: day)
+                        .transition(.opacity)
                 }
-                .transition(.opacity)
             } else {
                 TodayCard(today: week.today, planEnded: week.planEnded,
                           openTimers: openTimers, newPlan: { showWizard = true })

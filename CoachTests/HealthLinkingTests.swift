@@ -74,6 +74,33 @@ final class HealthLinkingTests: XCTestCase {
         XCTAssertTrue(week.extras.isEmpty)
     }
 
+    /// #125 : hier, un autre sport choisi comme séance du jour. Le lendemain, le jour est fait
+    /// et garde sa carte « faite » (même règle `isDone` que PlanStore : journal ou lien Santé).
+    func testPastReplacedDayKeepsDoneCard() {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: .now)
+        let yesterday = cal.date(byAdding: .day, value: -1, to: today)!
+        let plan = TrainingPlan(schemaVersion: 1, planId: "demo", version: 1, title: "Démo",
+                                sessions: [session("s1", Day.key(yesterday), .run), session("s2", Day.key(today), .run)])
+        let start = cal.date(byAdding: .hour, value: 18, to: yesterday)!
+        let squash = HealthActivity(id: "a1", start: start, end: start.addingTimeInterval(3300), kind: "squash",
+                                    durationSec: 3300, distanceKm: nil, avgHR: 150, sourceName: "Exercice",
+                                    sourceBundleId: "com.example.autre")
+        var choices = ActivityChoices()
+        choices.mainFor["a1"] = "s1"
+        let links = HealthLinking.resolve(sessions: plan.sessions, activities: [squash], doneByLog: [],
+                                          choices: choices, ownBundlePrefix: nil)
+        let now = cal.date(byAdding: .hour, value: 8, to: today)!
+        let week = WeekOverview.make(plan: plan, isDone: { links.bySession[$0] != nil }, now: now)
+            .decorated(with: links, now: now)
+        let day = week.days.first { cal.isDate($0.date, inSameDayAs: yesterday) }
+        // Lundi : hier est dans la semaine d'avant, rien à vérifier sur la semaine affichée.
+        guard let day else { return }
+        XCTAssertEqual(day.status, .done)
+        XCTAssertEqual(day.doneCard?.id, "s1", "même carte que ce jour-là")
+        XCTAssertEqual(day.replacement?.id, "a1")
+    }
+
     func testTwoSameDayLongestWins() {
         let links = resolve([session("s1", "2030-03-04", .run)],
                             [activity("short", "2030-03-04", "running", minutes: 20),
