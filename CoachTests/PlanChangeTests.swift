@@ -197,9 +197,6 @@ final class PlanChangeTests: XCTestCase {
         XCTAssertFalse(before.sessions.contains { $0.date == "2030-02-17" }, "dimanche libre avant")
         let result = try planner(s).change(days: [1, 2, 4, 6, 7], plan: before, today: midPlan)
         XCTAssertTrue(result.plan.sessions.contains { $0.date == "2030-02-17" }, "dimanche suivant : une séance")
-        let restBefore = before.sessions.filter { $0.date >= today && $0.date < nextMonday }.count
-        let restAfter = result.plan.sessions.filter { $0.date >= today && $0.date < nextMonday }.count
-        XCTAssertGreaterThanOrEqual(restAfter, restBefore, "le reste de la semaine profite du jour ajouté")
         XCTAssertEqual(result.settings.trainingDays, [1, 2, 4, 6, 7])
         assertNoHardPair(result.plan, from: today, to: nextMonday)
         XCTAssertEqual(result.plan.sessions.filter { $0.date < today }, before.sessions.filter { $0.date < today })
@@ -222,23 +219,87 @@ final class PlanChangeTests: XCTestCase {
         XCTAssertEqual(planner(settings(.moderate, days: Set(1...7))).daysValue, "Tous les jours")
     }
 
-    // MARK: Reste de la semaine
+    // MARK: Reste de la semaine (relectures coach et code)
 
-    func testRestOfWeekSkipsWhatIsDoneAndAvoidsHardPairs() {
-        func s(_ id: String, _ date: String, _ type: SessionType = .run, title: String) -> PlannedSession {
-            PlannedSession(id: id, date: date, time: nil, type: type, title: title, notes: nil, run: nil,
-                           strength: nil, circuit: nil, equipment: nil, originalDate: nil, replaces: nil)
+    /// Charge de chaque jour de `monday` à dimanche, précédée du samedi et du dimanche d'avant.
+    private func loads(_ p: TrainingPlan, monday: String) -> [DayLoad] {
+        (-2..<7).map { offset in
+            let day = PlanCalendar.string(PlanCalendar.calendar.date(byAdding: .day, value: offset, to: date(monday))!)
+            let s = p.sessions.filter { $0.date == day }
+            return DayLoad(hard: s.contains(where: \.countsAsHard),
+                           legs: s.contains { $0.role == .longRun || ($0.countsAsHard && $0.loadsLegs) },
+                           key: s.contains(where: \.isKey))
         }
-        // Sans détail de course, le rôle se lit au type : circuit = séance dure, course = footing.
-        let week = [s("w05-1", "2030-02-04", .circuit, title: "Circuit démo"), s("w05-2", "2030-02-05", title: "Footing démo"),
-                    s("w05-3", "2030-02-07", title: "Footing démo"), s("w05-4", "2030-02-09", .circuit, title: "Circuit démo")]
-        let kept = [s("w05-1", "2030-02-04", .circuit, title: "Circuit démo")]
-        let rest = PlanChangePlanner.composeRest(of: week, kept: kept,
-                                                 freeDays: ["2030-02-07", "2030-02-09", "2030-02-10"], taken: ["w05-1"])
-        XCTAssertEqual(rest.filter { $0.type == .circuit }.count, 1, "un circuit déjà fait : il en reste un")
-        XCTAssertEqual(rest.first { $0.type == .circuit }?.date, "2030-02-09", "à son jour prévu")
-        XCTAssertEqual(rest.count, 3)
-        XCTAssertFalse(rest.contains { $0.id == "w05-1" })
+    }
+
+    private func runMinutes(_ p: TrainingPlan, from: String, to: String) -> Int {
+        p.sessions.filter { $0.type == .run && $0.date >= from && $0.date < to }.reduce(0) { $0 + ($1.plannedMinutes ?? 0) }
+    }
+
+    func testAddedSundayThisWeekFollowsTheRules() throws {
+        let s = settings(.moderate, days: [1, 2, 4, 6])
+        let before = try plan(s)
+        let after = try planner(s).change(days: [1, 2, 4, 6, 7], plan: before, today: midPlan).plan
+        XCTAssertTrue(after.sessions.contains { $0.date == "2030-02-10" }, "dimanche de cette semaine : une séance")
+        XCTAssertEqual(PlanRules.violations(loads(after, monday: thisMonday), countFrom: 1), [])
+        XCTAssertLessThanOrEqual(runMinutes(after, from: thisMonday, to: nextMonday),
+                                 runMinutes(before, from: thisMonday, to: nextMonday) + 5,
+                                 "le volume de la semaine n'augmente pas en cours de route")
+    }
+
+    func testLowerOnFridayAddsNoHardSession() throws {
+        let s = settings(.firm)
+        let before = try plan(s)
+        let friday = Calendar.current.date(from: DateComponents(year: 2030, month: 2, day: 8, hour: 12))!
+        let done = Set(before.sessions.filter { $0.date >= thisMonday && $0.date < "2030-02-08" }.map(\.id))
+        let after = try planner(s).change(to: .gentle, plan: before, done: done, today: friday).plan
+        let hardLeft = after.sessions.filter { $0.date >= "2030-02-08" && $0.date < nextMonday && $0.countsAsHard }
+        let hardDone = before.sessions.filter { done.contains($0.id) && $0.countsAsHard }.count
+        XCTAssertTrue(hardLeft.isEmpty || hardDone + hardLeft.count <= PlanIntensity.gentle.hardCap(sessions: 7),
+                      "Doux : pas de séance dure de plus que le plafond, cette semaine")
+    }
+
+    func testMondayAfterHardSundayIsNotHard() throws {
+        let s = settings(.moderate)
+        var before = try plan(s)
+        let i = try XCTUnwrap(before.sessions.firstIndex { $0.date >= thisMonday && $0.date < nextMonday && $0.countsAsHard })
+        before.sessions[i].date = "2030-02-10"
+        let monday = Calendar.current.date(from: DateComponents(year: 2030, month: 2, day: 11, hour: 8))!
+        let after = try planner(s).change(to: .gentle, plan: before, today: monday).plan
+        XCTAssertFalse(after.sessions.contains { $0.date == nextMonday && $0.countsAsHard },
+                       "pas de séance dure le lundi après un dimanche dur")
+    }
+
+    func testEventWeekKeepsRestBeforeTheRace() throws {
+        let s = settings(.moderate)
+        let wednesday = Calendar.current.date(from: DateComponents(year: 2030, month: 6, day: 12, hour: 12))!
+        let after = try planner(s).change(to: .gentle, plan: try plan(s), today: wednesday).plan
+        XCTAssertFalse(after.sessions.contains { $0.date == "2030-06-15" }, "veille de l'épreuve : repos")
+        XCTAssertFalse(after.sessions.contains { $0.date >= "2030-06-13" && $0.date <= "2030-06-15" && $0.countsAsHard },
+                       "rien de dur dans les 3 jours avant l'épreuve")
+    }
+
+    func testTwoChangesInOneWeekKeepIdsUnique() throws {
+        let s = settings(.moderate, days: [1, 2, 4, 6])
+        let first = try planner(s).change(days: [1, 2, 4, 6, 7], plan: try plan(s), today: midPlan)
+        let thursday = Calendar.current.date(from: DateComponents(year: 2030, month: 2, day: 7, hour: 20))!
+        let done = Set(first.plan.sessions.filter { $0.date == "2030-02-07" }.map(\.id))
+        let second = try planner(first.settings).change(days: [1, 2, 4, 7], plan: first.plan, done: done, today: thursday)
+        XCTAssertEqual(Set(second.plan.sessions.map(\.id)).count, second.plan.sessions.count)
+        XCTAssertTrue(second.plan.sessions.filter { $0.date > "2030-02-07" }
+            .allSatisfy { TrainingDays.isoWeekday(date($0.date)) != 6 }, "plus de samedi")
+    }
+
+    func testPlanOverAndNotStarted() throws {
+        let s = settings(.moderate)
+        let after = Calendar.current.date(from: DateComponents(year: 2030, month: 6, day: 20, hour: 12))!
+        XCTAssertThrowsError(try planner(s).change(days: [1, 2], plan: try plan(s), today: after)) { error in
+            XCTAssertEqual(error as? PlanChangeError, .notAllowed(.planOver))
+        }
+        let before = Calendar.current.date(from: DateComponents(year: 2029, month: 12, day: 31, hour: 12))!
+        let result = try planner(s).change(days: [1, 3, 5, 7], plan: try plan(s), today: before)
+        XCTAssertTrue(result.plan.sessions.allSatisfy { $0.date >= "2030-01-07" }, "rien avant le début du plan")
+        XCTAssertTrue(result.plan.sessions.allSatisfy { [1, 3, 5, 7].contains(TrainingDays.isoWeekday(date($0.date))) })
     }
 
     // MARK: Enregistrement

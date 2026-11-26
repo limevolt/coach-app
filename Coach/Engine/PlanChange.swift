@@ -1,8 +1,9 @@
 // PlanChange.swift — coach local : changer un plan en cours sans repartir de zéro (#46).
 // Jours d'entraînement (#122) et intensité (#123, règles de #57) : effet DÈS AUJOURD'HUI (décision du propriétaire).
 // - Le passé et les séances faites ne bougent pas.
-// - Le reste de la semaine en cours est recomposé à partir de la semaine recalculée, en retirant ce qui est déjà
-//   fait ou passé (même rôle) et sans deux séances dures de suite.
+// - Le reste de la semaine en cours est recomposé par le moteur (`CurrentWeek`) : sans ce qui est déjà fait ou
+//   passé (même rôle), sous le plafond de séances dures et le volume de la semaine, sur les jours libres qui restent,
+//   avec les mêmes règles que tout le plan (enchaînements, jambes avant une séance clé, salle, cours, épreuve).
 // - Les semaines suivantes sont recalculées comme au premier jour du plan : la progression (+10 % au plus) et la
 //   montée progressive de l'intensité ne repartent pas de zéro ; le placeur part du week-end réellement prévu.
 // - Intensité : baisser à tout moment ; monter d'un cran à la fois, 3 semaines au moins depuis le dernier
@@ -160,8 +161,9 @@ struct PlanChangePlanner {
 
     // MARK: Recalcul
 
-    /// Le passé et les séances faites restent ; le reste de la semaine en cours est recomposé ;
-    /// les semaines suivantes sont recalculées.
+    /// Le passé et les séances faites restent ; le reste de la semaine en cours est recomposé par le moteur
+    /// (mêmes règles que pour tout le plan : enchaînements, salle, cours, épreuve) ; les semaines suivantes
+    /// sont recalculées.
     func recalculate(with newSettings: PlanSettings, plan: TrainingPlan, done: Set<String>,
                      today: Date) throws -> PlanChangeResult {
         guard let startDay = StrictDate.date(settings.startDate) else { throw PlanChangeError.invalidPlan }
@@ -172,38 +174,44 @@ struct PlanChangePlanner {
         let cal = PlanCalendar.calendar
         let todayKey = PlanCalendar.string(cal.startOfDay(for: today))
         let monday = PlanCalendar.monday(of: today)
-        let nextMonday = cal.date(byAdding: .day, value: 7, to: monday) ?? monday
-        let nextKey = PlanCalendar.string(nextMonday)
-
-        func generate(_ boundary: WeekBoundary?) throws -> GeneratedPlan {
-            do {
-                return try PlanGenerator(settings: newSettings, profile: profile, memory: memory, start: start,
-                                         boundary: boundary).generate(today: startDay)
-            } catch PlanGeneratorError.invalidSettings(let issues) {
-                throw PlanChangeError.invalidSettings(issues)
-            }
-        }
+        let mondayKey = PlanCalendar.string(monday)
+        let nextKey = PlanCalendar.string(cal.date(byAdding: .day, value: 7, to: monday) ?? monday)
 
         // Gardé : le passé et ce qui est fait, quel que soit le jour.
         let kept = plan.sessions.filter { $0.date < todayKey || done.contains($0.id) }
         let keptIds = Set(kept.map(\.id))
+        let started = weeks.contains { PlanCalendar.string($0.monday) == mondayKey }
+        let thisWeek = plan.sessions.filter { $0.date >= mondayKey && $0.date < nextKey }
+        let current = started ? Self.currentWeek(kept: kept.filter { $0.date >= mondayKey && $0.date < nextKey },
+                                                 planned: thisWeek, monday: monday, today: today) : nil
 
-        // 1. Reste de la semaine en cours, à partir de la même semaine recalculée.
-        let first = try generate(nil)
-        let thisWeek = Self.composeRest(
-            of: first.plan.sessions.filter { $0.date >= PlanCalendar.string(monday) && $0.date < nextKey },
-            kept: kept.filter { $0.date >= PlanCalendar.string(monday) && $0.date < nextKey },
-            freeDays: Self.days(from: today, to: nextMonday, usable: Set(WeekComposer.usableDays(newSettings))),
-            taken: keptIds)
+        let generated: GeneratedPlan
+        do {
+            generated = try PlanGenerator(settings: newSettings, profile: profile, memory: memory, start: start,
+                                          boundary: started ? Self.boundary(of: plan.sessions, before: monday) : nil,
+                                          currentWeek: current).generate(today: startDay)
+        } catch PlanGeneratorError.invalidSettings(let issues) {
+            throw PlanChangeError.invalidSettings(issues)
+        }
 
-        // 2. Semaines suivantes, à partir du week-end réellement prévu.
-        let current = kept + thisWeek
-        let following = try generate(Self.boundary(of: current, before: nextMonday)).plan.sessions
-            .filter { $0.date >= nextKey && !keptIds.contains($0.id) }
+        // Nouvelles séances : à partir d'aujourd'hui, sur les jours libres ; un identifiant déjà pris est renommé.
+        var used = keptIds
+        let upcoming: [PlannedSession] = generated.plan.sessions
+            .filter { $0.date >= todayKey }
+            .map { s in
+                var s = s
+                if used.contains(s.id) {
+                    var n = 2
+                    while used.contains("\(s.id)-v\(n)") { n += 1 }
+                    s.id = "\(s.id)-v\(n)"
+                }
+                used.insert(s.id)
+                return s
+            }
 
         var newPlan = plan
         newPlan.version = plan.version + 1
-        newPlan.sessions = (current + following).enumerated()
+        newPlan.sessions = (kept + upcoming).enumerated()
             .sorted { ($0.element.date, $0.offset) < ($1.element.date, $1.offset) }
             .map(\.element)
         guard newPlan.validationErrors().isEmpty,
@@ -211,69 +219,37 @@ struct PlanChangePlanner {
         return PlanChangeResult(plan: newPlan, settings: newSettings, keptIds: keptIds)
     }
 
-    /// Jours de `from` (inclus) à `to` (exclu) qui sont des jours d'entraînement, en "AAAA-MM-JJ".
-    static func days(from: Date, to: Date, usable: Set<Int>) -> [String] {
-        let cal = PlanCalendar.calendar
-        var result: [String] = []
-        var day = cal.startOfDay(for: from)
-        while day < to {
-            if usable.contains(TrainingDays.isoWeekday(day)) { result.append(PlanCalendar.string(day)) }
-            guard let next = cal.date(byAdding: .day, value: 1, to: day) else { break }
-            day = next
-        }
-        return result
-    }
-
-    /// Reste de la semaine : les séances de la semaine recalculée, moins celles déjà faites ou passées
-    /// (même rôle), sur les jours libres qui restent, sans deux séances dures de suite.
-    /// Ce qui ne trouve pas de place est laissé de côté : le coach ne tasse pas la semaine.
-    static func composeRest(of week: [PlannedSession], kept: [PlannedSession], freeDays: [String],
-                            taken: Set<String>) -> [PlannedSession] {
-        func slot(_ s: PlannedSession) -> String { "\(s.type.rawValue)-\(s.role)" }
-        var candidates = week
+    /// Ce que la semaine en cours a déjà : jours pris, rôles et charges faits ou passés.
+    static func currentWeek(kept: [PlannedSession], planned: [PlannedSession], monday: Date, today: Date) -> CurrentWeek {
+        let todayIso = TrainingDays.isoWeekday(today)
+        var loads: [Int: DayLoad] = [:]
         for s in kept {
-            if let i = candidates.firstIndex(where: { slot($0) == slot(s) }) { candidates.remove(at: i) }
+            guard let d = PlanDate.date(s.date) else { continue }
+            let iso = TrainingDays.isoWeekday(d)
+            let load = DayLoad(hard: s.countsAsHard,
+                               legs: s.role == .longRun || (s.countsAsHard && s.loadsLegs), key: s.isKey)
+            loads[iso] = load.merged(loads[iso])
         }
-        // Les séances clés d'abord (qualité, sortie longue), puis les autres ; à importance égale, l'ordre prévu.
-        candidates = candidates.enumerated().sorted { a, b in
-            let ka = (a.element.isKey ? 0 : a.element.countsAsHard ? 1 : 2, a.offset)
-            let kb = (b.element.isKey ? 0 : b.element.countsAsHard ? 1 : 2, b.offset)
-            return ka < kb
-        }.map(\.element)
-
-        let keptDays = Set(kept.map(\.date))
-        var free = freeDays.filter { !keptDays.contains($0) }
-        var hardDays = Set(kept.filter(\.countsAsHard).map(\.date))
-        var placed: [PlannedSession] = []
-        var usedIds = taken
-
-        func neighbours(_ day: String) -> [String] {
-            guard let d = PlanDate.date(day) else { return [] }
-            return [-1, 1].compactMap { PlanCalendar.calendar.date(byAdding: .day, value: $0, to: d) }.map(PlanCalendar.string)
-        }
-        for s in candidates {
-            let fits: (String) -> Bool = { day in
-                !s.countsAsHard || neighbours(day).allSatisfy { !hardDays.contains($0) }
-            }
-            // Son jour prévu s'il est libre, sinon le jour libre le plus proche.
-            let ordered = free.sorted { a, b in
-                (abs(Self.distance(a, s.date)), a) < (abs(Self.distance(b, s.date)), b)
-            }
-            guard let day = ordered.first(where: fits) else { continue }
-            var session = s
-            if session.date != day { session.date = day }
-            if usedIds.contains(session.id) { session.id += "-r" }
-            usedIds.insert(session.id)
-            placed.append(session)
-            free.removeAll { $0 == day }
-            if session.countsAsHard { hardDays.insert(day) }
-        }
-        return placed
+        // Le cours collectif garde son jour : il ne remplace pas une autre séance de la semaine.
+        let classLabel = SessionKind.martialCrossClass.label
+        let counted = kept.filter { !$0.title.hasPrefix(classLabel) }
+        return CurrentWeek(monday: PlanCalendar.string(monday),
+                           openDays: Set((todayIso...7).filter { loads[$0] == nil }),
+                           keptLoads: loads,
+                           consumed: counted.map(slot),
+                           keptHard: kept.filter(\.countsAsHard).count,
+                           keptRunMinutes: runMinutes(kept), plannedRunMinutes: runMinutes(planned))
     }
 
-    private static func distance(_ a: String, _ b: String) -> Int {
-        guard let da = PlanDate.date(a), let db = PlanDate.date(b) else { return 0 }
-        return PlanCalendar.calendar.dateComponents([.day], from: db, to: da).day ?? 0
+    private static func runMinutes(_ sessions: [PlannedSession]) -> Int {
+        sessions.filter { $0.type == .run }.reduce(0) { $0 + ($1.plannedMinutes ?? 0) }
+    }
+
+    /// Rôle d'une séance gardée : une sortie longue progressive reste une sortie longue.
+    static func slot(_ s: PlannedSession) -> SessionRole {
+        let title = s.title.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "fr_FR"))
+        if s.type == .run && title.contains("longue") { return .longRun }
+        return s.role
     }
 
     /// Charge du samedi et du dimanche, juste avant le lundi `monday`.

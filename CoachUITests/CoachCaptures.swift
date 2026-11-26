@@ -284,7 +284,9 @@ final class CoachCaptures: XCTestCase {
                 Thread.sleep(forTimeInterval: 1.5)
                 shot("29c-plan-cree")
                 // Plan en cours (#122, #123) : Réglages du plan › Jours, puis › Intensité ; effet dès aujourd'hui.
-                if tap("Jours", in: app) {
+                let daysRow = app.buttons["reglage-jours"].firstMatch
+                if daysRow.waitForExistence(timeout: 3) {
+                    daysRow.tap()
                     Thread.sleep(forTimeInterval: 0.6)
                     shot("29d-jours")
                     audit("Jours d'entraînement", app)
@@ -294,7 +296,9 @@ final class CoachCaptures: XCTestCase {
                         if tap("Appliquer", in: app) { Thread.sleep(forTimeInterval: 2) }
                     }
                 }
-                if tap("Intensité", in: app) {
+                let intensityRow = app.buttons["reglage-intensite"].firstMatch
+                if intensityRow.waitForExistence(timeout: 3) {
+                    intensityRow.tap()
                     Thread.sleep(forTimeInterval: 0.6)
                     shot("29f-intensite")
                     audit("Intensité du plan", app)

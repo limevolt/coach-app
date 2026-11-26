@@ -26,10 +26,16 @@ struct SettingsView: View {
                     }
                 }
 
-                if let changePlanner {
+                if isCoachPlan {
                     Section {
-                        Button { changeSheet = .days } label: { settingRow("Jours", changePlanner.daysValue) }
-                        Button { changeSheet = .intensity } label: { settingRow("Intensité", changePlanner.intensityValue) }
+                        if let changePlanner {
+                            Button { changeSheet = .days } label: { settingRow("Jours", changePlanner.daysValue) }
+                                .accessibilityIdentifier("reglage-jours")
+                            Button { changeSheet = .intensity } label: { settingRow("Intensité", changePlanner.intensityValue) }
+                                .accessibilityIdentifier("reglage-intensite")
+                        } else {
+                            ProgressView().frame(maxWidth: .infinity)
+                        }
                     } header: {
                         Text("Mon plan")
                     } footer: {
@@ -112,6 +118,12 @@ struct SettingsView: View {
             .task(id: store.plan?.key) { changePlanner = await store.planChangePlanner() }
             .planChangeSheet($changeSheet, planner: changePlanner, store: store)
         }
+    }
+
+    /// Plan créé par le coach (lu tout de suite, sans attendre Santé) : jamais l'ancien sélecteur, qui ne recalcule pas.
+    private var isCoachPlan: Bool {
+        guard let plan = store.plan else { return false }
+        return CoachStorage.loadSettings()?.id == plan.planId
     }
 
     /// « Jours      Lu Ma Je Sa › »

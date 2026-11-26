@@ -94,6 +94,8 @@ private func applyChange(store: PlanStore,
     let result = await Task.detached(priority: .userInitiated) {
         Result { try make(planner, plan, done, now) }
     }.value
+    // Le plan a changé pendant le calcul (adaptation du coach, synchro) : on ne l'écrase pas.
+    guard store.plan?.version == plan.version else { return "Le plan vient d'être mis à jour. Réessaie." }
     do {
         try await store.applyPlanChange(try result.get())
         return nil
@@ -150,9 +152,7 @@ struct IntensitySheet: View {
                 }
             }
             .sensoryFeedback(.selection, trigger: choice)
-            if planner.effectWeek(today: today) != nil {
-                InfoLine(text: "Dès aujourd'hui pour les séances qui restent. Les séances faites ne bougent pas.")
-            }
+            InfoLine(text: planner.effectText(today: today))
         }
     }
 
@@ -200,17 +200,20 @@ struct TrainingDaysSheet: View {
     }
 
     private var issue: PlanSettingsIssue? { planner.issues(forDays: days).first }
+    private var isOver: Bool { planner.effectWeek(today: .now) == nil }
     private var changed: Bool { planner.settingsWith(days: days).effectiveTrainingDays != planner.settings.effectiveTrainingDays }
 
     var body: some View {
-        PlanChangeSheet(title: "Jours d'entraînement", canApply: changed && issue == nil, working: working,
+        PlanChangeSheet(title: "Jours d'entraînement", canApply: changed && issue == nil && !isOver, working: working,
                         errorMessage: errorMessage, apply: apply) {
             DayGrid(selection: $days)
                 .disabled(working)
                 .sensoryFeedback(.selection, trigger: days)
-            if let issue {
+            if isOver {
+                InfoLine(text: "Le plan est terminé.")
+            } else if let issue {
                 InfoLine(text: issue.message, isAlert: true)
-            } else if planner.effectWeek(today: .now) != nil {
+            } else {
                 InfoLine(text: summary)
             }
         }
@@ -221,7 +224,9 @@ struct TrainingDaysSheet: View {
         let n = planner.sessionsPerWeek(days: days)
         let count = n == 1 ? "1 séance par semaine" : "\(n) séances par semaine"
         let rest = days.count == 7 ? " Un jour de repos complet est gardé." : ""
-        return "\(count), dès aujourd'hui. Les séances faites ne bougent pas.\(rest)"
+        return planner.hasStarted(today: .now)
+            ? "\(count), dès aujourd'hui. Les séances faites ne bougent pas.\(rest)"
+            : "\(count), dès le début du plan.\(rest)"
     }
 
     private func apply() {
@@ -250,6 +255,20 @@ extension PlanChangePlanner {
     }
 
     var intensityValue: String { settings.currentIntensity.label }
+
+    /// Le plan a-t-il commencé ?
+    func hasStarted(today: Date) -> Bool {
+        guard let start = StrictDate.date(settings.startDate) else { return true }
+        return PlanCalendar.calendar.startOfDay(for: today) >= start
+    }
+
+    /// Phrase sous les niveaux d'intensité.
+    func effectText(today: Date) -> String {
+        if effectWeek(today: today) == nil { return "Le plan est terminé." }
+        return hasStarted(today: today)
+            ? "Dès aujourd'hui pour les séances qui restent. Les séances faites ne bougent pas."
+            : "Dès le début du plan."
+    }
 }
 
 /// Section « Réglages du plan » : une ligne par réglage qui recalcule le plan. Sur l'écran Plan et dans Réglages.
@@ -263,10 +282,12 @@ struct PlanSettingsRows: View {
                 PlanLine(title: "Jours", trailing: planner.daysValue)
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("reglage-jours")
             Button { sheet = .intensity } label: {
                 PlanLine(title: "Intensité", trailing: planner.intensityValue, showsSeparator: false)
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("reglage-intensite")
         }
     }
 }
