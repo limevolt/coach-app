@@ -10,37 +10,34 @@ final class WatchCaptures: XCTestCase {
 
     @MainActor
     func testCaptures() {
-        // 1. Accueil : prochaine séance (course) + autres séances
+        // 1. Accueil : seulement la séance du jour (course) + « Entraînement libre »
         var app = launchDemo(plan: DemoPlan.json())
         _ = button("Commencer", in: app).waitForExistence(timeout: 30)
         shot("01-accueil")
-        app.swipeUp()
-        shot("02-accueil-bas")
 
-        // 2. Renfo : prêt → « Prêt ? » 5 s → série en cours → repos
-        app = launchDemo(plan: DemoPlan.json())
-        if tap("Renfo", in: app) {
-            shot("03-renfo-pret")
-            if tap("Commencer", in: app) {
-                shot("04a-depart-pret", settle: 0.5)
-                shot("04-renfo-serie", settle: 6.0)
-                // Page de commandes (pause, passer, +30 s, terminer) : glisser vers la droite
-                app.swipeRight()
-                shot("05-renfo-commandes")
-                app.swipeLeft()
-                if tap("Série faite", in: app) {
-                    shot("06-renfo-repos")
-                }
+        // 1 bis. Accueil un jour de repos (la 1re séance était hier, la suivante demain)
+        app = launchDemo(plan: DemoPlan.json(firstOffset: -2))
+        _ = button("Entraînement libre", in: app).waitForExistence(timeout: 30)
+        shot("02-accueil-repos")
+
+        // 2. Renfo du jour : « Commencer » → « Prêt ? » 5 s → série en cours → repos
+        app = launchDemo(plan: DemoPlan.json(firstOffset: -1))
+        if tap("Commencer", in: app, timeout: 30) {
+            shot("04a-depart-pret", settle: 0.5)
+            shot("04-renfo-serie", settle: 6.0)
+            // Page de commandes (pause, passer, +30 s, terminer) : glisser vers la droite
+            app.swipeRight()
+            shot("05-renfo-commandes")
+            app.swipeLeft()
+            if tap("Série faite", in: app) {
+                shot("06-renfo-repos")
             }
         }
 
-        // 3. Circuit : prêt → en cours
-        app = launchDemo(plan: DemoPlan.json())
-        if tap("Circuit", in: app) {
-            shot("07-circuit-pret")
-            if tap("Commencer", in: app) {
-                shot("08-circuit-en-cours", settle: 13.0)
-            }
+        // 3. Circuit du jour : « Commencer » → en cours
+        app = launchDemo(plan: DemoPlan.json(firstOffset: -5))
+        if tap("Commencer", in: app, timeout: 30) {
+            shot("08-circuit-en-cours", settle: 13.0)
         }
 
         // 4. Entraînements libres
@@ -49,11 +46,10 @@ final class WatchCaptures: XCTestCase {
             shot("09-libre")
         }
 
-        // 4 bis. Accueil avec une séance faite : elle n'est plus dans « Autres séances » (#27)
-        app = launchDemo(plan: DemoPlan.json(), done: [DemoPlan.sessionIds[1]])
-        _ = button("Commencer", in: app).waitForExistence(timeout: 30)
-        app.swipeUp()
-        shot("11-accueil-une-faite")
+        // 4 bis. Accueil quand la séance du jour est faite : « Fait » + « Entraînement libre »
+        app = launchDemo(plan: DemoPlan.json(), done: [DemoPlan.sessionIds[0]])
+        _ = button("Entraînement libre", in: app).waitForExistence(timeout: 30)
+        shot("11-accueil-fait")
 
         // 5. Aucune séance
         app = launchDemo(plan: nil)
