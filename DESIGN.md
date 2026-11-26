@@ -166,8 +166,21 @@ propriétaire le signale.
   ouvre Coach sur la montre et la séance y démarre aussitôt, sans second « Commencer » (choix du
   propriétaire, 18/11/2026). Exception : une course s'ouvre prête, l'app Exercice demande son départ.
 - Doit rester utilisable en courant, en sueur, avec des doigts mouillés.
+- **Séance guidée : la montre et l'iPhone ensemble** (choix du propriétaire, maquette « détail de séance et
+  séance guidée ») : une seule séance, deux écrans. La montre reste le « cerveau » (chrono, vibrations,
+  fréquence cardiaque, enregistrement Santé) ; l'iPhone posé au sol affiche la même séance en grand
+  (visuel animé, nom, chrono, exercice suivant pendant le repos). Pause, précédent et suivant agissent sur
+  la même séance, des deux côtés. **Sans montre**, l'iPhone mène la séance seul, avec les mêmes écrans.
 
 ## iPhone
+
+- **Détail de séance (maquette validée)** : circuit = « N tours » + durée, « 1 tour = X exercices · Y min »,
+  puis une **grille de grandes vignettes** (pose clé du personnage animé, nom sur 2 lignes réservées, durée
+  en mots : « 2 min », « 3 × 10 »), sans numéro. Toucher une vignette ouvre « Comment faire ? ».
+- **« Comment faire ? »** : animation lente par défaut, rien ne bouge dans la mise en page pendant qu'elle
+  tourne (pas de légende qui change de hauteur).
+- **Visuels des exercices** : nos personnages animés (`Shared/ExerciseAnimation.swift`), un seul style
+  pour toute l'app. Pas de photos ni de vidéos (droits, poids de l'app, vie privée du dépôt public).
 
 - **Accueil (version pastilles, #40)** : de haut en bas, « Semaine x sur y · dates » et le titre
   « Cette semaine » avec le bouton ••• ; le héros « séances faites / prévues » ; la semaine en
