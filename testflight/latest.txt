@@ -1,7 +1,7 @@
-commit: 9f754fb1c76514d109580f243eb6dd522a4e4643
-version TestFlight: 14
-archive: failure
-envoi: skipped
+commit: 21fc0430c06358658092b9eac8d9cfb1d31d9f58
+version TestFlight: 15
+archive: success
+envoi: success
 
 ===== PROFILS =====
 Certificat trouvé (DISTRIBUTION)
@@ -9,8 +9,11 @@ Profil prêt : Coach TestFlight com.limevolt.coachapp
 Profil prêt : Coach TestFlight com.limevolt.coachapp.watchkitapp
 
 ===== ARCHIVE =====
-** ARCHIVE FAILED **
-/Users/runner/work/coach-app/coach-app/Coach.xcodeproj: error: No profile for team 'FD598HBBW4' matching 'Coach TestFlight com.limevolt.coachapp.watchkitapp' found: Xcode couldn't find any provisioning profiles matching 'FD598HBBW4/Coach TestFlight com.limevolt.coachapp.watchkitapp'. Install the profile (by dragging and dropping it onto Xcode's dock item) or select a different one in the Signing & Capabilities tab of the target editor. (in target 'CoachWatch' from project 'Coach')
-/Users/runner/work/coach-app/coach-app/Coach.xcodeproj: error: No profile for team 'FD598HBBW4' matching 'Coach TestFlight com.limevolt.coachapp' found: Xcode couldn't find any provisioning profiles matching 'FD598HBBW4/Coach TestFlight com.limevolt.coachapp'. Install the profile (by dragging and dropping it onto Xcode's dock item) or select a different one in the Signing & Capabilities tab of the target editor. (in target 'Coach' from project 'Coach')
+** ARCHIVE SUCCEEDED **
 
 ===== ENVOI =====
+** EXPORT SUCCEEDED **
+2026-11-26 14:50:52.681 xcodebuild[3353:13505] Progress 100%: Uploaded package is processing.
+2026-11-26 14:50:52.684 xcodebuild[3353:13505] Progress 100%: Upload succeeded.
+Uploaded Coach
+warning: exportArchive App Store Connect Warning. SDK version issue. This app was built with the iOS 26.5 SDK. Starting April 2027, iOS and iPadOS apps must be built with the iOS 27 SDK or later, included in Xcode 27 or later, in order to be uploaded to App Store Connect or submitted for distribution.
