@@ -7,7 +7,8 @@ struct ExerciseGuideView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var playing = true
-    @State private var speed = 1.0
+    /// Lent par défaut (retour du propriétaire : l'animation allait trop vite).
+    @State private var speed = ExerciseGuideView.slow
     @State private var showMuscles = true
     @State private var elapsed: Double = 0
     @State private var anchor = Date()
@@ -37,10 +38,6 @@ struct ExerciseGuideView: View {
                         TimelineView(.animation(minimumInterval: 1 / 60, paused: !playing)) { context in
                             let t = time(at: context.date)
                             stage(animation, t)
-                        }
-                        TimelineView(.periodic(from: .now, by: 0.1)) { context in
-                            let sample = animation.sample(at: time(at: context.date))
-                            cue(sample.phase)
                         }
                         controls
                     } else {
@@ -75,25 +72,16 @@ struct ExerciseGuideView: View {
         }
     }
 
+    static let slow = 0.5
+
     // MARK: En-tête
 
     private var header: some View {
-        HStack(alignment: .bottom) {
-            VStack(alignment: .leading, spacing: Space.xs) {
-                Eyebrow(text: "Comment faire")
-                Text(exercise.name).font(.display(32)).foregroundStyle(Theme.text)
-            }
-            Spacer()
-            if let animation {
-                TimelineView(.periodic(from: .now, by: 0.2)) { context in
-                    let reps = Int(time(at: context.date) / max(animation.cycle, 0.1))
-                    VStack(alignment: .trailing, spacing: 0) {
-                        Text("\(reps)").font(.display(28)).monospacedDigit().foregroundStyle(Theme.text)
-                        Text("répétitions").font(.coach(.caption)).foregroundStyle(Theme.muted)
-                    }
-                }
-            }
+        VStack(alignment: .leading, spacing: Space.xs) {
+            Eyebrow(text: "Comment faire")
+            Text(exercise.name).font(.display(32)).foregroundStyle(Theme.text)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var chips: some View {
@@ -147,23 +135,6 @@ struct ExerciseGuideView: View {
         .aspectRatio(1 / 1.05, contentMode: .fit)
     }
 
-    private func cue(_ phase: AnimPhase) -> some View {
-        HStack(spacing: Space.m) {
-            Text("\((phase.step ?? 0) + 1)")
-                .font(.coach(size: 15, weight: .heavy))
-                .foregroundStyle(Color(hex: 0x11160A))
-                .frame(width: 30, height: 30)
-                .background(Theme.accent, in: RoundedRectangle(cornerRadius: Radius.xs, style: .continuous))
-            Text(phase.cue)
-                .font(.coach(size: 18, weight: .semibold))
-                .foregroundStyle(Theme.text)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .frame(minHeight: 34)
-        .card()
-        .animation(.easeInOut(duration: 0.2), value: phase.cue)
-    }
-
     // MARK: Commandes
 
     private var controls: some View {
@@ -177,9 +148,10 @@ struct ExerciseGuideView: View {
                         .background(Theme.accent, in: RoundedRectangle(cornerRadius: Radius.m, style: .continuous))
                 }
                 HStack(spacing: Space.xs) {
-                    tempoButton("Lent", 0.6)
+                    // Deux vitesses seulement (maquette) : la légende qui sautait a disparu,
+                    // l'étape en cours se lit dans la liste des étapes, sans rien déplacer.
+                    tempoButton("Lent", Self.slow)
                     tempoButton("Normal", 1)
-                    tempoButton("Rapide", 1.4)
                 }
                 .padding(Space.xs)
                 .frame(height: 56)

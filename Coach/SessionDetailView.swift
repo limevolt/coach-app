@@ -216,9 +216,12 @@ struct SessionDetailView: View {
             }
             ForEach(Array(run.blocks.enumerated()), id: \.offset) { _, block in
                 VStack(alignment: .leading, spacing: Space.s) {
-                    Text(block.iterations > 1 ? "\(block.iterations) ×" : "Bloc")
-                        .font(.coach(size: 22, weight: .heavy))
-                        .foregroundStyle(Theme.warm)
+                    // « 6 répétitions » plutôt que « 6 × » (retour du propriétaire) ; pas de titre pour un bloc unique.
+                    if block.iterations > 1 {
+                        Text("\(block.iterations) répétitions")
+                            .font(.number)
+                            .foregroundStyle(Theme.text)
+                    }
                     ForEach(Array(block.steps.enumerated()), id: \.offset) { _, step in
                         HStack(spacing: Space.s) {
                             Circle()
@@ -250,29 +253,45 @@ struct SessionDetailView: View {
 
     // MARK: Circuit
 
+    /// Maquette « détail de séance » : « 4 tours » + durée, « 1 tour = 6 exercices · 10 min », grandes vignettes
+    /// sans numéro, repos en une icône. Retour du propriétaire : on ne voyait ni les tours ni la répartition.
     private func circuitSection(_ circuit: CircuitWorkout) -> some View {
-        VStack(alignment: .leading, spacing: Space.s) {
-            HStack(spacing: Space.s) {
-                statTile("Tours", "\(circuit.rounds)")
-                statTile("Effort", "\(circuit.workSec) s")
-                statTile("Repos", "\(circuit.restSec) s")
-                statTile("Total", Durations.label(circuit.totalSeconds))
+        VStack(alignment: .leading, spacing: Space.l) {
+            VStack(alignment: .leading, spacing: Space.xs) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(circuit.rounds > 1 ? "\(circuit.rounds) tours" : "1 tour")
+                        .font(.number)
+                        .foregroundStyle(Theme.text)
+                    Spacer(minLength: Space.s)
+                    Text(Durations.label(circuit.workoutSeconds))
+                        .font(.detail)
+                        .foregroundStyle(Theme.muted)
+                        .monospacedDigit()
+                }
+                if circuit.rounds > 1 {
+                    Text(Self.roundLine(circuit))
+                        .font(.detail)
+                        .foregroundStyle(Theme.muted)
+                }
             }
-            sectionTitle("Exercices (dans l'ordre)")
-            ForEach(Array(circuit.exercises.enumerated()), id: \.offset) { i, ex in
-                ExerciseCard(exercise: ex, detail: "\(i + 1). \(ex.durationSec ?? circuit.workSec) s d'effort") { guide = ex }
+            ExerciseGrid(exercises: circuit.exercises,
+                         detail: { $0.circuitDetail(workSec: circuit.workSec) },
+                         onOpen: { guide = $0 })
+            if circuit.restSec > 0 {
+                Label(Durations.label(circuit.restSec), systemImage: "timer")
+                    .font(.detail)
+                    .foregroundStyle(Theme.muted)
+                    .accessibilityLabel("\(Durations.label(circuit.restSec)) de repos entre deux exercices")
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .card()
     }
 
-    private func statTile(_ label: String, _ value: String) -> some View {
-        VStack(spacing: Space.hairline) {
-            Text(value).font(.coach(size: 18, weight: .heavy)).foregroundStyle(Theme.text)
-                .lineLimit(1).minimumScaleFactor(0.7)
-            Text(label.uppercased()).font(.coach(size: 10, weight: .semibold)).foregroundStyle(Theme.muted)
-        }
-        .frame(maxWidth: .infinity)
-        .block()
+    /// « 1 tour = 6 exercices · 10 min ».
+    nonisolated static func roundLine(_ circuit: CircuitWorkout) -> String {
+        let n = circuit.exercises.count
+        return "1 tour = \(n) \(n > 1 ? "exercices" : "exercice") · \(Durations.label(circuit.roundSeconds))"
     }
 
     // MARK: Renfo
@@ -280,9 +299,7 @@ struct SessionDetailView: View {
     private func strengthSection(_ strength: StrengthWorkout) -> some View {
         VStack(alignment: .leading, spacing: Space.s) {
             sectionTitle("Exercices")
-            ForEach(Array(strength.exercises.enumerated()), id: \.offset) { _, ex in
-                ExerciseCard(exercise: ex, detail: ex.targetLabel) { guide = ex }
-            }
+            ExerciseGrid(exercises: strength.exercises, detail: \.strengthDetail, onOpen: { guide = $0 })
         }
     }
 
@@ -408,56 +425,6 @@ struct SessionDetailView: View {
             .padding(.top, Space.s)
     }
 
-}
-
-/// Carte d'exercice avec vignette animée. Toucher = écran « Comment faire ».
-struct ExerciseCard: View {
-    let exercise: Exercise
-    let detail: String
-    let onOpen: () -> Void
-
-    private var animation: ExerciseAnimation? { ExerciseLibrary.animation(for: exercise) }
-
-    var body: some View {
-        Button(action: onOpen) {
-            HStack(spacing: Space.m) {
-                Group {
-                    if let animation {
-                        AnimatedExerciseFigure(animation: animation, fps: 24)
-                    } else {
-                        Image(systemName: "figure.strengthtraining.functional")
-                            .font(.system(size: 30))
-                            .foregroundStyle(Theme.accent)
-                    }
-                }
-                .frame(width: 84, height: 84)
-                .background(Theme.card2, in: RoundedRectangle(cornerRadius: Radius.m, style: .continuous))
-
-                VStack(alignment: .leading, spacing: Space.xs) {
-                    Text(exercise.name)
-                        .font(.coach(size: 16, weight: .bold))
-                        .foregroundStyle(Theme.text)
-                    Text(detail)
-                        .font(.coach(size: 13))
-                        .foregroundStyle(Theme.muted)
-                    if let muscles = animation?.muscles, !muscles.isEmpty {
-                        Text(muscles.prefix(2).map(\.label).joined(separator: " · "))
-                            .font(.coach(size: 12, weight: .semibold))
-                            .foregroundStyle(Theme.warm)
-                    }
-                    if let notes = exercise.notes {
-                        Text(notes).font(.coach(.caption)).foregroundStyle(Theme.muted).lineLimit(2)
-                    }
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "questionmark.circle.fill")
-                    .font(.coach(.title3))
-                    .foregroundStyle(Theme.accent)
-            }
-            .block()
-        }
-        .buttonStyle(.plain)
-    }
 }
 
 /// Feuille « Ton retour » (#44, B2) : ressenti en 5 boutons, puis « Quelque chose à signaler ? »
