@@ -26,6 +26,15 @@ struct IntervalRunView: View {
         var end: Date?
     }
 
+    /// Ce que l'iPhone doit savoir pour afficher la même séance (#130, étape 3).
+    private struct SyncKey: Equatable {
+        var index: Int
+        var end: Date?
+        var paused: TimeInterval?
+        var phase: Phase
+        var abandoning: Bool
+    }
+
     @State private var phase: Phase = .ready
     @State private var index = 0
     @State private var segmentEnd: Date?
@@ -89,6 +98,20 @@ struct IntervalRunView: View {
             Button("Continuer", role: .cancel) {}
         } message: {
             Text("Terminer garde ce qui est fait. Abandonner n'enregistre rien.")
+        }
+        // Montre + iPhone (#130, étape 3) : l'iPhone ouvert affiche la même séance, en grand.
+        .onChange(of: SyncKey(index: index, end: segmentEnd, paused: pausedRemaining, phase: phase,
+                              abandoning: abandoning)) { _, _ in syncToPhone() }
+        // Rappel toutes les 5 s : un iPhone ouvert en cours de séance la rattrape.
+        .task(id: phase) {
+            while phase == .running, !Task.isCancelled {
+                syncToPhone()
+                try? await Task.sleep(for: .seconds(5))
+            }
+        }
+        // Boutons de l'iPhone : mêmes actions que sur la montre.
+        .onChange(of: store.guidedCommandId) { _, _ in
+            if let command = store.guidedCommand { apply(command) }
         }
         // Fin de séance : on coupe tout de suite le chrono et la séance Santé.
         .onChange(of: phase) { _, newPhase in
@@ -252,6 +275,37 @@ struct IntervalRunView: View {
         let wasPrepare = current?.kind == .prepare
         index += 1
         if wasPrepare { launch() }
+        beginSegment()
+    }
+
+    /// État envoyé à l'iPhone (séances du plan seulement : un minuteur libre n'est pas dans le plan de l'iPhone).
+    private func syncToPhone() {
+        guard run.kind == nil, phase != .ready || abandoning else { return }
+        let clock = GuidedClock(index: index, segmentEnd: segmentEnd,
+                                pausedRemaining: segmentEnd == nil ? (pausedRemaining ?? 0) : nil,
+                                finished: phase == .feedback || abandoning)
+        store.sendGuided(GuidedSync(sessionId: run.sessionId, segmentCount: run.segments.count,
+                                    clock: clock, abandoned: abandoning))
+    }
+
+    private func apply(_ command: GuidedCommand) {
+        guard phase == .running, current != nil, !abandoning else { return }
+        switch command {
+        case .pause: togglePause()
+        case .skip: advance(recordWork: false)
+        case .addRest: if current?.kind == .rest { addRest() }
+        case .previous: goBack()
+        }
+    }
+
+    /// « Précédent » depuis l'iPhone : début de l'exercice d'avant (les repos sont sautés), jamais le « Prêt ? ».
+    private func goBack() {
+        guard launched else { return }
+        let first = run.segments.first?.kind == .prepare ? 1 : 0
+        var target = index - 1
+        while target > first, run.segments.indices.contains(target), run.segments[target].kind == .rest { target -= 1 }
+        if segmentEnd == nil { workout.resume() }
+        index = max(first, target)
         beginSegment()
     }
 

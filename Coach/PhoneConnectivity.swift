@@ -172,10 +172,22 @@ final class PhoneConnectivity: NSObject, WCSessionDelegate {
         }
     }
 
-    /// Demande « needData » de la montre (à son ouverture, #107).
+    /// Demande « needData » de la montre (à son ouverture, #107), ou état de la séance guidée (#130).
     nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
+        if let guided = message[GuidedSync.messageKey] as? Data {
+            Task { @MainActor in GuidedMirror.shared.receive(guided) }
+            return
+        }
         guard message["needData"] != nil else { return }
         Task { @MainActor in self.onNeedsData?() }
+    }
+
+    /// Bouton de la séance guidée sur l'iPhone (pause, passer…) : envoyé à la montre, qui mène la séance.
+    func sendGuided(_ command: GuidedCommand) {
+        guard WCSession.isSupported() else { return }
+        let session = WCSession.default
+        guard session.activationState == .activated, session.isReachable else { return }
+        session.sendMessage([GuidedSync.commandKey: command.rawValue], replyHandler: nil, errorHandler: nil)
     }
 
     nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any],

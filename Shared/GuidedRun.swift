@@ -112,6 +112,17 @@ struct GuidedClock: Codable, Equatable {
 
     var isPaused: Bool { started && !finished && segmentEnd == nil }
 
+    init() {}
+
+    /// État recopié d'une autre horloge (la montre mène la séance, l'iPhone la suit).
+    init(index: Int, segmentEnd: Date?, pausedRemaining: TimeInterval?, finished: Bool) {
+        self.index = index
+        self.segmentEnd = segmentEnd
+        self.pausedRemaining = pausedRemaining
+        self.started = true
+        self.finished = finished
+    }
+
     /// Départ : première étape (« Prêt ? »), le chrono part tout de suite.
     mutating func start(_ segments: [TimedSegment], at now: Date) {
         index = 0
@@ -185,4 +196,27 @@ struct GuidedClock: Codable, Equatable {
         guard segments.indices.contains(newIndex) else { return finish() }
         segmentEnd = start.addingTimeInterval(TimeInterval(segments[newIndex].seconds))
     }
+}
+
+// MARK: - Montre et iPhone ensemble (#130, étape 3)
+
+/// État de la séance guidée envoyé par la montre à l'iPhone à chaque changement (étape, pause, fin).
+/// L'iPhone affiche la même séance ; un seul chrono, celui de la montre.
+struct GuidedSync: Codable, Equatable {
+    var sessionId: String
+    /// Nombre d'étapes : l'iPhone vérifie qu'il a le même déroulé (plan identique des deux côtés).
+    var segmentCount: Int
+    var clock: GuidedClock
+    var abandoned = false
+
+    /// Plus vieux que ça sans nouvelles : la montre n'est plus joignable, l'iPhone arrête de suivre.
+    static let staleAfter: TimeInterval = 15 * 60
+
+    static let messageKey = "guided"
+    static let commandKey = "guidedCommand"
+}
+
+/// Commande envoyée par l'iPhone à la montre (boutons de l'écran de séance guidée).
+enum GuidedCommand: String, Codable {
+    case pause, skip, previous, addRest
 }

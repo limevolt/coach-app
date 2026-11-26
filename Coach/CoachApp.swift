@@ -38,6 +38,10 @@ struct ContentView: View {
     @State private var tab = AppTab.plan
     /// Appui sur l'onglet déjà choisi (#64) : compteur transmis à l'onglet (`tabReselect`).
     @State private var reselects: [AppTab: Int] = [:]
+    /// Séance de la montre suivie sur l'iPhone (#130, étape 3) ; `closedMirror` : fermée sur l'iPhone,
+    /// on ne la rouvre pas tant qu'elle continue sur la montre.
+    @State private var mirrorSession: PlannedSession?
+    @State private var closedMirror: String?
 
     enum AppTab: Hashable { case plan, timers, settings }
 
@@ -65,6 +69,19 @@ struct ContentView: View {
                 .environment(\.tabReselect, reselects[.settings, default: 0])
                 .coachTabBar(bar)
                 .tag(AppTab.settings)
+        }
+        // Une séance de circuit tourne sur la montre : l'iPhone ouvert l'affiche en grand.
+        .onChange(of: GuidedMirror.shared.live?.sessionId) { _, id in
+            guard let id else { closedMirror = nil; return }
+            guard mirrorSession == nil, closedMirror != id,
+                  let session = store.plan?.sessions.first(where: { $0.id == id })?.effective,
+                  session.circuit != nil else { return }
+            mirrorSession = session
+        }
+        .fullScreenCover(item: $mirrorSession, onDismiss: {
+            closedMirror = GuidedMirror.shared.live?.sessionId
+        }) { session in
+            GuidedSessionView(session: session, mode: .mirror)
         }
         .alert("Coach",
                isPresented: Binding(get: { store.alertMessage != nil },
