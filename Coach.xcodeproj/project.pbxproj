@@ -63,6 +63,7 @@
 		62AB6368CBD9755740382A47 /* PlanStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99C07CEB41DF40D00D6B5767 /* PlanStore.swift */; };
 		63851E5726409024D24A042C /* WatchCaptures.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8267B20E1E74B1EB1864AF5 /* WatchCaptures.swift */; };
 		66628B8ECA6051B40DA2C1C9 /* GuidedClockTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F17411664D0EEB72BE1B45AE /* GuidedClockTests.swift */; };
+		67B4BAF34714710069B10CF1 /* GuidedMirror.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CA4EDBCD0868030C7498689 /* GuidedMirror.swift */; };
 		67F5FB0946201DBC784B9941 /* IntervalRunView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720370AB747C8CF84F1B287C /* IntervalRunView.swift */; };
 		6DA58566B452EF5C798AA72E /* DestructiveButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAEAC8B7EFE1AEA3EEB3B30A /* DestructiveButton.swift */; };
 		717CC985D3C28FA95D2714C0 /* Outfit-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9065AE64029D887414A302BC /* Outfit-Medium.ttf */; };
@@ -195,6 +196,7 @@
 		06DC198093FF72A80A0765C0 /* StrengthRunView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthRunView.swift; sourceTree = "<group>"; };
 		0AB28854C9073EAF6FBA2CB9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0B3EB494C46C4402E73C0E32 /* CoachMemory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachMemory.swift; sourceTree = "<group>"; };
+		0CA4EDBCD0868030C7498689 /* GuidedMirror.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidedMirror.swift; sourceTree = "<group>"; };
 		0F5D2E14E9042E95E3A6888B /* WatchSyncQueueTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSyncQueueTests.swift; sourceTree = "<group>"; };
 		115586EA3063303368467DC1 /* Outfit-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Outfit-ExtraBold.ttf"; sourceTree = "<group>"; };
 		1321A0C4A4FA8CAB6096AC8D /* WorkoutKind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutKind.swift; sourceTree = "<group>"; };
@@ -412,6 +414,7 @@
 				EAEAC8B7EFE1AEA3EEB3B30A /* DestructiveButton.swift */,
 				3819F510E1AE826C638EB6F3 /* ExerciseGuideView.swift */,
 				D9A00B39FFE3E7F72A3802B3 /* ExerciseTile.swift */,
+				0CA4EDBCD0868030C7498689 /* GuidedMirror.swift */,
 				4429CC5D1F4AC1DA6F5ED8E2 /* GuidedSessionView.swift */,
 				FC05BD771777D8DD2D41A190 /* HealthActivities.swift */,
 				5BC2FE5D6D5989A6C962A7D0 /* HealthReader.swift */,
@@ -638,7 +641,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1430;
+				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					34B5BC82ED07EEF47D7400E0 = {
 						DevelopmentTeam = QG4XL95P47;
@@ -774,6 +777,7 @@
 				DF6534218BC50D6ADDA37004 /* ExerciseTile.swift in Sources */,
 				FA22CF1DFF78FBC0648C30C4 /* ExtraActivityPlanner.swift in Sources */,
 				85F5E5B8D6CC550C96E2E5A3 /* FeedbackPlanner.swift in Sources */,
+				67B4BAF34714710069B10CF1 /* GuidedMirror.swift in Sources */,
 				9B9B5785F591A665D43AFE14 /* GuidedRun.swift in Sources */,
 				808A9DB1C62B902AE304D85A /* GuidedSessionView.swift in Sources */,
 				EBB1A3D5F4A480FF807A67FF /* HealthActivities.swift in Sources */,
