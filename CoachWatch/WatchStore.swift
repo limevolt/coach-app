@@ -47,10 +47,18 @@ final class WatchStore {
         bridge.activate()
     }
 
+    /// Jour affiché, observé : mis à jour au retour au premier plan et à minuit, pour que l'accueil
+    /// ne garde pas la séance de la veille si Coach reste ouvert la nuit.
+    var today = Calendar.current.startOfDay(for: .now)
+
+    func refreshDay() {
+        let now = Calendar.current.startOfDay(for: .now)
+        if now != today { today = now }
+    }
+
     /// Séances prévues aujourd'hui, dans l'ordre de la journée.
     var todaySessions: [PlannedSession] {
-        let today = Calendar.current.startOfDay(for: .now)
-        return sessions.filter { $0.dayStart == today }
+        sessions.filter { $0.dayStart == today }
     }
 
     /// Séance du jour : la première pas encore faite. La suivante du même jour apparaît une fois

@@ -31,7 +31,7 @@ struct SessionListView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Space.m) {
                     if let today = store.todaySession {
-                        NextSessionCard(session: today)
+                        TodaySessionCard(session: today)
                     } else if store.todayAllDone, let last = store.todaySessions.last {
                         doneState(last)
                     } else {
@@ -71,6 +71,7 @@ struct SessionListView: View {
             if workout.isActive && !workout.sessionInProgress { Task { await workout.end() } }
         }
         // Demande de l'iPhone : ouverte dès que possible (séance reçue, aucune séance en cours).
+        .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in store.refreshDay() }
         .onChange(of: store.startRequest) { _, _ in openRequestedSession() }
         .onChange(of: store.sessions) { _, _ in openRequestedSession() }
         .onChange(of: store.templates) { _, _ in openRequestedSession() }
@@ -146,9 +147,9 @@ struct SessionListView: View {
 
 }
 
-// MARK: - Prochain entraînement
+// MARK: - Séance du jour
 
-private struct NextSessionCard: View {
+private struct TodaySessionCard: View {
     let session: PlannedSession
 
     var body: some View {

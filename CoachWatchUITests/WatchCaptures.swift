@@ -15,7 +15,7 @@ final class WatchCaptures: XCTestCase {
         _ = button("Commencer", in: app).waitForExistence(timeout: 30)
         shot("01-accueil")
 
-        // 1 bis. Accueil un jour de repos (la 1re séance était hier, la suivante demain)
+        // 1 bis. Accueil un jour de repos (renfo hier, fractionné demain)
         app = launchDemo(plan: DemoPlan.json(firstOffset: -2))
         _ = button("Entraînement libre", in: app).waitForExistence(timeout: 30)
         shot("02-accueil-repos")
