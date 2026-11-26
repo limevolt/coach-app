@@ -175,8 +175,10 @@ propriétaire le signale.
 ## iPhone
 
 - **Détail de séance (maquette validée)** : circuit = « N tours » + durée, « 1 tour = X exercices · Y min »,
-  puis une **grille de grandes vignettes** (pose clé du personnage animé, nom sur 2 lignes réservées, durée
-  en mots : « 2 min », « 3 × 10 »), sans numéro. Toucher une vignette ouvre « Comment faire ? ».
+  puis une **grille de grandes vignettes** (pose clé du personnage animé, **durée en petite pastille, en haut à droite de l'image**
+  en mots : « 2 min », « 3 × 10 », nom dessous sur 2 lignes au plus), sans numéro. La durée reste dans la
+  vignette : en dessous du nom, on ne savait plus à quel exercice elle allait (retour du propriétaire).
+  Toucher une vignette ouvre « Comment faire ? ».
 - **« Comment faire ? »** : animation lente par défaut, rien ne bouge dans la mise en page pendant qu'elle
   tourne (pas de légende qui change de hauteur).
 - **Visuels des exercices** : nos personnages animés (`Shared/ExerciseAnimation.swift`), un seul style

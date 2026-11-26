@@ -16,7 +16,7 @@ struct ExerciseGrid: View {
     var body: some View {
         let columns = Array(repeating: GridItem(.flexible(), spacing: Theme.tileSpacing, alignment: .top),
                             count: typeSize.isAccessibilitySize ? 1 : 2)
-        LazyVGrid(columns: columns, alignment: .leading, spacing: Space.l) {
+        LazyVGrid(columns: columns, alignment: .leading, spacing: Space.xl) {
             ForEach(Array(exercises.enumerated()), id: \.offset) { _, exercise in
                 ExerciseTile(exercise: exercise, detail: detail(exercise)) {
                     onOpen(exercise)
@@ -26,8 +26,8 @@ struct ExerciseGrid: View {
     }
 }
 
-/// Vignette : pose fixe (lisible même avec « Réduire les animations »), nom sur 2 lignes au plus,
-/// durée en gris. Toucher = fiche « Comment faire ? ».
+/// Vignette : pose fixe (lisible même avec « Réduire les animations »), durée en pastille sur l'image,
+/// nom dessous sur 2 lignes au plus. Toucher = fiche « Comment faire ? ».
 struct ExerciseTile: View {
     let exercise: Exercise
     let detail: String
@@ -43,35 +43,43 @@ struct ExerciseTile: View {
                     if let animation {
                         ExerciseFigure(animation: animation, time: animation.keyPoseTime, shadow: false)
                             .padding(Space.s)
+                            .accessibilityHidden(true)
                     } else {
                         // Pas encore d'illustration : icône du type, la fiche donne les consignes écrites.
                         Image(systemName: Theme.exerciseFallbackSymbol)
                             .font(Theme.tileSymbolFont)
                             .foregroundStyle(Theme.muted)
+                            .accessibilityHidden(true)
                     }
                 }
                 .frame(height: Theme.exerciseTileHeight)
-                .accessibilityHidden(true)
-
-                // Nom et durée collés : la durée suit le nom, même s'il tient sur une ligne (captures).
-                VStack(alignment: .leading, spacing: Space.hairline) {
-                    Text(exercise.name)
-                        .font(.text)
-                        .foregroundStyle(Theme.text)
-                        .multilineTextAlignment(.leading)
-                        .lineLimit(2)
+                // Durée en petite pastille en haut à droite de l'image (retour du propriétaire : sous le nom, on ne savait pas
+                // si « 40 s » allait avec l'exercice du haut ou celui du bas).
+                .overlay(alignment: .topTrailing) {
                     Text(detail)
-                        .font(.detail)
-                        .foregroundStyle(Theme.muted)
+                        .font(.unit)
+                        .foregroundStyle(Theme.text)
                         .monospacedDigit()
-                        .accessibilityLabel(Exercise.spoken(detail))
+                        .padding(.horizontal, Space.s)
+                        .padding(.vertical, Space.xs)
+                        .background(Theme.bg, in: Capsule())
+                        .padding(Space.s)
                 }
+
+                Text(exercise.name)
+                    .font(.text)
+                    .foregroundStyle(Theme.text)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(2)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
         }
         .buttonStyle(.coachPressable)
-        .accessibilityElement(children: .combine)
+        // VoiceOver : le nom d'abord, puis la durée (« Squat, 3 séries de 12 »).
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(exercise.name), \(Exercise.spoken(detail))")
+        .accessibilityAddTraits(.isButton)
         .accessibilityHint("Comment faire")
     }
 }
