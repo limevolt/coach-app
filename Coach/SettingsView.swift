@@ -18,14 +18,6 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section {
-                    NavigationLink {
-                        ExerciseLibraryView().tabBarSpace()
-                    } label: {
-                        Label("Bibliothèque d'exercices animés", systemImage: "figure.strengthtraining.functional")
-                    }
-                }
-
                 // Une seule section pour le plan (#122, #119) : ses réglages, puis ce qu'on fait du plan.
                 if let plan = store.plan {
                     Section {
@@ -101,6 +93,15 @@ struct SettingsView: View {
                 } footer: {
                     if healthRequested == true {
                         Text("Ce que Coach peut lire se règle dans Santé : ton profil › Apps › Coach.")
+                    }
+                }
+
+                // Pas la priorité : en bas, avant la note sur les données.
+                Section {
+                    NavigationLink {
+                        ExerciseLibraryView().tabBarSpace()
+                    } label: {
+                        Label("Bibliothèque d'exercices animés", systemImage: "figure.strengthtraining.functional")
                     }
                 }
 
