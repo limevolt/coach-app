@@ -10,6 +10,11 @@ struct SessionDetailView: View {
     @State private var confirmRevert = false
     @State private var confirmNotDone = false
     @State private var guide: Exercise?
+    /// Séance guidée sur l'iPhone (#130) : circuits seulement pour l'instant.
+    @State private var showGuided = false
+    @State private var feedbackAfterGuided = false
+    /// Montre jumelée avec Coach : relu quelques secondes à l'ouverture (la liaison peut encore démarrer).
+    @State private var hasWatch = PhoneConnectivity.shared.hasWatch
 
     init(session: PlannedSession) {
         initial = session
@@ -30,7 +35,18 @@ struct SessionDetailView: View {
             VStack(alignment: .leading, spacing: Space.l) {
                 hero
                 if !done && inPlan {
-                    StartOnWatchButton { await store.startOnWatch(session) }  // taille normale (#101)
+                    if !hasWatch, canGuide {
+                        // Pas de montre : l'iPhone mène la séance (#130).
+                        Button { showGuided = true } label: { Label("Démarrer", systemImage: "play.fill") }
+                            .buttonStyle(.coachPrimary())
+                    } else {
+                        StartOnWatchButton { await store.startOnWatch(session) }  // taille normale (#101)
+                        if canGuide {
+                            // En attendant la montre + l'iPhone ensemble (#130, étape 3) : suivre sur l'iPhone seul.
+                            Button { showGuided = true } label: { Label("Suivre sur l'iPhone", systemImage: "iphone") }
+                                .buttonStyle(.coachQuiet())
+                        }
+                    }
                 }
                 if store.isMissed(stored) {
                     missedCard
@@ -46,9 +62,21 @@ struct SessionDetailView: View {
         }
         .background(Theme.bg.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
+        .task {
+            for _ in 0..<10 where !hasWatch {
+                try? await Task.sleep(for: .milliseconds(500))
+                hasWatch = PhoneConnectivity.shared.hasWatch
+            }
+        }
         .sheet(isPresented: $showFeedback) { FeedbackSheet(session: session) }
         .sheet(isPresented: $showAdapt) { AdaptSessionView(sessionId: initial.id) }
         .sheet(item: $guide) { ExerciseGuideView(exercise: $0) }
+        // Le retour s'ouvre une fois l'écran plein fermé (deux présentations à la fois ne s'affichent pas).
+        .fullScreenCover(isPresented: $showGuided, onDismiss: {
+            if feedbackAfterGuided { feedbackAfterGuided = false; showFeedback = true }
+        }) {
+            GuidedSessionView(session: session) { feedbackAfterGuided = true }
+        }
         .confirmationDialog("Marquer comme non faite ?", isPresented: $confirmNotDone, titleVisibility: .visible) {
             Button("Marquer comme non faite", role: .destructive) { store.markNotDone(initial.id) }
             Button("Annuler", role: .cancel) {}
@@ -56,6 +84,9 @@ struct SessionDetailView: View {
             Text(Self.notDoneMessage)
         }
     }
+
+    /// Séance qu'on peut suivre sur l'iPhone : un circuit avec des exercices.
+    private var canGuide: Bool { !(session.circuit?.exercises.isEmpty ?? true) }
 
     static let notDoneMessage = "Ton ressenti et tes séries sont retirés. La séance redevient à faire, sur l'iPhone et sur la montre. L'entraînement reste dans Santé."
 

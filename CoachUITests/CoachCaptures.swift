@@ -43,6 +43,23 @@ final class CoachCaptures: XCTestCase {
             }
             back(app)
         }
+        // Circuit : détail en vignettes (#129) et séance guidée sur l'iPhone (#130)
+        if openSession("Circuit découverte", in: app) {
+            shot("06c-seance-circuit")
+            audit("Séance circuit", app)
+            if tap("Suivre sur l'iPhone", in: app) {
+                shot("06d-guidee-pret", settle: 1.5)
+                shot("06e-guidee-effort", settle: 12)
+                let close = app.buttons["Quitter la séance"].firstMatch
+                if close.waitForExistence(timeout: 3) {
+                    close.tap()
+                    _ = tap("Abandonner", in: app)
+                }
+            } else {
+                note("« Suivre sur l'iPhone » introuvable")
+            }
+            back(app)
+        }
         // Très fatigué après le footing du jour : le renfo de demain en version légère (#44, B2)
         if openSession("Footing", in: app), tap("Je l'ai faite", in: app) {
             _ = tap("Dur, 8", in: app)

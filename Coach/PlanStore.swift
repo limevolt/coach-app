@@ -1141,6 +1141,17 @@ final class PlanStore {
         try? CoachStorage.save(profile: profile)
     }
 
+    /// Séance guidée faite sur l'iPhone (#130) : notée faite maintenant, avec la part faite si elle
+    /// a été terminée tôt. Le ressenti s'ajoute ensuite avec `saveFeedback`.
+    func recordGuided(_ session: PlannedSession, doneFraction: Double?) {
+        var log = self.log(for: session.id)
+            ?? SessionLog(id: UUID(), sessionId: session.id, completedAt: .now, rpe: nil, note: nil,
+                          sets: nil, title: session.title, kind: nil)
+        log.completedAt = .now
+        log.doneFraction = doneFraction
+        upsert(log)
+    }
+
     func upsert(_ log: SessionLog) {
         if let i = logs.firstIndex(where: { $0.id == log.id }) {
             logs[i] = log

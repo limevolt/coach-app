@@ -310,9 +310,3 @@ struct IntervalRunView: View {
         dismiss()
     }
 }
-
-extension Durations {
-    static func clock(_ seconds: Int) -> String {
-        String(format: "%d:%02d", seconds / 60, seconds % 60)
-    }
-}

@@ -35,6 +35,15 @@ final class PhoneConnectivity: NSObject, WCSessionDelegate {
     /// La montre a besoin du plan (app ouverte, réinstallée, de nouveau joignable) : l'iPhone le renvoie (#107).
     var onNeedsData: (() -> Void)?
 
+    /// Une montre avec Coach est jumelée : « Démarrer » lance la séance sur la montre ; sinon l'iPhone la
+    /// mène seul (séance guidée, #130). Mode démo (captures) : comme avec une montre.
+    var hasWatch: Bool {
+        if DemoMode.isOn { return true }
+        guard WCSession.isSupported() else { return false }
+        let session = WCSession.default
+        return session.activationState == .activated && session.isPaired && session.isWatchAppInstalled
+    }
+
     private var pending: [String: Any]?
     /// Dernière demande « Démarrer sur la montre », gardée dans le contexte tant qu'elle est récente.
     private var startRequest: StartRequest?
