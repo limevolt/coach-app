@@ -57,11 +57,11 @@ struct ExerciseTile: View {
                 // si « 40 s » allait avec l'exercice du haut ou celui du bas).
                 .overlay(alignment: .topTrailing) {
                     Text(detail)
-                        .font(.unit)
+                        .font(.label)
                         .foregroundStyle(Theme.text)
                         .monospacedDigit()
                         .padding(.horizontal, Space.s)
-                        .padding(.vertical, Space.xs)
+                        .padding(.vertical, Space.hairline)
                         .background(Theme.bg, in: Capsule())
                         .padding(Space.s)
                 }
