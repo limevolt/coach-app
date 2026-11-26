@@ -10,8 +10,8 @@ struct StartOnWatchButton: View {
 
     /// Un seul libellé partout : « Démarrer » (#40).
     var title = "Démarrer"
-    /// `.regular` dans la carte du jour de l'accueil, `.large` sur l'écran d'une séance.
-    var size: Size = .large
+    /// `.regular` partout (#101 : sur l'écran d'une séance, la grande taille paraissait trop grosse).
+    var size: Size = .regular
     let start: () async -> WatchStartResult
 
     @State private var sending = false

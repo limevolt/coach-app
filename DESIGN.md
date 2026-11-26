@@ -287,7 +287,7 @@ Le code reste la référence.
 
 | Famille | Composant | Quand l'utiliser |
 |---|---|---|
-| Boutons iPhone | `.buttonStyle(.coachPrimary())` | l'action principale, une seule par écran ; `large: true` pour « Démarrer », `compact: true` dans une ligne |
+| Boutons iPhone | `.buttonStyle(.coachPrimary())` | l'action principale, une seule par écran (« Démarrer » aussi, taille normale, #101) ; `compact: true` dans une ligne |
 | | `.buttonStyle(.coachQuiet())` | toute autre action visible (« Voir le détail », « Séance libre ») |
 | | `.buttonStyle(.coachPressable)` | une carte, une ligne ou une pastille qui se touche, sans habillage |
 | | `primaryActionStyle()` / `quietActionStyle()` | seulement l'étiquette d'un `Menu` (qui n'accepte pas de style de bouton) |

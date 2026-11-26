@@ -30,7 +30,7 @@ struct SessionDetailView: View {
             VStack(alignment: .leading, spacing: Space.l) {
                 hero
                 if !done && inPlan {
-                    StartOnWatchButton { await store.startOnWatch(session) }
+                    StartOnWatchButton(size: .regular) { await store.startOnWatch(session) }  // taille normale (#101)
                 }
                 if store.isMissed(stored) {
                     missedCard

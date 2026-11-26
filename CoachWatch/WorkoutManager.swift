@@ -124,6 +124,30 @@ final class WorkoutManager {
         }
     }
 
+    /// « Abandonner » (#118) : la séance s'arrête et rien n'est enregistré, ni dans Santé ni dans le suivi.
+    func discard() async {
+        if DemoMode.isOn {
+            isActive = false
+            startedAt = nil
+            endedAt = nil
+            return
+        }
+        let session = self.session
+        let builder = self.builder
+        self.session = nil
+        self.builder = nil
+        isActive = false
+        isPrepared = false
+        startedAt = nil
+        endedAt = nil
+        heartRate = 0
+        session?.end()
+        if let builder {
+            try? await builder.endCollection(at: Date())
+            builder.discardWorkout()
+        }
+    }
+
     func pause() { session?.pause() }
     func resume() { session?.resume() }
 

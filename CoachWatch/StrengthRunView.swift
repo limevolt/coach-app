@@ -83,10 +83,12 @@ struct StrengthRunView: View {
                 if autoStart, phase == .ready { beginStart() }
             }
             .confirmationDialog("Terminer la séance ?", isPresented: $confirmStop) {
-                Button("Terminer", role: .destructive) { phase = .feedback }
+                Button("Terminer") { phase = .feedback }
+                // #118 : laisser tomber la séance sans rien enregistrer.
+                Button("Abandonner", role: .destructive) { abandon() }
                 Button("Continuer", role: .cancel) {}
             } message: {
-                Text("Les séries déjà faites sont gardées.")
+                Text("Abandonner n'enregistre rien.")
             }
             // Fin de séance : on coupe tout de suite le chrono et la séance Santé.
             .onChange(of: phase) { _, newPhase in
@@ -458,6 +460,15 @@ struct StrengthRunView: View {
         case .prepare: Task { await start() }
         case .timed: completeSet()
         case .rest: goToNextSet()
+        }
+    }
+
+    /// Séance abandonnée (#118) : ni Santé, ni suivi.
+    private func abandon() {
+        Task {
+            await workout.discard()
+            workout.sessionInProgress = false
+            dismiss()
         }
     }
 
