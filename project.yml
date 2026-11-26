@@ -16,8 +16,8 @@ settings:
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "1.0"
     CURRENT_PROJECT_VERSION: "1"
-    # Équipe de signature (compte Apple du propriétaire).
-    DEVELOPMENT_TEAM: FD598HBBW4
+    # Équipe de signature : le compte qui publie sur TestFlight (#89). Ne pas changer sans refaire les profils.
+    DEVELOPMENT_TEAM: QG4XL95P47
     CODE_SIGN_STYLE: Automatic
     # Réglages recommandés par Xcode 26
     DEAD_CODE_STRIPPING: YES
