@@ -18,7 +18,7 @@ struct ExerciseGrid: View {
                             count: typeSize.isAccessibilitySize ? 1 : 2)
         LazyVGrid(columns: columns, alignment: .leading, spacing: Space.l) {
             ForEach(Array(exercises.enumerated()), id: \.offset) { _, exercise in
-                ExerciseTile(exercise: exercise, detail: detail(exercise), reservesTwoLines: !typeSize.isAccessibilitySize) {
+                ExerciseTile(exercise: exercise, detail: detail(exercise)) {
                     onOpen(exercise)
                 }
             }
@@ -26,13 +26,11 @@ struct ExerciseGrid: View {
     }
 }
 
-/// Vignette : pose fixe (lisible même avec « Réduire les animations »), nom sur 2 lignes réservées,
+/// Vignette : pose fixe (lisible même avec « Réduire les animations »), nom sur 2 lignes au plus,
 /// durée en gris. Toucher = fiche « Comment faire ? ».
 struct ExerciseTile: View {
     let exercise: Exercise
     let detail: String
-    /// Deux lignes réservées pour le nom, pour aligner la grille (pas en une colonne, très grand texte).
-    var reservesTwoLines = true
     let onOpen: () -> Void
 
     private var animation: ExerciseAnimation? { ExerciseLibrary.animation(for: exercise) }
@@ -55,16 +53,19 @@ struct ExerciseTile: View {
                 .frame(height: Theme.exerciseTileHeight)
                 .accessibilityHidden(true)
 
-                Text(exercise.name)
-                    .font(.text)
-                    .foregroundStyle(Theme.text)
-                    .multilineTextAlignment(.leading)
-                    .lineLimit(2, reservesSpace: reservesTwoLines)   // la grille ne se décale pas si un nom passe sur 2 lignes
-                Text(detail)
-                    .font(.detail)
-                    .foregroundStyle(Theme.muted)
-                    .monospacedDigit()
-                    .accessibilityLabel(Exercise.spoken(detail))
+                // Nom et durée collés : la durée suit le nom, même s'il tient sur une ligne (captures).
+                VStack(alignment: .leading, spacing: Space.hairline) {
+                    Text(exercise.name)
+                        .font(.text)
+                        .foregroundStyle(Theme.text)
+                        .multilineTextAlignment(.leading)
+                        .lineLimit(2)
+                    Text(detail)
+                        .font(.detail)
+                        .foregroundStyle(Theme.muted)
+                        .monospacedDigit()
+                        .accessibilityLabel(Exercise.spoken(detail))
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
