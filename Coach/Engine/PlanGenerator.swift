@@ -5,7 +5,7 @@
 import Foundation
 
 /// Point de départ connu (lu dans Santé par l'appelant), ou rien : départ prudent et séance test.
-struct StartingPoint: Equatable {
+struct StartingPoint: Codable, Equatable {
     /// Minutes de course par semaine, en moyenne sur les dernières semaines.
     var runMinutesPerWeek: Double?
     /// Séances par semaine, toutes disciplines (sans marche ni étirements), en moyenne : règle l'intensité (#57).
@@ -75,11 +75,21 @@ enum PlanGeneratorError: Error, Equatable {
     case invalidSettings([PlanSettingsIssue])
 }
 
+/// Fin réelle de la semaine gardée quand on recalcule les semaines à venir (#46) : le placeur part du samedi
+/// et du dimanche vraiment prévus (séance déplacée, allégée…), pas de ceux du plan recalculé.
+struct WeekBoundary: Equatable {
+    /// Lundi de la première semaine recalculée ("AAAA-MM-JJ").
+    var monday: String
+    var saturday: DayLoad
+    var sunday: DayLoad
+}
+
 struct PlanGenerator {
     var settings: PlanSettings
     var profile: AthleteProfile
     var memory: CoachMemory = CoachMemory()
     var start: StartingPoint = .unknown
+    var boundary: WeekBoundary? = nil
 
     /// Niveau inconnu : départ prudent, au plus 90 min de course la première semaine (et pas plus d'une séance
     /// par course), sortie longue de la durée d'une séance ; ensuite +10 % au plus.
@@ -100,13 +110,14 @@ struct PlanGenerator {
         let firstDayStart = cal.startOfDay(for: firstDay)
 
         // Intensité (#57) : celle choisie, atteinte progressivement si l'historique ne suffit pas encore.
+        // Changée en cours de plan (#46) : le niveau de chaque semaine ; le calendrier (semaines allégées)
+        // reste celui de la création, pour ne pas toucher aux semaines passées.
         let chosen = settings.intensity
         let history = settings.startLevel == .health ? start.plausibleSessionsPerWeek : nil
         let ceiling = PlanIntensity.startCeiling(sessionsPerWeek: history)
-        // Sans historique, la montée s'arrête à « Soutenu » tant que les retours de séance ne sont pas lus (#44).
-        let target = PlanIntensity.target(chosen: chosen, history: history)
-        let increase = min(memory.weeklyIncreaseLimit, chosen.maxWeeklyIncrease)
+        func increase(_ level: PlanIntensity) -> Double { min(memory.weeklyIncreaseLimit, level.maxWeeklyIncrease) }
         let weeks = PlanCalendar.weeks(firstDay: firstDay, eventDate: eventDate, deloadEvery: chosen.deloadEvery)
+        let chosenByWeek = weeks.map { settings.intensity(forWeek: $0.monday) }
         let days = WeekComposer.usableDays(settings)
         let counts = WeekComposer.counts(settings: settings, dayCount: days.count)
         var adjustments: [String] = []
@@ -128,7 +139,8 @@ struct PlanGenerator {
         let known = start.plausibleRunMinutes
         let startVolume = min(capacity, known ?? min(Self.unknownStartMinutes, sessionCap * Double(runCount)))
         let volumes = PlanCalendar.runMinutes(weeks: weeks, start: startVolume,
-                                              weeklyIncrease: increase, capacity: capacity)
+                                              weeklyIncrease: increase(chosen), capacity: capacity,
+                                              increaseByWeek: chosenByWeek.map(increase))
         // Séance test : niveau choisi « séance test », ou Santé sans donnée utilisable. Reportée si impossible.
         let wantsTest = runCount > 0 && (settings.startLevel == .test || known == nil)
         // Une seule course par semaine : c'est la sortie longue, pas de séance test.
@@ -145,7 +157,14 @@ struct PlanGenerator {
         let classDay = settings.choice(for: .martialCross).flatMap { $0.hasClass ? $0.classDay : nil }
 
         for (i, week) in weeks.enumerated() {
+            if let boundary, PlanCalendar.string(week.monday) == boundary.monday {
+                previousSaturday = boundary.saturday
+                previousSunday = boundary.sunday
+            }
             let isEventWeek = eventDate != nil && i == weeks.count - 1
+            // Sans historique, la montée s'arrête à « Soutenu » tant que les retours de séance ne sont pas lus (#44).
+            let weekChosen = chosenByWeek[i]
+            let target = PlanIntensity.target(chosen: weekChosen, history: history)
             // Semaine allégée et affûtage : au plus les règles de « Modéré » (aucune paire de jours durs).
             var intensity = PlanIntensity.effective(chosen: target, ceiling: ceiling, weekIndex: i)
             if week.isDeload || week.phase == .taper { intensity = min(intensity, .moderate) }
@@ -165,9 +184,9 @@ struct PlanGenerator {
             var maxLong = Int(longCap)
             if let lastBuildLong {
                 // Doux : le plancher de +5 min une semaine sur deux, pour rester près de +5 %.
-                let floorStep = (chosen == .gentle && week.index % 2 == 1) ? 0 : 5
+                let floorStep = (weekChosen == .gentle && week.index % 2 == 1) ? 0 : 5
                 maxLong = min(maxLong, max(lastBuildLong + floorStep,
-                                           Int(Double(lastBuildLong) * (1 + chosen.maxWeeklyIncrease) / 5) * 5))
+                                           Int(Double(lastBuildLong) * (1 + weekChosen.maxWeeklyIncrease) / 5) * 5))
             } else if known == nil {
                 maxLong = min(maxLong, settings.sessionMinutes)
             }
@@ -180,7 +199,7 @@ struct PlanGenerator {
             // Hausse réelle : comparée à la dernière semaine complète de progression, ou au point de départ.
             if !week.isDeload && week.phase != .taper && !isPartial {
                 composed = capRunIncrease(composed, last: lastBuildRun ?? Int(startVolume.rounded()),
-                                          noIncrease: afterDeload, increase: increase)
+                                          noIncrease: afterDeload, increase: increase(weekChosen))
             }
 
             let nextMonday: DayLoad = (classDay == 1 && i + 1 < weeks.count) ? DayLoad([.martialCrossClass]) : .rest

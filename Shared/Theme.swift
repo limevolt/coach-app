@@ -166,6 +166,8 @@ enum Theme {
     static let barIconFont = Font.system(size: 20, weight: .semibold)
     /// Bouton du haut appuyé : atténué.
     static let pressedOpacity: Double = 0.45
+    /// Choix impossible (niveau grisé, #46) : titre et barres atténués, la raison reste lisible.
+    static let unavailableOpacity: Double = 0.5
 
     // Icônes SF Symbols (taille fixe, graisse commune)
     /// Icône d'un bouton rond ou d'un état (•••, ✓ d'une ligne).

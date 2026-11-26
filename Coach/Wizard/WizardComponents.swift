@@ -148,18 +148,21 @@ struct RadioRow: View {
     var bars: Int? = nil
     /// Phrase en plus sous le choix (garde-fou, #57), annoncée par VoiceOver.
     var note: String? = nil
+    /// Choix impossible (#46) : titre et barres atténués, `detail` dit pourquoi.
+    var enabled = true
     let action: () -> Void
 
     @Environment(\.dynamicTypeSize) private var typeSize
 
     init(title: String, detail: String, isOn: Bool, tag: String? = nil, bars: Int? = nil, note: String? = nil,
-         action: @escaping () -> Void) {
+         enabled: Bool = true, action: @escaping () -> Void) {
         self.title = title
         self.detail = detail
         self.isOn = isOn
         self.tag = tag
         self.bars = bars
         self.note = note
+        self.enabled = enabled
         self.action = action
     }
 
@@ -169,18 +172,20 @@ struct RadioRow: View {
                 Image(systemName: isOn ? "largecircle.fill.circle" : "circle")
                     .font(Theme.iconFont)
                     .foregroundStyle(isOn ? Theme.accent : Theme.muted)
+                    .opacity(dimmed)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: Space.xs) {
                     // Très grand texte : les barres passent sous le titre (maquette #57).
                     if typeSize.isAccessibilitySize {
-                        titleLine
-                        if let bars { IntensityBars(level: bars) }
+                        titleLine.opacity(dimmed)
+                        if let bars { IntensityBars(level: bars).opacity(dimmed) }
                     } else {
                         HStack(spacing: Space.m) {
                             titleLine
                             Spacer(minLength: Space.s)
                             if let bars { IntensityBars(level: bars) }
                         }
+                        .opacity(dimmed)
                     }
                     Text(detail).font(.detail).foregroundStyle(Theme.muted)
                         .fixedSize(horizontal: false, vertical: true)
@@ -200,8 +205,11 @@ struct RadioRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .disabled(!enabled)
         .accessibilityAddTraits(isOn ? [.isSelected] : [])
     }
+
+    private var dimmed: Double { enabled ? 1 : Theme.unavailableOpacity }
 
     private var titleLine: some View {
         HStack(spacing: Space.s) {

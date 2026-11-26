@@ -458,13 +458,24 @@ struct EyebrowLabelStyle: LabelStyle {
 
 /// Ligne simple : titre, valeur grise à droite, chevron. Séparateur sous la ligne sauf la dernière.
 struct PlanLine: View {
-    let session: PlannedSession
+    let title: String
     let trailing: String
     var showsSeparator = true
 
+    init(session: PlannedSession, trailing: String, showsSeparator: Bool = true) {
+        self.init(title: session.title, trailing: trailing, showsSeparator: showsSeparator)
+    }
+
+    /// Ligne de réglage (« Intensité   Modéré › », #46) : même rendu qu'une séance.
+    init(title: String, trailing: String, showsSeparator: Bool = true) {
+        self.title = title
+        self.trailing = trailing
+        self.showsSeparator = showsSeparator
+    }
+
     var body: some View {
         HStack(spacing: Space.m) {
-            Text(session.title)
+            Text(title)
                 .font(.text)
                 .foregroundStyle(Theme.text)
                 .frame(maxWidth: .infinity, alignment: .leading)

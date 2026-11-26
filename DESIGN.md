@@ -202,6 +202,10 @@ propriétaire le signale.
   et gris, jamais citron vert : il reste pour le choix et « Continuer »), `tag` (« Conseillé », étiquette au
   contour gris) et `note` (garde-fou sous le choix, icône grise). En très grand texte, les barres passent
   sous le titre.
+- **Changer l'intensité en cours de plan (#46)** : écran Plan › « Réglages du plan » › ligne « Intensité »
+  (`PlanLine`, valeur « Modéré » ou « Modéré → Soutenu lun. 7 janv. ») ; feuille `IntensitySheet` avec les mêmes
+  `RadioRow`, étiquettes « Actuel » et « Prévu lundi ». Niveau impossible : `RadioRow(enabled: false)`, rond,
+  titre et barres atténués (`Theme.unavailableOpacity`), la raison à la place de la description.
 - **Accordéon** : les options d'une ligne cochée (pastilles de variantes, jour et heure du cours) se déplient
   sous la ligne (fondu + glissement vers le bas) et se replient quand on décoche ; simple fondu si
   « Réduire les animations » est activé.
