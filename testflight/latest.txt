@@ -1,5 +1,5 @@
-commit: 974e4f89a4de8b722d393b27fdc69a8d093d8356
-version TestFlight: 11
+commit: cda32ae049cdfd958621a57cbd0932372608188b
+version TestFlight: 12
 archive: success
 envoi: success
 
@@ -13,7 +13,7 @@ Profil prêt : Coach TestFlight com.limevolt.coachapp.watchkitapp
 
 ===== ENVOI =====
 ** EXPORT SUCCEEDED **
-2026-11-26 01:41:54.048 xcodebuild[6746:23781] Progress 100%: Uploaded package is processing.
-2026-11-26 01:41:54.056 xcodebuild[6746:23781] Progress 100%: Upload succeeded.
+2026-11-26 06:31:14.872 xcodebuild[5340:18974] Progress 100%: Uploaded package is processing.
+2026-11-26 06:31:14.900 xcodebuild[5340:18974] Progress 100%: Upload succeeded.
 Uploaded Coach
 warning: exportArchive App Store Connect Warning. SDK version issue. This app was built with the iOS 26.5 SDK. Starting April 2027, iOS and iPadOS apps must be built with the iOS 27 SDK or later, included in Xcode 27 or later, in order to be uploaded to App Store Connect or submitted for distribution.
