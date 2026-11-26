@@ -283,21 +283,36 @@ final class CoachCaptures: XCTestCase {
                 if waiting.exists { note("Création du plan : toujours en attente après 20 s") }
                 Thread.sleep(forTimeInterval: 1.5)
                 shot("29c-plan-cree")
-                // Intensité en cours de plan (#46) : Réglages du plan › Intensité, puis baisser d'un cran.
+                // Plan en cours (#122, #123) : Réglages du plan › Jours, puis › Intensité ; effet dès aujourd'hui.
+                if tap("Jours", in: app) {
+                    Thread.sleep(forTimeInterval: 0.6)
+                    shot("29d-jours")
+                    audit("Jours d'entraînement", app)
+                    if tap("Dimanche", in: app) {
+                        Thread.sleep(forTimeInterval: 0.4)
+                        shot("29e-jours-choix")
+                        if tap("Appliquer", in: app) { Thread.sleep(forTimeInterval: 2) }
+                    }
+                }
                 if tap("Intensité", in: app) {
                     Thread.sleep(forTimeInterval: 0.6)
-                    shot("29d-intensite-en-cours")
+                    shot("29f-intensite")
                     audit("Intensité du plan", app)
                     if tap("Modéré", in: app) {
                         Thread.sleep(forTimeInterval: 0.4)
-                        shot("29e-intensite-choix")
-                        if tap("Appliquer", in: app) {
-                            Thread.sleep(forTimeInterval: 2)
-                            _ = tap("Intensité", in: app)
-                            Thread.sleep(forTimeInterval: 0.6)
-                            shot("29f-intensite-prevue")
-                        }
+                        shot("29g-intensite-choix")
+                        if tap("Appliquer", in: app) { Thread.sleep(forTimeInterval: 2) }
                     }
+                }
+                app.swipeUp()
+                app.swipeUp()
+                Thread.sleep(forTimeInterval: 0.6)
+                shot("29h-plan-reglages-du-plan")
+                if app.buttons["onglet-Réglages"].exists {
+                    app.buttons["onglet-Réglages"].tap()
+                    Thread.sleep(forTimeInterval: 0.8)
+                    shot("29i-reglages-mon-plan")
+                    if app.buttons["onglet-Plan"].exists { app.buttons["onglet-Plan"].tap() }
                 }
             } else {
                 note("Bouton « Créer le plan » introuvable")

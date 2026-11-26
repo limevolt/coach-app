@@ -80,7 +80,8 @@ struct DayGrid: View {
     static let short = ["Lu", "Ma", "Me", "Je", "Ve", "Sa", "Di"]
 
     var body: some View {
-        HStack(spacing: Space.s) {
+        // Espace de 4 : 7 pastilles gardent 44 pt de large sur petit iPhone (#122).
+        HStack(spacing: Space.xs) {
             ForEach(days, id: \.self) { day in
                 let on = selection.contains(day)
                 Button {
