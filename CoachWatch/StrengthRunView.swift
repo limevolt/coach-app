@@ -44,6 +44,8 @@ struct StrengthRunView: View {
     @State private var rpe = 6
     @State private var saving = false
     @State private var confirmStop = false
+    /// « Abandonner » en cours (#118) : plus aucune action, plus de minuteur.
+    @State private var abandoning = false
     /// « Commencer » déjà appuyé (bloque un second appui pendant le démarrage).
     @State private var starting = false
     /// Séance figée au « Commencer » : une mise à jour venue de l'iPhone ne la change pas en cours de route.
@@ -83,12 +85,12 @@ struct StrengthRunView: View {
                 if autoStart, phase == .ready { beginStart() }
             }
             .confirmationDialog("Terminer la séance ?", isPresented: $confirmStop) {
-                Button("Terminer") { phase = .feedback }
+                Button("Terminer") { if !abandoning { phase = .feedback } }
                 // #118 : laisser tomber la séance sans rien enregistrer.
                 Button("Abandonner", role: .destructive) { abandon() }
                 Button("Continuer", role: .cancel) {}
             } message: {
-                Text("Abandonner n'enregistre rien.")
+                Text("Terminer garde ce qui est fait. Abandonner n'enregistre rien.")
             }
             // Fin de séance : on coupe tout de suite le chrono et la séance Santé.
             .onChange(of: phase) { _, newPhase in
@@ -465,6 +467,12 @@ struct StrengthRunView: View {
 
     /// Séance abandonnée (#118) : ni Santé, ni suivi.
     private func abandon() {
+        guard !abandoning else { return }
+        abandoning = true
+        // Le minuteur s'arrête tout de suite (plus de « clics » ni d'exercice suivant pendant l'abandon).
+        if case .countdown(let timer, let end) = phase {
+            phase = .paused(timer, remaining: max(0, end.timeIntervalSinceNow))
+        }
         Task {
             await workout.discard()
             workout.sessionInProgress = false

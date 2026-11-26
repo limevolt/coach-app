@@ -299,7 +299,7 @@ struct TodayCard: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityHint("Ouvre la séance")
-                StartOnWatchButton(size: .regular) { await store.startOnWatch(session) }
+                StartOnWatchButton { await store.startOnWatch(session) }
                     .id(stored.id)
 
             case .done(let stored):
