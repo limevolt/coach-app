@@ -816,13 +816,13 @@ final class PlanStore {
             .compactMap { DoneState.activeLog(for: $0, in: logs) }
         var items: [LoadItem] = active.compactMap { l in sessions[l.sessionId].map { LoadPlanner.item(session: $0, log: l) } }
         let links = healthLinks
-        for (sessionId, link) in links.bySession {
+        for (sessionId, link) in links.bySession where LoadPlanner.countsForLoad(link.activity) {
             items.append(LoadPlanner.item(activity: link.activity, effort: efforts[link.activity.id],
                                           plannedAs: link.kind == .auto ? sessions[sessionId] : nil))
         }
         // Sport en plus qui recouvre une séance faite dans Coach (faite un autre jour que prévu) : la même séance.
         let margin: TimeInterval = 15 * 60
-        for a in links.extras where !active.contains(where: { l in
+        for a in links.extras where LoadPlanner.countsForLoad(a) && !active.contains(where: { l in
             l.completedAt >= a.start.addingTimeInterval(-margin) && l.completedAt <= a.end.addingTimeInterval(margin)
         }) {
             items.append(LoadPlanner.item(activity: a, effort: efforts[a.id], plannedAs: nil))
@@ -830,8 +830,7 @@ final class PlanStore {
         // Avant un nouveau plan : toutes les séances Santé, celles écrites par Coach sur la montre comprises
         // (les journaux archivés ne comptent pas : pas de doublon).
         if let reset = lastReset {
-            for a in healthActivities where a.start < reset
-                && !(a.kind == "walking" && a.minutes < HealthLinking.shortWalkMinutes) {
+            for a in healthActivities where a.start < reset && LoadPlanner.countsForLoad(a) {
                 items.append(LoadPlanner.item(activity: a, effort: efforts[a.id], plannedAs: nil))
             }
         }

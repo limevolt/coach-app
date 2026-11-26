@@ -3,7 +3,8 @@
 // Fonctions pures, une règle = un test (LoadPlannerTests).
 //
 // - Charge d'une séance = durée (min) × ressenti (méthode « RPE de séance »).
-//   Sans ressenti : effort prévu de la séance du plan (#44) ; autre sport : 8 dur, 6 modéré, 3 facile.
+//   Sans ressenti : effort prévu de la séance du plan (#44) ; autre sport : 8 dur, 6 modéré.
+//   Sports calmes (marche, yoga, pilates, étirements…) : pas comptés (choix du propriétaire, #115).
 // - Une fois par semaine, sur la dernière semaine terminée (lundi → dimanche) : sa charge comparée à la
 //   moyenne des semaines couvertes parmi les 4 dernières. Données dans au moins 3 semaines, sinon rien.
 //   Rapport > 1,3 : la course de cette semaine ne progresse pas (même rôle, même séance de qualité).
@@ -65,6 +66,9 @@ enum LoadPlanner {
     static let estimatePaceMinPerKm = 6.0
 
     // MARK: Charge d'une séance
+
+    /// Un sport fait ailleurs compte dans la charge, sauf les sports calmes (marche, yoga…).
+    static func countsForLoad(_ a: HealthActivity) -> Bool { a.info.family != .calm }
 
     /// Effort par défaut d'un sport fait ailleurs, selon son intensité (#115).
     static func defaultEffort(_ i: ReplacementPlanner.Intensity) -> Double {

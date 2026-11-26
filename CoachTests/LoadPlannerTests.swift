@@ -84,6 +84,14 @@ final class LoadPlannerTests: XCTestCase {
         XCTAssertEqual(LoadPlanner.minutes(of: s), 90)
     }
 
+    func testCalmSportsDoNotCount() {
+        for kind in ["walking", "yoga", "pilates", "flexibility"] {
+            XCTAssertFalse(LoadPlanner.countsForLoad(sport(kind, at(5), minutes: 60)), kind)
+        }
+        XCTAssertTrue(LoadPlanner.countsForLoad(sport("hiit", at(5), minutes: 30)))
+        XCTAssertTrue(LoadPlanner.countsForLoad(sport("cycling", at(5), minutes: 30)))
+    }
+
     // MARK: Charge de la semaine
 
     func testRatioRegularFourWeeks() {
