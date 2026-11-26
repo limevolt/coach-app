@@ -272,7 +272,8 @@ struct SessionBuilder {
         let station = minutes >= 60 ? 180 : 120
         let w = week.index
         let home = !atGym
-        let cardio = available([.rower], atHome: home) && w % 2 == 1 ? "Rameur" : "Course sur place ou tapis"
+        let cardio = available([.rower], atHome: home) && w % 2 == 1 ? "Rameur"
+            : available([.treadmill], atHome: home) ? "Course sur place ou tapis" : "Course sur place"
         let moves = Self.strengthMoves.filter { $0 != "Kettlebell swing" || available([.kettlebell], atHome: home) }
             .filter { !(profile.sparedZones.contains(.knee) && ($0 == "Squat sauté" || $0 == "Burpees")) }
         func pick(_ list: [String], _ offset: Int) -> String { list[(w + offset) % list.count] }

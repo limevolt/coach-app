@@ -13,8 +13,14 @@ struct ExerciseGuideView: View {
     @State private var anchor = Date()
 
     private var animation: ExerciseAnimation? { ExerciseLibrary.animation(for: exercise) }
-    private var steps: [String] { exercise.instructions ?? animation?.steps ?? [] }
-    private var usesLibrarySteps: Bool { exercise.instructions == nil && animation != nil }
+    /// Jamais vide si on connaît l'exercice : consignes du plan, sinon celles de l'animation,
+    /// sinon les consignes écrites de `ExerciseSteps` (exercices sans animation).
+    private var steps: [String] {
+        if let own = exercise.instructions, !own.isEmpty { return own }
+        if let anim = animation?.steps, !anim.isEmpty { return anim }
+        return ExerciseSteps.steps(forName: exercise.name) ?? []
+    }
+    private var usesLibrarySteps: Bool { (exercise.instructions ?? []).isEmpty && !(animation?.steps ?? []).isEmpty }
     private var mistakes: [String] { exercise.mistakes ?? animation?.mistakes ?? [] }
 
     private func time(at date: Date) -> Double {
@@ -39,6 +45,11 @@ struct ExerciseGuideView: View {
                         controls
                     } else {
                         noAnimation
+                    }
+                    if let notes = exercise.notes, !notes.isEmpty {
+                        Label(notes, systemImage: "info.circle")
+                            .font(.text)
+                            .foregroundStyle(Theme.text)
                     }
                     if !steps.isEmpty { stepsSection }
                     if !mistakes.isEmpty { mistakesSection }
@@ -265,8 +276,8 @@ struct ExerciseGuideView: View {
     private var noAnimation: some View {
         VStack(spacing: Space.s) {
             Image(systemName: "figure.strengthtraining.functional").font(.system(size: 44)).foregroundStyle(Theme.accent)
-            Text("Pas encore d'animation pour cet exercice.")
-                .font(.coach(size: 15, weight: .semibold))
+            Text(steps.isEmpty ? "Pas encore de consignes pour cet exercice." : "Pas encore d'animation : suis les étapes.")
+                .font(.text)
                 .foregroundStyle(Theme.text)
         }
         .frame(maxWidth: .infinity)
