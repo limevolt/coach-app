@@ -8,6 +8,13 @@
 import Foundation
 import HealthKit
 
+extension Durations {
+    /// Chrono « 1:24 ».
+    static func clock(_ seconds: Int) -> String {
+        String(format: "%d:%02d", seconds / 60, seconds % 60)
+    }
+}
+
 /// Durée du compte à rebours avant chaque départ.
 enum StartCountdown {
     static let seconds = 5

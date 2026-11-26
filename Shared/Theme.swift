@@ -128,6 +128,15 @@ enum Theme {
     static let tileSpacing: CGFloat = Space.m
     static let tileSymbolFont = Font.system(size: 34, weight: .semibold)
     static let exerciseFallbackSymbol = "figure.strengthtraining.functional"
+    /// Séance guidée sur l'iPhone (maquette validée) : visuel, boutons précédent / suivant et pause.
+    static let guidedVisualHeight: CGFloat = 380
+    static let guidedNextVisualHeight: CGFloat = 220
+    static let guidedControl: CGFloat = 56
+    static let guidedMainControl: CGFloat = 80
+    static let guidedProgressHeight: CGFloat = 6
+    static let guidedControlIcon = Font.system(size: 20, weight: .bold)
+    static let guidedMainIcon = Font.system(size: 28, weight: .bold)
+    static let guidedDoneIcon = Font.system(size: 34, weight: .bold)
     /// Écran « Le coach prépare ton plan » : petit coureur (réduit en très grand texte) et barre d'avancement.
     static let creationFigure: CGFloat = 180
     static let creationFigureCompact: CGFloat = 120
@@ -231,6 +240,8 @@ extension Font {
     static let detail = Font.coach(.subheadline)
     /// Unité à côté d'un chiffre (« min », « /10 »).
     static let unit = Font.coach(size: 14, weight: .medium)
+    /// Compte à rebours « Prêt ? » de la séance guidée sur l'iPhone, lu à 2 m (taille fixe, comme les chronos).
+    static let guidedCountdown = Font.coach(size: 160, weight: .semibold)
 }
 
 extension View {
