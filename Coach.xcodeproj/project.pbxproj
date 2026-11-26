@@ -78,6 +78,7 @@
 		7F2DE6131F6EA60C8AE65BBC /* WeekComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6662F31E20824D39EED8074E /* WeekComposer.swift */; };
 		80146B299CFAC8BDBC5EAD55 /* HealthPermissions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5CF7AC31F6D6F52356127F2 /* HealthPermissions.swift */; };
 		801C62B7D0E42C0843D23D1C /* RunScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99BD1ECD404DB2315F4CB7D8 /* RunScheduler.swift */; };
+		808A9DB1C62B902AE304D85A /* GuidedSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4429CC5D1F4AC1DA6F5ED8E2 /* GuidedSessionView.swift */; };
 		80F341FDEBEBDE36145F0416 /* DemoMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6097D8724285314AF6D5C949 /* DemoMode.swift */; };
 		8114A82FDF9E0E45EE1F6E6B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 36ED7C29460F89A7A9A816B1 /* Assets.xcassets */; };
 		8118CA7306E3723EE11F4722 /* NavigationBarStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274FB8C9CA43AFA77F3E3430 /* NavigationBarStyle.swift */; };
@@ -219,6 +220,7 @@
 		3A94A8554D3534DDA5A5B299 /* Outfit-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Outfit-Regular.ttf"; sourceTree = "<group>"; };
 		3D495D87289FD2F14C06D471 /* Outfit-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Outfit-Black.ttf"; sourceTree = "<group>"; };
 		4415AD572B9C9CA1090038DD /* BusyButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BusyButton.swift; sourceTree = "<group>"; };
+		4429CC5D1F4AC1DA6F5ED8E2 /* GuidedSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidedSessionView.swift; sourceTree = "<group>"; };
 		469890DB7F1BA9D23EB804D4 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		4A535570E01A094C3E524720 /* FeedbackPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackPlanner.swift; sourceTree = "<group>"; };
 		4D3E65D02A73AC0CA8236C13 /* CoachWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CoachWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -410,6 +412,7 @@
 				EAEAC8B7EFE1AEA3EEB3B30A /* DestructiveButton.swift */,
 				3819F510E1AE826C638EB6F3 /* ExerciseGuideView.swift */,
 				D9A00B39FFE3E7F72A3802B3 /* ExerciseTile.swift */,
+				4429CC5D1F4AC1DA6F5ED8E2 /* GuidedSessionView.swift */,
 				FC05BD771777D8DD2D41A190 /* HealthActivities.swift */,
 				5BC2FE5D6D5989A6C962A7D0 /* HealthReader.swift */,
 				7F7A31251C7C102888E383FC /* HomeWeek.swift */,
@@ -635,7 +638,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1430;
+				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					34B5BC82ED07EEF47D7400E0 = {
 						DevelopmentTeam = QG4XL95P47;
@@ -772,6 +775,7 @@
 				FA22CF1DFF78FBC0648C30C4 /* ExtraActivityPlanner.swift in Sources */,
 				85F5E5B8D6CC550C96E2E5A3 /* FeedbackPlanner.swift in Sources */,
 				9B9B5785F591A665D43AFE14 /* GuidedRun.swift in Sources */,
+				808A9DB1C62B902AE304D85A /* GuidedSessionView.swift in Sources */,
 				EBB1A3D5F4A480FF807A67FF /* HealthActivities.swift in Sources */,
 				80146B299CFAC8BDBC5EAD55 /* HealthPermissions.swift in Sources */,
 				9DE8E796EC1E88D558090CEF /* HealthReader.swift in Sources */,
