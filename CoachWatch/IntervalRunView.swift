@@ -45,6 +45,7 @@ struct IntervalRunView: View {
     @State private var confirmStop = false
     /// « Abandonner » en cours (#118) : plus aucune action, plus de minuteur.
     @State private var abandoning = false
+    @State private var lastCommandAt = Date.distantPast
     /// « Commencer » déjà appuyé (bloque un second appui pendant le démarrage).
     @State private var starting = false
     /// Déroulé figé au « Commencer » : une mise à jour venue de l'iPhone ne le change pas en cours de route.
@@ -84,6 +85,8 @@ struct IntervalRunView: View {
             if (phase == .ready && !starting) || isBeforeStart { workout.discardPrepared() }
             // Sortie de l'écran (séance enregistrée ou abandonnée) : plus de séance affichée.
             if phase == .ready || phase == .feedback || isBeforeStart { workout.sessionInProgress = false }
+            // Écran quitté en pleine séance (retour pendant le « Prêt ? ») : l'iPhone ferme son suivi.
+            if phase == .running { sendAbandon() }
         }
         // Santé demandée à l'ouverture de l'écran, avant « Commencer » et le « Prêt ? » (#108) :
         // rien ne s'affiche si l'accès a déjà été donné (sur l'iPhone ou ici).
@@ -102,9 +105,12 @@ struct IntervalRunView: View {
         // Montre + iPhone (#130, étape 3) : l'iPhone ouvert affiche la même séance, en grand.
         .onChange(of: SyncKey(index: index, end: segmentEnd, paused: pausedRemaining, phase: phase,
                               abandoning: abandoning)) { _, _ in syncToPhone() }
-        // Rappel toutes les 5 s : un iPhone ouvert en cours de séance la rattrape.
+        // Rappel toutes les 5 s : un iPhone ouvert en cours de séance la rattrape. La fin est répétée
+        // quelques fois, au cas où un message se perd.
         .task(id: phase) {
-            while phase == .running, !Task.isCancelled {
+            var finals = 0
+            while (phase == .running || (phase == .feedback && finals < 4)), !Task.isCancelled {
+                if phase == .feedback { finals += 1 }
                 syncToPhone()
                 try? await Task.sleep(for: .seconds(5))
             }
@@ -233,6 +239,7 @@ struct IntervalRunView: View {
 
     /// Terminer pendant le « Prêt ? » : on revient simplement en arrière.
     private func cancelBeforeStart() {
+        sendAbandon()
         segmentEnd = nil
         workout.sessionInProgress = false
         workout.discardPrepared()
@@ -288,8 +295,21 @@ struct IntervalRunView: View {
                                     clock: clock, abandoned: abandoning))
     }
 
+    /// La séance s'arrête sans fin normale : l'iPhone ferme son écran de suivi.
+    private func sendAbandon() {
+        guard run.kind == nil else { return }
+        let clock = GuidedClock(index: index, segmentEnd: nil, pausedRemaining: nil, finished: true)
+        store.sendGuided(GuidedSync(sessionId: run.sessionId, segmentCount: run.segments.count,
+                                    clock: clock, abandoned: true))
+    }
+
     private func apply(_ command: GuidedCommand) {
         guard phase == .running, current != nil, !abandoning else { return }
+        // Pendant le « Prêt ? », seule « passer » a un sens (la séance Santé n'est pas lancée).
+        guard launched || command == .skip else { return }
+        // Deux commandes en moins d'une demi-seconde : la 2e est un double appui.
+        guard Date.now.timeIntervalSince(lastCommandAt) > 0.4 else { return }
+        lastCommandAt = .now
         switch command {
         case .pause: togglePause()
         case .skip: advance(recordWork: false)

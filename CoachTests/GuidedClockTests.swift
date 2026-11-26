@@ -104,6 +104,14 @@ final class GuidedClockTests: XCTestCase {
         // Entre deux messages, l'iPhone avance au même rythme que la montre.
         phone.tick(segments, at: t0.addingTimeInterval(26))
         XCTAssertEqual(phone.index, 4)
+        // Écran de suivi : ouvert tant que la montre envoie (moins de 60 s), pas si fini, abandonné ou autre plan.
+        XCTAssertTrue(sync.isLive(receivedAt: t0, now: t0.addingTimeInterval(30)))
+        XCTAssertFalse(sync.isLive(receivedAt: t0, now: t0.addingTimeInterval(61)))
+        var abandoned = sync
+        abandoned.abandoned = true
+        XCTAssertFalse(abandoned.isLive(receivedAt: t0, now: t0))
+        XCTAssertTrue(sync.matches(segments))
+        XCTAssertFalse(GuidedSync(sessionId: "c", segmentCount: 3, clock: watch).matches(segments))
         let paused = GuidedClock(index: 2, segmentEnd: nil, pausedRemaining: 12, finished: false)
         XCTAssertTrue(paused.isPaused)
         XCTAssertEqual(paused.remaining(at: t0), 12, accuracy: 0.001)

@@ -209,8 +209,18 @@ struct GuidedSync: Codable, Equatable {
     var clock: GuidedClock
     var abandoned = false
 
-    /// Plus vieux que ça sans nouvelles : la montre n'est plus joignable, l'iPhone arrête de suivre.
-    static let staleAfter: TimeInterval = 15 * 60
+    /// La montre renvoie l'état toutes les 5 s : sans nouvelles depuis 20 s, elle n'est plus joignable ;
+    /// après 60 s, l'iPhone n'ouvre plus l'écran de suivi.
+    static let silentAfter: TimeInterval = 20
+    static let staleAfter: TimeInterval = 60
+
+    /// Séance à afficher sur l'iPhone : ni finie, ni abandonnée, ni trop ancienne.
+    func isLive(receivedAt: Date, now: Date) -> Bool {
+        !clock.finished && !abandoned && now.timeIntervalSince(receivedAt) < Self.staleAfter
+    }
+
+    /// Même déroulé des deux côtés (même plan sur la montre et l'iPhone) : sinon l'iPhone ne suit pas.
+    func matches(_ segments: [TimedSegment]) -> Bool { segmentCount == segments.count }
 
     static let messageKey = "guided"
     static let commandKey = "guidedCommand"

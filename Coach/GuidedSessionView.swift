@@ -33,6 +33,8 @@ struct GuidedSessionView: View {
     @State private var lastSkip = Date.distantPast
     @State private var confirmQuit = false
     @State private var guide: Exercise?
+    /// Miroir : la montre n'a pas le même plan (déroulé différent), l'iPhone ne suit pas.
+    @State private var mismatch = false
     private var mirror: GuidedMirror { GuidedMirror.shared }
     private var mirrored: Bool { mode == .mirror }
 
@@ -119,6 +121,8 @@ struct GuidedSessionView: View {
     /// État reçu de la montre.
     private func follow(_ sync: GuidedSync) {
         if sync.abandoned { dismiss(); return }
+        guard sync.matches(segments) else { mismatch = true; return }
+        mismatch = false
         let wasIndex = clock.index
         clock = sync.clock
         if sync.clock.finished, endedAt == nil { endedAt = .now }
@@ -156,7 +160,7 @@ struct GuidedSessionView: View {
     @ViewBuilder private func screen(now: Date) -> some View {
         if clock.finished {
             finishedScreen
-        } else if mirrored && !clock.started {
+        } else if mirrored && (!clock.started || mismatch) {
             waitingScreen
         } else if let seg = current {
             VStack(alignment: .leading, spacing: Space.l) {
@@ -196,7 +200,12 @@ struct GuidedSessionView: View {
             }
             .accessibilityLabel("Quitter la séance")
             Spacer()
-            Text(roundLabel(seg)).font(.detail).foregroundStyle(Theme.muted).monospacedDigit()
+            if mirrored && mirror.isSilent(at: .now) {
+                Label("Montre injoignable", systemImage: "applewatch.slash")
+                    .font(.detail).foregroundStyle(Theme.warm)
+            } else {
+                Text(roundLabel(seg)).font(.detail).foregroundStyle(Theme.muted).monospacedDigit()
+            }
             Spacer()
             if seg.kind != .prepare, let ex = exercise(for: seg) {
                 Button {
@@ -428,7 +437,9 @@ struct GuidedSessionView: View {
     private var waitingScreen: some View {
         VStack(spacing: Space.l) {
             ProgressView().tint(Theme.accent)
-            Text("En attente de la montre").font(.text).foregroundStyle(Theme.muted)
+            Text(mismatch ? "La montre n'a pas le même plan. Ouvre Coach sur la montre pour le recevoir."
+                          : "En attente de la montre")
+                .font(.text).foregroundStyle(Theme.muted).multilineTextAlignment(.center)
             Button("Fermer") { dismiss() }.buttonStyle(.coachQuiet())
         }
         .padding(.horizontal, Theme.screenMargin)
