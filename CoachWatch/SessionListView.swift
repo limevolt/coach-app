@@ -1,8 +1,8 @@
 // SessionListView.swift — écran d'accueil de la montre
-// En haut : « Prochain entraînement » + « Commencer » (le seul : la séance démarre aussitôt, #16).
-// Une séance lancée depuis l'iPhone (« Démarrer sur la montre », #5) s'ouvre ici, prête.
-// En faisant défiler : les autres séances de la semaine, pour en lancer une autre.
-// Tout en bas : « Entraînement libre » → les minuteurs libres enregistrés (créés sur l'iPhone).
+// Seulement le sport du jour + « Commencer » (la séance démarre aussitôt, #16), pas la liste du plan.
+// Séance du jour déjà faite : « Fait ». Pas de séance : « Repos ».
+// Une séance lancée depuis l'iPhone (« Démarrer sur la montre », #5) s'ouvre ici, prête, quel que soit son jour.
+// En dessous, bouton discret : « Entraînement libre » → les minuteurs libres (créés sur l'iPhone).
 
 import SwiftUI
 import WorkoutKit
@@ -29,26 +29,13 @@ struct SessionListView: View {
     var body: some View {
         NavigationStack(path: $path) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 10) {
-                    if let next = store.nextSession {
-                        NextSessionCard(session: next)
+                VStack(alignment: .leading, spacing: Space.m) {
+                    if let today = store.todaySession {
+                        TodaySessionCard(session: today)
+                    } else if store.todayAllDone, let last = store.todaySessions.last {
+                        doneState(last)
                     } else {
                         emptyState
-                    }
-
-                    let others = store.otherSessions
-                    if !others.isEmpty {
-                        Text("AUTRES SÉANCES")
-                            .font(.coach(size: 11, weight: .semibold))
-                            .tracking(1.2)
-                            .foregroundStyle(Theme.muted)
-                            .padding(.top, 6)
-                        ForEach(others) { session in
-                            NavigationLink(value: SessionRoute(sessionId: session.id, autoStart: false)) {
-                                SessionRow(session: session, done: store.doneIds.contains(session.id))
-                            }
-                            .buttonStyle(.plain)
-                        }
                     }
 
                     NavigationLink {
@@ -57,7 +44,7 @@ struct SessionListView: View {
                         Label("Entraînement libre", systemImage: "timer")
                     }
                     .buttonStyle(.coachDashed)
-                    .padding(.top, 6)
+                    .padding(.top, Space.xs)
                 }
                 .padding(.horizontal, Theme.watchMargin)
             }
@@ -84,6 +71,7 @@ struct SessionListView: View {
             if workout.isActive && !workout.sessionInProgress { Task { await workout.end() } }
         }
         // Demande de l'iPhone : ouverte dès que possible (séance reçue, aucune séance en cours).
+        .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in store.refreshDay() }
         .onChange(of: store.startRequest) { _, _ in openRequestedSession() }
         .onChange(of: store.sessions) { _, _ in openRequestedSession() }
         .onChange(of: store.templates) { _, _ in openRequestedSession() }
@@ -125,19 +113,43 @@ struct SessionListView: View {
         store.markOpened(request)
     }
 
-    /// Rien à faire : une phrase courte, sans titre (#27).
+    /// Pas de séance aujourd'hui : « Repos » (ou synchroniser si la montre n'a encore rien reçu).
+    @ViewBuilder
     private var emptyState: some View {
-        Text(store.sessions.isEmpty ? "Aucune séance. Synchronise depuis l'iPhone." : "Rien de prévu. Repos !")
-            .font(.coach(.footnote, weight: .semibold))
-            .foregroundStyle(Theme.muted)
-            .frame(maxWidth: .infinity, alignment: .leading)
+        if store.sessions.isEmpty {
+            Text("Aucune séance. Synchronise depuis l'iPhone.")
+                .font(Theme.watchTitle)
+                .foregroundStyle(Theme.muted)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            Label("Repos", systemImage: "moon.zzz.fill")
+                .font(Theme.watchHomeActivity)
+                .foregroundStyle(Theme.text)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityLabel("Repos aujourd'hui")
+        }
+    }
+
+    /// Séance du jour déjà faite : « Fait » + le sport, en petit.
+    private func doneState(_ session: PlannedSession) -> some View {
+        VStack(alignment: .leading, spacing: Space.hairline) {
+            Label("Fait", systemImage: "checkmark.circle.fill")
+                .font(Theme.watchHomeActivity)
+                .foregroundStyle(Theme.accent)
+            Text(session.sportLabel)
+                .font(Theme.watchTitle)
+                .foregroundStyle(Theme.muted)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Séance du jour faite : \(session.sportLabel)")
     }
 
 }
 
-// MARK: - Prochain entraînement
+// MARK: - Séance du jour
 
-private struct NextSessionCard: View {
+private struct TodaySessionCard: View {
     let session: PlannedSession
 
     var body: some View {
@@ -149,7 +161,7 @@ private struct NextSessionCard: View {
                 .foregroundStyle(Theme.color(for: session.type))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-                .accessibilityLabel("Prochain entraînement : \(session.sportLabel), \(session.title), \(session.shortDayLabel)")
+                .accessibilityLabel("Séance du jour : \(session.sportLabel), \(session.title)")
 
             if session.type == .run {
                 RunLauncher(session: session) {
@@ -212,38 +224,6 @@ private struct FreeWorkoutListView: View {
         }
         .navigationTitle("Libre")
         .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-// MARK: - Autres séances
-
-private struct SessionRow: View {
-    let session: PlannedSession
-    let done: Bool
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: Theme.icon(for: session.type))
-                .font(.coach(.footnote))
-                .foregroundStyle(Theme.color(for: session.type))
-                .frame(width: 22)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(session.shortDayLabel)
-                    .font(.coach(.caption2))
-                    .foregroundStyle(.secondary)
-                Text(session.sportLabel)
-                    .font(.coach(.footnote, weight: .semibold))
-                    .lineLimit(1)
-            }
-            Spacer(minLength: 4)
-            if done {
-                Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-            }
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 

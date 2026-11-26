@@ -51,22 +51,29 @@ final class WatchStore {
         bridge.activate()
     }
 
-    /// Séances à partir d'avant-hier (pour rattraper une séance décalée).
-    var visibleSessions: [PlannedSession] {
-        let from = Calendar.current.date(byAdding: .day, value: -2, to: Calendar.current.startOfDay(for: .now)) ?? .distantPast
-        return sessions.filter { ($0.dayStart ?? .distantPast) >= from }
+    /// Jour affiché, observé : mis à jour au retour au premier plan et à minuit, pour que l'accueil
+    /// ne garde pas la séance de la veille si Coach reste ouvert la nuit.
+    var today = Calendar.current.startOfDay(for: .now)
+
+    func refreshDay() {
+        let now = Calendar.current.startOfDay(for: .now)
+        if now != today { today = now }
     }
 
-    /// Première séance pas encore faite, à partir d'aujourd'hui.
-    var nextSession: PlannedSession? {
-        let today = Calendar.current.startOfDay(for: .now)
-        return sessions.first { !doneIds.contains($0.id) && ($0.dayStart ?? .distantPast) >= today }
+    /// Séances prévues aujourd'hui, dans l'ordre de la journée.
+    var todaySessions: [PlannedSession] {
+        sessions.filter { $0.dayStart == today }
     }
 
-    /// Les autres séances pas encore faites (des deux derniers jours et à venir), pour en lancer une autre (#27).
-    var otherSessions: [PlannedSession] {
-        let nextId = nextSession?.id
-        return visibleSessions.filter { $0.id != nextId && !doneIds.contains($0.id) }
+    /// Séance du jour : la première pas encore faite. La suivante du même jour apparaît une fois
+    /// celle-ci finie. Les autres jours ne s'affichent plus sur la montre.
+    var todaySession: PlannedSession? {
+        todaySessions.first { !doneIds.contains($0.id) }
+    }
+
+    /// Toutes les séances du jour sont faites (au moins une était prévue).
+    var todayAllDone: Bool {
+        !todaySessions.isEmpty && todaySession == nil
     }
 
     /// Dernière commande reçue de l'iPhone pendant une séance guidée (#130) ; `guidedCommandId` change à

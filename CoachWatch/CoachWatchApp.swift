@@ -20,7 +20,7 @@ struct CoachWatchApp: App {
         }
         // Montre à jour sans bouton (#107) : à chaque retour au premier plan, le plan est redemandé.
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { appDelegate.store.refresh() }
+            if phase == .active { appDelegate.store.refreshDay(); appDelegate.store.refresh() }
         }
     }
 }
