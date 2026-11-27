@@ -261,7 +261,7 @@ struct StrengthGuidedView: View {
     private func setBody(now: Date) -> some View {
         let ex = current
         return VStack(alignment: .leading, spacing: Space.l) {
-            GuidedExerciseVisual(exercise: ex, height: Theme.guidedStrengthVisualHeight)
+            GuidedExerciseVisual(exercise: ex, height: Theme.guidedStrengthVisualHeight, shrinks: true)
                 .layoutPriority(-1)   // petit iPhone, très grand texte : seul le visuel rétrécit
             VStack(alignment: .leading, spacing: Space.hairline) {
                 Text(ex?.name ?? "").font(.screenTitle).lineLimit(1).minimumScaleFactor(0.7)
@@ -398,7 +398,8 @@ struct StrengthGuidedView: View {
         VStack(alignment: .leading, spacing: Space.m) {
             Eyebrow(text: "Ensuite")
             // Repos et « Prêt ? » sont sur fond carte : l'aperçu prend le gris plus clair pour rester visible.
-            GuidedExerciseVisual(exercise: ex, height: Theme.guidedStrengthNextVisualHeight, fill: Theme.card2)
+            GuidedExerciseVisual(exercise: ex, height: Theme.guidedStrengthNextVisualHeight, fill: Theme.card2,
+                                 shrinks: true)
                 .layoutPriority(-1)
             VStack(alignment: .leading, spacing: Space.hairline) {
                 Text(ex.name).font(.number).foregroundStyle(Theme.text)
@@ -420,7 +421,8 @@ struct StrengthGuidedView: View {
     /// Pause : reprendre, passer cette étape, terminer (comme l'écran de pause du circuit).
     private var pausedBody: some View {
         VStack(alignment: .leading, spacing: Space.l) {
-            GuidedExerciseVisual(exercise: current, height: Theme.guidedStrengthVisualHeight, animated: false)
+            GuidedExerciseVisual(exercise: current, height: Theme.guidedStrengthVisualHeight, animated: false,
+                                 shrinks: true)
                 .opacity(0.5)
                 .layoutPriority(-1)
             Label("Pause", systemImage: "pause.fill").font(.screenTitle).foregroundStyle(Theme.text)

@@ -11,6 +11,8 @@ struct GuidedExerciseVisual: View {
     let height: CGFloat
     var animated = true
     var fill: Color = Theme.card
+    /// Peut rétrécir jusqu'à `Theme.guidedMinVisualHeight` quand la place manque (petit iPhone, très grand texte).
+    var shrinks = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -39,7 +41,7 @@ struct GuidedExerciseVisual: View {
                 Image(systemName: Theme.exerciseFallbackSymbol).font(Theme.tileSymbolFont).foregroundStyle(Theme.muted)
             }
         }
-        .frame(height: height)
+        .frame(minHeight: shrinks ? Theme.guidedMinVisualHeight : height, maxHeight: height)
         .accessibilityHidden(true)
     }
 

@@ -142,6 +142,8 @@ enum Theme {
     /// Renfo guidé (#142) : visuel un peu plus petit (nom, série et reps en dessous), aperçu au repos.
     static let guidedStrengthVisualHeight: CGFloat = 300
     static let guidedStrengthNextVisualHeight: CGFloat = 170
+    /// Hauteur minimale d'un visuel qui rétrécit quand la place manque.
+    static let guidedMinVisualHeight: CGFloat = 96
     /// Écran « Le coach prépare ton plan » : petit coureur (réduit en très grand texte) et barre d'avancement.
     static let creationFigure: CGFloat = 180
     static let creationFigureCompact: CGFloat = 120
