@@ -78,4 +78,35 @@ final class GuidedMirrorTests: XCTestCase {
         XCTAssertEqual(session(.strength, strength: true, circuit: true).guidedKind, .strength)
         XCTAssertNil(session(.strength, strength: false, circuit: false).guidedKind)
     }
+
+    // MARK: Bandeau « séance en cours » (#146)
+
+    func testReopenAsksTheRootToShowTheSessionAgain() {
+        let mirror = GuidedMirror()
+        let before = mirror.reopenToken
+        mirror.reopen("r")
+        XCTAssertEqual(mirror.reopenId, "r")
+        XCTAssertEqual(mirror.reopenToken, before + 1)
+    }
+
+    func testBannerStatusFollowsTheRenfo() {
+        let exercises = [Exercise(name: "Squat", sets: 3, reps: 10, restSec: 60)]
+        let session = PlannedSession(id: "r", date: "2030-01-08", time: nil, type: .strength, title: "Renfo de démo",
+                                     notes: nil, run: nil, strength: StrengthWorkout(exercises: exercises),
+                                     circuit: nil, equipment: nil, originalDate: nil, replaces: nil)
+        let t0 = Date(timeIntervalSince1970: 1_000_000)
+        var clock = StrengthClock()
+        clock.begin(exercises, at: t0)
+        func status() -> String {
+            SessionRunningBanner.status(GuidedSync(sessionId: "r", segmentCount: 1, clock: GuidedClock(), strength: clock),
+                                        session: session, at: t0.addingTimeInterval(12))
+        }
+        XCTAssertTrue(status().hasPrefix("Prêt ?"))
+        clock.tick(exercises, at: t0.addingTimeInterval(5))
+        XCTAssertEqual(status(), "Squat · Série 1 sur 3")
+        clock.setDone(exercises, at: t0.addingTimeInterval(10))
+        XCTAssertEqual(status(), "Série 2 sur 3 · repos 0:58")
+        clock.togglePause(at: t0.addingTimeInterval(11))
+        XCTAssertEqual(status(), "En pause")
+    }
 }

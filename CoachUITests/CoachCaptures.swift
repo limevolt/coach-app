@@ -256,6 +256,28 @@ final class CoachCaptures: XCTestCase {
             note("Renfo en grand texte : « Sans la montre » introuvable")
         }
 
+        // Séance en cours sur la montre (#146) : le suivi s'ouvre ; fermé, un bandeau permet d'y revenir.
+        app = launchDemo(plan: DemoPlan.json(), watchSession: "demo-s2")
+        _ = app.buttons["onglet-Plan"].waitForExistence(timeout: 30)
+        let closeMirror = app.buttons["Quitter la séance"].firstMatch
+        if closeMirror.waitForExistence(timeout: 10) {
+            shot("06j-suivi-ouvert-tout-seul", settle: 1)
+            closeMirror.tap()
+            let banner = app.buttons["bandeau-seance-en-cours"].firstMatch
+            if banner.waitForExistence(timeout: 5) {
+                shot("06k-bandeau-seance-en-cours", settle: 1)
+                audit("Bandeau séance en cours", app)
+                _ = tap("Libre", in: app)
+                shot("06l-bandeau-onglet-libre", settle: 1)
+                banner.tap()
+                if closeMirror.waitForExistence(timeout: 5) { shot("06m-suivi-rouvert", settle: 1) }
+            } else {
+                note("Bandeau « séance en cours » introuvable")
+            }
+        } else {
+            note("Suivi de la séance en cours sur la montre : pas ouvert")
+        }
+
         // 5. Accueil en très grande taille de texte
         app = launchDemo(plan: DemoPlan.json(),
                          arguments: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityL"])

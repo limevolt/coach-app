@@ -8,6 +8,10 @@ import SwiftUI
 struct StartOnWatchButton: View {
     /// Un seul libellé partout : « Démarrer » (#40).
     var title = "Démarrer"
+    /// « En cours sur ta montre » touché : rouvre l'écran de suivi (#146). nil : simple état.
+    var reopen: (() -> Void)?
+    /// La séance tourne déjà sur la montre (écran rouvert plus tard) : « En cours sur ta montre ».
+    var running = false
     let start: () async -> WatchStartResult
 
     @State private var sending = false
@@ -15,16 +19,18 @@ struct StartOnWatchButton: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.m) {
-            switch result {
+            switch running ? WatchStartResult.sent : result {
             case .sent:
-                Label("En cours sur ta montre", systemImage: "applewatch")
-                    .font(.coach(.body, weight: .bold))
-                    .foregroundStyle(Theme.accent)
-                    .frame(maxWidth: .infinity,
-                           minHeight: Theme.primaryButtonHeight)
-                    .background(Theme.accent.opacity(0.15),
-                                in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
-                    .transition(.opacity)
+                Group {
+                    if let reopen {
+                        Button(action: reopen) { sentLabel }
+                            .buttonStyle(.plain)
+                            .accessibilityHint("Rouvre la séance en grand")
+                    } else {
+                        sentLabel
+                    }
+                }
+                .transition(.opacity)
             case .failed(let reason):
                 VStack(alignment: .leading, spacing: Space.m) {
                     Label("Montre injoignable", systemImage: "exclamationmark.circle")
@@ -71,6 +77,15 @@ struct StartOnWatchButton: View {
     }
 
     static let sentLifetime: TimeInterval = 600
+
+    private var sentLabel: some View {
+        Label("En cours sur ta montre", systemImage: "applewatch")
+            .font(.coach(.body, weight: .bold))
+            .foregroundStyle(Theme.accent)
+            .frame(maxWidth: .infinity, minHeight: Theme.primaryButtonHeight)
+            .background(Theme.accent.opacity(0.15),
+                        in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+    }
 
     private func send() {
         guard !sending else { return }

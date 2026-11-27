@@ -17,6 +17,8 @@ struct CoachTabBar<ID: Hashable>: View {
     let tabs: [CoachTab<ID>]
     @Binding var selection: ID
     /// Appui sur l'onglet déjà choisi : retour à son premier écran, en haut de la page.
+    /// Au-dessus des onglets : le bandeau « séance en cours sur la montre » (#146).
+    var accessory: AnyView?
     var reselect: (ID) -> Void = { _ in }
 
     /// Clavier ouvert : la barre s'efface au lieu de remonter avec lui.
@@ -27,13 +29,16 @@ struct CoachTabBar<ID: Hashable>: View {
     var body: some View {
         Group {
             if !keyboardShown {
-                HStack(spacing: 0) {
-                    ForEach(Array(tabs.enumerated()), id: \.element.id) { index, tab in
-                        item(tab, index: index)
+                VStack(spacing: 0) {
+                    accessory
+                    HStack(spacing: 0) {
+                        ForEach(Array(tabs.enumerated()), id: \.element.id) { index, tab in
+                            item(tab, index: index)
+                        }
                     }
+                    .padding(.horizontal, Theme.tabPressInset * 2)
+                    .padding(.bottom, noBottomInset ? Theme.tabBarBottomPadding : 0)
                 }
-                .padding(.horizontal, Theme.tabPressInset * 2)
-                .padding(.bottom, noBottomInset ? Theme.tabBarBottomPadding : 0)
                 .background {
                     GeometryReader { geometry in
                         Color.clear.onAppear { noBottomInset = geometry.safeAreaInsets.bottom == 0 }
@@ -123,17 +128,21 @@ extension EnvironmentValues {
     /// Compteur de ré-appuis sur l'onglet affiché : chaque onglet y réagit à sa façon
     /// (Plan : retour à l'accueil, puis en haut de la page).
     @Entry var tabReselect = 0
+    /// Hauteur du bandeau posé au-dessus des onglets (#146) : réservée sous chaque page.
+    @Entry var tabAccessoryHeight: CGFloat = 0
 }
 
 /// Place réservée sous un écran pour la barre d'onglets, posée par-dessus (`coachTabBar`).
 /// Se replie quand le clavier est ouvert, comme la barre.
 private struct TabBarSpacer: View {
     @State private var keyboardShown = false
+    @Environment(\.tabAccessoryHeight) private var accessoryHeight
 
     var body: some View {
         Color.clear
             // Barre + fondu : un bouton fixé en bas d'écran reste au-dessus du fondu.
-            .frame(height: keyboardShown ? 0 : Theme.tabBarHeight + Theme.tabBarBottomPadding + Theme.bottomFadeHeight)
+            .frame(height: keyboardShown ? 0
+                   : Theme.tabBarHeight + Theme.tabBarBottomPadding + Theme.bottomFadeHeight + accessoryHeight)
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
                 keyboardShown = true
             }

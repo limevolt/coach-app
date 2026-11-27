@@ -25,6 +25,18 @@ final class GuidedMirror {
     /// Délai pendant lequel on attend la montre.
     static let expectFor: TimeInterval = 60
 
+    /// Rouvrir l'écran de suivi fermé (bandeau, « En cours sur ta montre ») (#146).
+    private(set) var reopenToken = 0
+    private(set) var reopenId: String?
+
+    func reopen(_ sessionId: String) {
+        reopenId = sessionId
+        reopenToken += 1
+    }
+
+    /// Détail de séance affiché : pas de bandeau pour cette séance-là (son bouton la rouvre).
+    var detailShown: String?
+
     /// L'envoi à la montre a échoué : l'écran d'attente propose tout de suite l'iPhone seul.
     private(set) var startFailed = false
 

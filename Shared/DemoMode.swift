@@ -19,12 +19,15 @@ enum DemoMode {
         .split(separator: ",").map(String.init)
     /// Douleur signalée sur les séances faites (#44), ex. « knee ».
     static let painZone: String? = ProcessInfo.processInfo.environment["COACH_DEMO_PAIN"]
+    /// Séance qui « tourne sur la montre » (#146) : l'iPhone reçoit un faux état toutes les 5 s.
+    static let watchSessionId: String? = ProcessInfo.processInfo.environment["COACH_DEMO_WATCH"]
     #else
     static let planJSON: String? = nil
     static let isOn = false
     static let doneIds: [String] = []
     static let activitySpecs: [String] = []
     static let painZone: String? = nil
+    static let watchSessionId: String? = nil
     #endif
 
     static var plan: TrainingPlan? {
