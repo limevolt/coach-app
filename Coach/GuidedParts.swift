@@ -70,6 +70,8 @@ struct GuidedRoundButton: View {
 struct GuidedHeader: View {
     let position: String
     let silent: Bool
+    /// Fond d'effort teinté : texte secondaire plus clair (contraste 4,5:1).
+    var onTint = false
     let onClose: () -> Void
     /// nil : pas de fiche (« Prêt ? », repos).
     var onHelp: (() -> Void)?
@@ -86,7 +88,7 @@ struct GuidedHeader: View {
                 Label("Montre injoignable", systemImage: "applewatch.slash")
                     .font(.detail).foregroundStyle(Theme.warm)
             } else {
-                Text(position).font(.detail).foregroundStyle(Theme.muted).monospacedDigit()
+                Text(position).font(.detail).foregroundStyle(onTint ? Theme.mutedOnTint : Theme.muted).monospacedDigit()
             }
             Spacer()
             if let onHelp {

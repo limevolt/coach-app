@@ -210,6 +210,7 @@ struct StrengthGuidedView: View {
     private var header: some View {
         GuidedHeader(position: "Exercice \(min(clock.exerciseIndex + 1, exercises.count)) sur \(exercises.count)",
                      silent: mirrored && mirror.isSilent(at: .now),
+                     onTint: !clock.isPaused && (clock.step == .work || clock.step == .timed),
                      // Miroir : fermer l'écran de l'iPhone seulement, la séance continue sur la montre.
                      onClose: { if mirrored { dismiss() } else { confirmQuit = true } },
                      onHelp: helpAction)
@@ -239,8 +240,7 @@ struct StrengthGuidedView: View {
                     .frame(height: Theme.guidedProgressHeight)
             }
         }
-        .accessibilityElement()
-        .accessibilityLabel("Exercice \(min(clock.exerciseIndex + 1, exercises.count)) sur \(exercises.count)")
+        .accessibilityHidden(true)   // l'en-tête dit déjà « Exercice x sur y »
     }
 
     private func prepareBody(now: Date) -> some View {
@@ -334,7 +334,6 @@ struct StrengthGuidedView: View {
                 Button("+30 s") { act(.addRest) { clock.addRest() } }.buttonStyle(.coachQuiet())
                 Button("Passer le repos") { act(.skip) { clock.skip(exercises, at: .now) } }
                     .buttonStyle(.coachQuiet())
-                    .layoutPriority(1)
             }
         }
     }

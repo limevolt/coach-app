@@ -188,6 +188,7 @@ struct GuidedSessionView: View {
         let ex = seg.kind != .prepare ? exercise(for: seg) : nil
         // Miroir : fermer l'écran de l'iPhone seulement, la séance continue sur la montre.
         return GuidedHeader(position: roundLabel(seg), silent: mirrored && mirror.isSilent(at: .now),
+                            onTint: seg.kind == .work && !clock.isPaused,
                             onClose: { if mirrored { dismiss() } else { confirmQuit = true } },
                             onHelp: ex.map { ex in {
                                 // La fiche met la séance en pause (seule sur l'iPhone ; en miroir, la montre continue).

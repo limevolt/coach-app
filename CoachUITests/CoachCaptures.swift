@@ -42,8 +42,13 @@ final class CoachCaptures: XCTestCase {
                 shot("06b-seance-en-cours-montre")
             }
             // Renfo guidé sur l'iPhone (#142) : « Prêt ? », série, puis repos avec correction des reps.
+            // Le bouton « Démarrer » change de taille juste après l'envoi : on attend que l'écran soit posé.
+            Thread.sleep(forTimeInterval: 2)
             if tap("Suivre sur l'iPhone", in: app) {
-                shot("06f-renfo-pret", settle: 1.5)
+                if !app.staticTexts["Prêt ?"].waitForExistence(timeout: 3) {
+                    _ = tap("Suivre sur l'iPhone", in: app)   // appui perdu pendant une animation : un 2e essai
+                }
+                shot("06f-renfo-pret", settle: 0.5)
                 shot("06g-renfo-serie", settle: 5)
                 audit("Renfo guidé — série", app)
                 if tap("Série faite", in: app) {
@@ -236,6 +241,17 @@ final class CoachCaptures: XCTestCase {
             app.swipeUp()
             shot("65-adapter-grand-texte-suite")
             audit("Adapter — grand texte", app)
+        }
+
+        // Renfo guidé en très grand texte (#142) : seul le visuel rétrécit, les boutons restent visibles.
+        app = launchDemo(plan: DemoPlan.json(),
+                         arguments: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityL"])
+        _ = app.buttons["onglet-Plan"].waitForExistence(timeout: 30)
+        if openSession("Renfo A", in: app), tap("Suivre sur l'iPhone", in: app) {
+            shot("06i-renfo-serie-grand-texte", settle: 7)
+            audit("Renfo guidé — grand texte", app)
+        } else {
+            note("Renfo en grand texte : « Suivre sur l'iPhone » introuvable")
         }
 
         // 5. Accueil en très grande taille de texte
