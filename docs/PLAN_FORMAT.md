@@ -107,11 +107,12 @@ Pour chaque exercice avec charge ou matériel (haltères, barre, machine…), aj
 
 ```json
 { "name": "Rowing haltères", "sets": 3, "reps": 10, "weightKg": 12, "restSec": 75, "animation": "row",
-  "noEquipment": { "name": "Rowing sac à dos", "reps": 12, "animation": "row",
+  "noEquipment": { "name": "Rowing sac à dos", "reps": 12,
                    "instructions": ["Remplis un sac à dos.", "Buste penché, dos plat.", "Tire le sac vers le nombril."] } }
 ```
 
-- Champs : `name` (obligatoire), `sets`, `reps` ou `durationSec`, `restSec`, `notes`, `instructions`, `animation`. Les champs absents reprennent ceux de l'exercice.
+- Champs : `name` (obligatoire), `sets`, `reps` ou `durationSec`, `restSec`, `notes`, `instructions`, `animation`. Les séries, répétitions et repos absents reprennent ceux de l'exercice.
+- **Consignes et animation ne sont jamais reprises de l'exercice avec matériel.** Mets des `instructions` propres à la variante (sinon l'app prend celles de sa variante intégrée du même nom, ou affiche « Pas encore de consignes »). `animation` seulement si elle montre vraiment la variante : les animations aux haltères (`rdl`, `row`) sont ignorées, et sans animation l'app n'en affiche aucune plutôt qu'une fausse.
 - Sans `noEquipment`, l'app choisit une variante intégrée (squat → squat sauté, rowing → rowing sac à dos, mollets → mollets sur une marche…) ou retire la charge.
 
 ### Champs remplis par l'app
@@ -119,6 +120,7 @@ Pour chaque exercice avec charge ou matériel (haltères, barre, machine…), aj
 L'utilisateur peut adapter une séance depuis l'iPhone (autre activité, sans matériel, échange de jours). L'app note alors dans la séance :
 - `originalDate` : date prévue à l'origine (séance déplacée) ;
 - `replaces` : titre de la séance remplacée ;
+- `homeVariant` (sur un exercice) : `true` = variante sans matériel appliquée par l'app ;
 - `coachNote` : ce que le coach de l'app a changé (« Déplacée par le coach (squash jeudi) », « Allégée par le coach (squash la veille) »).
 
 Dans un plan mis à jour, **supprime `originalDate`, `replaces` et `coachNote`** (tiens-en compte pour la suite).
@@ -127,7 +129,7 @@ Dans un plan mis à jour, **supprime `originalDate`, `replaces` et `coachNote`**
 
 - `instructions` : liste de 2 à 5 phrases courtes (position, mouvement, erreurs à éviter). Affichées sur la montre (« Comment faire ? ») et sur l'iPhone.
 - `mistakes` : erreurs à éviter (facultatif ; sinon celles de la bibliothèque).
-- `animation` : animation intégrée à utiliser. Valeurs : `squat`, `squatJump`, `pushup`, `plank`, `sidePlank`, `lunge`, `jumpingJack`, `mountainClimber`, `rdl` (soulevé de terre roumain), `row` (rowing haltères), `calfRaise` (mollets), `gluteBridge` (pont fessier). Si absent, l'app la devine d'après le nom (« Squat sauté », « Pompes », « Fentes »…). Privilégie ces exercices : ils sont animés. Pour un autre exercice, mets des `instructions` détaillées.
+- `animation` : animation intégrée à utiliser. Valeurs : `squat`, `squatJump`, `pushup`, `plank`, `sidePlank`, `lunge`, `jumpingJack`, `mountainClimber`, `rdl` (soulevé de terre roumain), `row` (rowing haltères), `calfRaise` (mollets), `gluteBridge` (pont fessier). Si absent, l'app la devine d'après le nom (« Squat sauté », « Pompes », « Fentes »…), sauf pour une autre version que celle dessinée (« … sur une jambe », « sans charge », « inversé ») : pas d'animation plutôt qu'une fausse. Privilégie ces exercices : ils sont animés. Pour un autre exercice, mets des `instructions` détaillées.
 - `videoURL` : lien vers une démo (YouTube, fichier iCloud, vidéo générée par IA…). Bouton « Voir la démo » sur l'iPhone.
 
 ## Limites

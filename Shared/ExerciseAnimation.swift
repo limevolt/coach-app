@@ -152,6 +152,8 @@ struct ExerciseAnimation: Identifiable {
     let name: String
     var muscles: [Muscle]
     var dumbbells = false
+    /// Sur une jambe : la seule animation acceptée pour un exercice « … sur une jambe ».
+    var singleLeg = false
     var wide = false
     var scale: CGFloat = 1
     var raise: CGFloat = 0          // remonte les exercices au sol pour les centrer

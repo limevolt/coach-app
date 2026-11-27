@@ -15,6 +15,12 @@ enum ExerciseLibrary {
     }
 
     static func animation(for exercise: Exercise) -> ExerciseAnimation? {
+        if exercise.homeVariant == true {
+            // Variante sans matériel : uniquement l'animation prévue pour elle, jamais devinée d'après le nom
+            // (« Soulevé de terre roumain sur une jambe » trouvait l'animation aux haltères). Aucune plutôt qu'une fausse.
+            guard let id = exercise.animation, let a = animation(id: id), !a.dumbbells else { return nil }
+            return a
+        }
         if let id = exercise.animation, let a = animation(id: id) { return a }
         return animation(forName: exercise.name)
     }
@@ -37,10 +43,19 @@ enum ExerciseLibrary {
             (["pont", "bridge", "hip thrust"], "gluteBridge")
         ]
         for rule in rules where rule.keys.contains(where: { n.contains($0) }) {
-            return animation(id: rule.id)
+            guard let a = animation(id: rule.id) else { return nil }
+            // Une autre version que celle dessinée : aucune animation plutôt qu'une fausse
+            // (« Soulevé de terre roumain sur une jambe » n'est pas la version aux haltères sur deux jambes).
+            if n.contains("une jambe") && !a.singleLeg { return nil }
+            if a.dumbbells && bodyweightMarkers.contains(where: { n.contains($0) }) { return nil }
+            return a
         }
         return nil
     }
+
+    /// Mots qui désignent une version sans charge d'un exercice dessiné aux haltères.
+    private static let bodyweightMarkers = ["unilateral", "inverse", "sac a dos", "poids du corps", "sans charge",
+                                            "sans materiel", "table"]
 
     // MARK: Constructeurs de poses
 

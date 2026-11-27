@@ -14,13 +14,9 @@ struct ExerciseGuideView: View {
     @State private var anchor = Date()
 
     private var animation: ExerciseAnimation? { ExerciseLibrary.animation(for: exercise) }
-    /// Jamais vide si on connaît l'exercice : consignes du plan, sinon celles de l'animation,
-    /// sinon les consignes écrites de `ExerciseSteps` (exercices sans animation).
-    private var steps: [String] {
-        if let own = exercise.instructions, !own.isEmpty { return own }
-        if let anim = animation?.steps, !anim.isEmpty { return anim }
-        return ExerciseSteps.steps(forName: exercise.name) ?? []
-    }
+    /// Consignes du plan, sinon celles de l'animation, sinon les consignes écrites de `ExerciseSteps`.
+    /// Vide pour une variante sans matériel dont on n'a que les consignes avec matériel (avertissement).
+    private var steps: [String] { ExerciseSteps.steps(for: exercise, animation: animation) }
     private var usesLibrarySteps: Bool { (exercise.instructions ?? []).isEmpty && !(animation?.steps ?? []).isEmpty }
     private var mistakes: [String] { exercise.mistakes ?? animation?.mistakes ?? [] }
 
@@ -248,13 +244,20 @@ struct ExerciseGuideView: View {
     private var noAnimation: some View {
         VStack(spacing: Space.s) {
             Image(systemName: "figure.strengthtraining.functional").font(.system(size: 44)).foregroundStyle(Theme.accent)
-            Text(steps.isEmpty ? "Pas encore de consignes pour cet exercice." : "Pas encore d'animation : suis les étapes.")
+            Text(noAnimationText)
                 .font(.text)
                 .foregroundStyle(Theme.text)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, Space.xxl)
         .card()
+    }
+
+    private var noAnimationText: String {
+        if !steps.isEmpty { return "Pas encore d'animation : suis les étapes." }
+        return exercise.homeVariant == true
+            ? "Pas encore de consignes pour cette version sans matériel."
+            : "Pas encore de consignes pour cet exercice."
     }
 
     private func sectionTitle(_ text: String) -> some View {
