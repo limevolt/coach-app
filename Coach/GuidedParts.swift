@@ -108,17 +108,32 @@ struct GuidedHeader: View {
 }
 
 /// Miroir ouvert avant le premier message de la montre, ou plan différent sur la montre.
+/// Sans nouvelles après quelques secondes : « Continuer sur l'iPhone seul ».
 struct GuidedWaitingScreen: View {
     let mismatch: Bool
     let onClose: () -> Void
+    var onAlone: (() -> Void)?
+
+    /// Attente avant de proposer l'iPhone seul.
+    static let aloneAfter: TimeInterval = 10
+    @State private var openedAt = Date.now
 
     var body: some View {
-        VStack(spacing: Space.l) {
-            ProgressView().tint(Theme.accent)
-            Text(mismatch ? "La montre n'a pas le même plan. Ouvre Coach sur la montre pour le recevoir."
-                          : "En attente de la montre")
-                .font(.text).foregroundStyle(Theme.muted).multilineTextAlignment(.center)
-            Button("Fermer", action: onClose).buttonStyle(.coachQuiet())
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            let failed = GuidedMirror.shared.startFailed
+            let late = mismatch || failed || context.date.timeIntervalSince(openedAt) >= Self.aloneAfter
+            VStack(spacing: Space.l) {
+                ProgressView().tint(Theme.accent)
+                Text(mismatch ? "La montre n'a pas le même plan. Ouvre Coach sur la montre pour le recevoir."
+                              : late ? "La montre ne répond pas. Ouvre Coach sur la montre, ou continue sur l'iPhone."
+                                     : "Démarrage sur la montre…")
+                    .font(.text).foregroundStyle(Theme.muted).multilineTextAlignment(.center)
+                // Pas quand la montre mène déjà une séance (plan différent) : on aurait deux séances.
+                if late, !mismatch, let onAlone {
+                    Button("Continuer sur l'iPhone seul", action: onAlone).buttonStyle(.coachPrimary())
+                }
+                Button("Fermer", action: onClose).buttonStyle(.coachQuiet())
+            }
         }
         .padding(.horizontal, Theme.screenMargin)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -133,21 +148,36 @@ enum GuidedSound {
 }
 
 /// Séance guidée de l'iPhone qui convient : circuit, ou renfo en séries (#142).
+/// En miroir, si la montre ne répond pas, on peut passer à l'iPhone seul.
 struct GuidedRunView: View {
     let session: PlannedSession
     var mode: GuidedSessionView.Mode = .alone
     var onFeedback: () -> Void = {}
 
+    @State private var alone = false
+    private var effectiveMode: GuidedSessionView.Mode { alone ? .alone : mode }
+
     /// Séance qu'on peut suivre sur l'iPhone : un circuit ou un renfo avec des exercices.
-    static func canGuide(_ session: PlannedSession) -> Bool {
-        !(session.circuit?.exercises.isEmpty ?? true) || !(session.strength?.exercises.isEmpty ?? true)
-    }
+    static func canGuide(_ session: PlannedSession) -> Bool { session.guidedKind != nil }
 
     var body: some View {
-        if !(session.circuit?.exercises.isEmpty ?? true) {
-            GuidedSessionView(session: session, mode: mode, onFeedback: onFeedback)
-        } else {
-            StrengthGuidedView(session: session, mode: mode, onFeedback: onFeedback)
+        Group {
+            if session.guidedKind == .circuit {
+                GuidedSessionView(session: session, mode: effectiveMode, onFeedback: onFeedback,
+                                  onAlone: continueAlone)
+            } else {
+                StrengthGuidedView(session: session, mode: effectiveMode, onFeedback: onFeedback,
+                                   onAlone: continueAlone)
+            }
         }
+        .id(alone)   // l'écran repart de zéro en mode « iPhone seul »
+    }
+
+    /// La montre ne répond pas : l'iPhone mène seul, et la demande de départ est retirée
+    /// (sinon la montre pourrait lancer la même séance plus tard, en double).
+    private func continueAlone() {
+        PhoneConnectivity.shared.cancelStart()
+        GuidedMirror.shared.clearExpected()
+        alone = true
     }
 }

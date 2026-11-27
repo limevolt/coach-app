@@ -37,39 +37,41 @@ final class CoachCaptures: XCTestCase {
             app.swipeUp()
             shot("06-seance-renfo-bas")
             app.swipeDown()
-            // « Démarrer » → « En cours sur ta montre » (#5)
+            // « Démarrer » avec une montre (#142) : la séance part sur la montre et l'iPhone ouvre le suivi.
+            // En mode démo, la montre ne répond jamais : après 10 s, « Continuer sur l'iPhone seul ».
             if tap("Démarrer", in: app) {
-                shot("06b-seance-en-cours-montre")
+                shot("06b-attente-montre", settle: 1.5)
+                let alone = app.buttons["Continuer sur l'iPhone seul"].firstMatch
+                if alone.waitForExistence(timeout: 15) {
+                    shot("06b2-montre-sans-reponse", settle: 0.5)
+                    audit("Attente de la montre", app)
+                    alone.tap()
+                    // Renfo guidé sur l'iPhone : « Prêt ? », série, puis repos avec correction des reps.
+                    shot("06f-renfo-pret", settle: 1)
+                    shot("06g-renfo-serie", settle: 5)
+                    audit("Renfo guidé — série", app)
+                    if tap("Série faite", in: app) {
+                        shot("06h-renfo-repos", settle: 1)
+                        audit("Renfo guidé — repos", app)
+                    }
+                    let close = app.buttons["Quitter la séance"].firstMatch
+                    if close.waitForExistence(timeout: 3) {
+                        close.tap()
+                        _ = tap("Abandonner", in: app)
+                    }
+                } else {
+                    note("Renfo : « Continuer sur l'iPhone seul » introuvable")
+                }
             }
-            // Renfo guidé sur l'iPhone (#142) : « Prêt ? », série, puis repos avec correction des reps.
-            // Le bouton « Démarrer » change de taille juste après l'envoi : on attend que l'écran soit posé.
-            Thread.sleep(forTimeInterval: 2)
-            if tap("Suivre sur l'iPhone", in: app) {
-                if !app.staticTexts["Prêt ?"].waitForExistence(timeout: 3) {
-                    _ = tap("Suivre sur l'iPhone", in: app)   // appui perdu pendant une animation : un 2e essai
-                }
-                shot("06f-renfo-pret", settle: 0.5)
-                shot("06g-renfo-serie", settle: 5)
-                audit("Renfo guidé — série", app)
-                if tap("Série faite", in: app) {
-                    shot("06h-renfo-repos", settle: 1)
-                    audit("Renfo guidé — repos", app)
-                }
-                let close = app.buttons["Quitter la séance"].firstMatch
-                if close.waitForExistence(timeout: 3) {
-                    close.tap()
-                    _ = tap("Abandonner", in: app)
-                }
-            } else {
-                note("Renfo : « Suivre sur l'iPhone » introuvable")
-            }
+            // Retour sur le détail : « En cours sur ta montre » (#5) et « Sans la montre ».
+            shot("06b-seance-en-cours-montre", settle: 1)
             back(app)
         }
         // Circuit : détail en vignettes (#129) et séance guidée sur l'iPhone (#130)
         if openSession("Circuit découverte", in: app) {
             shot("06c-seance-circuit")
             audit("Séance circuit", app)
-            if tap("Suivre sur l'iPhone", in: app) {
+            if tap("Sans la montre", in: app) {
                 shot("06d-guidee-pret", settle: 1.5)
                 shot("06e-guidee-effort", settle: 12)
                 let close = app.buttons["Quitter la séance"].firstMatch
@@ -78,7 +80,7 @@ final class CoachCaptures: XCTestCase {
                     _ = tap("Abandonner", in: app)
                 }
             } else {
-                note("« Suivre sur l'iPhone » introuvable")
+                note("« Sans la montre » introuvable")
             }
             back(app)
         }
@@ -247,11 +249,11 @@ final class CoachCaptures: XCTestCase {
         app = launchDemo(plan: DemoPlan.json(),
                          arguments: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityL"])
         _ = app.buttons["onglet-Plan"].waitForExistence(timeout: 30)
-        if openSession("Renfo A", in: app), tap("Suivre sur l'iPhone", in: app) {
+        if openSession("Renfo A", in: app), tap("Sans la montre", in: app) {
             shot("06i-renfo-serie-grand-texte", settle: 7)
             audit("Renfo guidé — grand texte", app)
         } else {
-            note("Renfo en grand texte : « Suivre sur l'iPhone » introuvable")
+            note("Renfo en grand texte : « Sans la montre » introuvable")
         }
 
         // 5. Accueil en très grande taille de texte

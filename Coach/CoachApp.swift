@@ -44,6 +44,9 @@ struct ContentView: View {
     @State private var closedMirror: String?
     /// Écran de suivi vraiment affiché (une autre feuille ouverte peut l'empêcher de s'afficher).
     @State private var shownMirror: String?
+    /// Séance finie sur l'iPhone seul depuis l'écran de suivi : « Donner mon ressenti » ouvre le retour ensuite.
+    @State private var feedbackAfterMirror: PlannedSession?
+    @State private var feedbackSession: PlannedSession?
 
     enum AppTab: Hashable { case plan, timers, settings }
 
@@ -76,12 +79,19 @@ struct ContentView: View {
         // Vérifié à chaque message (toutes les 5 s) : l'iPhone ouvert en pleine séance la rattrape.
         .onChange(of: GuidedMirror.shared.messages, initial: true) { _, _ in presentMirrorIfNeeded() }
         .fullScreenCover(item: $mirrorSession, onDismiss: {
-            closedMirror = GuidedMirror.shared.live?.sessionId
+            // Fermé (même en attente de la montre) : pas rouvert tant que cette séance continue sur la montre.
+            closedMirror = GuidedMirror.shared.live?.sessionId ?? GuidedMirror.shared.expectedId
+            GuidedMirror.shared.clearExpected()
             shownMirror = nil
+            if let pending = feedbackAfterMirror {
+                feedbackAfterMirror = nil
+                feedbackSession = pending
+            }
         }) { session in
-            GuidedRunView(session: session, mode: .mirror)
+            GuidedRunView(session: session, mode: .mirror) { feedbackAfterMirror = session }
                 .onAppear { shownMirror = session.id }
         }
+        .sheet(item: $feedbackSession) { FeedbackSheet(session: $0) }
         .alert("Coach",
                isPresented: Binding(get: { store.alertMessage != nil },
                                     set: { if !$0 { store.alertMessage = nil } })) {
@@ -95,15 +105,17 @@ struct ContentView: View {
 extension ContentView {
     /// Séance de circuit ou de renfo (#142) en cours sur la montre : l'écran de suivi s'ouvre (une fois par séance si on le ferme).
     private func presentMirrorIfNeeded() {
-        guard let live = GuidedMirror.shared.live else {
+        guard let showId = GuidedMirror.shared.sessionToShow else {
             closedMirror = nil
             // Demandé mais jamais affiché (une autre feuille était ouverte) : on oublie.
             if let pending = mirrorSession, shownMirror != pending.id { mirrorSession = nil }
             return
         }
-        if let pending = mirrorSession, shownMirror != pending.id, pending.id != live.sessionId { mirrorSession = nil }
-        guard mirrorSession == nil, closedMirror != live.sessionId,
-              let session = store.plan?.sessions.first(where: { $0.id == live.sessionId })?.effective,
+        if let pending = mirrorSession, shownMirror != pending.id, pending.id != showId { mirrorSession = nil }
+        // Séance déjà notée faite (finie sur l'iPhone seul) : un état tardif de la montre ne rouvre rien.
+        if store.isDone(showId), GuidedMirror.shared.expectedId != showId { return }
+        guard mirrorSession == nil, closedMirror != showId,
+              let session = store.plan?.sessions.first(where: { $0.id == showId })?.effective,
               GuidedRunView.canGuide(session) else { return }
         mirrorSession = session
     }

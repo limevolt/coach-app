@@ -588,11 +588,16 @@ final class PlanStore {
     /// Lance la séance sur la montre : Coach s'y ouvre et la séance démarre aussitôt
     /// (sauf la course, qui s'ouvre prête dans l'app Exercice).
     func startOnWatch(_ session: PlannedSession) async -> WatchStartResult {
+        // Circuit ou renfo : l'iPhone ouvre tout de suite l'écran de suivi, qui attend la montre (#142).
+        let guided = session.guidedKind != nil
+        if guided { GuidedMirror.shared.expect(session.id) }
         // Captures automatiques : pas de montre, on montre l'état « en cours ».
         if DemoMode.isOn || !connectsToWatch { return .sent }
         pushToWatch()
         let request = StartRequest(id: session.id, isTimer: false, sentAt: .now, autoStart: true)
-        return await PhoneConnectivity.shared.startOnWatch(request, configuration: session.workoutConfiguration)
+        let result = await PhoneConnectivity.shared.startOnWatch(request, configuration: session.workoutConfiguration)
+        if guided, !result.isSent { GuidedMirror.shared.markStartFailed() }
+        return result
     }
 
     /// Même chose pour un minuteur libre.

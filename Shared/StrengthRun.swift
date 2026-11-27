@@ -214,3 +214,19 @@ struct StrengthClock: Codable, Equatable {
         weight = current(exercises)?.weightKg ?? 0
     }
 }
+
+// MARK: - Séance suivie sur la montre et l'iPhone
+
+/// Séance guidée commune à la montre et à l'iPhone : circuit ou renfo en séries. Même règle des deux côtés,
+/// pour que l'iPhone attende le bon écran de la montre (#142).
+enum GuidedKind { case circuit, strength }
+
+extension PlannedSession {
+    /// nil pour une course (l'app Exercice la mène) ou une séance sans exercices.
+    var guidedKind: GuidedKind? {
+        if type == .run { return nil }
+        if type == .circuit, !(circuit?.exercises.isEmpty ?? true) { return .circuit }
+        if !(strength?.exercises.isEmpty ?? true) { return .strength }
+        return nil
+    }
+}

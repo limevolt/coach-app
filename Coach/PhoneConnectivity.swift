@@ -116,6 +116,17 @@ final class PhoneConnectivity: NSObject, WCSessionDelegate {
         return .failed("La montre ne répond pas. Vérifie qu'elle est au poignet, déverrouillée et près de l'iPhone, ou ouvre Coach dessus : la séance sera en haut.")
     }
 
+    /// « Continuer sur l'iPhone seul » : la demande de départ est retirée du contexte de la montre,
+    /// pour qu'elle ne lance pas la même séance plus tard (#142).
+    func cancelStart() {
+        startRequest = nil
+        var context = pending ?? WCSession.default.applicationContext
+        guard context["start"] != nil else { return }
+        context["start"] = nil
+        pending = context
+        flush()
+    }
+
     /// `startWatchApp` exige l'autorisation d'enregistrer des entraînements. Demandée une fois ;
     /// renvoie un message si elle est refusée.
     private func ensureWorkoutSharing() async -> String? {
