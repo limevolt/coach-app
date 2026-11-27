@@ -272,18 +272,41 @@ struct StrengthGuidedView: View {
             .foregroundStyle(Theme.text)
             target(ex, now: now)
             Spacer(minLength: 0)
-            HStack(spacing: Space.l) {
-                GuidedRoundButton(icon: "backward.end.fill", label: "Série précédente") {
-                    act(.previous) { clock.previous(exercises, at: .now) }
+            // Très grand texte : « Série faite » sur toute la largeur, précédent et pause en dessous.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: Space.l) {
+                    previousButton
+                    setDoneButton
+                    pauseButton
                 }
-                .disabled(clock.exerciseIndex == 0 && clock.setNumber == 1)
-                Button { act(.setDone) { clock.setDone(exercises, at: .now) } } label: {
-                    Label("Série faite", systemImage: "checkmark")
+                VStack(spacing: Space.m) {
+                    setDoneButton
+                    HStack {
+                        previousButton
+                        Spacer()
+                        pauseButton
+                    }
                 }
-                .buttonStyle(.coachPrimary())
-                GuidedRoundButton(icon: "pause.fill", label: "Pause") { act(.pause) { togglePause() } }
             }
         }
+    }
+
+    private var previousButton: some View {
+        GuidedRoundButton(icon: "backward.end.fill", label: "Série précédente") {
+            act(.previous) { clock.previous(exercises, at: .now) }
+        }
+        .disabled(clock.exerciseIndex == 0 && clock.setNumber == 1)
+    }
+
+    private var setDoneButton: some View {
+        Button { act(.setDone) { clock.setDone(exercises, at: .now) } } label: {
+            Label("Série faite", systemImage: "checkmark").lineLimit(1)
+        }
+        .buttonStyle(.coachPrimary())
+    }
+
+    private var pauseButton: some View {
+        GuidedRoundButton(icon: "pause.fill", label: "Pause") { act(.pause) { togglePause() } }
     }
 
     /// Objectif de la série : répétitions (réglées à la couronne sur la montre) ou décompte, et poids.
