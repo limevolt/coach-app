@@ -32,7 +32,7 @@ enum ExerciseLibrary {
             (["squat saut", "jump squat", "squat jump"], "squatJump"),
             (["squat"], "squat"),
             (["pompe", "push"], "pushup"),
-            (["gainage lat", "planche lat", "side plank", "lateral"], "sidePlank"),
+            (["gainage lat", "planche lat", "side plank"], "sidePlank"),   // pas « lateral » seul : « unilatéral »
             (["gainage", "planche", "plank"], "plank"),
             (["fente", "lunge"], "lunge"),
             (["jumping", "jack"], "jumpingJack"),

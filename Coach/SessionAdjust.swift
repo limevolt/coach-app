@@ -197,6 +197,9 @@ enum Bodyweight {
         return ([e.name, e.notes ?? ""] + (e.instructions ?? [])).contains(where: EquipmentText.mentions)
     }
 
+    /// Noms d'exercices déjà sans matériel : jamais remplacés par une variante intégrée.
+    private static let bodyweightNames = ["inverse", "sous une table", "poids du corps", "sans charge", "sans materiel"]
+
     /// Variante intégrée qui porte exactement ce nom (« Soulevé de terre roumain sur une jambe »…).
     private static func rule(named name: String) -> Rule? {
         let n = normalized(name)
@@ -232,8 +235,8 @@ enum Bodyweight {
         let rule = rules.first { r in r.keys.contains { n.contains($0) } }
         let loaded = needsEquipment(e)
 
-        // 2. Déjà au poids du corps (pompes, gainage, dead bug…) : rien à changer
-        guard loaded || rule?.always == true else { return e }
+        // 2. Déjà au poids du corps (pompes, gainage, dead bug, rowing inversé sous une table…) : rien à changer
+        guard loaded || (rule?.always == true && !bodyweightNames.contains { n.contains($0) }) else { return e }
         if let rule, normalized(rule.name) == n {
             var same = e
             same.weightKg = nil

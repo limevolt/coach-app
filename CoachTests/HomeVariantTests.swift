@@ -102,4 +102,50 @@ final class HomeVariantTests: XCTestCase {
         XCTAssertEqual(v, plank)
         XCTAssertEqual(ExerciseLibrary.animation(for: v)?.id, "plank")
     }
+
+    // Relecture : « unilatéral » n'est pas un gainage latéral.
+    func testUnilateralIsNotASidePlank() {
+        XCTAssertNil(ExerciseLibrary.animation(forName: "Rowing unilatéral"))
+        XCTAssertNil(ExerciseLibrary.animation(forName: "RDL unilatéral"))
+        XCTAssertEqual(ExerciseLibrary.animation(forName: "Gainage latéral")?.id, "sidePlank")
+    }
+
+    // Relecture : mots entiers seulement, pas de morceaux de mots.
+    func testEquipmentWordsAreWholeWords() {
+        XCTAssertFalse(EquipmentText.mentions("Presse le sol avec les mains."))
+        XCTAssertFalse(EquipmentText.mentions("Réception élastique, genoux souples."))
+        XCTAssertFalse(EquipmentText.mentions("Pompes au poids du corps."))
+        XCTAssertTrue(EquipmentText.mentions("Deux haltères devant les cuisses."))
+        XCTAssertTrue(EquipmentText.mentions("Assis sur un banc."))
+        XCTAssertTrue(EquipmentText.mentions("Squat avec 20 kg."))
+        XCTAssertTrue(EquipmentText.mentions("10 min de vélo d'appartement"))
+    }
+
+    // Relecture : un exercice déjà sans matériel du coach local reste tel quel.
+    func testInvertedRowUnderATableIsKept() {
+        let row = Exercise(name: "Rowing inversé sous une table", sets: 3, reps: 10, restSec: 60)
+        XCTAssertEqual(home([row])[0], row)
+    }
+
+    // Chemin « même nom que la variante » : charge retirée, consignes avec matériel remplacées.
+    func testSameNameAsVariantDropsEquipmentInstructions() {
+        let e = Exercise(name: "Squat sauté", sets: 3, reps: 10, weightKg: 8, restSec: 60,
+                         instructions: ["Un haltère dans chaque main."], animation: "rdl")
+        let v = home([e])[0]
+        XCTAssertNil(v.weightKg)
+        XCTAssertEqual(v.homeVariant, true)
+        XCTAssertFalse(v.instructions?.contains(where: EquipmentText.mentions) ?? true)
+        XCTAssertEqual(ExerciseLibrary.animation(for: v)?.id, "squatJump")
+    }
+
+    func testShadowBoxingIsMarkedAsVariant() {
+        let session = PlannedSession(id: "m", date: "2030-01-08", time: nil, type: .circuit, title: "Martial cross",
+                                     notes: nil, run: nil, strength: nil,
+                                     circuit: CircuitWorkout(rounds: 2, workSec: 120, restSec: 20, roundRestSec: 20, prepareSec: 10,
+                                                             exercises: [Exercise(name: "Jab-cross au sac", durationSec: 120)]),
+                                     equipment: "none", originalDate: nil, replaces: nil)
+        let v = session.effective.circuit?.exercises.first
+        XCTAssertEqual(v?.homeVariant, true)
+        XCTAssertNil(v.flatMap(ExerciseLibrary.animation(for:)))
+    }
 }

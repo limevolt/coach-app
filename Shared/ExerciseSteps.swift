@@ -40,12 +40,12 @@ enum ExerciseSteps {
             "Buste penché à 45°, dos plat, sac tenu à deux mains.",
             "Tire le sac vers le nombril en serrant les omoplates.",
             "Redescends lentement."]),
-        (["rowing inverse"], [
+        (["rowing inverse sous une table"], [
             "Allongé sous une table solide, mains sur le bord, bras tendus.",
             "Corps gainé et droit, talons au sol.",
             "Tire la poitrine vers le bord de la table en serrant les omoplates.",
             "Redescends lentement. Plus facile : genoux pliés."]),
-        (["mollets sur une marche"], [
+        (["mollets sur une marche, une jambe"], [
             "Avant du pied sur une marche, talon dans le vide, une main au mur.",
             "Monte le plus haut possible sur la pointe.",
             "Descends lentement sous le niveau de la marche.",
@@ -167,10 +167,18 @@ enum ExerciseSteps {
 
 /// Repère le matériel cité dans un texte (nom, note, consigne) : haltères, barre, machine, rameur…
 enum EquipmentText {
-    static let words = ["haltere", "barre", "kettlebell", "kb ", "machine", "poulie", "leste", "lest ",
+    /// Mots entiers (pluriel accepté) ; « * » final = début de mot (« velo d'appart* »).
+    /// Pas de morceaux de mots : « presser », « réception élastique » ne parlent pas de matériel.
+    static let words = ["haltere", "barre", "kettlebell", "kb", "machine", "poulie", "leste", "lest",
                         "avec poids", "avec charge", "disque", "elastique", "banc", "smith", "presse",
                         "rameur", "tapis de course", "elliptique", "ski erg", "skierg", "assault", "airbike", "air bike",
-                        "stepper", "velo d'appart", "velo stationnaire", "spinning", "poignee"]
+                        "stepper", "velo d'appart*", "velo stationnaire", "spinning", "poignee"]
+
+    private static let patterns: [String] = words.map { w in
+        w.hasSuffix("*")
+            ? "\\b" + NSRegularExpression.escapedPattern(for: String(w.dropLast()))
+            : "\\b" + NSRegularExpression.escapedPattern(for: w) + "(s|x)?\\b"
+    }
 
     static func normalized(_ s: String) -> String {
         s.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "fr_FR")).lowercased()
@@ -182,6 +190,6 @@ enum EquipmentText {
             .replacingOccurrences(of: "sans charge", with: "")
             .replacingOccurrences(of: "sans materiel", with: "")
         if t.range(of: "\\d+\\s?kg", options: .regularExpression) != nil { return true }
-        return words.contains { t.contains($0) }
+        return patterns.contains { t.range(of: $0, options: .regularExpression) != nil }
     }
 }
