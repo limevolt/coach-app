@@ -113,7 +113,8 @@ final class HomeVariantTests: XCTestCase {
     // Relecture : mots entiers seulement, pas de morceaux de mots.
     func testEquipmentWordsAreWholeWords() {
         XCTAssertFalse(EquipmentText.mentions("Presse le sol avec les mains."))
-        XCTAssertFalse(EquipmentText.mentions("Réception élastique, genoux souples."))
+        XCTAssertFalse(EquipmentText.mentions("Presser le sol, appui bancal évité."))
+        XCTAssertTrue(EquipmentText.mentions("Presse à cuisses, 3 séries."))
         XCTAssertFalse(EquipmentText.mentions("Pompes au poids du corps."))
         XCTAssertTrue(EquipmentText.mentions("Deux haltères devant les cuisses."))
         XCTAssertTrue(EquipmentText.mentions("Assis sur un banc."))

@@ -168,9 +168,9 @@ enum ExerciseSteps {
 /// Repère le matériel cité dans un texte (nom, note, consigne) : haltères, barre, machine, rameur…
 enum EquipmentText {
     /// Mots entiers (pluriel accepté) ; « * » final = début de mot (« velo d'appart* »).
-    /// Pas de morceaux de mots : « presser », « réception élastique » ne parlent pas de matériel.
+    /// Pas de morceaux de mots : « presser », « bancal » ne parlent pas de matériel.
     static let words = ["haltere", "barre", "kettlebell", "kb", "machine", "poulie", "leste", "lest",
-                        "avec poids", "avec charge", "disque", "elastique", "banc", "smith", "presse",
+                        "avec poids", "avec charge", "disque", "elastique", "banc", "smith", "presse a*", "leg press",
                         "rameur", "tapis de course", "elliptique", "ski erg", "skierg", "assault", "airbike", "air bike",
                         "stepper", "velo d'appart*", "velo stationnaire", "spinning", "poignee"]
 
