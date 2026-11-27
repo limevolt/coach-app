@@ -25,6 +25,18 @@ final class GuidedMirror {
     /// Délai pendant lequel on attend la montre.
     static let expectFor: TimeInterval = 60
 
+    /// Rouvrir l'écran de suivi fermé (bandeau, « En cours sur ta montre ») (#146).
+    private(set) var reopenToken = 0
+    private(set) var reopenId: String?
+
+    func reopen(_ sessionId: String) {
+        reopenId = sessionId
+        reopenToken += 1
+    }
+
+    /// Détail de séance affiché : pas de bandeau pour cette séance-là (son bouton la rouvre).
+    var detailShown: String?
+
     /// L'envoi à la montre a échoué : l'écran d'attente propose tout de suite l'iPhone seul.
     private(set) var startFailed = false
 
@@ -59,9 +71,18 @@ final class GuidedMirror {
     }
 
     /// Séance en cours sur la montre, à afficher.
-    var live: GuidedSync? {
-        guard let sync, sync.isLive(receivedAt: receivedAt, now: .now) else { return nil }
+    var live: GuidedSync? { live(at: .now) }
+
+    func live(at now: Date) -> GuidedSync? {
+        guard let sync, sync.isLive(receivedAt: receivedAt, now: now) else { return nil }
         return sync
+    }
+
+    /// Séance pour le bandeau (#146) : en cours sur la montre, son écran de suivi n'est pas affiché,
+    /// et on n'est pas sur son détail (« En cours sur ta montre » y joue ce rôle).
+    func bannerSessionId(at now: Date, mirrorShown: Bool) -> String? {
+        guard !mirrorShown, let live = live(at: now), detailShown != live.sessionId else { return nil }
+        return live.sessionId
     }
 
     /// Plus de nouvelles de la montre depuis un moment (hors de portée, app fermée).

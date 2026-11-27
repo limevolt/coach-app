@@ -41,7 +41,12 @@ struct SessionDetailView: View {
                             .buttonStyle(.coachPrimary())
                     } else {
                         // Avec une montre : la séance part sur la montre et l'iPhone l'affiche en grand (#130, #142).
-                        StartOnWatchButton { await store.startOnWatch(session) }  // taille normale (#101)
+                        let running = GuidedMirror.shared.live?.sessionId == session.id
+                        // Rouvrir seulement une séance qui tourne encore sur la montre.
+                        StartOnWatchButton(reopen: canGuide && running ? { GuidedMirror.shared.reopen(session.id) } : nil,
+                                           running: running) {
+                            await store.startOnWatch(session)
+                        }  // taille normale (#101)
                         if canGuide {
                             Button { showGuided = true } label: { Label("Sans la montre", systemImage: "iphone") }
                                 .buttonStyle(.coachQuiet())
@@ -64,6 +69,11 @@ struct SessionDetailView: View {
         }
         .background(Theme.bg.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
+        // Séance en cours sur la montre : pas de bandeau ici, « En cours sur ta montre » la rouvre (#146).
+        .onAppear { GuidedMirror.shared.detailShown = session.id }
+        .onDisappear {
+            if GuidedMirror.shared.detailShown == session.id { GuidedMirror.shared.detailShown = nil }
+        }
         .task {
             for _ in 0..<10 where !hasWatch {
                 try? await Task.sleep(for: .milliseconds(500))
