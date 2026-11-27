@@ -146,13 +146,41 @@ final class StrengthClockTests: XCTestCase {
         clock.setDone(exercises, at: t0.addingTimeInterval(30))
         clock.adjustLastReps(by: -1)
         clock.adjustLastReps(by: -1)
-        XCTAssertEqual(clock.lastDone?.reps, 8)
+        XCTAssertEqual(clock.done.last?.reps, 8)
         for _ in 0..<20 { clock.adjustLastReps(by: -1) }
-        XCTAssertEqual(clock.lastDone?.reps, 0)
+        XCTAssertEqual(clock.done.last?.reps, 0)
         // Hors du repos, la série notée ne bouge plus.
         clock.skip(exercises, at: t0.addingTimeInterval(40))
         clock.adjustLastReps(by: 3)
-        XCTAssertEqual(clock.lastDone?.reps, 0)
+        XCTAssertEqual(clock.done.last?.reps, 0)
+    }
+
+    func testASkippedSetCannotBeCorrected() {
+        var clock = started()
+        clock.setDone(exercises, at: t0.addingTimeInterval(30))
+        XCTAssertEqual(clock.correctable?.setNumber, 1)
+        clock.skip(exercises, at: t0.addingTimeInterval(31))   // repos passé
+        clock.skip(exercises, at: t0.addingTimeInterval(32))   // série 2 passée : repos
+        XCTAssertEqual(clock.step, .rest)
+        XCTAssertNil(clock.correctable)
+        clock.adjustLastReps(by: -3)
+        XCTAssertEqual(clock.done.last?.reps, 10)
+    }
+
+    func testDoneFraction() {
+        XCTAssertNil(StrengthGuidedView.doneFraction(done: 12, total: 12))
+        XCTAssertEqual(StrengthGuidedView.doneFraction(done: 3, total: 12), 0.25)
+        XCTAssertNil(StrengthGuidedView.doneFraction(done: 0, total: 0))
+    }
+
+    func testCircuitSyncWithoutStrengthStillDecodes() throws {
+        // État envoyé par une montre qui ne connaît pas encore le renfo guidé.
+        let old = GuidedSync(sessionId: "c", segmentCount: 8, clock: GuidedClock())
+        var json = try JSONSerialization.jsonObject(with: JSONEncoder().encode(old)) as? [String: Any] ?? [:]
+        json["strength"] = nil
+        let decoded = try JSONDecoder().decode(GuidedSync.self, from: JSONSerialization.data(withJSONObject: json))
+        XCTAssertNil(decoded.strength)
+        XCTAssertEqual(decoded.segmentCount, 8)
     }
 
     func testFinishKeepsWhatWasDone() {

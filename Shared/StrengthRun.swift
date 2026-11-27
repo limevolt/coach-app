@@ -24,6 +24,8 @@ struct StrengthClock: Codable, Equatable {
     var weight = 0.0
     /// Séries notées.
     private(set) var done: [SetLog] = []
+    /// La dernière série terminée a été notée (pas passée) : on peut en corriger les répétitions au repos.
+    private(set) var lastRecorded = false
 
     /// Repos par défaut quand le plan n'en donne pas.
     static let defaultRest = 60
@@ -37,8 +39,8 @@ struct StrengthClock: Codable, Equatable {
         exercises.indices.contains(exerciseIndex) ? exercises[exerciseIndex] : nil
     }
 
-    /// Dernière série notée : pendant le repos, on peut en corriger les répétitions.
-    var lastDone: SetLog? { done.last }
+    /// Série qu'on vient de finir, à corriger pendant le repos (pas si elle a été passée).
+    var correctable: SetLog? { step == .rest && lastRecorded ? done.last : nil }
 
     func remaining(at now: Date) -> TimeInterval {
         if let end { return max(0, end.timeIntervalSince(now)) }
@@ -115,6 +117,7 @@ struct StrengthClock: Codable, Equatable {
         if let kg = restored?.weightKg { weight = kg }
         workPaused = false
         pausedRemaining = nil
+        lastRecorded = false
         goToSet(exercises, at: now)
     }
 
@@ -144,7 +147,7 @@ struct StrengthClock: Codable, Equatable {
 
     /// − / + au repos : corrige les répétitions de la série qu'on vient de faire.
     mutating func adjustLastReps(by delta: Int) {
-        guard step == .rest, let last = done.indices.last, let reps = done[last].reps else { return }
+        guard step == .rest, lastRecorded, let last = done.indices.last, let reps = done[last].reps else { return }
         done[last].reps = max(0, reps + delta)
     }
 
@@ -182,6 +185,7 @@ struct StrengthClock: Codable, Equatable {
         workPaused = false
         pausedRemaining = nil
         guard let ex = current(exercises) else { finish(); return }
+        lastRecorded = record
         if record {
             done.append(SetLog(exercise: ex.name, setNumber: setNumber,
                                reps: ex.durationSec == nil ? reps : nil,

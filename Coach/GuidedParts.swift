@@ -140,7 +140,7 @@ struct GuidedRunView: View {
     }
 
     var body: some View {
-        if session.circuit != nil {
+        if !(session.circuit?.exercises.isEmpty ?? true) {
             GuidedSessionView(session: session, mode: mode, onFeedback: onFeedback)
         } else {
             StrengthGuidedView(session: session, mode: mode, onFeedback: onFeedback)

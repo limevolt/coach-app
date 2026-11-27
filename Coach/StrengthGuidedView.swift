@@ -30,6 +30,8 @@ struct StrengthGuidedView: View {
     @State private var mismatch = false
     /// Miroir : premier état reçu de la montre.
     @State private var following = false
+    /// La séance a démarré (la tâche d'ouverture ne la relance pas si l'écran réapparaît).
+    @State private var didStart = false
     private var mirror: GuidedMirror { GuidedMirror.shared }
     private var mirrored: Bool { mode == .mirror }
 
@@ -42,6 +44,8 @@ struct StrengthGuidedView: View {
             screen(now: context.date)
         }
         .task {
+            guard !didStart else { return }
+            didStart = true
             startedAt = .now
             if mirrored {
                 if let sync = mirror.sync, sync.sessionId == session.id { follow(sync) }
@@ -140,20 +144,25 @@ struct StrengthGuidedView: View {
         clock.skip(exercises, at: .now)
     }
 
-    /// « Terminer » : on garde ce qui est fait (part des séries notées).
+    /// « Terminer » : on garde ce qui est fait. Aucune série notée : rien n'est enregistré (comme « Abandonner »).
     private func finish() {
+        guard !clock.done.isEmpty else { dismiss(); return }
         if clock.isPaused { togglePause() }
-        let done = clock.done.count
         clock.finish()
-        endedAt = .now
-        store.recordGuided(session, doneFraction: totalSets > 0 && done < totalSets ? Double(done) / Double(totalSets) : nil,
+        completed(at: .now)
+    }
+
+    /// Séance finie : notée faite avec la part des séries notées (en miroir, c'est la montre qui l'enregistre).
+    private func completed(at date: Date) {
+        endedAt = date
+        guard !mirrored, !clock.done.isEmpty else { return }
+        store.recordGuided(session, doneFraction: Self.doneFraction(done: clock.done.count, total: totalSets),
                            sets: clock.done)
     }
 
-    /// Séance allée jusqu'au bout : notée faite (en miroir, c'est la montre qui l'enregistre).
-    private func completed(at date: Date) {
-        endedAt = date
-        if !mirrored { store.recordGuided(session, doneFraction: nil, sets: clock.done) }
+    /// Part faite : nil si toutes les séries sont notées.
+    static func doneFraction(done: Int, total: Int) -> Double? {
+        total > 0 && done < total ? Double(done) / Double(total) : nil
     }
 
     // MARK: Écrans
@@ -184,26 +193,36 @@ struct StrengthGuidedView: View {
         }
     }
 
-    /// Série : fond teinté de la couleur du renfo ; repos et « Prêt ? » : fond carte ; pause : fond (DESIGN.md).
-    private var background: Color {
-        if clock.isPaused { return Theme.bg }
-        switch clock.step {
-        case .work, .timed: return Theme.effortBackground(for: session.type)
-        default: return Theme.card
+    /// Série : fond teinté de la couleur du renfo (sur le fond de l'app) ; repos et « Prêt ? » : fond carte ;
+    /// pause : fond (DESIGN.md).
+    private var background: some View {
+        ZStack {
+            Theme.bg
+            if !clock.isPaused {
+                switch clock.step {
+                case .work, .timed: Theme.effortBackground(for: session.type)
+                default: Theme.card
+                }
+            }
         }
     }
 
     private var header: some View {
-        let onSet = clock.step == .work || clock.step == .timed
-        return GuidedHeader(position: "Exercice \(min(clock.exerciseIndex + 1, exercises.count)) sur \(exercises.count)",
-                            silent: mirrored && mirror.isSilent(at: .now),
-                            // Miroir : fermer l'écran de l'iPhone seulement, la séance continue sur la montre.
-                            onClose: { if mirrored { dismiss() } else { confirmQuit = true } },
-                            onHelp: onSet ? current.map { ex in {
-                                // La fiche met la séance en pause (seule sur l'iPhone ; en miroir, la montre continue).
-                                if !mirrored, !clock.isPaused { togglePause() }
-                                guide = ex
-                            } } : nil)
+        GuidedHeader(position: "Exercice \(min(clock.exerciseIndex + 1, exercises.count)) sur \(exercises.count)",
+                     silent: mirrored && mirror.isSilent(at: .now),
+                     // Miroir : fermer l'écran de l'iPhone seulement, la séance continue sur la montre.
+                     onClose: { if mirrored { dismiss() } else { confirmQuit = true } },
+                     onHelp: helpAction)
+    }
+
+    /// « Comment faire ? » pendant une série seulement.
+    private var helpAction: (() -> Void)? {
+        guard clock.step == .work || clock.step == .timed, let ex = current else { return nil }
+        return {
+            // La fiche met la séance en pause (seule sur l'iPhone ; en miroir, la montre continue).
+            if !mirrored, !clock.isPaused { togglePause() }
+            guide = ex
+        }
     }
 
     /// Un trait par exercice : rempli selon les séries faites.
@@ -308,7 +327,7 @@ struct StrengthGuidedView: View {
             }
             .frame(maxWidth: .infinity)
             .foregroundStyle(Theme.text)
-            if let last = clock.lastDone, let reps = last.reps { correction(last, reps: reps) }
+            if let last = clock.correctable, let reps = last.reps { correction(last, reps: reps) }
             if let ex = current { upcoming(ex) }
             Spacer(minLength: 0)
             HStack(spacing: Space.m) {

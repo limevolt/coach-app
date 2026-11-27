@@ -45,6 +45,8 @@ struct StrengthRunView: View {
     @State private var launched = false
     /// Commandes de l'iPhone : anti double appui.
     @State private var lastCommandAt = Date.distantPast
+    /// Envoi à l'iPhone retardé pendant qu'on tourne la couronne.
+    @State private var pendingSync: Task<Void, Never>?
     @FocusState private var crownFocused: Bool
 
     /// Pas de la couronne pour le poids.
@@ -67,8 +69,8 @@ struct StrengthRunView: View {
                 if screen == .ready || screen == .feedback || (isBeforeStart && !launched) {
                     workout.sessionInProgress = false
                 }
-                // Écran quitté en pleine séance (retour pendant le « Prêt ? ») : l'iPhone ferme son suivi.
-                if screen == .running { sendAbandon() }
+                // Retour pendant le « Prêt ? » : l'iPhone ferme son suivi (fin et abandon envoient le leur).
+                if isBeforeStart && !launched { sendAbandon() }
             }
             // Santé demandée à l'ouverture de l'écran, avant « Commencer » et le « Prêt ? » (#108) :
             // rien ne s'affiche si l'accès a déjà été donné (sur l'iPhone ou ici).
@@ -85,7 +87,21 @@ struct StrengthRunView: View {
                 Text("Terminer garde ce qui est fait. Abandonner n'enregistre rien.")
             }
             // Montre + iPhone (#142) : l'iPhone ouvert affiche la même séance, en grand.
-            .onChange(of: clock) { _, _ in syncToPhone() }
+            // Couronne : un seul envoi par petit groupe de crans (pas un message par cran).
+            .onChange(of: clock) { old, new in
+                var stepOnly = old
+                stepOnly.reps = new.reps
+                stepOnly.weight = new.weight
+                pendingSync?.cancel()
+                if stepOnly == new {
+                    pendingSync = Task {
+                        try? await Task.sleep(for: .milliseconds(300))
+                        if !Task.isCancelled { syncToPhone() }
+                    }
+                } else {
+                    syncToPhone()
+                }
+            }
             .onChange(of: abandoning) { _, _ in syncToPhone() }
             // Rappel toutes les 5 s : un iPhone ouvert en cours de séance la rattrape. La fin est répétée
             // quelques fois, au cas où un message se perd.
@@ -331,6 +347,8 @@ struct StrengthRunView: View {
         case .rest: Haptics.rest()
         default: break
         }
+        // Nouvel exercice : la couronne revient sur les répétitions (le poids peut ne plus être affiché).
+        if new.exerciseIndex != old.exerciseIndex { crownTarget = .reps }
         if new.exerciseIndex != old.exerciseIndex || new.reps != old.reps || new.weight != old.weight { syncCrown() }
         if new.step == .work { crownFocused = true }
     }
@@ -374,7 +392,8 @@ struct StrengthRunView: View {
             if Task.isCancelled { return }
         }
         guard !Task.isCancelled else { return }
-        change { $0.tick(exercises, at: .now) }
+        // Réveil quelques centièmes avant la fin : on enchaîne quand même (sinon le minuteur resterait figé).
+        change { $0.tick(exercises, at: max(.now, end)) }
     }
 
     // MARK: iPhone (#142)
