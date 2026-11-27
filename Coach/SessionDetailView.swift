@@ -41,13 +41,12 @@ struct SessionDetailView: View {
                             .buttonStyle(.coachPrimary())
                     } else {
                         // Avec une montre : la séance part sur la montre et l'iPhone l'affiche en grand (#130, #142).
-                        StartOnWatchButton {
-                            if canGuide { GuidedMirror.shared.expect(session.id) }
-                            return await store.startOnWatch(session)
-                        }  // taille normale (#101)
+                        StartOnWatchButton { await store.startOnWatch(session) }  // taille normale (#101)
                         if canGuide {
                             Button { showGuided = true } label: { Label("Sans la montre", systemImage: "iphone") }
                                 .buttonStyle(.coachQuiet())
+                                // Départ sur la montre en cours : pas de 2e écran par-dessus.
+                                .disabled(GuidedMirror.shared.expectedId != nil)
                         }
                     }
                 }

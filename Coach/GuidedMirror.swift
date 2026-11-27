@@ -25,18 +25,29 @@ final class GuidedMirror {
     /// Délai pendant lequel on attend la montre.
     static let expectFor: TimeInterval = 60
 
-    func expect(_ sessionId: String) {
+    /// L'envoi à la montre a échoué : l'écran d'attente propose tout de suite l'iPhone seul.
+    private(set) var startFailed = false
+
+    func expect(_ sessionId: String, at now: Date = .now) {
         expectedId = sessionId
-        expectedAt = .now
+        expectedAt = now
+        startFailed = false
         messages += 1   // la racine ouvre l'écran de suivi
     }
 
-    func clearExpected() { expectedId = nil }
+    func markStartFailed() { startFailed = true }
+
+    func clearExpected() {
+        expectedId = nil
+        startFailed = false
+    }
 
     /// Séance à afficher : celle en cours sur la montre, sinon celle qu'on vient de lancer depuis l'iPhone.
-    var sessionToShow: String? {
+    var sessionToShow: String? { sessionToShow(at: .now) }
+
+    func sessionToShow(at now: Date) -> String? {
         if let live { return live.sessionId }
-        guard let expectedId, Date.now.timeIntervalSince(expectedAt) < Self.expectFor else { return nil }
+        guard let expectedId, now.timeIntervalSince(expectedAt) < Self.expectFor else { return nil }
         return expectedId
     }
 

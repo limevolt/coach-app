@@ -83,7 +83,7 @@ struct SessionListView: View {
     private func destination(_ session: PlannedSession, autoStart: Bool) -> some View {
                 if session.type == .run {
                     RunReadyView(session: session)
-                } else if session.type == .circuit, let config = IntervalRunConfig.circuit(session) {
+                } else if session.guidedKind == .circuit, let config = IntervalRunConfig.circuit(session) {
                     IntervalRunView(config: config, autoStart: autoStart, tint: Theme.color(for: session.type))
                 } else {
                     StrengthRunView(session: session, autoStart: autoStart)

@@ -79,7 +79,8 @@ struct ContentView: View {
         // Vérifié à chaque message (toutes les 5 s) : l'iPhone ouvert en pleine séance la rattrape.
         .onChange(of: GuidedMirror.shared.messages, initial: true) { _, _ in presentMirrorIfNeeded() }
         .fullScreenCover(item: $mirrorSession, onDismiss: {
-            closedMirror = GuidedMirror.shared.live?.sessionId
+            // Fermé (même en attente de la montre) : pas rouvert tant que cette séance continue sur la montre.
+            closedMirror = GuidedMirror.shared.live?.sessionId ?? GuidedMirror.shared.expectedId
             GuidedMirror.shared.clearExpected()
             shownMirror = nil
             if let pending = feedbackAfterMirror {
@@ -111,6 +112,8 @@ extension ContentView {
             return
         }
         if let pending = mirrorSession, shownMirror != pending.id, pending.id != showId { mirrorSession = nil }
+        // Séance déjà notée faite (finie sur l'iPhone seul) : un état tardif de la montre ne rouvre rien.
+        if store.isDone(showId), GuidedMirror.shared.expectedId != showId { return }
         guard mirrorSession == nil, closedMirror != showId,
               let session = store.plan?.sessions.first(where: { $0.id == showId })?.effective,
               GuidedRunView.canGuide(session) else { return }

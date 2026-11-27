@@ -120,14 +120,16 @@ struct GuidedWaitingScreen: View {
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
-            let late = mismatch || context.date.timeIntervalSince(openedAt) >= Self.aloneAfter
+            let failed = GuidedMirror.shared.startFailed
+            let late = mismatch || failed || context.date.timeIntervalSince(openedAt) >= Self.aloneAfter
             VStack(spacing: Space.l) {
                 ProgressView().tint(Theme.accent)
                 Text(mismatch ? "La montre n'a pas le même plan. Ouvre Coach sur la montre pour le recevoir."
                               : late ? "La montre ne répond pas. Ouvre Coach sur la montre, ou continue sur l'iPhone."
                                      : "Démarrage sur la montre…")
                     .font(.text).foregroundStyle(Theme.muted).multilineTextAlignment(.center)
-                if late, let onAlone {
+                // Pas quand la montre mène déjà une séance (plan différent) : on aurait deux séances.
+                if late, !mismatch, let onAlone {
                     Button("Continuer sur l'iPhone seul", action: onAlone).buttonStyle(.coachPrimary())
                 }
                 Button("Fermer", action: onClose).buttonStyle(.coachQuiet())
@@ -156,20 +158,26 @@ struct GuidedRunView: View {
     private var effectiveMode: GuidedSessionView.Mode { alone ? .alone : mode }
 
     /// Séance qu'on peut suivre sur l'iPhone : un circuit ou un renfo avec des exercices.
-    static func canGuide(_ session: PlannedSession) -> Bool {
-        !(session.circuit?.exercises.isEmpty ?? true) || !(session.strength?.exercises.isEmpty ?? true)
-    }
+    static func canGuide(_ session: PlannedSession) -> Bool { session.guidedKind != nil }
 
     var body: some View {
         Group {
-            if !(session.circuit?.exercises.isEmpty ?? true) {
+            if session.guidedKind == .circuit {
                 GuidedSessionView(session: session, mode: effectiveMode, onFeedback: onFeedback,
-                                  onAlone: { alone = true })
+                                  onAlone: continueAlone)
             } else {
                 StrengthGuidedView(session: session, mode: effectiveMode, onFeedback: onFeedback,
-                                   onAlone: { alone = true })
+                                   onAlone: continueAlone)
             }
         }
         .id(alone)   // l'écran repart de zéro en mode « iPhone seul »
+    }
+
+    /// La montre ne répond pas : l'iPhone mène seul, et la demande de départ est retirée
+    /// (sinon la montre pourrait lancer la même séance plus tard, en double).
+    private func continueAlone() {
+        PhoneConnectivity.shared.cancelStart()
+        GuidedMirror.shared.clearExpected()
+        alone = true
     }
 }
