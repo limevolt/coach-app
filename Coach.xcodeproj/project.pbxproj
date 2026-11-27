@@ -101,6 +101,7 @@
 		905EE1E54683208A4CFDF3E8 /* Deadline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DA20173CFDA2D84BE4F9D1C /* Deadline.swift */; };
 		9161B4E2AA2D3B4A7293D7BD /* WatchSyncQueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F5D2E14E9042E95E3A6888B /* WatchSyncQueueTests.swift */; };
 		93B36E4537D6BA45FD7E6B60 /* Outfit-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3D495D87289FD2F14C06D471 /* Outfit-Black.ttf */; };
+		9684268B64EB4275BEC6D8B1 /* GuidedMirrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 008E0BC08E7B7EB1E9B7F3FF /* GuidedMirrorTests.swift */; };
 		9B9B5785F591A665D43AFE14 /* GuidedRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA946F497AD7F3C9D3F61907 /* GuidedRun.swift */; };
 		9D4862496CFA2F89246CD238 /* CoachCaptures.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5087627E360F0D4D6FD9FC7 /* CoachCaptures.swift */; };
 		9DE8E796EC1E88D558090CEF /* HealthReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BC2FE5D6D5989A6C962A7D0 /* HealthReader.swift */; };
@@ -195,6 +196,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		008E0BC08E7B7EB1E9B7F3FF /* GuidedMirrorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidedMirrorTests.swift; sourceTree = "<group>"; };
 		0297432F0DC3AE501B127968 /* ExtraActivityPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtraActivityPlanner.swift; sourceTree = "<group>"; };
 		04294D002204A3F5456A6755 /* HealthLinkingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthLinkingTests.swift; sourceTree = "<group>"; };
 		05EED4368A1C5978F355FC97 /* CoachWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachWatchApp.swift; sourceTree = "<group>"; };
@@ -378,6 +380,7 @@
 				5CCD9F7E305075A4B543DCC4 /* FeedbackPlannerTests.swift */,
 				EE7E0C2F99B88BF3C787D961 /* GoalDetailsTests.swift */,
 				F17411664D0EEB72BE1B45AE /* GuidedClockTests.swift */,
+				008E0BC08E7B7EB1E9B7F3FF /* GuidedMirrorTests.swift */,
 				04294D002204A3F5456A6755 /* HealthLinkingTests.swift */,
 				75D32B2E1AE803293D894E70 /* HealthPermissionsTests.swift */,
 				2387D0711A96968259E2BAB7 /* IsolatedStore.swift */,
@@ -654,7 +657,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1430;
+				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					34B5BC82ED07EEF47D7400E0 = {
 						DevelopmentTeam = QG4XL95P47;
@@ -888,6 +891,7 @@
 				E41992555F3D17F143761864 /* FeedbackPlannerTests.swift in Sources */,
 				D9FB553C937BC7C3890514F8 /* GoalDetailsTests.swift in Sources */,
 				66628B8ECA6051B40DA2C1C9 /* GuidedClockTests.swift in Sources */,
+				9684268B64EB4275BEC6D8B1 /* GuidedMirrorTests.swift in Sources */,
 				FDE3D875C107FD568B80F574 /* HealthLinkingTests.swift in Sources */,
 				EBFFD90A0182F9F90E8671A1 /* HealthPermissionsTests.swift in Sources */,
 				B13AD6ACE9B0441EB55CB474 /* IsolatedStore.swift in Sources */,
