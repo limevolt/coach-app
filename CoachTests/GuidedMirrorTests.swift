@@ -117,11 +117,6 @@ final class GuidedMirrorTests: XCTestCase {
         XCTAssertEqual(mirror.bannerSessionId(at: now, mirrorShown: false), "r")
         // Écran de suivi affiché : pas de bandeau.
         XCTAssertNil(mirror.bannerSessionId(at: now, mirrorShown: true))
-        // Sur le détail de cette séance : pas de bandeau (son bouton la rouvre).
-        mirror.detailShown = "r"
-        XCTAssertNil(mirror.bannerSessionId(at: now, mirrorShown: false))
-        mirror.detailShown = "autre"
-        XCTAssertEqual(mirror.bannerSessionId(at: now, mirrorShown: false), "r")
         // La montre se tait plus d'une minute : la séance n'est plus en cours, le bandeau s'efface.
         XCTAssertNil(mirror.bannerSessionId(at: now.addingTimeInterval(GuidedSync.staleAfter + 1), mirrorShown: false))
     }

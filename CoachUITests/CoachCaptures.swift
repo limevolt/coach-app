@@ -270,7 +270,14 @@ final class CoachCaptures: XCTestCase {
                 _ = tap("Libre", in: app)
                 shot("06l-bandeau-onglet-libre", settle: 1)
                 banner.tap()
-                if closeMirror.waitForExistence(timeout: 5) { shot("06m-suivi-rouvert", settle: 1) }
+                if closeMirror.waitForExistence(timeout: 5) {
+                    shot("06m-suivi-rouvert", settle: 1)
+                    // Détail de la séance pendant qu'elle tourne : bandeau, « En cours sur ta montre »,
+                    // ni « Sans la montre », ni « Adapter », ni « Je l'ai faite ».
+                    closeMirror.tap()
+                    _ = tap("Plan", in: app)
+                    if openSession("Renfo A", in: app) { shot("06n-detail-seance-en-cours", settle: 1) }
+                }
             } else {
                 note("Bandeau « séance en cours » introuvable")
             }
