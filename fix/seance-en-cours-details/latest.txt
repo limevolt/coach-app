@@ -1,0 +1,15 @@
+commit: 0553a589c0a28ecca0832385dd684d80a1147c38
+branche: fix/seance-en-cours-details
+ios: skipped
+watch: skipped
+tests: skipped
+
+===== ERREURS / AVERTISSEMENTS iOS =====
+
+===== ERREURS / AVERTISSEMENTS MONTRE =====
+
+===== TESTS UNITAIRES =====
+
+===== DESIGN SYSTÈME (valeurs en dur) =====
+
+===== FIN DU JOURNAL iOS =====
