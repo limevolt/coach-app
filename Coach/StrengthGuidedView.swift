@@ -10,6 +10,8 @@ struct StrengthGuidedView: View {
     var mode: GuidedSessionView.Mode = .alone
     /// Séance terminée et « Donner mon ressenti » : la feuille de retour s'ouvre derrière.
     var onFeedback: () -> Void = {}
+    /// Miroir : la montre ne répond pas, on continue sur l'iPhone seul.
+    var onAlone: () -> Void = {}
 
     @Environment(PlanStore.self) private var store
     @Environment(\.dismiss) private var dismiss
@@ -48,7 +50,7 @@ struct StrengthGuidedView: View {
             didStart = true
             startedAt = .now
             if mirrored {
-                if let sync = mirror.sync, sync.sessionId == session.id { follow(sync) }
+                if let sync = mirror.live, sync.sessionId == session.id { follow(sync) }
             } else {
                 clock.begin(exercises, at: .now)
             }
@@ -171,7 +173,7 @@ struct StrengthGuidedView: View {
         if clock.finished {
             finishedScreen
         } else if mirrored && (!following || mismatch) {
-            GuidedWaitingScreen(mismatch: mismatch) { dismiss() }
+            GuidedWaitingScreen(mismatch: mismatch, onClose: { dismiss() }, onAlone: onAlone)
         } else {
             VStack(alignment: .leading, spacing: Space.l) {
                 header

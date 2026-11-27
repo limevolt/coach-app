@@ -14,6 +14,8 @@ struct GuidedSessionView: View {
     var mode: Mode = .alone
     /// Séance terminée et « Donner mon ressenti » : la feuille de retour s'ouvre derrière.
     var onFeedback: () -> Void = {}
+    /// Miroir : la montre ne répond pas, on continue sur l'iPhone seul.
+    var onAlone: () -> Void = {}
 
     @Environment(PlanStore.self) private var store
     @Environment(\.dismiss) private var dismiss
@@ -48,7 +50,7 @@ struct GuidedSessionView: View {
             config = IntervalRunConfig.circuit(session)
             startedAt = .now
             if mirrored {
-                if let sync = mirror.sync, sync.sessionId == session.id { follow(sync) }
+                if let sync = mirror.live, sync.sessionId == session.id { follow(sync) }
             } else {
                 clock.start(segments, at: .now)
             }
@@ -374,7 +376,7 @@ struct GuidedSessionView: View {
     }
 
     private var waitingScreen: some View {
-        GuidedWaitingScreen(mismatch: mismatch) { dismiss() }
+        GuidedWaitingScreen(mismatch: mismatch, onClose: { dismiss() }, onAlone: onAlone)
     }
 
     // MARK: Utilitaires

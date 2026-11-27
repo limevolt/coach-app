@@ -40,10 +40,13 @@ struct SessionDetailView: View {
                         Button { showGuided = true } label: { Label("Démarrer", systemImage: "play.fill") }
                             .buttonStyle(.coachPrimary())
                     } else {
-                        StartOnWatchButton { await store.startOnWatch(session) }  // taille normale (#101)
+                        // Avec une montre : la séance part sur la montre et l'iPhone l'affiche en grand (#130, #142).
+                        StartOnWatchButton {
+                            if canGuide { GuidedMirror.shared.expect(session.id) }
+                            return await store.startOnWatch(session)
+                        }  // taille normale (#101)
                         if canGuide {
-                            // En attendant la montre + l'iPhone ensemble (#130, étape 3) : suivre sur l'iPhone seul.
-                            Button { showGuided = true } label: { Label("Suivre sur l'iPhone", systemImage: "iphone") }
+                            Button { showGuided = true } label: { Label("Sans la montre", systemImage: "iphone") }
                                 .buttonStyle(.coachQuiet())
                         }
                     }

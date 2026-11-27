@@ -18,6 +18,28 @@ final class GuidedMirror {
     private(set) var messages = 0
     private var lastCommand = Date.distantPast
 
+    /// « Démarrer » touché sur l'iPhone avec une montre : l'écran de suivi s'ouvre tout de suite,
+    /// en attendant le premier état de la montre (#142).
+    private(set) var expectedId: String?
+    private var expectedAt = Date.distantPast
+    /// Délai pendant lequel on attend la montre.
+    static let expectFor: TimeInterval = 60
+
+    func expect(_ sessionId: String) {
+        expectedId = sessionId
+        expectedAt = .now
+        messages += 1   // la racine ouvre l'écran de suivi
+    }
+
+    func clearExpected() { expectedId = nil }
+
+    /// Séance à afficher : celle en cours sur la montre, sinon celle qu'on vient de lancer depuis l'iPhone.
+    var sessionToShow: String? {
+        if let live { return live.sessionId }
+        guard let expectedId, Date.now.timeIntervalSince(expectedAt) < Self.expectFor else { return nil }
+        return expectedId
+    }
+
     func receive(_ data: Data) {
         guard let new = try? JSONDecoder().decode(GuidedSync.self, from: data) else { return }
         receivedAt = .now
