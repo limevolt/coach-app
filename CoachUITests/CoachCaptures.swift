@@ -270,7 +270,26 @@ final class CoachCaptures: XCTestCase {
                 _ = tap("Libre", in: app)
                 shot("06l-bandeau-onglet-libre", settle: 1)
                 banner.tap()
-                if closeMirror.waitForExistence(timeout: 5) { shot("06m-suivi-rouvert", settle: 1) }
+                if closeMirror.waitForExistence(timeout: 5) {
+                    shot("06m-suivi-rouvert", settle: 1)
+                    // Détail de la séance pendant qu'elle tourne : bandeau, « En cours sur ta montre »,
+                    // ni « Sans la montre », ni « Adapter », ni « Je l'ai faite ».
+                    closeMirror.tap()
+                    _ = tap("Plan", in: app)
+                    // La ligne « Renfo A » de la liste (pas le bandeau, qui porte aussi ce nom).
+                    let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@ AND identifier != %@",
+                                                               "Renfo A", "bandeau-seance-en-cours")).firstMatch
+                    if row.waitForExistence(timeout: 5) {
+                        for _ in 0..<4 where !row.isHittable {
+                            app.swipeUp(velocity: .slow)
+                            Thread.sleep(forTimeInterval: 0.3)
+                        }
+                        row.tap()
+                        shot("06n-detail-seance-en-cours", settle: 1)
+                    } else {
+                        note("Ligne « Renfo A » introuvable avec le bandeau")
+                    }
+                }
             } else {
                 note("Bandeau « séance en cours » introuvable")
             }

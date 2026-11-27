@@ -34,9 +34,6 @@ final class GuidedMirror {
         reopenToken += 1
     }
 
-    /// Détail de séance affiché : pas de bandeau pour cette séance-là (son bouton la rouvre).
-    var detailShown: String?
-
     /// L'envoi à la montre a échoué : l'écran d'attente propose tout de suite l'iPhone seul.
     private(set) var startFailed = false
 
@@ -78,10 +75,10 @@ final class GuidedMirror {
         return sync
     }
 
-    /// Séance pour le bandeau (#146) : en cours sur la montre, son écran de suivi n'est pas affiché,
-    /// et on n'est pas sur son détail (« En cours sur ta montre » y joue ce rôle).
+    /// Séance pour le bandeau (#146) : en cours sur la montre et son écran de suivi n'est pas affiché.
+    /// Partout, détail de la séance compris.
     func bannerSessionId(at now: Date, mirrorShown: Bool) -> String? {
-        guard !mirrorShown, let live = live(at: now), detailShown != live.sessionId else { return nil }
+        guard !mirrorShown, let live = live(at: now) else { return nil }
         return live.sessionId
     }
 

@@ -299,7 +299,11 @@ struct TodayCard: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityHint("Ouvre la séance")
-                StartOnWatchButton { await store.startOnWatch(session) }
+                // Séance en cours sur la montre : « En cours sur ta montre », qui rouvre le suivi (#146).
+                let running = GuidedMirror.shared.live?.sessionId == stored.id
+                StartOnWatchButton(reopen: running && GuidedRunView.canGuide(session)
+                                       ? { GuidedMirror.shared.reopen(stored.id) } : nil,
+                                   running: running) { await store.startOnWatch(session) }
                     .id(stored.id)
 
             case .done(let stored):

@@ -119,25 +119,55 @@ struct GuidedWaitingScreen: View {
     @State private var openedAt = Date.now
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 1)) { context in
+        TimelineView(.periodic(from: .now, by: 0.25)) { context in
+            let elapsed = context.date.timeIntervalSince(openedAt)
             let failed = GuidedMirror.shared.startFailed
-            let late = mismatch || failed || context.date.timeIntervalSince(openedAt) >= Self.aloneAfter
-            VStack(spacing: Space.l) {
-                ProgressView().tint(Theme.accent)
-                Text(mismatch ? "La montre n'a pas le même plan. Ouvre Coach sur la montre pour le recevoir."
-                              : late ? "La montre ne répond pas. Ouvre Coach sur la montre, ou continue sur l'iPhone."
-                                     : "Démarrage sur la montre…")
-                    .font(.text).foregroundStyle(Theme.muted).multilineTextAlignment(.center)
-                // Pas quand la montre mène déjà une séance (plan différent) : on aurait deux séances.
-                if late, !mismatch, let onAlone {
-                    Button("Continuer sur l'iPhone seul", action: onAlone).buttonStyle(.coachPrimary())
+            let late = mismatch || failed || elapsed >= Self.aloneAfter
+            if !late {
+                // Même « Prêt ? » que la montre, tout de suite : l'état de la montre prend le relais dès qu'il arrive.
+                countdown(left: TimeInterval(StartCountdown.seconds) - elapsed)
+            } else {
+                VStack(spacing: Space.l) {
+                    ProgressView().tint(Theme.accent)
+                    Text(mismatch ? "La montre n'a pas le même plan. Ouvre Coach sur la montre pour le recevoir."
+                                  : "La montre ne répond pas. Ouvre Coach sur la montre, ou continue sur l'iPhone.")
+                        .font(.text).foregroundStyle(Theme.muted).multilineTextAlignment(.center)
+                    // Pas quand la montre mène déjà une séance (plan différent) : on aurait deux séances.
+                    if !mismatch, let onAlone {
+                        Button("Continuer sur l'iPhone seul", action: onAlone).buttonStyle(.coachPrimary())
+                    }
+                    Button("Fermer", action: onClose).buttonStyle(.coachQuiet())
                 }
-                Button("Fermer", action: onClose).buttonStyle(.coachQuiet())
+                .padding(.horizontal, Theme.screenMargin)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Theme.bg.ignoresSafeArea())
             }
         }
+    }
+
+    /// « Prêt ? » 5-4-3-2-1 (écran 6 de la maquette) ; à 0 sans nouvelles de la montre : « Démarrage sur la montre… ».
+    private func countdown(left: TimeInterval) -> some View {
+        VStack(alignment: .leading, spacing: Space.l) {
+            GuidedHeader(position: "", silent: false, onClose: onClose)
+            VStack(spacing: 0) {
+                Text("Prêt ?").font(.screenTitle)
+                if left > 0 {
+                    Text("\(Int(left.rounded(.up)))")
+                        .font(.guidedCountdown).monospacedDigit()
+                        .contentTransition(.numericText())
+                } else {
+                    ProgressView().tint(Theme.accent).padding(.top, Space.xl)
+                    Text("Démarrage sur la montre…").font(.text).foregroundStyle(Theme.muted)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .foregroundStyle(Theme.text)
+            Spacer(minLength: 0)
+        }
         .padding(.horizontal, Theme.screenMargin)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Theme.bg.ignoresSafeArea())
+        .padding(.vertical, Space.l)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(Theme.card.ignoresSafeArea())
     }
 }
 

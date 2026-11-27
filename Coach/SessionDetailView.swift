@@ -41,23 +41,24 @@ struct SessionDetailView: View {
                             .buttonStyle(.coachPrimary())
                     } else {
                         // Avec une montre : la séance part sur la montre et l'iPhone l'affiche en grand (#130, #142).
-                        let running = GuidedMirror.shared.live?.sessionId == session.id
                         // Rouvrir seulement une séance qui tourne encore sur la montre.
-                        StartOnWatchButton(reopen: canGuide && running ? { GuidedMirror.shared.reopen(session.id) } : nil,
-                                           running: running) {
+                        StartOnWatchButton(reopen: canGuide && runningOnWatch ? { GuidedMirror.shared.reopen(session.id) } : nil,
+                                           running: runningOnWatch) {
                             await store.startOnWatch(session)
                         }  // taille normale (#101)
-                        if canGuide {
+                        // Pendant la séance sur la montre : pas de 2e séance sur l'iPhone.
+                        if canGuide, !runningOnWatch, GuidedMirror.shared.expectedId != session.id {
                             Button { showGuided = true } label: { Label("Sans la montre", systemImage: "iphone") }
                                 .buttonStyle(.coachQuiet())
-                                // Départ sur la montre en cours : pas de 2e écran par-dessus.
+                                // Départ d'une autre séance en cours : pas de 2e écran par-dessus.
                                 .disabled(GuidedMirror.shared.expectedId != nil)
                         }
                     }
                 }
                 if store.isMissed(stored) {
                     missedCard
-                } else if !done && inPlan {
+                } else if !done && inPlan && !runningOnWatch {
+                    // « Adapter » et « Je l'ai faite » n'ont pas de sens pendant la séance.
                     secondaryActions
                 }
                 if let run = session.run { runSection(run) }
@@ -69,11 +70,6 @@ struct SessionDetailView: View {
         }
         .background(Theme.bg.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
-        // Séance en cours sur la montre : pas de bandeau ici, « En cours sur ta montre » la rouvre (#146).
-        .onAppear { GuidedMirror.shared.detailShown = session.id }
-        .onDisappear {
-            if GuidedMirror.shared.detailShown == session.id { GuidedMirror.shared.detailShown = nil }
-        }
         .task {
             for _ in 0..<10 where !hasWatch {
                 try? await Task.sleep(for: .milliseconds(500))
@@ -96,6 +92,9 @@ struct SessionDetailView: View {
             Text(Self.notDoneMessage)
         }
     }
+
+    /// La séance tourne en ce moment sur la montre (#146).
+    private var runningOnWatch: Bool { GuidedMirror.shared.live?.sessionId == session.id }
 
     /// Séance qu'on peut suivre sur l'iPhone : un circuit ou un renfo avec des exercices (#142).
     private var canGuide: Bool { GuidedRunView.canGuide(session) }
