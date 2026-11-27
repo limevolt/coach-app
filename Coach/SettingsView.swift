@@ -109,6 +109,8 @@ struct SettingsView: View {
                     Text("Toutes les données (plan, journaux, santé) restent sur ton iPhone et ta montre.")
                         .font(.coach(.footnote))
                         .foregroundStyle(.secondary)
+                } footer: {
+                    AppVersionLabel()
                 }
             }
             .themedForm()
@@ -145,5 +147,26 @@ struct SettingsView: View {
         openURL(health) { accepted in
             if !accepted { openURL(settings) }
         }
+    }
+}
+
+/// « Coach 1.0 (20) » : version et numéro de build (celui de TestFlight), pour savoir si on est à jour (#143).
+/// Appui long : copier.
+struct AppVersionLabel: View {
+    private var version: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?" }
+    private var build: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?" }
+    private var text: String { "Coach \(version) (\(build))" }
+
+    var body: some View {
+        Text(text)
+            .font(.detail)
+            .monospacedDigit()
+            .foregroundStyle(Theme.muted)
+            .frame(maxWidth: .infinity)
+            .padding(.top, Space.m)
+            .contextMenu {
+                Button { UIPasteboard.general.string = text } label: { Label("Copier", systemImage: "doc.on.doc") }
+            }
+            .accessibilityLabel("Version \(version), build \(build)")
     }
 }

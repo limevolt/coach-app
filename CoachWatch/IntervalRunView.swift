@@ -315,6 +315,7 @@ struct IntervalRunView: View {
         case .skip: advance(recordWork: false)
         case .addRest: if current?.kind == .rest { addRest() }
         case .previous: goBack()
+        case .setDone, .repsDown, .repsUp: break   // renfo seulement
         }
     }
 

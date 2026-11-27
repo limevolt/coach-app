@@ -23,6 +23,8 @@ enum Theme {
     static let extraFill = Color(hex: 0x3A4250)
     static let text = Color(hex: 0xEEF2F7)
     static let muted = Color(hex: 0x8B97A8)
+    /// Texte secondaire sur un fond d'effort teinté (au moins 4,5:1, #142).
+    static let mutedOnTint = Color(hex: 0xB4BFCC)
     static let accent = Color(hex: 0xC6F432)      // citron vert
     static let accentDark = Color(hex: 0x1B260A)  // texte sur fond citron vert
     static let teal = Color(hex: 0x2DD4BF)
@@ -137,6 +139,9 @@ enum Theme {
     static let guidedControlIcon = Font.system(size: 20, weight: .bold)
     static let guidedMainIcon = Font.system(size: 28, weight: .bold)
     static let guidedDoneIcon = Font.system(size: 34, weight: .bold)
+    /// Renfo guidé (#142) : visuel un peu plus petit (nom, série et reps en dessous), aperçu au repos.
+    static let guidedStrengthVisualHeight: CGFloat = 300
+    static let guidedStrengthNextVisualHeight: CGFloat = 170
     /// Écran « Le coach prépare ton plan » : petit coureur (réduit en très grand texte) et barre d'avancement.
     static let creationFigure: CGFloat = 180
     static let creationFigureCompact: CGFloat = 120

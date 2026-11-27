@@ -208,6 +208,12 @@ struct GuidedSync: Codable, Equatable {
     var segmentCount: Int
     var clock: GuidedClock
     var abandoned = false
+    /// Séance de renfo en séries (#142) : son état remplace `clock` (laissé vide) ; `segmentCount`
+    /// est alors le nombre d'exercices.
+    var strength: StrengthClock?
+
+    /// Séance terminée (circuit ou renfo).
+    var finished: Bool { strength?.finished ?? clock.finished }
 
     /// La montre renvoie l'état toutes les 5 s : sans nouvelles depuis 20 s, elle n'est plus joignable ;
     /// après 60 s, l'iPhone n'ouvre plus l'écran de suivi.
@@ -216,11 +222,13 @@ struct GuidedSync: Codable, Equatable {
 
     /// Séance à afficher sur l'iPhone : ni finie, ni abandonnée, ni trop ancienne.
     func isLive(receivedAt: Date, now: Date) -> Bool {
-        !clock.finished && !abandoned && now.timeIntervalSince(receivedAt) < Self.staleAfter
+        !finished && !abandoned && now.timeIntervalSince(receivedAt) < Self.staleAfter
     }
 
     /// Même déroulé des deux côtés (même plan sur la montre et l'iPhone) : sinon l'iPhone ne suit pas.
     func matches(_ segments: [TimedSegment]) -> Bool { segmentCount == segments.count }
+    /// Renfo : même nombre d'exercices des deux côtés.
+    func matches(_ exercises: [Exercise]) -> Bool { segmentCount == exercises.count }
 
     static let messageKey = "guided"
     static let commandKey = "guidedCommand"
@@ -229,4 +237,6 @@ struct GuidedSync: Codable, Equatable {
 /// Commande envoyée par l'iPhone à la montre (boutons de l'écran de séance guidée).
 enum GuidedCommand: String, Codable {
     case pause, skip, previous, addRest
+    /// Renfo (#142) : « Série faite », et − / + sur les répétitions de la série qu'on vient de faire.
+    case setDone, repsDown, repsUp
 }

@@ -1,4 +1,4 @@
-// GuidedMirror.swift — la séance guidée de la montre, suivie sur l'iPhone (#130, étape 3).
+// GuidedMirror.swift — la séance guidée de la montre (circuit, ou renfo #142), suivie sur l'iPhone (#130).
 // La montre envoie son état (`GuidedSync`) à chaque changement et toutes les 5 s ; l'iPhone ouvert
 // affiche la même séance en grand (`GuidedSessionView`, mode miroir) et renvoie ses boutons à la montre.
 
@@ -35,10 +35,13 @@ final class GuidedMirror {
     func isSilent(at now: Date) -> Bool { now.timeIntervalSince(receivedAt) > GuidedSync.silentAfter }
 
     /// Anti double appui : un 2e appui en moins d'une demi-seconde sauterait deux étapes.
+    /// − / + sur les répétitions (#142) peuvent s'enchaîner vite.
     func send(_ command: GuidedCommand) {
         let now = Date.now
-        guard now.timeIntervalSince(lastCommand) > 0.5 else { return }
-        lastCommand = now
+        if command != .repsDown && command != .repsUp {
+            guard now.timeIntervalSince(lastCommand) > 0.5 else { return }
+            lastCommand = now
+        }
         PhoneConnectivity.shared.sendGuided(command)
     }
 }

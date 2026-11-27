@@ -41,6 +41,23 @@ final class CoachCaptures: XCTestCase {
             if tap("Démarrer", in: app) {
                 shot("06b-seance-en-cours-montre")
             }
+            // Renfo guidé sur l'iPhone (#142) : « Prêt ? », série, puis repos avec correction des reps.
+            if tap("Suivre sur l'iPhone", in: app) {
+                shot("06f-renfo-pret", settle: 1.5)
+                shot("06g-renfo-serie", settle: 5)
+                audit("Renfo guidé — série", app)
+                if tap("Série faite", in: app) {
+                    shot("06h-renfo-repos", settle: 1)
+                    audit("Renfo guidé — repos", app)
+                }
+                let close = app.buttons["Quitter la séance"].firstMatch
+                if close.waitForExistence(timeout: 3) {
+                    close.tap()
+                    _ = tap("Abandonner", in: app)
+                }
+            } else {
+                note("Renfo : « Suivre sur l'iPhone » introuvable")
+            }
             back(app)
         }
         // Circuit : détail en vignettes (#129) et séance guidée sur l'iPhone (#130)
@@ -90,6 +107,11 @@ final class CoachCaptures: XCTestCase {
             item.tap()
             shot("0\(7 + index)-onglet-\(tab.lowercased().folding(options: .diacriticInsensitive, locale: nil))")
             audit("Onglet \(tab)", app)
+            // Bas des Réglages : version et numéro de build (#143).
+            if tab == "Réglages" {
+                app.swipeUp()
+                shot("08b-reglages-version")
+            }
         }
 
         // 4a. Accueil : séance du jour faite (#40, carte « Fait aujourd'hui »)
