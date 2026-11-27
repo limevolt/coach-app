@@ -75,7 +75,7 @@ struct SessionDetailView: View {
         .fullScreenCover(isPresented: $showGuided, onDismiss: {
             if feedbackAfterGuided { feedbackAfterGuided = false; showFeedback = true }
         }) {
-            GuidedSessionView(session: session) { feedbackAfterGuided = true }
+            GuidedRunView(session: session) { feedbackAfterGuided = true }
         }
         .confirmationDialog("Marquer comme non faite ?", isPresented: $confirmNotDone, titleVisibility: .visible) {
             Button("Marquer comme non faite", role: .destructive) { store.markNotDone(initial.id) }
@@ -85,8 +85,8 @@ struct SessionDetailView: View {
         }
     }
 
-    /// Séance qu'on peut suivre sur l'iPhone : un circuit avec des exercices.
-    private var canGuide: Bool { !(session.circuit?.exercises.isEmpty ?? true) }
+    /// Séance qu'on peut suivre sur l'iPhone : un circuit ou un renfo avec des exercices (#142).
+    private var canGuide: Bool { GuidedRunView.canGuide(session) }
 
     static let notDoneMessage = "Ton ressenti et tes séries sont retirés. La séance redevient à faire, sur l'iPhone et sur la montre. L'entraînement reste dans Santé."
 

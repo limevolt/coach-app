@@ -41,6 +41,28 @@ final class CoachCaptures: XCTestCase {
             if tap("Démarrer", in: app) {
                 shot("06b-seance-en-cours-montre")
             }
+            // Renfo guidé sur l'iPhone (#142) : « Prêt ? », série, puis repos avec correction des reps.
+            // Le bouton « Démarrer » change de taille juste après l'envoi : on attend que l'écran soit posé.
+            Thread.sleep(forTimeInterval: 2)
+            if tap("Suivre sur l'iPhone", in: app) {
+                if !app.staticTexts["Prêt ?"].waitForExistence(timeout: 3) {
+                    _ = tap("Suivre sur l'iPhone", in: app)   // appui perdu pendant une animation : un 2e essai
+                }
+                shot("06f-renfo-pret", settle: 0.5)
+                shot("06g-renfo-serie", settle: 5)
+                audit("Renfo guidé — série", app)
+                if tap("Série faite", in: app) {
+                    shot("06h-renfo-repos", settle: 1)
+                    audit("Renfo guidé — repos", app)
+                }
+                let close = app.buttons["Quitter la séance"].firstMatch
+                if close.waitForExistence(timeout: 3) {
+                    close.tap()
+                    _ = tap("Abandonner", in: app)
+                }
+            } else {
+                note("Renfo : « Suivre sur l'iPhone » introuvable")
+            }
             back(app)
         }
         // Circuit : détail en vignettes (#129) et séance guidée sur l'iPhone (#130)
@@ -90,6 +112,11 @@ final class CoachCaptures: XCTestCase {
             item.tap()
             shot("0\(7 + index)-onglet-\(tab.lowercased().folding(options: .diacriticInsensitive, locale: nil))")
             audit("Onglet \(tab)", app)
+            // Bas des Réglages : version et numéro de build (#143).
+            if tab == "Réglages" {
+                app.swipeUp()
+                shot("08b-reglages-version")
+            }
         }
 
         // 4a. Accueil : séance du jour faite (#40, carte « Fait aujourd'hui »)
@@ -214,6 +241,17 @@ final class CoachCaptures: XCTestCase {
             app.swipeUp()
             shot("65-adapter-grand-texte-suite")
             audit("Adapter — grand texte", app)
+        }
+
+        // Renfo guidé en très grand texte (#142) : seul le visuel rétrécit, les boutons restent visibles.
+        app = launchDemo(plan: DemoPlan.json(),
+                         arguments: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityL"])
+        _ = app.buttons["onglet-Plan"].waitForExistence(timeout: 30)
+        if openSession("Renfo A", in: app), tap("Suivre sur l'iPhone", in: app) {
+            shot("06i-renfo-serie-grand-texte", settle: 7)
+            audit("Renfo guidé — grand texte", app)
+        } else {
+            note("Renfo en grand texte : « Suivre sur l'iPhone » introuvable")
         }
 
         // 5. Accueil en très grande taille de texte

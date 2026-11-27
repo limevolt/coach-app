@@ -3,7 +3,6 @@
 // en grand. Étape 2 : l'iPhone mène la séance seul (sans montre, ou si on choisit de suivre sur l'iPhone).
 // Le déroulé vient de `Shared/GuidedRun.swift` (`IntervalRunConfig`, `GuidedClock`), comme sur la montre.
 
-import AudioToolbox
 import SwiftUI
 
 struct GuidedSessionView: View {
@@ -19,7 +18,6 @@ struct GuidedSessionView: View {
     @Environment(PlanStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var config: IntervalRunConfig?
     @State private var clock = GuidedClock()
@@ -88,14 +86,14 @@ struct GuidedSessionView: View {
             var next = clock
             if next.tick(segments, at: now), !(mirrored && next.finished) {
                 clock = next
-                Self.play(.go)
+                GuidedSound.go.play()
                 lastBeep = nil
                 if clock.finished { completed(at: now) }
             } else if clock.started, !clock.isPaused, !clock.finished {
                 let left = Int(clock.remaining(at: now).rounded(.up))
                 if (1...3).contains(left), lastBeep != left {
                     lastBeep = left
-                    Self.play(.tick)
+                    GuidedSound.tick.play()
                 }
             }
             try? await Task.sleep(for: .milliseconds(200))
@@ -150,11 +148,6 @@ struct GuidedSessionView: View {
         segments.prefix(clock.finished ? segments.count : clock.index).filter { $0.kind == .work }.count
     }
 
-    private enum Sound { case tick, go }
-    private static func play(_ sound: Sound) {
-        AudioServicesPlaySystemSound(sound == .tick ? 1057 : 1025)
-    }
-
     // MARK: Écrans
 
     @ViewBuilder private func screen(now: Date) -> some View {
@@ -192,36 +185,16 @@ struct GuidedSessionView: View {
     }
 
     private func header(_ seg: TimedSegment) -> some View {
-        HStack {
-            // Miroir : fermer l'écran de l'iPhone seulement, la séance continue sur la montre.
-            Button { if mirrored { dismiss() } else { confirmQuit = true } } label: {
-                Image(systemName: "xmark").font(Theme.guidedControlIcon)
-                    .frame(width: Theme.minTap, height: Theme.minTap)
-            }
-            .accessibilityLabel("Quitter la séance")
-            Spacer()
-            if mirrored && mirror.isSilent(at: .now) {
-                Label("Montre injoignable", systemImage: "applewatch.slash")
-                    .font(.detail).foregroundStyle(Theme.warm)
-            } else {
-                Text(roundLabel(seg)).font(.detail).foregroundStyle(Theme.muted).monospacedDigit()
-            }
-            Spacer()
-            if seg.kind != .prepare, let ex = exercise(for: seg) {
-                Button {
-                    // La fiche met la séance en pause (seule sur l'iPhone ; en miroir, la montre continue).
-                    if !mirrored, !clock.isPaused { togglePause() }
-                    guide = ex
-                } label: {
-                    Image(systemName: "questionmark.circle").font(Theme.guidedControlIcon)
-                        .frame(width: Theme.minTap, height: Theme.minTap)
-                }
-                .accessibilityLabel("Comment faire ?")
-            } else {
-                Color.clear.frame(width: Theme.minTap, height: Theme.minTap).accessibilityHidden(true)
-            }
-        }
-        .foregroundStyle(Theme.text)
+        let ex = seg.kind != .prepare ? exercise(for: seg) : nil
+        // Miroir : fermer l'écran de l'iPhone seulement, la séance continue sur la montre.
+        return GuidedHeader(position: roundLabel(seg), silent: mirrored && mirror.isSilent(at: .now),
+                            onTint: seg.kind == .work && !clock.isPaused,
+                            onClose: { if mirrored { dismiss() } else { confirmQuit = true } },
+                            onHelp: ex.map { ex in {
+                                // La fiche met la séance en pause (seule sur l'iPhone ; en miroir, la montre continue).
+                                if !mirrored, !clock.isPaused { togglePause() }
+                                guide = ex
+                            } })
     }
 
     /// Les exercices du tour en cours : faits en citron vert.
@@ -340,13 +313,7 @@ struct GuidedSessionView: View {
     }
 
     private func roundButton(_ icon: String, label: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: icon).font(Theme.guidedControlIcon)
-                .foregroundStyle(Theme.text)
-                .frame(width: Theme.guidedControl, height: Theme.guidedControl)
-                .overlay(Circle().stroke(Theme.line, lineWidth: Theme.quietStroke))
-        }
-        .accessibilityLabel(label)
+        GuidedRoundButton(icon: icon, label: label, action: action)
     }
 
     private func skip() {
@@ -359,36 +326,9 @@ struct GuidedSessionView: View {
         if clock.finished { completed(at: now) }
     }
 
-    /// Visuel de l'exercice : personnage animé (pose fixe si « Réduire les animations »),
-    /// sinon les étapes écrites en grand (maquette « exercice sans visuel »).
-    @ViewBuilder private func visual(for exercise: Exercise?, height: CGFloat, animated: Bool,
-                                     fill: Color = Theme.card) -> some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: Radius.card, style: .continuous).fill(fill)
-            if let exercise, let animation = ExerciseLibrary.animation(for: exercise) {
-                if animated && !reduceMotion {
-                    AnimatedExerciseFigure(animation: animation, shadow: false).padding(Space.l)
-                } else {
-                    ExerciseFigure(animation: animation, time: animation.keyPoseTime, shadow: false).padding(Space.l)
-                }
-            } else if let exercise, let steps = Self.steps(exercise), !steps.isEmpty {
-                VStack(alignment: .leading, spacing: Space.l) {
-                    ForEach(Array(steps.prefix(3).enumerated()), id: \.offset) { i, step in
-                        HStack(alignment: .firstTextBaseline, spacing: Space.m) {
-                            Text("\(i + 1)").foregroundStyle(Theme.accent)
-                            Text(step).foregroundStyle(Theme.text).lineLimit(3).minimumScaleFactor(0.8)
-                        }
-                        .font(.number)
-                    }
-                }
-                .padding(Space.xl)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-            } else {
-                Image(systemName: Theme.exerciseFallbackSymbol).font(Theme.tileSymbolFont).foregroundStyle(Theme.muted)
-            }
-        }
-        .frame(height: height)
-        .accessibilityHidden(true)
+    private func visual(for exercise: Exercise?, height: CGFloat, animated: Bool,
+                        fill: Color = Theme.card) -> some View {
+        GuidedExerciseVisual(exercise: exercise, height: height, animated: animated, fill: fill)
     }
 
     private var finishedScreen: some View {
@@ -433,18 +373,8 @@ struct GuidedSessionView: View {
         .background(Theme.bg.ignoresSafeArea())
     }
 
-    /// Miroir ouvert avant le premier message de la montre.
     private var waitingScreen: some View {
-        VStack(spacing: Space.l) {
-            ProgressView().tint(Theme.accent)
-            Text(mismatch ? "La montre n'a pas le même plan. Ouvre Coach sur la montre pour le recevoir."
-                          : "En attente de la montre")
-                .font(.text).foregroundStyle(Theme.muted).multilineTextAlignment(.center)
-            Button("Fermer") { dismiss() }.buttonStyle(.coachQuiet())
-        }
-        .padding(.horizontal, Theme.screenMargin)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Theme.bg.ignoresSafeArea())
+        GuidedWaitingScreen(mismatch: mismatch) { dismiss() }
     }
 
     // MARK: Utilitaires
@@ -468,10 +398,5 @@ struct GuidedSessionView: View {
     private func roundLabel(_ seg: TimedSegment) -> String {
         let rounds = max(1, session.circuit?.rounds ?? 1)
         return rounds > 1 ? "Tour \(max(seg.round, 1)) sur \(rounds)" : ""
-    }
-
-    static func steps(_ exercise: Exercise) -> [String]? {
-        if let own = exercise.instructions, !own.isEmpty { return own }
-        return ExerciseSteps.steps(forName: exercise.name)
     }
 }

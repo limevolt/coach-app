@@ -1143,12 +1143,13 @@ final class PlanStore {
 
     /// Séance guidée faite sur l'iPhone (#130) : notée faite maintenant, avec la part faite si elle
     /// a été terminée tôt. Le ressenti s'ajoute ensuite avec `saveFeedback`.
-    func recordGuided(_ session: PlannedSession, doneFraction: Double?) {
+    func recordGuided(_ session: PlannedSession, doneFraction: Double?, sets: [SetLog]? = nil) {
         var log = self.log(for: session.id)
             ?? SessionLog(id: UUID(), sessionId: session.id, completedAt: .now, rpe: nil, note: nil,
                           sets: nil, title: session.title, kind: nil)
         log.completedAt = .now
         log.doneFraction = doneFraction
+        if let sets { log.sets = sets }   // renfo guidé (#142) : les séries notées
         upsert(log)
     }
 

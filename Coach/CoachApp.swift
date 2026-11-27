@@ -79,7 +79,7 @@ struct ContentView: View {
             closedMirror = GuidedMirror.shared.live?.sessionId
             shownMirror = nil
         }) { session in
-            GuidedSessionView(session: session, mode: .mirror)
+            GuidedRunView(session: session, mode: .mirror)
                 .onAppear { shownMirror = session.id }
         }
         .alert("Coach",
@@ -93,7 +93,7 @@ struct ContentView: View {
 }
 
 extension ContentView {
-    /// Séance de circuit en cours sur la montre : l'écran de suivi s'ouvre (une fois par séance si on le ferme).
+    /// Séance de circuit ou de renfo (#142) en cours sur la montre : l'écran de suivi s'ouvre (une fois par séance si on le ferme).
     private func presentMirrorIfNeeded() {
         guard let live = GuidedMirror.shared.live else {
             closedMirror = nil
@@ -104,7 +104,7 @@ extension ContentView {
         if let pending = mirrorSession, shownMirror != pending.id, pending.id != live.sessionId { mirrorSession = nil }
         guard mirrorSession == nil, closedMirror != live.sessionId,
               let session = store.plan?.sessions.first(where: { $0.id == live.sessionId })?.effective,
-              session.circuit != nil else { return }
+              GuidedRunView.canGuide(session) else { return }
         mirrorSession = session
     }
 
