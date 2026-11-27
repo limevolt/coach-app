@@ -109,4 +109,39 @@ final class GuidedMirrorTests: XCTestCase {
         clock.togglePause(at: t0.addingTimeInterval(11))
         XCTAssertEqual(status(), "En pause")
     }
+
+    func testBannerOnlyForASessionStillRunningAndNotOnScreen() throws {
+        let mirror = GuidedMirror()
+        mirror.receive(try data(liveSync("r")))
+        let now = Date.now
+        XCTAssertEqual(mirror.bannerSessionId(at: now, mirrorShown: false), "r")
+        // Écran de suivi affiché : pas de bandeau.
+        XCTAssertNil(mirror.bannerSessionId(at: now, mirrorShown: true))
+        // Sur le détail de cette séance : pas de bandeau (son bouton la rouvre).
+        mirror.detailShown = "r"
+        XCTAssertNil(mirror.bannerSessionId(at: now, mirrorShown: false))
+        mirror.detailShown = "autre"
+        XCTAssertEqual(mirror.bannerSessionId(at: now, mirrorShown: false), "r")
+        // La montre se tait plus d'une minute : la séance n'est plus en cours, le bandeau s'efface.
+        XCTAssertNil(mirror.bannerSessionId(at: now.addingTimeInterval(GuidedSync.staleAfter + 1), mirrorShown: false))
+    }
+
+    func testBannerStatusFollowsTheCircuit() {
+        let circuit = CircuitWorkout(rounds: 2, workSec: 30, restSec: 15, roundRestSec: nil, prepareSec: nil,
+                                     exercises: [Exercise(name: "Burpees"), Exercise(name: "Fentes")])
+        let session = PlannedSession(id: "c", date: "2030-01-08", time: nil, type: .circuit, title: "Circuit de démo",
+                                     notes: nil, run: nil, strength: nil, circuit: circuit,
+                                     equipment: nil, originalDate: nil, replaces: nil)
+        let segments = IntervalRunConfig.circuit(session)?.segments ?? []
+        let t0 = Date(timeIntervalSince1970: 1_000_000)
+        func status(_ index: Int) -> String {
+            let clock = GuidedClock(index: index, segmentEnd: t0.addingTimeInterval(20), pausedRemaining: nil, finished: false)
+            return SessionRunningBanner.status(GuidedSync(sessionId: "c", segmentCount: segments.count, clock: clock),
+                                               session: session, at: t0)
+        }
+        XCTAssertEqual(status(0), "Prêt ? 0:20")
+        XCTAssertEqual(status(1), "Tour 1 sur 2 · Burpees 0:20")
+        XCTAssertEqual(status(2), "Tour 1 sur 2 · repos 0:20")
+        XCTAssertEqual(status(99), "En cours")
+    }
 }

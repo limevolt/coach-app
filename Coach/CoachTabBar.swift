@@ -16,9 +16,9 @@ struct CoachTab<ID: Hashable>: Identifiable {
 struct CoachTabBar<ID: Hashable>: View {
     let tabs: [CoachTab<ID>]
     @Binding var selection: ID
-    /// Appui sur l'onglet déjà choisi : retour à son premier écran, en haut de la page.
     /// Au-dessus des onglets : le bandeau « séance en cours sur la montre » (#146).
     var accessory: AnyView?
+    /// Appui sur l'onglet déjà choisi : retour à son premier écran, en haut de la page.
     var reselect: (ID) -> Void = { _ in }
 
     /// Clavier ouvert : la barre s'efface au lieu de remonter avec lui.
@@ -38,6 +38,8 @@ struct CoachTabBar<ID: Hashable>: View {
                     }
                     .padding(.horizontal, Theme.tabPressInset * 2)
                     .padding(.bottom, noBottomInset ? Theme.tabBarBottomPadding : 0)
+                    .accessibilityElement(children: .contain)
+                    .accessibilityLabel("Onglets")
                 }
                 .background {
                     GeometryReader { geometry in
@@ -59,8 +61,6 @@ struct CoachTabBar<ID: Hashable>: View {
                     }
                     .ignoresSafeArea(edges: .bottom)
                 }
-                .accessibilityElement(children: .contain)
-                .accessibilityLabel("Onglets")
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in

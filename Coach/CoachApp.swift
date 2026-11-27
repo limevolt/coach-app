@@ -82,12 +82,15 @@ struct ContentView: View {
         .onChange(of: GuidedMirror.shared.messages, initial: true) { _, _ in presentMirrorIfNeeded() }
         // Bandeau ou « En cours sur ta montre » (#146) : l'écran de suivi fermé se rouvre.
         .onChange(of: GuidedMirror.shared.reopenToken) { _, _ in
-            guard let id = GuidedMirror.shared.reopenId else { return }
+            // Seulement une séance qui tourne encore sur la montre (pas une séance finie entre-temps).
+            guard let id = GuidedMirror.shared.reopenId, GuidedMirror.shared.live?.sessionId == id else { return }
             closedMirror = nil
-            if GuidedMirror.shared.live?.sessionId != id { GuidedMirror.shared.expect(id) }
+            // Demandé plus tôt mais jamais affiché (une autre feuille était ouverte) : on redemande.
+            if let pending = mirrorSession, shownMirror != pending.id { mirrorSession = nil }
             presentMirrorIfNeeded()
         }
-        .environment(\.tabAccessoryHeight, bannerSession == nil ? 0 : bannerHeight)
+        // Hauteur mesurée du bandeau (0 quand il n'est pas affiché).
+        .environment(\.tabAccessoryHeight, bannerHeight)
         // Captures (#146) : une séance de renfo « tourne sur la montre », en repos.
         .task { await simulateWatchForCaptures() }
         .fullScreenCover(item: $mirrorSession, onDismiss: {
@@ -155,17 +158,26 @@ extension ContentView {
     }
 
     /// Séance qui tourne sur la montre alors que son écran de suivi est fermé (#146).
-    private var bannerSession: PlannedSession? {
-        let mirror = GuidedMirror.shared
-        guard mirrorSession == nil, let live = mirror.live, mirror.detailShown != live.sessionId else { return nil }
-        return store.plan?.sessions.first(where: { $0.id == live.sessionId })?.effective
+    private func bannerSession(at now: Date) -> PlannedSession? {
+        GuidedMirror.shared.bannerSessionId(at: now, mirrorShown: shownMirror != nil).flatMap(followable)
+    }
+
+    /// Séance qu'on peut suivre sur l'iPhone : dans le plan, circuit ou renfo, pas encore notée faite.
+    private func followable(_ id: String) -> PlannedSession? {
+        guard !store.isDone(id), let session = store.plan?.sessions.first(where: { $0.id == id })?.effective,
+              GuidedRunView.canGuide(session) else { return nil }
+        return session
     }
 
     private var banner: AnyView? {
-        guard let session = bannerSession, let sync = GuidedMirror.shared.live else { return nil }
-        return AnyView(
-            SessionRunningBanner(session: session, sync: sync) { GuidedMirror.shared.reopen(session.id) }
-                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { bannerHeight = $0 }
+        AnyView(
+            // Revu chaque seconde : le bandeau s'efface aussi quand la montre se tait (séance plus en cours).
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                if let session = bannerSession(at: context.date), let sync = GuidedMirror.shared.live(at: context.date) {
+                    SessionRunningBanner(session: session, sync: sync) { GuidedMirror.shared.reopen(session.id) }
+                }
+            }
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { bannerHeight = $0 }
         )
     }
 }

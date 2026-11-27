@@ -71,9 +71,18 @@ final class GuidedMirror {
     }
 
     /// Séance en cours sur la montre, à afficher.
-    var live: GuidedSync? {
-        guard let sync, sync.isLive(receivedAt: receivedAt, now: .now) else { return nil }
+    var live: GuidedSync? { live(at: .now) }
+
+    func live(at now: Date) -> GuidedSync? {
+        guard let sync, sync.isLive(receivedAt: receivedAt, now: now) else { return nil }
         return sync
+    }
+
+    /// Séance pour le bandeau (#146) : en cours sur la montre, son écran de suivi n'est pas affiché,
+    /// et on n'est pas sur son détail (« En cours sur ta montre » y joue ce rôle).
+    func bannerSessionId(at now: Date, mirrorShown: Bool) -> String? {
+        guard !mirrorShown, let live = live(at: now), detailShown != live.sessionId else { return nil }
+        return live.sessionId
     }
 
     /// Plus de nouvelles de la montre depuis un moment (hors de portée, app fermée).

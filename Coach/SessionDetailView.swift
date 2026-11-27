@@ -41,8 +41,10 @@ struct SessionDetailView: View {
                             .buttonStyle(.coachPrimary())
                     } else {
                         // Avec une montre : la séance part sur la montre et l'iPhone l'affiche en grand (#130, #142).
-                        StartOnWatchButton(reopen: canGuide ? { GuidedMirror.shared.reopen(session.id) } : nil,
-                                           running: GuidedMirror.shared.live?.sessionId == session.id) {
+                        let running = GuidedMirror.shared.live?.sessionId == session.id
+                        // Rouvrir seulement une séance qui tourne encore sur la montre.
+                        StartOnWatchButton(reopen: canGuide && running ? { GuidedMirror.shared.reopen(session.id) } : nil,
+                                           running: running) {
                             await store.startOnWatch(session)
                         }  // taille normale (#101)
                         if canGuide {
