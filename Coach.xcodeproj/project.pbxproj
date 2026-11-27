@@ -102,6 +102,7 @@
 		9161B4E2AA2D3B4A7293D7BD /* WatchSyncQueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F5D2E14E9042E95E3A6888B /* WatchSyncQueueTests.swift */; };
 		93B36E4537D6BA45FD7E6B60 /* Outfit-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3D495D87289FD2F14C06D471 /* Outfit-Black.ttf */; };
 		9684268B64EB4275BEC6D8B1 /* GuidedMirrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 008E0BC08E7B7EB1E9B7F3FF /* GuidedMirrorTests.swift */; };
+		975C8C30485A926452CC6908 /* SessionRunningBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = C67EFF86ED685B3EBC6559ED /* SessionRunningBanner.swift */; };
 		9B9B5785F591A665D43AFE14 /* GuidedRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA946F497AD7F3C9D3F61907 /* GuidedRun.swift */; };
 		9D4862496CFA2F89246CD238 /* CoachCaptures.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5087627E360F0D4D6FD9FC7 /* CoachCaptures.swift */; };
 		9DE8E796EC1E88D558090CEF /* HealthReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BC2FE5D6D5989A6C962A7D0 /* HealthReader.swift */; };
@@ -289,6 +290,7 @@
 		C38A57DE47A7143F483FAF37 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		C4C696570245BF16A3413FEB /* exemple-plan.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "exemple-plan.json"; sourceTree = "<group>"; };
 		C5CF7AC31F6D6F52356127F2 /* HealthPermissions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthPermissions.swift; sourceTree = "<group>"; };
+		C67EFF86ED685B3EBC6559ED /* SessionRunningBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRunningBanner.swift; sourceTree = "<group>"; };
 		C8267B20E1E74B1EB1864AF5 /* WatchCaptures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchCaptures.swift; sourceTree = "<group>"; };
 		C97289243940E2B96242B26A /* ExtraActivityPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtraActivityPlannerTests.swift; sourceTree = "<group>"; };
 		CA946F497AD7F3C9D3F61907 /* GuidedRun.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidedRun.swift; sourceTree = "<group>"; };
@@ -446,6 +448,7 @@
 				E56466260B3F81B7EF2535F3 /* SegmentedChoice.swift */,
 				13CE692C78AF6FE152D49881 /* SessionAdjust.swift */,
 				8BCEB04270CDBFAB907B3042 /* SessionDetailView.swift */,
+				C67EFF86ED685B3EBC6559ED /* SessionRunningBanner.swift */,
 				276E7638F419A5D3A0590E11 /* SettingsView.swift */,
 				A7E2BDDF89704716BC45D9B3 /* StartOnWatch.swift */,
 				5055CE44BD448E02491CE004 /* StrengthGuidedView.swift */,
@@ -657,7 +660,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1430;
+				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					34B5BC82ED07EEF47D7400E0 = {
 						DevelopmentTeam = QG4XL95P47;
@@ -825,6 +828,7 @@
 				5CD4CDD782D9C2E84E5FB1BF /* SessionAdjust.swift in Sources */,
 				14A24395149617D03AB9F64A /* SessionBuilder.swift in Sources */,
 				E03F482288B9F4D4923EF730 /* SessionDetailView.swift in Sources */,
+				975C8C30485A926452CC6908 /* SessionRunningBanner.swift in Sources */,
 				2E1144022454E7717EB8AE43 /* SettingsView.swift in Sources */,
 				5A9CD021F0A4D707B5532715 /* StartOnWatch.swift in Sources */,
 				19D5964FCB4FBAA25413AD6B /* StrengthGuidedView.swift in Sources */,
