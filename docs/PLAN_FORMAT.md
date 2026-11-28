@@ -129,7 +129,7 @@ Dans un plan mis à jour, **supprime `originalDate`, `replaces` et `coachNote`**
 
 - `instructions` : liste de 2 à 5 phrases courtes (position, mouvement, erreurs à éviter). Affichées sur la montre (« Comment faire ? ») et sur l'iPhone.
 - `mistakes` : erreurs à éviter (facultatif ; sinon celles de la bibliothèque).
-- `animation` : animation intégrée à utiliser. Valeurs : `squat`, `squatJump`, `pushup`, `plank`, `sidePlank`, `lunge`, `jumpingJack`, `mountainClimber`, `rdl` (soulevé de terre roumain), `row` (rowing haltères), `calfRaise` (mollets), `gluteBridge` (pont fessier). Si absent, l'app la devine d'après le nom (« Squat sauté », « Pompes », « Fentes »…), sauf pour une autre version que celle dessinée (« … sur une jambe », « sans charge », « inversé ») : pas d'animation plutôt qu'une fausse. Privilégie ces exercices : ils sont animés. Pour un autre exercice, mets des `instructions` détaillées.
+- `animation` : animation intégrée à utiliser. Valeurs : `squat`, `squatJump`, `pushup`, `plank`, `sidePlank`, `lunge`, `jumpingJack`, `mountainClimber`, `rdl` (soulevé de terre roumain aux haltères), `rdlSingleLeg` (soulevé de terre roumain sur une jambe, sans matériel), `row` (rowing haltères), `calfRaise` (mollets), `gluteBridge` (pont fessier). Si absent, l'app la devine d'après le nom (« Squat sauté », « Pompes », « Fentes »…), sauf pour une autre version que celle dessinée (« … sur une jambe », « sans charge », « inversé ») : pas d'animation plutôt qu'une fausse. Privilégie ces exercices : ils sont animés. Pour un autre exercice, mets des `instructions` détaillées.
 - `videoURL` : lien vers une démo (YouTube, fichier iCloud, vidéo générée par IA…). Bouton « Voir la démo » sur l'iPhone.
 
 ## Limites

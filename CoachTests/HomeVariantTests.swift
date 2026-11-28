@@ -25,7 +25,8 @@ final class HomeVariantTests: XCTestCase {
         let v = home([dumbbellRDL])[0]
         XCTAssertEqual(v.name, "Soulevé de terre roumain sur une jambe")
         XCTAssertEqual(v.homeVariant, true)
-        XCTAssertNil(ExerciseLibrary.animation(for: v), "pas l'animation aux haltères")
+        XCTAssertEqual(ExerciseLibrary.animation(for: v)?.id, "rdlSingleLeg", "pas l'animation aux haltères")
+        XCTAssertEqual(ExerciseLibrary.animation(for: v)?.dumbbells, false)
         XCTAssertNil(v.mistakes)
         let steps = guideSteps(v)
         XCTAssertFalse(steps.isEmpty)
@@ -38,7 +39,7 @@ final class HomeVariantTests: XCTestCase {
         var e = dumbbellRDL
         e.noEquipment = ExerciseAlternative(name: "Soulevé de terre roumain sur une jambe", animation: "rdl")
         let v = home([e])[0]
-        XCTAssertNil(ExerciseLibrary.animation(for: v), "animation aux haltères refusée même demandée par le plan")
+        XCTAssertEqual(ExerciseLibrary.animation(for: v)?.id, "rdlSingleLeg", "animation aux haltères du plan remplacée")
         XCTAssertEqual(v.instructions, ExerciseSteps.steps(forName: "Soulevé de terre roumain sur une jambe"))
     }
 
@@ -76,6 +77,7 @@ final class HomeVariantTests: XCTestCase {
         XCTAssertEqual(out.map(\.name), ["Squat sauté", "Fentes alternées", "Rowing sac à dos",
                                          "Mollets sur une marche, une jambe", "Pont fessier une jambe", "Pompes"])
         XCTAssertEqual(anims, ["squatJump", "lunge", nil, nil, nil, "pushup"])
+        XCTAssertEqual(ExerciseLibrary.animation(for: home([dumbbellRDL])[0])?.id, "rdlSingleLeg")
         for v in out {
             XCTAssertEqual(v.homeVariant, true, v.name)
             let steps = guideSteps(v)
@@ -87,7 +89,7 @@ final class HomeVariantTests: XCTestCase {
 
     // Plans du coach local à la maison : le nom seul ne doit plus faire deviner l'animation aux haltères.
     func testNameGuessRefusesTheDumbbellOrTwoLegAnimation() {
-        XCTAssertNil(ExerciseLibrary.animation(forName: "Soulevé de terre roumain sur une jambe"))
+        XCTAssertEqual(ExerciseLibrary.animation(forName: "Soulevé de terre roumain sur une jambe")?.id, "rdlSingleLeg")
         XCTAssertNil(ExerciseLibrary.animation(forName: "Rowing inversé sous une table"))
         XCTAssertNil(ExerciseLibrary.animation(forName: "Pont fessier une jambe"))
         XCTAssertEqual(ExerciseLibrary.animation(forName: "Soulevé de terre roumain")?.id, "rdl")
@@ -148,5 +150,19 @@ final class HomeVariantTests: XCTestCase {
         let v = session.effective.circuit?.exercises.first
         XCTAssertEqual(v?.homeVariant, true)
         XCTAssertNil(v.flatMap(ExerciseLibrary.animation(for:)))
+    }
+
+    // Nouvelle animation : sans haltères, sur une jambe, pose clé en bas (effort max).
+    func testSingleLegRDLAnimation() {
+        let a = ExerciseLibrary.rdlSingleLeg
+        XCTAssertFalse(a.dumbbells)
+        XCTAssertTrue(a.singleLeg)
+        XCTAssertEqual(a.steps, ExerciseSteps.steps(forName: a.name))
+        XCTAssertTrue(ExerciseLibrary.all.contains { $0.id == a.id })
+        XCTAssertEqual(ExerciseLibrary.animation(id: "rdlSingleLeg")?.id, a.id)
+        let bottom = a.phases[1].pose
+        XCTAssertEqual(bottom.effort, 1)
+        XCTAssertLessThan(bottom.footF.y, BodyGeo.flat - 40, "jambe libre décollée du sol")
+        for p in a.phases { XCTAssertTrue((0..<4).contains(p.step ?? 0)) }
     }
 }

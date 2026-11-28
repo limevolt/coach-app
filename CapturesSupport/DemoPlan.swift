@@ -10,7 +10,8 @@ enum DemoPlan {
 
     /// Le plan d'exemple en JSON. `firstOffset` : nombre de jours entre aujourd'hui et la 1re séance
     /// (0 = la 1re séance est aujourd'hui, -2 = elle était avant-hier).
-    static func json(firstOffset: Int = 0) -> String {
+    /// `edit` : retouche des séances (données fictives) pour une capture précise.
+    static func json(firstOffset: Int = 0, edit: (inout [[String: Any]]) -> Void = { _ in }) -> String {
         guard let url = Bundle(for: BundleToken.self).url(forResource: "exemple-plan", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               var root = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
@@ -38,6 +39,7 @@ enum DemoPlan {
         for i in sessions.indices {
             if let new = moved(sessions[i]["date"]) { sessions[i]["date"] = new }
         }
+        edit(&sessions)
         root["sessions"] = sessions
         if var goals = root["goals"] as? [[String: Any]] {
             for i in goals.indices {

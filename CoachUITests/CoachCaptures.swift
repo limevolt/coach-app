@@ -256,6 +256,36 @@ final class CoachCaptures: XCTestCase {
             note("Renfo en grand texte : « Sans la montre » introuvable")
         }
 
+        // « Sans matériel » sur un renfo (#149) : le soulevé de terre roumain aux haltères devient la version
+        // sur une jambe, avec ses propres consignes et sa propre animation (jamais celles aux haltères).
+        app = launchDemo(plan: DemoPlan.json { sessions in
+            guard let i = sessions.firstIndex(where: { $0["id"] as? String == "demo-s2" }),
+                  var strength = sessions[i]["strength"] as? [String: Any],
+                  var exercises = strength["exercises"] as? [[String: Any]] else { return }
+            exercises.insert(["name": "Soulevé de terre roumain", "sets": 3, "reps": 10, "weightKg": 12,
+                              "restSec": 90, "animation": "rdl"], at: 0)
+            strength["exercises"] = exercises
+            sessions[i]["strength"] = strength
+        })
+        _ = app.buttons["onglet-Plan"].waitForExistence(timeout: 30)
+        if openSession("Renfo A", in: app), tap("Adapter", in: app) {
+            Thread.sleep(forTimeInterval: 0.6)
+            if tap("Sans matériel", in: app) {
+                shot("66-adapter-sans-materiel")
+                if tap("Faire sans matériel", in: app) {
+                    shot("67-renfo-sans-materiel", settle: 1.5)
+                    if tap("sur une jambe", in: app) {
+                        shot("68-fiche-rdl-une-jambe", settle: 2)
+                        audit("Fiche — soulevé de terre roumain sur une jambe", app)
+                        app.swipeUp()
+                        shot("69-fiche-rdl-une-jambe-bas")
+                    }
+                }
+            }
+        } else {
+            note("Sans matériel : « Adapter » introuvable sur le renfo")
+        }
+
         // Séance en cours sur la montre (#146) : le suivi s'ouvre ; fermé, un bandeau permet d'y revenir.
         app = launchDemo(plan: DemoPlan.json(), watchSession: "demo-s2")
         _ = app.buttons["onglet-Plan"].waitForExistence(timeout: 30)

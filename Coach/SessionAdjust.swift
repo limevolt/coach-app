@@ -156,7 +156,7 @@ enum Bodyweight {
                             "Pas de place ? Course sur place."],
              always: true, cardio: true),
         Rule(keys: ["roumain", "rdl", "deadlift", "souleve de terre"],
-             name: "Soulevé de terre roumain sur une jambe", animation: nil,   // "rdl" = version aux haltères, sur deux jambes
+             name: "Soulevé de terre roumain sur une jambe", animation: "rdlSingleLeg",
              instructions: ExerciseSteps.steps(forName: "Soulevé de terre roumain sur une jambe") ?? [],
              always: true),
         Rule(keys: ["squat"],
@@ -206,6 +206,12 @@ enum Bodyweight {
         return rules.first { normalized($0.name) == n }
     }
 
+    /// Animation demandée par le plan, si elle existe et ne montre pas de matériel.
+    private static func withoutEquipmentAnimation(_ id: String?) -> String? {
+        guard let id, let a = ExerciseLibrary.animation(id: id), !a.dumbbells else { return nil }
+        return a.id
+    }
+
     /// Consignes ou erreurs qui ne parlent pas de matériel, sinon nil (jamais celles de la version avec matériel).
     private static func withoutEquipmentText(_ lines: [String]?) -> [String]? {
         guard let lines, !lines.isEmpty, !lines.contains(where: EquipmentText.mentions) else { return nil }
@@ -227,7 +233,7 @@ enum Bodyweight {
                             notes: alt.notes ?? "Sans matériel (au lieu de « \(e.name) »)",
                             instructions: alt.instructions ?? known?.instructions,
                             mistakes: nil,
-                            animation: alt.animation ?? known?.animation,
+                            animation: withoutEquipmentAnimation(alt.animation) ?? known?.animation,
                             videoURL: nil,
                             homeVariant: true)
         }
