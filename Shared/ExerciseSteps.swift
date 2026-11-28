@@ -6,6 +6,17 @@ import Foundation
 
 enum ExerciseSteps {
 
+    /// Consignes à afficher pour un exercice : celles du plan, sinon celles de son animation,
+    /// sinon celles du catalogue d'après le nom. Pour une variante sans matériel, jamais de consignes
+    /// qui parlent de matériel : liste vide, et l'écran affiche un avertissement.
+    static func steps(for exercise: Exercise, animation: ExerciseAnimation?) -> [String] {
+        if let own = exercise.instructions, !own.isEmpty { return own }
+        if let anim = animation?.steps, !anim.isEmpty { return anim }
+        guard let byName = steps(forName: exercise.name) else { return [] }
+        if exercise.homeVariant == true, byName.contains(where: EquipmentText.mentions) { return [] }
+        return byName
+    }
+
     /// Consignes trouvées d'après le nom de l'exercice (sans accents ni majuscules), ou nil.
     static func steps(forName name: String) -> [String]? {
         let n = name.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "fr_FR"))
@@ -18,6 +29,33 @@ enum ExerciseSteps {
 
     /// Ordre important : la première entrée qui correspond l'emporte (le plus précis d'abord).
     private static let catalogue: [(keys: [String], steps: [String])] = [
+        // Variantes sans matériel (aussi utilisées par « Sans matériel » dans Adapter) : avant les versions avec charge.
+        (["souleve de terre roumain sur une jambe", "roumain sur une jambe", "roumain une jambe", "roumain a une jambe",
+          "rdl sur une jambe", "rdl une jambe", "single leg rdl", "single leg deadlift"], [
+            "Debout sur une jambe, genou légèrement fléchi.",
+            "Bascule le buste vers l'avant, dos plat, l'autre jambe tendue vers l'arrière.",
+            "Remonte en serrant le fessier.",
+            "Fais toutes les répétitions d'un côté, puis change."]),
+        (["rowing sac a dos"], [
+            "Remplis un sac à dos (livres, bouteilles d'eau).",
+            "Buste penché à 45°, dos plat, sac tenu à deux mains.",
+            "Tire le sac vers le nombril en serrant les omoplates.",
+            "Redescends lentement."]),
+        (["rowing inverse sous une table"], [
+            "Allongé sous une table solide, mains sur le bord, bras tendus.",
+            "Corps gainé et droit, talons au sol.",
+            "Tire la poitrine vers le bord de la table en serrant les omoplates.",
+            "Redescends lentement. Plus facile : genoux pliés."]),
+        (["mollets sur une marche, une jambe"], [
+            "Avant du pied sur une marche, talon dans le vide, une main au mur.",
+            "Monte le plus haut possible sur la pointe.",
+            "Descends lentement sous le niveau de la marche.",
+            "Fais un côté, puis l'autre."]),
+        (["pont fessier une jambe", "pont fessier sur une jambe"], [
+            "Allongé sur le dos, un pied au sol, l'autre jambe tendue.",
+            "Pousse dans le talon et monte le bassin.",
+            "Serre le fessier 1 s en haut, redescends lentement.",
+            "Change de jambe à chaque série."]),
         (["jab-cross-crochet"], [
             "En garde, poings au menton, pieds décalés.",
             "Jab : bras avant tendu vite, puis retour en garde.",
@@ -126,4 +164,33 @@ enum ExerciseSteps {
             "Saute à nouveau pour revenir pieds joints.",
             "Reste sur l'avant du pied, rythme régulier."])
     ]
+}
+
+/// Repère le matériel cité dans un texte (nom, note, consigne) : haltères, barre, machine, rameur…
+enum EquipmentText {
+    /// Mots entiers (pluriel accepté) ; « * » final = début de mot (« velo d'appart* »).
+    /// Pas de morceaux de mots : « presser », « bancal » ne parlent pas de matériel.
+    static let words = ["haltere", "barre", "kettlebell", "kb", "machine", "poulie", "leste", "lest",
+                        "avec poids", "avec charge", "disque", "elastique", "banc", "smith", "presse a cuisses", "presse a jambes", "leg press",
+                        "rameur", "tapis de course", "elliptique", "ski erg", "skierg", "assault", "airbike", "air bike",
+                        "stepper", "velo d'appart*", "velo stationnaire", "spinning", "poignee"]
+
+    private static let patterns: [String] = words.map { w in
+        w.hasSuffix("*")
+            ? "\\b" + NSRegularExpression.escapedPattern(for: String(w.dropLast()))
+            : "\\b" + NSRegularExpression.escapedPattern(for: w) + "(s|x)?\\b"
+    }
+
+    static func normalized(_ s: String) -> String {
+        s.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "fr_FR")).lowercased()
+    }
+
+    static func mentions(_ text: String) -> Bool {
+        let t = normalized(text)
+            .replacingOccurrences(of: "poids du corps", with: "")
+            .replacingOccurrences(of: "sans charge", with: "")
+            .replacingOccurrences(of: "sans materiel", with: "")
+        if t.range(of: "\\d+\\s?kg", options: .regularExpression) != nil { return true }
+        return patterns.contains { t.range(of: $0, options: .regularExpression) != nil }
+    }
 }

@@ -15,6 +15,12 @@ enum ExerciseLibrary {
     }
 
     static func animation(for exercise: Exercise) -> ExerciseAnimation? {
+        if exercise.homeVariant == true {
+            // Variante sans matériel : uniquement l'animation prévue pour elle, jamais devinée d'après le nom
+            // (« Soulevé de terre roumain sur une jambe » trouvait l'animation aux haltères). Aucune plutôt qu'une fausse.
+            guard let id = exercise.animation, let a = animation(id: id), !a.dumbbells else { return nil }
+            return a
+        }
         if let id = exercise.animation, let a = animation(id: id) { return a }
         return animation(forName: exercise.name)
     }
@@ -26,21 +32,32 @@ enum ExerciseLibrary {
             (["squat saut", "jump squat", "squat jump"], "squatJump"),
             (["squat"], "squat"),
             (["pompe", "push"], "pushup"),
-            (["gainage lat", "planche lat", "side plank", "lateral"], "sidePlank"),
+            (["gainage lat", "planche lat", "side plank"], "sidePlank"),   // pas « lateral » seul : « unilatéral »
             (["gainage", "planche", "plank"], "plank"),
             (["fente", "lunge"], "lunge"),
             (["jumping", "jack"], "jumpingJack"),
             (["mountain", "grimpeur"], "mountainClimber"),
+            (["roumain sur une jambe", "roumain une jambe", "roumain a une jambe", "rdl sur une jambe", "rdl une jambe",
+              "single leg rdl", "single leg deadlift"], "rdlSingleLeg"),
             (["roumain", "deadlift", "rdl", "souleve de terre"], "rdl"),
             (["rowing", "row", "tirage"], "row"),
             (["mollet", "calf"], "calfRaise"),
             (["pont", "bridge", "hip thrust"], "gluteBridge")
         ]
         for rule in rules where rule.keys.contains(where: { n.contains($0) }) {
-            return animation(id: rule.id)
+            guard let a = animation(id: rule.id) else { return nil }
+            // Une autre version que celle dessinée : aucune animation plutôt qu'une fausse
+            // (« Soulevé de terre roumain sur une jambe » n'est pas la version aux haltères sur deux jambes).
+            if n.contains("une jambe") && !a.singleLeg { return nil }
+            if a.dumbbells && bodyweightMarkers.contains(where: { n.contains($0) }) { return nil }
+            return a
         }
         return nil
     }
+
+    /// Mots qui désignent une version sans charge d'un exercice dessiné aux haltères.
+    private static let bodyweightMarkers = ["unilateral", "inverse", "sac a dos", "poids du corps", "sans charge",
+                                            "sans materiel", "table"]
 
     // MARK: Constructeurs de poses
 
@@ -50,7 +67,8 @@ enum ExerciseLibrary {
 
     private static func stand(hip: CGPoint, torso: Double, head: Double = 0, hands: Hands = .hang,
                               effort: Double = 0.2, ankleX: CGFloat = 192, lift: CGFloat = 0,
-                              footAng: Double = 0, handsAt: ((CGPoint, CGPoint) -> CGPoint)? = nil) -> BodyPose {
+                              footAng: Double = 0, handsAt: ((CGPoint, CGPoint) -> CGPoint)? = nil,
+                              footF: CGPoint? = nil, footAngF: Double? = nil) -> BodyPose {
         let sh = G.shoulder(hip: hip, torso: torso)
         let hN: CGPoint
         if let handsAt {
@@ -65,7 +83,7 @@ enum ExerciseLibrary {
         }
         let fN = CGPoint(x: ankleX, y: G.flat - lift)
         return BodyPose(hip: hip, torso: torso, head: head,
-                        footN: fN, footF: fN + G.far, footAngN: footAng, footAngF: footAng,
+                        footN: fN, footF: footF ?? fN + G.far, footAngN: footAng, footAngF: footAngF ?? footAng,
                         handN: hN, handF: hN + G.far, effort: effort)
     }
 
@@ -94,7 +112,7 @@ enum ExerciseLibrary {
 
     static let all: [ExerciseAnimation] = [
         squat, squatJump, pushup, plankAnim, sidePlank, lunge,
-        jumpingJack, mountainClimber, rdl, row, calfRaise, gluteBridge
+        jumpingJack, mountainClimber, rdl, rdlSingleLeg, row, calfRaise, gluteBridge
     ]
 
     /// Petit coureur de l'écran d'attente « Le coach prépare ton plan » : pas un exercice du plan (hors `all`).
@@ -338,6 +356,37 @@ enum ExerciseLibrary {
             mistakes: ["Dos arrondi : garde la poitrine ouverte.",
                        "Plier les genoux comme un squat.",
                        "Haltères qui s'éloignent des jambes."])
+    }()
+
+    /// Sans haltères, sur la jambe avant ; la jambe arrière part tendue dans l'axe du buste (#149).
+    static let rdlSingleLeg: ExerciseAnimation = {
+        let ankleX: CGFloat = 256
+        let hang: (CGPoint, CGPoint) -> CGPoint = { sh, _ in CGPoint(x: sh.x + 3, y: sh.y + 112) }
+        /// Pied libre dans le prolongement du buste, vers l'arrière.
+        func freeFoot(_ hip: CGPoint, _ torso: Double) -> CGPoint { hip + G.far + G.dir(torso) * -186 }
+        let top = stand(hip: CGPoint(x: 249, y: 196), torso: 2, effort: 0.2, ankleX: ankleX, handsAt: hang,
+                        footF: CGPoint(x: 232, y: G.flat - 30), footAngF: 15)
+        let midHip = CGPoint(x: 236, y: 202)
+        let mid = stand(hip: midHip, torso: 40, head: -10, effort: 0.6, ankleX: ankleX, handsAt: hang,
+                        footF: freeFoot(midHip, 40), footAngF: 60)
+        let lowHip = CGPoint(x: 224, y: 208)
+        let bottom = stand(hip: lowHip, torso: 76, head: -20, effort: 1, ankleX: ankleX, handsAt: hang,
+                           footF: freeFoot(lowHip, 76), footAngF: 86)
+        return ExerciseAnimation(
+            id: "rdlSingleLeg", name: "Soulevé de terre roumain sur une jambe",
+            muscles: [.hamstrings, .glutes, .core], singleLeg: true, level: "Intermédiaire",
+            phases: [
+                AnimPhase(duration: 0.8, label: "Descente", cue: "Bascule le buste, la jambe libre part en arrière", pose: mid, step: 1),
+                AnimPhase(duration: 0.8, label: "Descente", cue: "Dos plat, bassin face au sol", pose: bottom, step: 1),
+                AnimPhase(duration: 0.5, label: "En bas", cue: "Buste et jambe libre alignés", pose: bottom, step: 1),
+                AnimPhase(duration: 0.55, label: "Remontée", cue: "Serre le fessier de la jambe d'appui", pose: mid, step: 2),
+                AnimPhase(duration: 0.55, label: "Remontée", cue: "Reviens debout sans poser le pied", pose: top, step: 2),
+                AnimPhase(duration: 0.7, label: "En haut", cue: "Genou d'appui souple, regard devant", pose: top, step: 0)
+            ],
+            steps: ExerciseSteps.steps(forName: "Soulevé de terre roumain sur une jambe") ?? [],
+            mistakes: ["Bassin qui s'ouvre sur le côté : hanches parallèles au sol.",
+                       "Dos arrondi : poitrine ouverte, regard vers le sol devant toi.",
+                       "Genou d'appui verrouillé : garde-le souple."])
     }()
 
     static let row: ExerciseAnimation = {

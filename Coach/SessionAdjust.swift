@@ -111,11 +111,6 @@ enum Bodyweight {
         var cardio = false
     }
 
-    private static let equipmentWords = ["haltere", "barre", "kettlebell", "kb ", "machine", "poulie", "leste", "lest ",
-                                         "avec poids", "avec charge", "disque", "elastique", "banc", "smith", "presse",
-                                         "rameur", "tapis de course", "elliptique", "ski erg", "skierg", "assault", "airbike", "air bike",
-                                         "stepper", "velo d'appart", "velo stationnaire", "spinning"]
-
     private static let machinePattern = "(rameur|elliptique|ski ?erg|v[ée]lo d'appartement|v[ée]lo stationnaire|assault ?bike|air ?bike|stepper)"
 
     /// Machines de cardio de la salle → équivalent maison, dans les notes de la séance.
@@ -161,11 +156,8 @@ enum Bodyweight {
                             "Pas de place ? Course sur place."],
              always: true, cardio: true),
         Rule(keys: ["roumain", "rdl", "deadlift", "souleve de terre"],
-             name: "Soulevé de terre roumain sur une jambe", animation: "rdl",
-             instructions: ["Debout sur une jambe, genou légèrement fléchi.",
-                            "Bascule le buste vers l'avant, dos plat, l'autre jambe tendue vers l'arrière.",
-                            "Remonte en serrant le fessier.",
-                            "Fais toutes les répétitions d'un côté, puis change."],
+             name: "Soulevé de terre roumain sur une jambe", animation: "rdlSingleLeg",
+             instructions: ExerciseSteps.steps(forName: "Soulevé de terre roumain sur une jambe") ?? [],
              always: true),
         Rule(keys: ["squat"],
              name: "Squat sauté", animation: "squatJump",
@@ -178,25 +170,16 @@ enum Bodyweight {
                             "Genou avant au-dessus de la cheville.",
                             "Remonte en poussant dans le talon avant, puis change de jambe."]),
         Rule(keys: ["rowing", "row", "tirage"],
-             name: "Rowing sac à dos", animation: "row",
-             instructions: ["Remplis un sac à dos (livres, bouteilles d'eau).",
-                            "Buste penché à 45°, dos plat, sac tenu à deux mains.",
-                            "Tire le sac vers le nombril en serrant les omoplates.",
-                            "Redescends lentement."],
+             name: "Rowing sac à dos", animation: nil,   // "row" = version aux haltères
+             instructions: ExerciseSteps.steps(forName: "Rowing sac à dos") ?? [],
              always: true),
         Rule(keys: ["mollet", "calf"],
-             name: "Mollets sur une marche, une jambe", animation: "calfRaise",
-             instructions: ["Avant du pied sur une marche, talon dans le vide, une main au mur.",
-                            "Monte le plus haut possible sur la pointe.",
-                            "Descends lentement sous le niveau de la marche.",
-                            "Fais un côté, puis l'autre."],
+             name: "Mollets sur une marche, une jambe", animation: nil,   // "calfRaise" = deux pieds, au sol
+             instructions: ExerciseSteps.steps(forName: "Mollets sur une marche, une jambe") ?? [],
              always: true),
         Rule(keys: ["pont", "hip thrust", "bridge", "fessier"],
-             name: "Pont fessier une jambe", animation: "gluteBridge",
-             instructions: ["Allongé sur le dos, un pied au sol, l'autre jambe tendue.",
-                            "Pousse dans le talon et monte le bassin.",
-                            "Serre le fessier 1 s en haut, redescends lentement.",
-                            "Change de jambe à chaque série."],
+             name: "Pont fessier une jambe", animation: nil,   // "gluteBridge" = deux pieds au sol
+             instructions: ExerciseSteps.steps(forName: "Pont fessier une jambe") ?? [],
              always: true),
         Rule(keys: ["developpe", "press", "pompe", "bench"],
              name: "Pompes", animation: "pushup",
@@ -206,25 +189,41 @@ enum Bodyweight {
                             "Trop dur ? Genoux au sol."])
     ]
 
-    private static func normalized(_ s: String) -> String {
-        s.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "fr_FR")).lowercased()
-    }
+    private static func normalized(_ s: String) -> String { EquipmentText.normalized(s) }
 
     /// Exercice avec charge ou matériel ? (poids chiffré, ou matériel cité dans le nom, la note ou les consignes)
     static func needsEquipment(_ e: Exercise) -> Bool {
         if e.weightKg != nil { return true }
-        let text = ([e.name, e.notes ?? ""] + (e.instructions ?? []))
-            .map(normalized)
-            .joined(separator: " ")
-            .replacingOccurrences(of: "poids du corps", with: "")
-            .replacingOccurrences(of: "sans charge", with: "")
-        if text.range(of: "\\d+\\s?kg", options: .regularExpression) != nil { return true }
-        return equipmentWords.contains { text.contains($0) }
+        return ([e.name, e.notes ?? ""] + (e.instructions ?? [])).contains(where: EquipmentText.mentions)
+    }
+
+    /// Noms d'exercices déjà sans matériel : jamais remplacés par une variante intégrée.
+    private static let bodyweightNames = ["inverse", "sous une table", "poids du corps", "sans charge", "sans materiel"]
+
+    /// Variante intégrée qui porte exactement ce nom (« Soulevé de terre roumain sur une jambe »…).
+    private static func rule(named name: String) -> Rule? {
+        let n = normalized(name)
+        return rules.first { normalized($0.name) == n }
+    }
+
+    /// Animation demandée par le plan, si elle existe et ne montre pas de matériel.
+    private static func withoutEquipmentAnimation(_ id: String?) -> String? {
+        guard let id, let a = ExerciseLibrary.animation(id: id), !a.dumbbells else { return nil }
+        return a.id
+    }
+
+    /// Consignes ou erreurs qui ne parlent pas de matériel, sinon nil (jamais celles de la version avec matériel).
+    private static func withoutEquipmentText(_ lines: [String]?) -> [String]? {
+        guard let lines, !lines.isEmpty, !lines.contains(where: EquipmentText.mentions) else { return nil }
+        return lines
     }
 
     static func convert(_ e: Exercise) -> Exercise {
         // 1. Variante prévue par le coach
         if let alt = e.noEquipment {
+            // Consignes et animation de la variante elle-même : celles du plan, sinon celles de la variante
+            // intégrée du même nom. Jamais celles de l'exercice avec matériel.
+            let known = rule(named: alt.name)
             return Exercise(name: alt.name,
                             sets: alt.sets ?? e.sets,
                             reps: alt.reps ?? (alt.durationSec == nil ? e.reps : nil),
@@ -232,20 +231,27 @@ enum Bodyweight {
                             weightKg: nil,
                             restSec: alt.restSec ?? e.restSec,
                             notes: alt.notes ?? "Sans matériel (au lieu de « \(e.name) »)",
-                            instructions: alt.instructions,
+                            instructions: alt.instructions ?? known?.instructions,
                             mistakes: nil,
-                            animation: alt.animation,
-                            videoURL: nil)
+                            animation: withoutEquipmentAnimation(alt.animation) ?? known?.animation,
+                            videoURL: nil,
+                            homeVariant: true)
         }
         let n = normalized(e.name)
         let rule = rules.first { r in r.keys.contains { n.contains($0) } }
         let loaded = needsEquipment(e)
 
-        // 2. Déjà au poids du corps (pompes, gainage, dead bug…) : rien à changer
-        guard loaded || rule?.always == true else { return e }
+        // 2. Déjà au poids du corps (pompes, gainage, dead bug, rowing inversé sous une table…) : rien à changer
+        guard loaded || (rule?.always == true && !bodyweightNames.contains { n.contains($0) }) else { return e }
         if let rule, normalized(rule.name) == n {
             var same = e
             same.weightKg = nil
+            same.videoURL = nil
+            same.noEquipment = nil
+            same.homeVariant = true
+            same.instructions = withoutEquipmentText(e.instructions) ?? rule.instructions
+            same.mistakes = withoutEquipmentText(e.mistakes)
+            same.animation = rule.animation
             return same
         }
 
@@ -254,6 +260,7 @@ enum Bodyweight {
         out.weightKg = nil
         out.videoURL = nil
         out.noEquipment = nil
+        out.homeVariant = true
         if let rule {
             out.name = rule.name
             out.animation = rule.animation
@@ -264,7 +271,11 @@ enum Bodyweight {
                 out.durationSec = 300
             }
         } else {
+            // Pas de variante connue : même mouvement sans charge. Les consignes et erreurs qui parlent
+            // de matériel sont retirées (avertissement à la place) ; l'animation aux haltères n'est plus affichée.
             out.name = e.name + " (sans charge)"
+            out.instructions = withoutEquipmentText(e.instructions)
+            out.mistakes = withoutEquipmentText(e.mistakes)
         }
         out.notes = "Sans matériel (au lieu de « \(e.name) »)"
         return out
@@ -300,6 +311,7 @@ extension Bodyweight {
                             "Frappe vite mais sans verrouiller le coude ni le genou.",
                             "Reviens en garde après chaque coup."]
         out.mistakes = nil
+        out.homeVariant = true
         out.notes = "Sans matériel (au lieu de « \(e.name) »)"
         return out
     }

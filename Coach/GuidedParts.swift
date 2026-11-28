@@ -45,9 +45,11 @@ struct GuidedExerciseVisual: View {
         .accessibilityHidden(true)
     }
 
+    /// Appelé seulement sans animation : consignes du plan, sinon celles du catalogue
+    /// (jamais celles de la version avec matériel pour une variante sans matériel).
     static func steps(_ exercise: Exercise) -> [String]? {
-        if let own = exercise.instructions, !own.isEmpty { return own }
-        return ExerciseSteps.steps(forName: exercise.name)
+        let steps = ExerciseSteps.steps(for: exercise, animation: nil)
+        return steps.isEmpty ? nil : steps
     }
 }
 

@@ -103,6 +103,9 @@ struct Exercise: Codable, Hashable {
     var animation: String?        // animation intégrée (ex. "squat"), sinon devinée d'après le nom
     var videoURL: String?         // démo (YouTube, fichier iCloud, vidéo IA…)
     var noEquipment: ExerciseAlternative?  // variante sans matériel (à la maison)
+    /// Rempli par l'app : cet exercice est la variante sans matériel d'un exercice avec matériel.
+    /// Il ne reprend alors jamais l'animation ni les consignes de la version avec matériel.
+    var homeVariant: Bool?
 }
 
 /// Variante d'un exercice sans matériel. Les champs absents reprennent ceux de l'exercice d'origine.
