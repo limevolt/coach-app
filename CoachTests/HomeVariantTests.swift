@@ -90,6 +90,9 @@ final class HomeVariantTests: XCTestCase {
     // Plans du coach local à la maison : le nom seul ne doit plus faire deviner l'animation aux haltères.
     func testNameGuessRefusesTheDumbbellOrTwoLegAnimation() {
         XCTAssertEqual(ExerciseLibrary.animation(forName: "Soulevé de terre roumain sur une jambe")?.id, "rdlSingleLeg")
+        XCTAssertEqual(ExerciseLibrary.animation(forName: "Soulevé de terre roumain à une jambe")?.id, "rdlSingleLeg")
+        XCTAssertEqual(ExerciseLibrary.animation(forName: "Single leg RDL")?.id, "rdlSingleLeg")
+        XCTAssertNotNil(ExerciseSteps.steps(forName: "Single leg RDL"))
         XCTAssertNil(ExerciseLibrary.animation(forName: "Rowing inversé sous une table"))
         XCTAssertNil(ExerciseLibrary.animation(forName: "Pont fessier une jambe"))
         XCTAssertEqual(ExerciseLibrary.animation(forName: "Soulevé de terre roumain")?.id, "rdl")
@@ -116,6 +119,7 @@ final class HomeVariantTests: XCTestCase {
     func testEquipmentWordsAreWholeWords() {
         XCTAssertFalse(EquipmentText.mentions("Presse le sol avec les mains."))
         XCTAssertFalse(EquipmentText.mentions("Presser le sol, appui bancal évité."))
+        XCTAssertFalse(EquipmentText.mentions("Presse avec les talons dans le sol."))
         XCTAssertTrue(EquipmentText.mentions("Presse à cuisses, 3 séries."))
         XCTAssertFalse(EquipmentText.mentions("Pompes au poids du corps."))
         XCTAssertTrue(EquipmentText.mentions("Deux haltères devant les cuisses."))

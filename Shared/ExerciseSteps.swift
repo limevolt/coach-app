@@ -30,7 +30,8 @@ enum ExerciseSteps {
     /// Ordre important : la première entrée qui correspond l'emporte (le plus précis d'abord).
     private static let catalogue: [(keys: [String], steps: [String])] = [
         // Variantes sans matériel (aussi utilisées par « Sans matériel » dans Adapter) : avant les versions avec charge.
-        (["souleve de terre roumain sur une jambe", "rdl sur une jambe", "rdl une jambe"], [
+        (["souleve de terre roumain sur une jambe", "roumain sur une jambe", "roumain une jambe", "roumain a une jambe",
+          "rdl sur une jambe", "rdl une jambe", "single leg rdl", "single leg deadlift"], [
             "Debout sur une jambe, genou légèrement fléchi.",
             "Bascule le buste vers l'avant, dos plat, l'autre jambe tendue vers l'arrière.",
             "Remonte en serrant le fessier.",
@@ -170,7 +171,7 @@ enum EquipmentText {
     /// Mots entiers (pluriel accepté) ; « * » final = début de mot (« velo d'appart* »).
     /// Pas de morceaux de mots : « presser », « bancal » ne parlent pas de matériel.
     static let words = ["haltere", "barre", "kettlebell", "kb", "machine", "poulie", "leste", "lest",
-                        "avec poids", "avec charge", "disque", "elastique", "banc", "smith", "presse a*", "leg press",
+                        "avec poids", "avec charge", "disque", "elastique", "banc", "smith", "presse a cuisses", "presse a jambes", "leg press",
                         "rameur", "tapis de course", "elliptique", "ski erg", "skierg", "assault", "airbike", "air bike",
                         "stepper", "velo d'appart*", "velo stationnaire", "spinning", "poignee"]
 
