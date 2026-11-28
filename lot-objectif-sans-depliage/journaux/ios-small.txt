@@ -1,0 +1,45 @@
+** TEST EXECUTE SUCCEEDED **
+2026-11-25 18:41:23.600753+0000 CoachUITests-Runner[37629:109007] [General] Failed to send CA Event for app launch measurements for ca_event_type: 0 event_name: com.apple.app_launch_measurement.FirstFramePresentationMetric
+2026-11-25 18:41:23.647502+0000 CoachUITests-Runner[37629:109007] [General] Failed to send CA Event for app launch measurements for ca_event_type: 1 event_name: com.apple.app_launch_measurement.ExtendedLaunchMetrics
+Test Case '-[CoachUITests.CoachCaptures testCaptures]' passed (692.599 seconds).
+-----
+    t =   674.59s         Find the Target Application 'com.limevolt.coachapp'
+    t =   675.34s     Wait for com.limevolt.coachapp to idle
+    t =   675.83s Find the "Créer le plan" Button
+    t =   676.14s Find the "Créer le plan" Button
+    t =   676.91s Tap "Créer le plan" Button
+    t =   676.91s     Wait for com.limevolt.coachapp to idle
+    t =   677.05s     Find the "Créer le plan" Button
+    t =   677.31s     Check for interrupting elements affecting "Créer le plan" Button
+    t =   677.38s     Synthesize event
+    t =   677.74s     Wait for com.limevolt.coachapp to idle
+    t =   682.49s Added attachment named '29b-creation-en-cours'
+    t =   685.46s Find the Any (Descendant with identity binding to AX element pid: 55390, elementOrHash.elementID: 4405154624.351)
+    t =   685.67s Checking existence of `"Intense (début en Modéré)" StaticText`
+    t =   685.75s Find the "Intense (début en Modéré)" StaticText
+    t =   685.86s Find the "Intense (début en Modéré)" StaticText
+    t =   685.93s Checking existence of `"Le coach prépare ton plan" StaticText`
+    t =   686.66s Checking existence of `"Le coach prépare ton plan" StaticText`
+    t =   687.35s Checking existence of `"Le coach prépare ton plan" StaticText`
+    t =   688.05s Checking existence of `"Le coach prépare ton plan" StaticText`
+    t =   688.22s Checking existence of `"Le coach prépare ton plan" StaticText`
+    t =   691.01s Added attachment named '29c-plan-cree'
+    t =   691.01s Added attachment named 'audit'
+    t =   691.32s Tear Down
+Test Case '-[CoachUITests.CoachCaptures testCaptures]' passed (692.599 seconds).
+Test Suite 'CoachCaptures' passed at 2026-11-25 18:53:12.858.
+	 Executed 1 test, with 0 failures (0 unexpected) in 692.599 (692.610) seconds
+Test Suite 'CoachUITests.xctest' passed at 2026-11-25 18:53:12.859.
+	 Executed 1 test, with 0 failures (0 unexpected) in 692.599 (692.611) seconds
+Test Suite 'All tests' passed at 2026-11-25 18:53:12.859.
+	 Executed 1 test, with 0 failures (0 unexpected) in 692.599 (692.613) seconds
+2026-11-25 18:53:16.254 xcodebuild[36439:101957] [MT] IDETestOperationsObserverDebug: 889.545 elapsed -- Testing started completed.
+2026-11-25 18:53:16.254 xcodebuild[36439:101957] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-25 18:53:16.254 xcodebuild[36439:101957] [MT] IDETestOperationsObserverDebug: 889.545 sec, +889.545 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/coach-app/coach-app/results/ios-small.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started

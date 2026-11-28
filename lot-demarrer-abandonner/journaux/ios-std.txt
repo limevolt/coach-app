@@ -1,0 +1,43 @@
+** TEST EXECUTE SUCCEEDED **
+Test Case '-[CoachUITests.CoachCaptures testCaptures]' passed (885.402 seconds).
+-----
+    t =   876.29s     Wait for com.limevolt.coachapp to idle
+    t =   876.29s     Find the Target Application 'com.limevolt.coachapp'
+    t =   876.35s     Check for interrupting elements affecting "Coach" Application
+    t =   876.42s     Synthesize event
+    t =   876.86s     Wait for com.limevolt.coachapp to idle
+    t =   879.20s Added attachment named '29h-plan-reglages-du-plan'
+    t =   879.20s Checking existence of `"onglet-Réglages" Button`
+    t =   879.37s Tap "onglet-Réglages" Button
+    t =   879.37s     Wait for com.limevolt.coachapp to idle
+    t =   879.38s     Find the "onglet-Réglages" Button
+    t =   879.54s     Check for interrupting elements affecting "onglet-Réglages" Button
+    t =   879.67s     Synthesize event
+    t =   880.06s     Wait for com.limevolt.coachapp to idle
+    t =   882.55s Added attachment named '29i-reglages-mon-plan'
+    t =   882.55s Checking existence of `"onglet-Plan" Button`
+    t =   882.78s Tap "onglet-Plan" Button
+    t =   882.78s     Wait for com.limevolt.coachapp to idle
+    t =   882.79s     Find the "onglet-Plan" Button
+    t =   882.90s     Check for interrupting elements affecting "onglet-Plan" Button
+    t =   883.01s     Synthesize event
+    t =   883.35s     Wait for com.limevolt.coachapp to idle
+    t =   883.89s Added attachment named 'audit'
+    t =   884.25s Tear Down
+Test Case '-[CoachUITests.CoachCaptures testCaptures]' passed (885.402 seconds).
+Test Suite 'CoachCaptures' passed at 2026-11-26 15:22:42.448.
+	 Executed 1 test, with 0 failures (0 unexpected) in 885.402 (885.408) seconds
+Test Suite 'CoachUITests.xctest' passed at 2026-11-26 15:22:42.450.
+	 Executed 1 test, with 0 failures (0 unexpected) in 885.402 (885.410) seconds
+Test Suite 'All tests' passed at 2026-11-26 15:22:42.451.
+	 Executed 1 test, with 0 failures (0 unexpected) in 885.402 (885.421) seconds
+2026-11-26 15:22:45.349 xcodebuild[3364:13522] [MT] IDETestOperationsObserverDebug: 1112.301 elapsed -- Testing started completed.
+2026-11-26 15:22:45.351 xcodebuild[3364:13522] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-26 15:22:45.351 xcodebuild[3364:13522] [MT] IDETestOperationsObserverDebug: 1112.301 sec, +1112.301 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/coach-app/coach-app/results/ios-std.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started

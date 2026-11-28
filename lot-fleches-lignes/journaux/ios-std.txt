@@ -1,0 +1,44 @@
+** TEST EXECUTE FAILED **
+/Users/runner/work/coach-app/coach-app/CapturesSupport/DemoPlan.swift:69: error: -[CoachUITests.CoachCaptures testCaptures] : Failed to launch <XCUIApplicationImpl: 0x109859c00 com.limevolt.coachapp at /Users/runner/work/coach-app/coach-app/dd-ios/Build/Products/Debug-iphonesimulator/Coach.app> via Xcode: Timed out while launching application via Xcode.
+Test Case '-[CoachUITests.CoachCaptures testCaptures]' failed (73.900 seconds).
+-----
+
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:iOS Simulator, arch:arm64, id:8EBAA496-5654-45BF-897F-3C4FD73935F1, OS:26.5, name:iPhone 17 }
+{ platform:iOS Simulator, arch:x86_64, id:8EBAA496-5654-45BF-897F-3C4FD73935F1, OS:26.5, name:iPhone 17 }
+2026-11-25 22:08:08.242606+0000 CoachUITests-Runner[4259:18789] [Default] Running tests...
+objc[4259]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x10a570310) and /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x109d0c398). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'All tests' started at 2026-11-25 22:08:25.388.
+Test Suite 'CoachUITests.xctest' started at 2026-11-25 22:08:25.390.
+Test Suite 'CoachCaptures' started at 2026-11-25 22:08:25.390.
+2026-11-25 22:09:38.426 xcodebuild[3153:12941] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-25 22:09:38.428 xcodebuild[3153:12941] [MT] IDELaunchParametersSnapshot: no debugger version
+Test Case '-[CoachUITests.CoachCaptures testCaptures]' started.
+    t =     0.00s Start Test at 2026-11-25 22:08:25.391
+    t =     0.98s Set Up
+    t =     1.03s Terminate com.limevolt.coachapp:0
+    t =     1.04s Open com.limevolt.coachapp
+    t =     1.04s     Launch com.limevolt.coachapp
+/Users/runner/work/coach-app/coach-app/CapturesSupport/DemoPlan.swift:69: error: -[CoachUITests.CoachCaptures testCaptures] : Failed to launch <XCUIApplicationImpl: 0x109859c00 com.limevolt.coachapp at /Users/runner/work/coach-app/coach-app/dd-ios/Build/Products/Debug-iphonesimulator/Coach.app> via Xcode: Timed out while launching application via Xcode.
+    t =    63.35s Tear Down
+Test Case '-[CoachUITests.CoachCaptures testCaptures]' failed (73.900 seconds).
+Test Suite 'CoachCaptures' failed at 2026-11-25 22:09:39.297.
+	 Executed 1 test, with 1 failure (0 unexpected) in 73.900 (73.907) seconds
+Test Suite 'CoachUITests.xctest' failed at 2026-11-25 22:09:39.298.
+	 Executed 1 test, with 1 failure (0 unexpected) in 73.900 (73.908) seconds
+Test Suite 'All tests' failed at 2026-11-25 22:09:39.298.
+	 Executed 1 test, with 1 failure (0 unexpected) in 73.900 (73.910) seconds
+2026-11-25 22:10:40.431 xcodebuild[3153:12941] [MT] IDETestOperationsObserverDebug: 379.933 elapsed -- Testing started completed.
+2026-11-25 22:10:40.432 xcodebuild[3153:12941] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-25 22:10:40.432 xcodebuild[3153:12941] [MT] IDETestOperationsObserverDebug: 379.934 sec, +379.934 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/coach-app/coach-app/results/ios-std.xcresult
+
+Failing tests:
+	CoachCaptures.testCaptures()
+
+** TEST EXECUTE FAILED **
+
+Testing started

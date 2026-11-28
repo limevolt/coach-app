@@ -1,0 +1,43 @@
+** TEST EXECUTE SUCCEEDED **
+Test Case '-[CoachUITests.CoachCaptures testCaptures]' passed (818.573 seconds).
+-----
+    t =   810.91s     Wait for com.limevolt.coachapp to idle
+    t =   810.92s     Find the Target Application 'com.limevolt.coachapp'
+    t =   810.99s     Check for interrupting elements affecting "Coach" Application
+    t =   811.06s     Synthesize event
+    t =   811.07s         Find the Target Application 'com.limevolt.coachapp'
+    t =   811.20s         Find the Target Application 'com.limevolt.coachapp'
+    t =   811.28s         Find the Target Application 'com.limevolt.coachapp'
+    t =   811.43s         Find the Target Application 'com.limevolt.coachapp'
+    t =   811.52s         Find the Target Application 'com.limevolt.coachapp'
+    t =   812.40s     Wait for com.limevolt.coachapp to idle
+    t =   812.83s Find the "Intensité, Intense → Modéré lun. 30 nov." Button
+    t =   813.08s Find the "Intensité, Intense → Modéré lun. 30 nov." Button
+    t =   813.25s Find the Target Application 'com.limevolt.coachapp'
+    t =   813.30s Find the "Intensité, Intense → Modéré lun. 30 nov." Button
+    t =   813.83s Tap "Intensité, Intense → Modéré lun. 30 nov." Button
+    t =   813.83s     Wait for com.limevolt.coachapp to idle
+    t =   814.07s     Find the "Intensité, Intense → Modéré lun. 30 nov." Button
+    t =   814.25s     Check for interrupting elements affecting "Intensité, Intense → Modéré lun. 30 nov." Button
+    t =   814.33s     Synthesize event
+    t =   814.65s     Wait for com.limevolt.coachapp to idle
+    t =   816.97s Added attachment named '29f-intensite-prevue'
+    t =   816.97s Added attachment named 'audit'
+    t =   817.26s Tear Down
+Test Case '-[CoachUITests.CoachCaptures testCaptures]' passed (818.573 seconds).
+Test Suite 'CoachCaptures' passed at 2026-11-25 23:28:00.157.
+	 Executed 1 test, with 0 failures (0 unexpected) in 818.573 (818.582) seconds
+Test Suite 'CoachUITests.xctest' passed at 2026-11-25 23:28:00.159.
+	 Executed 1 test, with 0 failures (0 unexpected) in 818.573 (818.584) seconds
+Test Suite 'All tests' passed at 2026-11-25 23:28:00.159.
+	 Executed 1 test, with 0 failures (0 unexpected) in 818.573 (818.593) seconds
+2026-11-25 23:28:04.254 xcodebuild[3895:14921] [MT] IDETestOperationsObserverDebug: 1016.949 elapsed -- Testing started completed.
+2026-11-25 23:28:04.254 xcodebuild[3895:14921] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-25 23:28:04.254 xcodebuild[3895:14921] [MT] IDETestOperationsObserverDebug: 1016.949 sec, +1016.949 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/coach-app/coach-app/results/ios-std.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started

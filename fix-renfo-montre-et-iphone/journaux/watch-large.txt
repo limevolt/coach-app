@@ -1,0 +1,44 @@
+** TEST EXECUTE FAILED **
+/Users/runner/work/coach-app/coach-app/CoachWatchUITests/WatchCaptures.swift:51: error: -[CoachWatchUITests.WatchCaptures testCaptures] : Failed to get matching snapshots: Lost connection to the application (pid 76482). (Underlying Error: Couldn’t communicate with a helper application. Try your operation again. If that fails, quit and relaunch the application and try again. The connection to service created from an endpoint was invalidated: Failed to check-in, peer may have been unloaded: mach_error=10000003.)
+Test Case '-[CoachWatchUITests.WatchCaptures testCaptures]' failed (285.858 seconds).
+-----
+    t =   249.09s     Find the "Entraînement libre" Button
+    t =   249.23s     Check for interrupting elements affecting "Entraînement libre" Button
+    t =   249.27s     Synthesize event
+    t =   249.82s     Wait for com.limevolt.coachapp.watchkitapp to idle
+    t =   251.07s Added attachment named '09-libre'
+    t =   251.07s Terminate com.limevolt.coachapp.watchkitapp:76459
+    t =   252.11s Open com.limevolt.coachapp.watchkitapp
+    t =   252.11s     Launch com.limevolt.coachapp.watchkitapp
+2026-11-27 12:34:48.048 xcodebuild[71604:191951] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-27 12:34:48.048 xcodebuild[71604:191951] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =   257.32s         Setting up automation session
+    t =   259.12s         Wait for com.limevolt.coachapp.watchkitapp to idle
+    t =   260.63s Wait for com.limevolt.coachapp.watchkitapp to become Running Foreground
+    t =   260.64s Waiting 30.0s for Button (First Match) to exist
+    t =   261.69s     Checking `Expect predicate `existsNoRetry == 1` for object Button (First Match)`
+    t =   261.69s         Checking existence of `Button (First Match)`
+/Users/runner/work/coach-app/coach-app/CoachWatchUITests/WatchCaptures.swift:51: error: -[CoachWatchUITests.WatchCaptures testCaptures] : Failed to get matching snapshots: Lost connection to the application (pid 76482). (Underlying Error: Couldn’t communicate with a helper application. Try your operation again. If that fails, quit and relaunch the application and try again. The connection to service created from an endpoint was invalidated: Failed to check-in, peer may have been unloaded: mach_error=10000003.)
+    t =   264.10s         Capturing element debug description
+    t =   264.11s Tear Down
+    t =   265.83s     Checking for crash reports corresponding to unexpected termination of com.limevolt.coachapp.watchkitapp
+Test Case '-[CoachWatchUITests.WatchCaptures testCaptures]' failed (285.858 seconds).
+Test Suite 'WatchCaptures' failed at 2026-11-27 12:35:20.535.
+	 Executed 1 test, with 1 failure (0 unexpected) in 285.858 (285.866) seconds
+Test Suite 'CoachWatchUITests.xctest' failed at 2026-11-27 12:35:20.538.
+	 Executed 1 test, with 1 failure (0 unexpected) in 285.858 (285.868) seconds
+Test Suite 'All tests' failed at 2026-11-27 12:35:20.538.
+	 Executed 1 test, with 1 failure (0 unexpected) in 285.858 (285.870) seconds
+2026-11-27 12:36:07.935 xcodebuild[71604:191951] [MT] IDETestOperationsObserverDebug: 440.444 elapsed -- Testing started completed.
+2026-11-27 12:36:07.936 xcodebuild[71604:191951] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-27 12:36:07.936 xcodebuild[71604:191951] [MT] IDETestOperationsObserverDebug: 440.444 sec, +440.444 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/coach-app/coach-app/results/watch-large.xcresult
+
+Failing tests:
+	WatchCaptures.testCaptures()
+
+** TEST EXECUTE FAILED **
+
+Testing started

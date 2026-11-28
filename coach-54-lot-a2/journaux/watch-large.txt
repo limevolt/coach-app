@@ -1,0 +1,44 @@
+** TEST EXECUTE FAILED **
+/Users/runner/work/coach-app/coach-app/CapturesSupport/DemoPlan.swift:68: error: -[CoachWatchUITests.WatchCaptures testCaptures] : Failed to launch <XCUIApplicationImpl: 0x109e07c80 com.limevolt.coach.watchkitapp at /Users/runner/work/coach-app/coach-app/dd-watch/Build/Products/Debug-watchsimulator/CoachWatch.app> via Xcode: Timed out while launching application via Xcode.
+Test Case '-[CoachWatchUITests.WatchCaptures testCaptures]' failed (320.385 seconds).
+-----
+    t =   228.70s Waiting 10.0s for Button (First Match) to exist
+    t =   229.75s     Checking `Expect predicate `existsNoRetry == 1` for object Button (First Match)`
+    t =   229.76s         Checking existence of `Button (First Match)`
+    t =   231.69s Find the Button (First Match)
+    t =   237.46s Find the "Série faite" Button
+    t =   237.96s Tap "Série faite" Button
+    t =   237.96s     Wait for com.limevolt.coach.watchkitapp to idle
+    t =   237.96s     Find the "Série faite" Button
+    t =   238.09s     Check for interrupting elements affecting "Série faite" Button
+    t =   238.12s     Synthesize event
+    t =   238.51s     Wait for com.limevolt.coach.watchkitapp to idle
+    t =   239.56s Added attachment named '06-renfo-repos'
+    t =   239.56s Terminate com.limevolt.coach.watchkitapp:41364
+    t =   251.57s Open com.limevolt.coach.watchkitapp
+    t =   251.57s     Launch com.limevolt.coach.watchkitapp
+2026-11-22 15:35:02.677 xcodebuild[37158:109995] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-22 15:35:02.677 xcodebuild[37158:109995] [MT] IDELaunchParametersSnapshot: no debugger version
+/Users/runner/work/coach-app/coach-app/CapturesSupport/DemoPlan.swift:68: error: -[CoachWatchUITests.WatchCaptures testCaptures] : Failed to launch <XCUIApplicationImpl: 0x109e07c80 com.limevolt.coach.watchkitapp at /Users/runner/work/coach-app/coach-app/dd-watch/Build/Products/Debug-watchsimulator/CoachWatch.app> via Xcode: Timed out while launching application via Xcode.
+    t =   319.24s Tear Down
+Test Case '-[CoachWatchUITests.WatchCaptures testCaptures]' failed (320.385 seconds).
+Test Suite 'WatchCaptures' failed at 2026-11-22 15:35:14.983.
+	 Executed 1 test, with 1 failure (0 unexpected) in 320.385 (320.387) seconds
+Test Suite 'CoachWatchUITests.xctest' failed at 2026-11-22 15:35:14.987.
+	 Executed 1 test, with 1 failure (0 unexpected) in 320.385 (320.392) seconds
+Test Suite 'All tests' failed at 2026-11-22 15:35:14.988.
+	 Executed 1 test, with 1 failure (0 unexpected) in 320.385 (320.393) seconds
+2026-11-22 15:35:29.968020+0000 CoachWatchUITests-Runner[37797:127796] [Default] Xcode took 14.89 seconds to acknowledge that testing finished.
+2026-11-22 15:36:19.035 xcodebuild[37158:109995] [MT] IDETestOperationsObserverDebug: 459.269 elapsed -- Testing started completed.
+2026-11-22 15:36:19.035 xcodebuild[37158:109995] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-22 15:36:19.035 xcodebuild[37158:109995] [MT] IDETestOperationsObserverDebug: 459.269 sec, +459.269 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/coach-app/coach-app/results/watch-large.xcresult
+
+Failing tests:
+	WatchCaptures.testCaptures()
+
+** TEST EXECUTE FAILED **
+
+Testing started

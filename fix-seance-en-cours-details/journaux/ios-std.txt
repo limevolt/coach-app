@@ -1,0 +1,44 @@
+** TEST EXECUTE FAILED **
+/Users/runner/work/coach-app/coach-app/CoachUITests/CoachCaptures.swift:465: error: -[CoachUITests.CoachCaptures testCaptures] : Failed to get matching snapshot: No matches found for Descendant with identity binding to AX element pid: 33084, elementOrHash.elementID: 4471942976.319 from input {(
+Test Case '-[CoachUITests.CoachCaptures testCaptures]' failed (958.038 seconds).
+-----
+    t =   944.15s Added attachment named '29b-creation-en-cours'
+    t =   948.09s Find the Any (Descendant with identity binding to AX element pid: 33084, elementOrHash.elementID: 4471828288.324)
+    t =   948.78s Checking existence of `"Course à pied, Renfo, Martial cross" StaticText`
+    t =   949.21s Find the "Course à pied, Renfo, Martial cross" StaticText
+    t =   949.36s Find the "Course à pied, Renfo, Martial cross" StaticText
+    t =   949.49s Find the Any (Descendant with identity binding to AX element pid: 33084, elementOrHash.elementID: 4471942976.319)
+    t =   949.62s Checking existence of `"17" StaticText`
+    t =   949.80s Find the "17" StaticText
+    t =   951.93s Find the StaticText
+    t =   953.49s     Find the StaticText (retry 1)
+    t =   954.66s     Find the StaticText (retry 2)
+    t =   954.72s     Collecting debug information to assist test failure triage
+    t =   954.72s         Requesting snapshot of accessibility hierarchy for app with pid 33084
+    t =   954.86s     Requesting snapshot of accessibility hierarchy for app with pid 33084
+    t =   954.95s     Find: Descendant with identity binding to AX element pid: 33084, elementOrHash.elementID: 4471942976.319
+    t =   954.96s     Requesting snapshot of accessibility hierarchy for app with pid 33084
+/Users/runner/work/coach-app/coach-app/CoachUITests/CoachCaptures.swift:465: error: -[CoachUITests.CoachCaptures testCaptures] : Failed to get matching snapshot: No matches found for Descendant with identity binding to AX element pid: 33084, elementOrHash.elementID: 4471942976.319 from input {(
+    Application, pid: 33084
+)}
+    t =   956.37s Tear Down
+Test Case '-[CoachUITests.CoachCaptures testCaptures]' failed (958.038 seconds).
+Test Suite 'CoachCaptures' failed at 2026-11-27 18:26:47.783.
+	 Executed 1 test, with 1 failure (0 unexpected) in 958.038 (958.046) seconds
+Test Suite 'CoachUITests.xctest' failed at 2026-11-27 18:26:47.785.
+	 Executed 1 test, with 1 failure (0 unexpected) in 958.038 (958.049) seconds
+Test Suite 'All tests' failed at 2026-11-27 18:26:47.787.
+	 Executed 1 test, with 1 failure (0 unexpected) in 958.038 (958.053) seconds
+2026-11-27 18:27:46.394 xcodebuild[4686:17162] [MT] IDETestOperationsObserverDebug: 1226.768 elapsed -- Testing started completed.
+2026-11-27 18:27:46.397 xcodebuild[4686:17162] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-27 18:27:46.397 xcodebuild[4686:17162] [MT] IDETestOperationsObserverDebug: 1226.768 sec, +1226.768 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/coach-app/coach-app/results/ios-std.xcresult
+
+Failing tests:
+	CoachCaptures.testCaptures()
+
+** TEST EXECUTE FAILED **
+
+Testing started

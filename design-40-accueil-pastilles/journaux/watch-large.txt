@@ -1,0 +1,45 @@
+** TEST EXECUTE FAILED **
+/Users/runner/work/coach-app/coach-app/CapturesSupport/DemoPlan.swift:66: error: -[CoachWatchUITests.WatchCaptures testCaptures] : Failed to get launch progress for <XCUIApplicationImpl: 0x10a207700 com.limevolt.coach.watchkitapp at /Users/runner/work/coach-app/coach-app/dd-watch/Build/Products/Debug-watchsimulator/CoachWatch.app>: Timed out while requesting launch progress.
+2026-11-20 07:36:35.065 xcodebuild[26084:82526]  iOSSimulator: 4E0869B0-D349-43E0-A3CB-D62D92FC26A3: Failed to launch app with identifier: com.limevolt.coach.watchkitapp and options: {
+Test Case '-[CoachWatchUITests.WatchCaptures testCaptures]' failed (138.187 seconds).
+-----
+        "CA_ASSERT_MAIN_THREAD_TRANSACTIONS" = 0;
+        "CA_DEBUG_TRANSACTIONS" = 0;
+        "COACH_DEMO_PLAN" = "{\"sessions\":[{\"notes\":\"Footing en aisance respiratoire : tu dois pouvoir parler.\",\"run\":{\"blocks\":[{\"steps\":[{\"purpose\":\"work\",\"alert\":{\"type\":\"hrZone\",\"zone\":2},\"goal\":{\"type\":\"time\",\"value\":20,\"unit\":\"min\"}}],\"iterations\":1},{\"steps\":[{\"purpose\":\"work\",\"goal\":{\"type\":\"time\",\"value\":20,\"unit\":\"s\"}},{\"purpose\":\"recovery\",\"goal\":{\"type\":\"time\",\"value\":60,\"unit\":\"s\"}}],\"iterations\":6}],\"cooldown\":{\"goal\":{\"type\":\"time\",\"value\":5,\"unit\":\"min\"}},\"location\":\"outdoor\",\"warmup\":{\"alert\":{\"type\":\"hrZone\",\"zone\":2},\"goal\":{\"type\":\"time\",\"value\":10,\"unit\":\"min\"}}},\"title\":\"Footing + 6 acc\U00e9l\U00e9rations\",\"type\":\"run\",\"id\":\"demo-s1\",\"date\":\"2026-11-20\",\"time\":\"18:30\"},{\"type\":\"strength\",\"title\":\"Renfo A \U2014 poids du corps\",\"date\":\"2026-11-21\",\"id\":\"demo-s2\",\"strength\":{\"exercises\":[{\"reps\":12,\"sets\":3,\"name\":\"Squat\",\"restSec\":60,\"instructions\":[\"Pieds largeur d'\U00e9paules, pointes l\U00e9g\U00e8rement ouvertes\",\"Descends en poussant les fesses en arri\U00e8re, comme pour t'asseoir\",\"Genoux dans l'axe des pieds, dos droit\",\"Remonte en poussant dans les talons\"]},{\"reps\":10,\"sets\":3,\"notes\":\"Sur les genoux si besoin\",\"name\":\"Pompes\",\"restSec\":60,\"instructions\":[\"Mains un peu plus larges que les \U00e9paules\",\"Corps gain\U00e9, align\U00e9 de la t\U00eate aux talons\",\"Descends la poitrine pr\U00e8s du sol, coudes \U00e0 45\U00b0\",\"Pousse pour remonter sans creuser le dos\"]},{\"reps\":10,\"sets\":3,\"notes\":\"10 par jambe\",\"name\":\"Fentes altern\U00e9es\",\"restSec\":60,\"instructions\":[\"Grand pas en avant\",\"Descends jusqu'\U00e0 ce que les deux genoux soient \U00e0 90\U00b0\",\"Genou avant au-dessus de la cheville\",\"Repousse et change de jambe\"]},{\"instructions\":[\"Sur les avant-bras, coudes sous les \U00e9paules\",\"Serre les fessiers et le ventre\",\"Ne laisse pas tomber le bassin\",\"Respire calmement\"],\"sets\":3,\"name\":\"Gainage planche\",\"restSec\":45,\"durationSec\":40}]},\"time\":\"18:30\"},{\"type\":\"run\",\"notes\":\"Allure indicative : on l'ajustera selon tes donn\U00e9es.\",\"id\":\"demo-s3\",\"run\":{\"blocks\":[{\"steps\":[{\"purpose\":\"work\",\"alert\":{\"type\":\"pace\",\"min\":\"5:00\",\"max\":\"5:30\"},\"goal\":{\"type\":\"distance\",\"value\":400,\"unit\":\"m\"}},{\"purpose\":\"recovery\",\"goal\":{\"type\":\"time\",\"value\":90,\"unit\":\"s\"}}],\"iterations\":6}],\"cooldown\":{\"goal\":{\"type\":\"time\",\"value\":10,\"unit\":\"min\"}},\"location\":\"outdoor\",\"warmup\":{\"alert\":{\"type\":\"hrZone\",\"zone\":2},\"goal\":{\"type\":\"time\",\"value\":15,\"unit\":\"min\"}}},\"date\":\"2026-11-23\",\"title\":\"Fractionn\U00e9 6\U00d7400 m\",\"time\":\"18:30\"},{\"notes\":\"Version douce du Tabata : 30 s d'effort, 15 s de repos. Va \U00e0 ton rythme.\",\"title\":\"Circuit d\U00e9couverte\",\"type\":\"circuit\",\"date\":\"2026-11-25\",\"id\":\"demo-s4\",\"time\":\"10:00\",\"circuit\":{\"exercises\":[{\"name\":\"Jumping jacks\",\"instructions\":[\"Saute en \U00e9cartant bras et jambes\",\"Reviens pieds joints, bras le long du corps\",\"Reste l\U00e9ger sur la pointe des pieds\"]},{\"name\":\"Squat\",\"instructions\":[\"Fesses en arri\U00e8re, dos droit\",\"Genoux dans l'axe des pieds\"]},{\"name\":\"Mountain climbers\",\"instructions\":[\"Position de pompe, bras tendus\",\"Ram\U00e8ne un genou vers la poitrine puis l'autre, en alternance rapide\",\"Garde le bassin bas\"]},{\"name\":\"Gainage planche\",\"durationSec\":20,\"instructions\":[\"Avant-bras au sol, corps align\U00e9\",\"Ventre et fessiers serr\U00e9s\"]}],\"roundRestSec\":60,\"rounds\":3,\"prepareSec\":10,\"workSec\":30,\"restSec\":15}}],\"notes\":\"Plan de d\U00e9monstration pour v\U00e9rifier que tout fonctionne (montre, minuteurs, circuit, suivi). Ton vrai plan arrivera apr\U00e8s tes r\U00e9ponses \U00e0 Claude.\",\"schemaVersion\":1,\"planId\":\"demo\",\"goals\":[{\"progress\":0.10000000000000001,\"id\":\"g1\",\"date\":\"2027-02-04\",\"baseline\":\"\U00e0 \U00e9valuer (test semaine 1)\",\"title\":\"Courir 5 km sans s'arr\U00eater\",\"target\":\"5 km en continu\"}],\"version\":1,\"title\":\"Semaine test\"}";
+        "DYLD_FRAMEWORK_PATH" = "/Users/runner/work/coach-app/coach-app/dd-watch/Build/Products/Debug-watchsimulator";
+        "DYLD_INSERT_LIBRARIES" = "/Library/Developer/CoreSimulator/Volumes/watchOS_23T570/Library/Developer/CoreSimulator/Profiles/Runtimes/watchOS 26.5.simruntime/Contents/Resources/RuntimeRoot/usr/lib/libMainThreadChecker.dylib:/usr/lib/libRPAC.dylib:/usr/lib/libRPAC.dylib";
+        "DYLD_LIBRARY_PATH" = "/Users/runner/work/coach-app/coach-app/dd-watch/Build/Products/Debug-watchsimulator";
+        "LLVM_PROFILE_FILE" = "/dev/null";
+        NSUnbufferedIO = YES;
+        "OS_ACTIVITY_DT_MODE" = YES;
+        "OS_ACTIVITY_MODE" = info;
+        "PERFC_ENABLE_EXTENDED_DIAGNOSTIC_FORMAT" = 1;
+        "PERFC_ENABLE_PROFILE_MODE" = 1;
+        "PERFC_RESET_INSERT_LIBRARIES" = 1;
+        "PERFC_SUPPRESS_SYSTEM_REPORTS" = 1;
+        "SWIFT_BACKTRACE" = "enable=no";
+        TERM = dumb;
+        "XCODE_SCHEME_NAME" = CoachWatchCaptures;
+        "__XCODE_BUILT_PRODUCTS_DIR_PATHS" = "/Users/runner/work/coach-app/coach-app/dd-watch/Build/Products/Debug-watchsimulator";
+        "__XPC_DYLD_FRAMEWORK_PATH" = "/Users/runner/work/coach-app/coach-app/dd-watch/Build/Products/Debug-watchsimulator";
+        "__XPC_DYLD_LIBRARY_PATH" = "/Users/runner/work/coach-app/coach-app/dd-watch/Build/Products/Debug-watchsimulator";
+        "__XPC_LLVM_PROFILE_FILE" = "/dev/null";
+    };
+    stderr = "/dev/ttys001";
+    stdout = "/dev/ttys001";
+    "terminate_running_process" = 1;
+    "wait_for_debugger" = 1;
+} (error = Error Domain=NSMachErrorDomain Code=-308 "(ipc/mig) server died")
+2026-11-20 07:37:55.499 xcodebuild[26084:80291] [MT] IDETestOperationsObserverDebug: 282.824 elapsed -- Testing started completed.
+2026-11-20 07:37:55.501 xcodebuild[26084:80291] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-20 07:37:55.501 xcodebuild[26084:80291] [MT] IDETestOperationsObserverDebug: 282.826 sec, +282.826 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/coach-app/coach-app/results/watch-large.xcresult
+
+Failing tests:
+	WatchCaptures.testCaptures()
+
+** TEST EXECUTE FAILED **
+
+Testing started

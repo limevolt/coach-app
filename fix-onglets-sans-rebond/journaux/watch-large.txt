@@ -1,0 +1,44 @@
+** TEST EXECUTE FAILED **
+/Users/runner/work/coach-app/coach-app/CapturesSupport/DemoPlan.swift:95: error: -[CoachWatchUITests.WatchCaptures testCaptures] : Failed to get matching snapshots: Lost connection to the application (pid 76710). (Underlying Error: Couldn’t communicate with a helper application. Try your operation again. If that fails, quit and relaunch the application and try again. connection to service with pid 76710 created from an endpoint)
+Test Case '-[CoachWatchUITests.WatchCaptures testCaptures]' failed (247.196 seconds).
+-----
+    t =   185.31s         Find the Target Application 'com.limevolt.coachapp.watchkitapp'
+    t =   186.22s         Find the Target Application 'com.limevolt.coachapp.watchkitapp'
+    t =   186.72s         Find the Target Application 'com.limevolt.coachapp.watchkitapp'
+    t =   188.03s     Wait for com.limevolt.coachapp.watchkitapp to idle
+    t =   189.72s Find the "mar. 1 déc., Circuit" Button
+    t =   196.98s Find the "mar. 1 déc., Circuit" Button
+    t =   205.34s Tap "mar. 1 déc., Circuit" Button
+    t =   205.34s     Wait for com.limevolt.coachapp.watchkitapp to idle
+    t =   205.34s     Find the "mar. 1 déc., Circuit" Button
+    t =   207.71s     Check for interrupting elements affecting "mar. 1 déc., Circuit" Button
+    t =   208.05s     Synthesize event
+    t =   208.68s     Wait for com.limevolt.coachapp.watchkitapp to idle
+    t =   210.35s Added attachment named '07-circuit-pret'
+    t =   210.35s Waiting 10.0s for Button (First Match) to exist
+    t =   211.38s     Checking `Expect predicate `existsNoRetry == 1` for object Button (First Match)`
+    t =   211.40s         Checking existence of `Button (First Match)`
+/Users/runner/work/coach-app/coach-app/CapturesSupport/DemoPlan.swift:95: error: -[CoachWatchUITests.WatchCaptures testCaptures] : Failed to get matching snapshots: Lost connection to the application (pid 76710). (Underlying Error: Couldn’t communicate with a helper application. Try your operation again. If that fails, quit and relaunch the application and try again. connection to service with pid 76710 created from an endpoint)
+    t =   216.52s         Capturing element debug description
+    t =   216.54s Tear Down
+    t =   227.10s     Checking for crash reports corresponding to unexpected termination of com.limevolt.coachapp.watchkitapp
+Test Case '-[CoachWatchUITests.WatchCaptures testCaptures]' failed (247.196 seconds).
+Test Suite 'WatchCaptures' failed at 2026-11-26 23:06:55.751.
+	 Executed 1 test, with 1 failure (0 unexpected) in 247.196 (247.205) seconds
+Test Suite 'CoachWatchUITests.xctest' failed at 2026-11-26 23:06:55.758.
+	 Executed 1 test, with 1 failure (0 unexpected) in 247.196 (247.212) seconds
+Test Suite 'All tests' failed at 2026-11-26 23:06:55.759.
+	 Executed 1 test, with 1 failure (0 unexpected) in 247.196 (247.213) seconds
+2026-11-26 23:07:47.128 xcodebuild[73589:198314] [MT] IDETestOperationsObserverDebug: 393.237 elapsed -- Testing started completed.
+2026-11-26 23:07:47.129 xcodebuild[73589:198314] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-26 23:07:47.129 xcodebuild[73589:198314] [MT] IDETestOperationsObserverDebug: 393.237 sec, +393.237 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/coach-app/coach-app/results/watch-large.xcresult
+
+Failing tests:
+	WatchCaptures.testCaptures()
+
+** TEST EXECUTE FAILED **
+
+Testing started

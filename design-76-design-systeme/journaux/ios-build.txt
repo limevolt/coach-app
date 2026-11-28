@@ -1,0 +1,42 @@
+** TEST BUILD SUCCEEDED **
+-----
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib /Users/runner/work/coach-app/coach-app/dd-ios/Build/Products/Debug-iphonesimulator/CoachUITests-Runner.app/Frameworks
+
+Copy /Users/runner/work/coach-app/coach-app/dd-ios/Build/Products/Debug-iphonesimulator/CoachUITests-Runner.app/Frameworks/XCUnit.framework /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/XCUnit.framework (in target 'CoachUITests' from project 'Coach')
+    cd /Users/runner/work/coach-app/coach-app
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/XCUnit.framework /Users/runner/work/coach-app/coach-app/dd-ios/Build/Products/Debug-iphonesimulator/CoachUITests-Runner.app/Frameworks
+
+Copy /Users/runner/work/coach-app/coach-app/dd-ios/Build/Products/Debug-iphonesimulator/CoachUITests-Runner.app/Frameworks/XCUIAutomation.framework /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks/XCUIAutomation.framework (in target 'CoachUITests' from project 'Coach')
+    cd /Users/runner/work/coach-app/coach-app
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks/XCUIAutomation.framework /Users/runner/work/coach-app/coach-app/dd-ios/Build/Products/Debug-iphonesimulator/CoachUITests-Runner.app/Frameworks
+
+Copy /Users/runner/work/coach-app/coach-app/dd-ios/Build/Products/Debug-iphonesimulator/CoachUITests-Runner.app/Frameworks/XCTestSupport.framework /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/XCTestSupport.framework (in target 'CoachUITests' from project 'Coach')
+    cd /Users/runner/work/coach-app/coach-app
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/XCTestSupport.framework /Users/runner/work/coach-app/coach-app/dd-ios/Build/Products/Debug-iphonesimulator/CoachUITests-Runner.app/Frameworks
+
+Copy /Users/runner/work/coach-app/coach-app/dd-ios/Build/Products/Debug-iphonesimulator/CoachUITests-Runner.app/Frameworks/XCTestCore.framework /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/XCTestCore.framework (in target 'CoachUITests' from project 'Coach')
+    cd /Users/runner/work/coach-app/coach-app
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/XCTestCore.framework /Users/runner/work/coach-app/coach-app/dd-ios/Build/Products/Debug-iphonesimulator/CoachUITests-Runner.app/Frameworks
+
+Copy /Users/runner/work/coach-app/coach-app/dd-ios/Build/Products/Debug-iphonesimulator/CoachUITests-Runner.app/Frameworks/XCTest.framework /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks/XCTest.framework (in target 'CoachUITests' from project 'Coach')
+    cd /Users/runner/work/coach-app/coach-app
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks/XCTest.framework /Users/runner/work/coach-app/coach-app/dd-ios/Build/Products/Debug-iphonesimulator/CoachUITests-Runner.app/Frameworks
+
+Copy /Users/runner/work/coach-app/coach-app/dd-ios/Build/Products/Debug-iphonesimulator/CoachUITests-Runner.app/Frameworks/XCTAutomationSupport.framework /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/XCTAutomationSupport.framework (in target 'CoachUITests' from project 'Coach')
+    cd /Users/runner/work/coach-app/coach-app
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/XCTAutomationSupport.framework /Users/runner/work/coach-app/coach-app/dd-ios/Build/Products/Debug-iphonesimulator/CoachUITests-Runner.app/Frameworks
+
+Copy /Users/runner/work/coach-app/coach-app/dd-ios/Build/Products/Debug-iphonesimulator/CoachUITests-Runner.app/Frameworks/Testing.framework /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks/Testing.framework (in target 'CoachUITests' from project 'Coach')
+    cd /Users/runner/work/coach-app/coach-app
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks/Testing.framework /Users/runner/work/coach-app/coach-app/dd-ios/Build/Products/Debug-iphonesimulator/CoachUITests-Runner.app/Frameworks
+
+RegisterExecutionPolicyException /Users/runner/work/coach-app/coach-app/dd-ios/Build/Products/Debug-iphonesimulator/CoachUITests-Runner.app/PlugIns/CoachUITests.xctest (in target 'CoachUITests' from project 'Coach')
+    cd /Users/runner/work/coach-app/coach-app
+    builtin-RegisterExecutionPolicyException /Users/runner/work/coach-app/coach-app/dd-ios/Build/Products/Debug-iphonesimulator/CoachUITests-Runner.app/PlugIns/CoachUITests.xctest
+
+Touch /Users/runner/work/coach-app/coach-app/dd-ios/Build/Products/Debug-iphonesimulator/CoachUITests-Runner.app/PlugIns/CoachUITests.xctest (in target 'CoachUITests' from project 'Coach')
+    cd /Users/runner/work/coach-app/coach-app
+    /usr/bin/touch -c /Users/runner/work/coach-app/coach-app/dd-ios/Build/Products/Debug-iphonesimulator/CoachUITests-Runner.app/PlugIns/CoachUITests.xctest
+
+** TEST BUILD SUCCEEDED **
+

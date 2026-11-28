@@ -1,0 +1,44 @@
+** TEST EXECUTE FAILED **
+/Users/runner/work/coach-app/coach-app/CapturesSupport/DemoPlan.swift:69: error: -[CoachWatchUITests.WatchCaptures testCaptures] : Failed to get launch progress for <XCUIApplicationImpl: 0x107596380 com.limevolt.coach.watchkitapp at /Users/runner/work/coach-app/coach-app/dd-watch/Build/Products/Debug-watchsimulator/CoachWatch.app>: Timed out while requesting launch progress.
+Test Case '-[CoachWatchUITests.WatchCaptures testCaptures]' failed (148.274 seconds).
+-----
+
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:iOS Simulator, arch:arm64, id:F90353E4-F95D-488C-9F4E-B43F74E385F2, OS:26.5, name:iPhone 17 Pro Max }
+{ platform:iOS Simulator, arch:x86_64, id:F90353E4-F95D-488C-9F4E-B43F74E385F2, OS:26.5, name:iPhone 17 Pro Max }
+2026-11-24 08:16:11.138789+0000 CoachWatchUITests-Runner[64773:175554] [SceneConfiguration] Info.plist contained no UIScene configuration dictionary (looking for configuration named "Default Configuration")
+2026-11-24 08:16:11.220401+0000 CoachWatchUITests-Runner[64773:175554] [Default] Running tests...
+Test Suite 'All tests' started at 2026-11-24 08:16:18.154.
+Test Suite 'CoachWatchUITests.xctest' started at 2026-11-24 08:16:18.155.
+Test Suite 'WatchCaptures' started at 2026-11-24 08:16:18.155.
+Test Case '-[CoachWatchUITests.WatchCaptures testCaptures]' started.
+    t =     0.00s Start Test at 2026-11-24 08:16:18.156
+    t =     0.49s Set Up
+    t =     0.54s Terminate com.limevolt.coach.watchkitapp:0
+    t =     0.54s Open com.limevolt.coach.watchkitapp
+    t =     0.54s     Launch com.limevolt.coach.watchkitapp
+    t =     0.54s         Waiting for system app quiescence
+2026-11-24 08:16:33.937 xcodebuild[64192:172725] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-24 08:16:33.961 xcodebuild[64192:172725] [MT] IDELaunchParametersSnapshot: no debugger version
+/Users/runner/work/coach-app/coach-app/CapturesSupport/DemoPlan.swift:69: error: -[CoachWatchUITests.WatchCaptures testCaptures] : Failed to get launch progress for <XCUIApplicationImpl: 0x107596380 com.limevolt.coach.watchkitapp at /Users/runner/work/coach-app/coach-app/dd-watch/Build/Products/Debug-watchsimulator/CoachWatch.app>: Timed out while requesting launch progress.
+    t =   147.83s Tear Down
+Test Case '-[CoachWatchUITests.WatchCaptures testCaptures]' failed (148.274 seconds).
+Test Suite 'WatchCaptures' failed at 2026-11-24 08:18:46.430.
+	 Executed 1 test, with 1 failure (0 unexpected) in 148.274 (148.275) seconds
+Test Suite 'CoachWatchUITests.xctest' failed at 2026-11-24 08:18:46.447.
+	 Executed 1 test, with 1 failure (0 unexpected) in 148.274 (148.292) seconds
+Test Suite 'All tests' failed at 2026-11-24 08:18:46.447.
+	 Executed 1 test, with 1 failure (0 unexpected) in 148.274 (148.293) seconds
+2026-11-24 08:20:50.917 xcodebuild[64192:172725] [MT] IDETestOperationsObserverDebug: 334.983 elapsed -- Testing started completed.
+2026-11-24 08:20:50.918 xcodebuild[64192:172725] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-24 08:20:50.918 xcodebuild[64192:172725] [MT] IDETestOperationsObserverDebug: 334.986 sec, +334.986 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/coach-app/coach-app/results/watch-large.xcresult
+
+Failing tests:
+	WatchCaptures.testCaptures()
+
+** TEST EXECUTE FAILED **
+
+Testing started

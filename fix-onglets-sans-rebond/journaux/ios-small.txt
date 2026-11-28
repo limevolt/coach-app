@@ -1,0 +1,44 @@
+** TEST EXECUTE FAILED **
+/Users/runner/work/coach-app/coach-app/CoachUITests/CoachCaptures.swift:318: error: -[CoachUITests.CoachCaptures testCaptures] : Failed to not hittable: Button, {{34.3, 415.1}, {306.4, 47.6}}, identifier: 'reglage-intensite', label: 'Intensité, Intense'
+Test Case '-[CoachUITests.CoachCaptures testCaptures]' failed (676.556 seconds).
+-----
+    t =   672.32s         Wait for com.limevolt.coachapp to idle
+    t =   672.32s         Find the "reglage-intensite" Button
+    t =   672.59s         Check for interrupting elements affecting "reglage-intensite" Button
+    t =   672.67s         Synthesize event
+    t =   672.71s             Scroll element to visible
+    t =   672.71s             Find the "reglage-intensite" Button
+    t =   672.92s             Computed hit point {-1, -1} after scrolling to visible
+    t =   672.92s             Failed: Not hittable: Button, {{34.3, 415.1}, {306.4, 47.6}}, identifier: 'reglage-intensite', label: 'Intensité, Intense'
+    t =   673.93s     Retrying `Tap "reglage-intensite" Button` (attempt #3)
+    t =   673.93s         Wait for com.limevolt.coachapp to idle
+    t =   673.93s         Find the "reglage-intensite" Button
+    t =   674.10s         Check for interrupting elements affecting "reglage-intensite" Button
+    t =   674.15s         Synthesize event
+    t =   674.19s             Scroll element to visible
+    t =   674.19s             Find the "reglage-intensite" Button
+    t =   674.44s             Computed hit point {-1, -1} after scrolling to visible
+    t =   674.44s             Failed: Not hittable: Button, {{34.3, 415.1}, {306.4, 47.6}}, identifier: 'reglage-intensite', label: 'Intensité, Intense'
+    t =   674.45s Requesting snapshot of accessibility hierarchy for app with pid 61086
+/Users/runner/work/coach-app/coach-app/CoachUITests/CoachCaptures.swift:318: error: -[CoachUITests.CoachCaptures testCaptures] : Failed to not hittable: Button, {{34.3, 415.1}, {306.4, 47.6}}, identifier: 'reglage-intensite', label: 'Intensité, Intense'
+    t =   675.36s Tear Down
+Test Case '-[CoachUITests.CoachCaptures testCaptures]' failed (676.556 seconds).
+Test Suite 'CoachCaptures' failed at 2026-11-26 22:59:24.164.
+	 Executed 1 test, with 1 failure (0 unexpected) in 676.556 (676.558) seconds
+Test Suite 'CoachUITests.xctest' failed at 2026-11-26 22:59:24.164.
+	 Executed 1 test, with 1 failure (0 unexpected) in 676.556 (676.558) seconds
+Test Suite 'All tests' failed at 2026-11-26 22:59:24.165.
+	 Executed 1 test, with 1 failure (0 unexpected) in 676.556 (676.560) seconds
+2026-11-26 23:00:10.043 xcodebuild[39111:109393] [MT] IDETestOperationsObserverDebug: 897.171 elapsed -- Testing started completed.
+2026-11-26 23:00:10.043 xcodebuild[39111:109393] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-26 23:00:10.043 xcodebuild[39111:109393] [MT] IDETestOperationsObserverDebug: 897.171 sec, +897.171 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/coach-app/coach-app/results/ios-small.xcresult
+
+Failing tests:
+	CoachCaptures.testCaptures()
+
+** TEST EXECUTE FAILED **
+
+Testing started

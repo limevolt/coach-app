@@ -1,0 +1,43 @@
+** TEST EXECUTE SUCCEEDED **
+Test Case '-[CoachUITests.CoachCaptures testCaptures]' passed (387.361 seconds).
+-----
+    t =   376.35s     Wait for com.limevolt.coach to idle
+    t =   378.13s Added attachment named '28-assistant-recap'
+    t =   380.97s Find the Any (Descendant with identity binding to AX element pid: 30394, elementOrHash.elementID: 4673298752.380)
+    t =   381.15s Checking existence of `"Annuler" Button`
+    t =   381.24s Find the "Annuler" Button
+    t =   381.44s Find the "Annuler" Button
+    t =   381.54s Find the Any (Descendant with identity binding to AX element pid: 30394, elementOrHash.elementID: 4674295040.389)
+    t =   381.86s Checking existence of `"17" StaticText`
+    t =   382.35s Find the "17" StaticText
+    t =   382.50s Find the "17" StaticText
+    t =   382.78s Find the Any (Descendant with identity binding to AX element pid: 30394, elementOrHash.elementID: 4674291456.381)
+    t =   383.10s Checking existence of `"Ton plan, étape 7 sur 7" StaticText`
+    t =   383.29s Find the "Ton plan, étape 7 sur 7" StaticText
+    t =   383.78s Find the "Ton plan, étape 7 sur 7" StaticText
+    t =   383.98s Swipe up Target Application 'com.limevolt.coach'
+    t =   383.98s     Wait for com.limevolt.coach to idle
+    t =   384.02s     Find the Target Application 'com.limevolt.coach'
+    t =   384.15s     Check for interrupting elements affecting "Coach" Application
+    t =   384.39s     Synthesize event
+    t =   384.90s     Wait for com.limevolt.coach to idle
+    t =   386.64s Added attachment named '29-assistant-recap-bas'
+    t =   386.64s Added attachment named 'audit'
+    t =   386.71s Tear Down
+Test Case '-[CoachUITests.CoachCaptures testCaptures]' passed (387.361 seconds).
+Test Suite 'CoachCaptures' passed at 2026-11-22 12:06:20.917.
+	 Executed 1 test, with 0 failures (0 unexpected) in 387.361 (387.375) seconds
+Test Suite 'CoachUITests.xctest' passed at 2026-11-22 12:06:20.920.
+	 Executed 1 test, with 0 failures (0 unexpected) in 387.361 (387.378) seconds
+Test Suite 'All tests' passed at 2026-11-22 12:06:20.921.
+	 Executed 1 test, with 0 failures (0 unexpected) in 387.361 (387.383) seconds
+2026-11-22 12:06:30.686 xcodebuild[21909:67738] [MT] IDETestOperationsObserverDebug: 610.261 elapsed -- Testing started completed.
+2026-11-22 12:06:30.686 xcodebuild[21909:67738] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-22 12:06:30.686 xcodebuild[21909:67738] [MT] IDETestOperationsObserverDebug: 610.261 sec, +610.261 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/coach-app/coach-app/results/ios-small.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started

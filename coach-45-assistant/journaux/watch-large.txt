@@ -1,0 +1,51 @@
+    SimCallingSelector = "launchApplicationWithID:options:pid:error:";
+} (error = Error Domain=FBSOpenApplicationServiceErrorDomain Code=4 "Simulator device failed to launch com.limevolt.coach.watchkitapp." UserInfo={BSErrorCodeDescription=InvalidRequest, NSUnderlyingError=0x9e27d0630 {Error Domain=FBSOpenApplicationServiceErrorDomain Code=4 "The request to open "com.limevolt.coach.watchkitapp" failed." UserInfo={NSLocalizedDescription=The request to open "com.limevolt.coach.watchkitapp" failed., BSErrorCodeDescription=InvalidRequest, FBSOpenApplicationRequestID=0x4e79, NSUnderlyingError=0x9e27d2d00 {Error Domain=FBSOpenApplicationErrorDomain Code=4 "Application info provider (FBSApplicationLibrary) returned nil for "com.limevolt.coach.watchkitapp"" UserInfo={BSErrorCodeDescription=NotFound, NSLocalizedFailureReason=Application info provider (FBSApplicationLibrary) returned nil for "com.limevolt.coach.watchkitapp"}}}}, FBSOpenApplicationRequestID=0x4e79, SimCallingSelector=launchApplicationWithID:options:pid:error:, NSLocalizedDescription=Simulator device failed to launch com.limevolt.coach.watchkitapp.})
+** TEST EXECUTE FAILED **
+/Users/runner/work/coach-app/coach-app/CapturesSupport/DemoPlan.swift:66: error: -[CoachWatchUITests.WatchCaptures testCaptures] : Failed to launch <XCUIApplicationImpl: 0x10a1ffa40 com.limevolt.coach.watchkitapp at /Users/runner/work/coach-app/coach-app/dd-watch/Build/Products/Debug-watchsimulator/CoachWatch.app> via Xcode: Timed out while launching application via Xcode.
+2026-11-21 07:50:48.578 xcodebuild[40582:126894]  iOSSimulator: DB083A7F-D21F-4520-891B-67112267A95D: Failed to launch app with identifier: com.limevolt.coach.watchkitapp and options: {
+2026-11-21 07:50:49.954 xcodebuild[40582:116732] [MT] IDELaunchReport: a9476b167dd44640:a9476b167dd44640: Finished with error: Simulator device failed to launch com.limevolt.coach.watchkitapp.
+2026-11-21 07:53:10.524 xcodebuild[40582:134520]  IDELaunchReport: a9476b167dd443c0:a9476b167dd47400:Launch CoachWatch Finished with error: Failed to send signal 19 to process 44640: 3
+Details:  DTServiceHub - Error resuming pid 44640 'Error Domain=DTXMessage Code=1 "Failed to send signal 19 to process 44640: 3" UserInfo={NSLocalizedDescription=Failed to send signal 19 to process 44640: 3}'
+Test Case '-[CoachWatchUITests.WatchCaptures testCaptures]' failed (382.709 seconds).
+Testing failed:
+-----
+Test Suite 'CoachWatchUITests.xctest' failed at 2026-11-21 07:53:05.575.
+	 Executed 1 test, with 1 failure (0 unexpected) in 382.709 (382.721) seconds
+Test Suite 'All tests' failed at 2026-11-21 07:53:05.575.
+	 Executed 1 test, with 1 failure (0 unexpected) in 382.709 (382.723) seconds
+2026-11-21 07:53:06.734 xcodebuild[40582:116732] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-21 07:53:06.739 xcodebuild[40582:116732] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-11-21 07:53:10.493 xcodebuild[40582:134520]  DVTAssertions: Warning in DVTiOSFrameworks/IDEiOSSupportCore/IDELaunchiPhoneSimulatorService.m:320
+Details:  DTServiceHub - Error resuming pid 44640 'Error Domain=DTXMessage Code=1 "Failed to send signal 19 to process 44640: 3" UserInfo={NSLocalizedDescription=Failed to send signal 19 to process 44640: 3}'
+Object:   <IDELaunchiPhoneSimulatorLauncher: 0x9dfd22ca0>
+Method:   -performWorkerAction
+Thread:   <NSThread: 0x9ddfd0180>{number = 30, name = (null)}
+Please file a bug at https://feedbackassistant.apple.com with this warning message and any useful information you can provide.
+2026-11-21 07:53:10.524 xcodebuild[40582:134520]  IDELaunchReport: a9476b167dd443c0:a9476b167dd47400:Launch CoachWatch Finished with error: Failed to send signal 19 to process 44640: 3
+Domain: DTXMessage
+Code: 1
+--
+
+2026-11-21 07:53:10.524 xcodebuild[40582:134520]  IDELaunchReport: a9476b167dd443c0:a9476b167dd47400:Launch CoachWatch com.apple.dt.IDERunOperationWorkerFinished {
+    "operation_duration_ms" = 2847;
+    "operation_errorCode" = 1;
+    "operation_errorDomain" = DTXMessage;
+    "operation_error_reportable" = 1;
+    "operation_name" = IDELaunchiPhoneSimulatorLauncher;
+}
+2026-11-21 07:55:14.329 xcodebuild[40582:116732] [MT] IDETestOperationsObserverDebug: 580.683 elapsed -- Testing started completed.
+2026-11-21 07:55:14.329 xcodebuild[40582:116732] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-21 07:55:14.329 xcodebuild[40582:116732] [MT] IDETestOperationsObserverDebug: 580.683 sec, +580.683 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/coach-app/coach-app/results/watch-large.xcresult
+
+Testing failed:
+	Simulator device failed to launch com.limevolt.coach.watchkitapp.
+
+Failing tests:
+	WatchCaptures.testCaptures()
+
+** TEST EXECUTE FAILED **
+
+Testing started

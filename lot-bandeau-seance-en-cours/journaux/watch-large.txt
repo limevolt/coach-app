@@ -1,0 +1,48 @@
+	CoachWatchUITests-Runner encountered an error (Failed to install or launch the test runner. (Underlying Error: Simulator device failed to launch com.limevolt.coachapp.watchkitapp.uitests.xctrunner. The request was denied by service delegate (IOSSHLMainWorkspace) for reason: Busy ("Application has termination assertions"). (Underlying Error: The request to open "com.limevolt.coachapp.watchkitapp.uitests.xctrunner" failed. The request was denied by service delegate (IOSSHLMainWorkspace) for reason: Busy ("Application has termination assertions"). (Underlying Error: The operation couldn’t be completed. Application has termination assertions))))
+    SimCallingSelector = "launchApplicationWithID:options:pid:error:";
+} (error = Error Domain=FBSOpenApplicationServiceErrorDomain Code=1 "Simulator device failed to launch com.limevolt.coachapp.watchkitapp.uitests.xctrunner." UserInfo={NSLocalizedDescription=Simulator device failed to launch com.limevolt.coachapp.watchkitapp.uitests.xctrunner., NSUnderlyingError=0x8421aae80 {Error Domain=FBSOpenApplicationServiceErrorDomain Code=1 "The request to open "com.limevolt.coachapp.watchkitapp.uitests.xctrunner" failed." UserInfo={BSErrorCodeDescription=RequestDenied, NSLocalizedDescription=The request to open "com.limevolt.coachapp.watchkitapp.uitests.xctrunner" failed., NSUnderlyingError=0x8421aa850 {Error Domain=FBSOpenApplicationErrorDomain Code=6 "Application has termination assertions" UserInfo={BSErrorCodeDescription=Busy, NSLocalizedFailureReason=Application has termination assertions}}, FBSOpenApplicationRequestID=0xc48, NSLocalizedFailureReason=The request was denied by service delegate (IOSSHLMainWorkspace) for reason: Busy ("Application has termination assertions").}}, NSLocalizedFailureReason=The request was denied by service delegate (IOSSHLMainWorkspace) for reason: Busy ("Application has termination assertions")., FBSOpenApplicationRequestID=0xc48, SimCallingSelector=launchApplicationWithID:options:pid:error:, BSErrorCodeDescription=RequestDenied})
+** TEST EXECUTE FAILED **
+2026-11-27 15:57:04.700 xcodebuild[76290:202860]  iOSSimulator: DB083A7F-D21F-4520-891B-67112267A95D: Failed to launch app with identifier: com.limevolt.coachapp.watchkitapp.uitests.xctrunner and options: {
+2026-11-27 15:57:06.719 xcodebuild[76290:201990] [MT] IDELaunchReport: 1b8ca075e88f1d00:1b8ca075e88f1d00: Finished with error: Simulator device failed to launch com.limevolt.coachapp.watchkitapp.uitests.xctrunner.
+Testing failed:
+-----
+    "param_diag_sanitizer_ubsan_enable" = 0;
+    "param_diag_sanitizer_ubsan_stopOnIssue" = 0;
+    "param_diag_showNonLocalizedStrings" = 0;
+    "param_diag_viewDebugging_enabled" = 0;
+    "param_diag_viewDebugging_insertDylibOnLaunch" = 0;
+    "param_install_style" = 2;
+    "param_launcher_UID" = 2;
+    "param_launcher_allowDeviceSensorReplayData" = 0;
+    "param_launcher_kind" = 0;
+    "param_launcher_style" = 0;
+    "param_launcher_substyle" = 10304;
+    "param_runnable_appExtensionHostRunMode" = 0;
+    "param_runnable_productType" = "com.apple.product-type.application";
+    "param_testing_launchedForTesting" = 1;
+    "param_testing_suppressSimulatorApp" = 1;
+    "param_testing_usingCLI" = 0;
+    "sdk_canonicalName" = "iphonesimulator26.5";
+    "sdk_osVersion" = "26.5";
+    "sdk_platformID" = 7;
+    "sdk_variant" = iphonesimulator;
+    "sdk_version_monotonic" = 2305008100;
+}
+
+
+*** If you believe this error represents a bug, please attach the result bundle at /Users/runner/work/coach-app/coach-app/results/watch-large.xcresult
+
+2026-11-27 15:57:34.342 xcodebuild[76290:201990] [MT] IDETestOperationsObserverDebug: 120.728 elapsed -- Testing started completed.
+2026-11-27 15:57:34.343 xcodebuild[76290:201990] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-27 15:57:34.343 xcodebuild[76290:201990] [MT] IDETestOperationsObserverDebug: 120.728 sec, +120.728 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/coach-app/coach-app/results/watch-large.xcresult
+
+Testing failed:
+	Simulator device failed to launch com.limevolt.coachapp.watchkitapp.uitests.xctrunner.
+	CoachWatchUITests-Runner encountered an error (Failed to install or launch the test runner. (Underlying Error: Simulator device failed to launch com.limevolt.coachapp.watchkitapp.uitests.xctrunner. The request was denied by service delegate (IOSSHLMainWorkspace) for reason: Busy ("Application has termination assertions"). (Underlying Error: The request to open "com.limevolt.coachapp.watchkitapp.uitests.xctrunner" failed. The request was denied by service delegate (IOSSHLMainWorkspace) for reason: Busy ("Application has termination assertions"). (Underlying Error: The operation couldn’t be completed. Application has termination assertions))))
+
+** TEST EXECUTE FAILED **
+
+Testing started

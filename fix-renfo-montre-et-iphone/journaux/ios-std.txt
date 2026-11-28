@@ -1,0 +1,45 @@
+** TEST EXECUTE SUCCEEDED **
+2026-11-27 11:56:20.363992+0000 CoachUITests-Runner[4755:23226] [General] Failed to send CA Event for app launch measurements for ca_event_type: 0 event_name: com.apple.app_launch_measurement.FirstFramePresentationMetric
+2026-11-27 11:56:20.410025+0000 CoachUITests-Runner[4755:23227] [General] Failed to send CA Event for app launch measurements for ca_event_type: 1 event_name: com.apple.app_launch_measurement.ExtendedLaunchMetrics
+Test Case '-[CoachUITests.CoachCaptures testCaptures]' passed (855.918 seconds).
+-----
+    t =   847.06s     Wait for com.limevolt.coachapp to idle
+    t =   847.06s     Find the Target Application 'com.limevolt.coachapp'
+    t =   847.11s     Check for interrupting elements affecting "Coach" Application
+    t =   847.15s     Synthesize event
+    t =   847.58s     Wait for com.limevolt.coachapp to idle
+    t =   849.86s Added attachment named '29h-plan-reglages-du-plan'
+    t =   849.86s Checking existence of `"onglet-Réglages" Button`
+    t =   849.96s Tap "onglet-Réglages" Button
+    t =   849.97s     Wait for com.limevolt.coachapp to idle
+    t =   849.97s     Find the "onglet-Réglages" Button
+    t =   850.10s     Check for interrupting elements affecting "onglet-Réglages" Button
+    t =   850.15s     Synthesize event
+    t =   850.48s     Wait for com.limevolt.coachapp to idle
+    t =   852.79s Added attachment named '29i-reglages-mon-plan'
+    t =   852.79s Checking existence of `"onglet-Plan" Button`
+    t =   852.94s Tap "onglet-Plan" Button
+    t =   852.94s     Wait for com.limevolt.coachapp to idle
+    t =   852.95s     Find the "onglet-Plan" Button
+    t =   853.06s     Check for interrupting elements affecting "onglet-Plan" Button
+    t =   853.19s     Synthesize event
+    t =   853.52s     Wait for com.limevolt.coachapp to idle
+    t =   854.05s Added attachment named 'audit'
+    t =   854.44s Tear Down
+Test Case '-[CoachUITests.CoachCaptures testCaptures]' passed (855.918 seconds).
+Test Suite 'CoachCaptures' passed at 2026-11-27 12:11:29.663.
+	 Executed 1 test, with 0 failures (0 unexpected) in 855.918 (855.924) seconds
+Test Suite 'CoachUITests.xctest' passed at 2026-11-27 12:11:29.663.
+	 Executed 1 test, with 0 failures (0 unexpected) in 855.918 (855.925) seconds
+Test Suite 'All tests' passed at 2026-11-27 12:11:29.664.
+	 Executed 1 test, with 0 failures (0 unexpected) in 855.918 (855.927) seconds
+2026-11-27 12:11:33.880 xcodebuild[3259:13378] [MT] IDETestOperationsObserverDebug: 1146.656 elapsed -- Testing started completed.
+2026-11-27 12:11:33.880 xcodebuild[3259:13378] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-27 12:11:33.880 xcodebuild[3259:13378] [MT] IDETestOperationsObserverDebug: 1146.656 sec, +1146.656 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/coach-app/coach-app/results/ios-std.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started

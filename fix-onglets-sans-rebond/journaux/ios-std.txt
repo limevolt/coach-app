@@ -1,0 +1,46 @@
+** TEST EXECUTE FAILED **
+/Users/runner/work/coach-app/coach-app/CoachUITests/CoachCaptures.swift:318: error: -[CoachUITests.CoachCaptures testCaptures] : Failed to not hittable: Button, {{34.4, 608.7}, {333.2, 47.9}}, identifier: 'reglage-intensite', label: 'Intensité, Intense'
+2026-11-26 22:31:05.006645+0000 CoachUITests-Runner[5224:22977] [General] Failed to send CA Event for app launch measurements for ca_event_type: 0 event_name: com.apple.app_launch_measurement.FirstFramePresentationMetric
+2026-11-26 22:31:05.049599+0000 CoachUITests-Runner[5224:22975] [General] Failed to send CA Event for app launch measurements for ca_event_type: 1 event_name: com.apple.app_launch_measurement.ExtendedLaunchMetrics
+Test Case '-[CoachUITests.CoachCaptures testCaptures]' failed (750.891 seconds).
+-----
+    t =   747.30s         Wait for com.limevolt.coachapp to idle
+    t =   747.31s         Find the "reglage-intensite" Button
+    t =   747.42s         Check for interrupting elements affecting "reglage-intensite" Button
+    t =   747.48s         Synthesize event
+    t =   747.52s             Scroll element to visible
+    t =   747.52s             Find the "reglage-intensite" Button
+    t =   747.70s             Computed hit point {-1, -1} after scrolling to visible
+    t =   747.70s             Failed: Not hittable: Button, {{34.4, 608.7}, {333.2, 47.9}}, identifier: 'reglage-intensite', label: 'Intensité, Intense'
+    t =   748.71s     Retrying `Tap "reglage-intensite" Button` (attempt #3)
+    t =   748.71s         Wait for com.limevolt.coachapp to idle
+    t =   748.71s         Find the "reglage-intensite" Button
+    t =   748.87s         Check for interrupting elements affecting "reglage-intensite" Button
+    t =   748.93s         Synthesize event
+    t =   748.97s             Scroll element to visible
+    t =   748.98s             Find the "reglage-intensite" Button
+    t =   749.24s             Computed hit point {-1, -1} after scrolling to visible
+    t =   749.24s             Failed: Not hittable: Button, {{34.4, 608.7}, {333.2, 47.9}}, identifier: 'reglage-intensite', label: 'Intensité, Intense'
+    t =   749.24s Requesting snapshot of accessibility hierarchy for app with pid 28923
+/Users/runner/work/coach-app/coach-app/CoachUITests/CoachCaptures.swift:318: error: -[CoachUITests.CoachCaptures testCaptures] : Failed to not hittable: Button, {{34.4, 608.7}, {333.2, 47.9}}, identifier: 'reglage-intensite', label: 'Intensité, Intense'
+    t =   749.89s Tear Down
+Test Case '-[CoachUITests.CoachCaptures testCaptures]' failed (750.891 seconds).
+Test Suite 'CoachCaptures' failed at 2026-11-26 22:44:13.076.
+	 Executed 1 test, with 1 failure (0 unexpected) in 750.891 (750.894) seconds
+Test Suite 'CoachUITests.xctest' failed at 2026-11-26 22:44:13.078.
+	 Executed 1 test, with 1 failure (0 unexpected) in 750.891 (750.897) seconds
+Test Suite 'All tests' failed at 2026-11-26 22:44:13.078.
+	 Executed 1 test, with 1 failure (0 unexpected) in 750.891 (750.898) seconds
+2026-11-26 22:44:48.844 xcodebuild[3775:14557] [MT] IDETestOperationsObserverDebug: 1002.128 elapsed -- Testing started completed.
+2026-11-26 22:44:48.844 xcodebuild[3775:14557] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-26 22:44:48.844 xcodebuild[3775:14557] [MT] IDETestOperationsObserverDebug: 1002.128 sec, +1002.128 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/coach-app/coach-app/results/ios-std.xcresult
+
+Failing tests:
+	CoachCaptures.testCaptures()
+
+** TEST EXECUTE FAILED **
+
+Testing started

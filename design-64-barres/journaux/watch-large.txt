@@ -1,0 +1,47 @@
+    SimCallingSelector = "launchApplicationWithID:options:pid:error:";
+} (error = Error Domain=FBSOpenApplicationServiceErrorDomain Code=4 "Simulator device failed to launch com.limevolt.coach.watchkitapp." UserInfo={BSErrorCodeDescription=InvalidRequest, NSUnderlyingError=0xc6c05e280 {Error Domain=FBSOpenApplicationServiceErrorDomain Code=4 "The request to open "com.limevolt.coach.watchkitapp" failed." UserInfo={NSLocalizedDescription=The request to open "com.limevolt.coach.watchkitapp" failed., BSErrorCodeDescription=InvalidRequest, FBSOpenApplicationRequestID=0x7acb, NSUnderlyingError=0xc6c05e7c0 {Error Domain=FBSOpenApplicationErrorDomain Code=4 "Application info provider (FBSApplicationLibrary) returned nil for "com.limevolt.coach.watchkitapp"" UserInfo={BSErrorCodeDescription=NotFound, NSLocalizedFailureReason=Application info provider (FBSApplicationLibrary) returned nil for "com.limevolt.coach.watchkitapp"}}}}, FBSOpenApplicationRequestID=0x7acb, SimCallingSelector=launchApplicationWithID:options:pid:error:, NSLocalizedDescription=Simulator device failed to launch com.limevolt.coach.watchkitapp.})
+** TEST EXECUTE SUCCEEDED **
+2026-11-23 12:38:12.316 xcodebuild[51375:141565]  iOSSimulator: DB083A7F-D21F-4520-891B-67112267A95D: Failed to launch app with identifier: com.limevolt.coach.watchkitapp and options: {
+2026-11-23 12:38:12.829 xcodebuild[51375:141564] [MT] IDELaunchReport: 8f31deee0a5d7fc0:8f31deee0a5d7fc0: Finished with error: Simulator device failed to launch com.limevolt.coach.watchkitapp.
+Test Case '-[CoachWatchUITests.WatchCaptures testCaptures]' passed (351.128 seconds).
+-----
+    t =   310.94s         Wait for com.limevolt.coach.watchkitapp to idle
+    t =   312.98s Wait for com.limevolt.coach.watchkitapp to become Running Foreground
+    t =   312.98s Waiting 30.0s for Button (First Match) to exist
+    t =   314.08s     Checking `Expect predicate `existsNoRetry == 1` for object Button (First Match)`
+    t =   314.08s         Checking existence of `Button (First Match)`
+    t =   314.79s Swipe up Target Application 'com.limevolt.coach.watchkitapp'
+    t =   314.79s     Wait for com.limevolt.coach.watchkitapp to idle
+    t =   314.86s     Find the Target Application 'com.limevolt.coach.watchkitapp'
+    t =   315.38s     Check for interrupting elements affecting "Coach" Application
+    t =   316.36s     Synthesize event
+    t =   316.99s     Wait for com.limevolt.coach.watchkitapp to idle
+    t =   319.26s Added attachment named '11-accueil-une-faite'
+    t =   319.26s Terminate com.limevolt.coach.watchkitapp:56345
+    t =   320.29s Open com.limevolt.coach.watchkitapp
+    t =   320.29s     Launch com.limevolt.coach.watchkitapp
+2026-11-23 12:39:26.455 xcodebuild[51375:141564] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-23 12:39:26.455 xcodebuild[51375:141564] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =   322.89s         Setting up automation session
+    t =   325.60s         Wait for com.limevolt.coach.watchkitapp to idle
+    t =   327.11s Wait for com.limevolt.coach.watchkitapp to become Running Foreground
+    t =   330.19s Added attachment named '10-accueil-vide'
+    t =   330.21s Tear Down
+    t =   331.09s Checking for crash reports corresponding to unexpected termination of com.limevolt.coach.watchkitapp
+Test Case '-[CoachWatchUITests.WatchCaptures testCaptures]' passed (351.128 seconds).
+Test Suite 'WatchCaptures' passed at 2026-11-23 12:39:57.097.
+	 Executed 1 test, with 0 failures (0 unexpected) in 351.128 (351.132) seconds
+Test Suite 'CoachWatchUITests.xctest' passed at 2026-11-23 12:39:57.099.
+	 Executed 1 test, with 0 failures (0 unexpected) in 351.128 (351.134) seconds
+Test Suite 'All tests' passed at 2026-11-23 12:39:57.100.
+	 Executed 1 test, with 0 failures (0 unexpected) in 351.128 (351.136) seconds
+2026-11-23 12:40:01.639 xcodebuild[51375:141564] [MT] IDETestOperationsObserverDebug: 459.693 elapsed -- Testing started completed.
+2026-11-23 12:40:01.641 xcodebuild[51375:141564] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-23 12:40:01.641 xcodebuild[51375:141564] [MT] IDETestOperationsObserverDebug: 459.693 sec, +459.693 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/coach-app/coach-app/results/watch-large.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started

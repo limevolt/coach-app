@@ -1,0 +1,43 @@
+** TEST EXECUTE SUCCEEDED **
+Test Case '-[CoachWatchUITests.WatchCaptures testCaptures]' passed (333.266 seconds).
+-----
+    t =   318.91s         Wait for com.limevolt.coach.watchkitapp to idle
+    t =   320.27s Wait for com.limevolt.coach.watchkitapp to become Running Foreground
+    t =   320.27s Waiting 30.0s for Button (First Match) to exist
+    t =   321.31s     Checking `Expect predicate `existsNoRetry == 1` for object Button (First Match)`
+    t =   321.31s         Checking existence of `Button (First Match)`
+    t =   321.44s Swipe up Target Application 'com.limevolt.coach.watchkitapp'
+    t =   321.44s     Wait for com.limevolt.coach.watchkitapp to idle
+    t =   321.44s     Find the Target Application 'com.limevolt.coach.watchkitapp'
+    t =   321.47s     Check for interrupting elements affecting "Coach" Application
+    t =   321.57s     Synthesize event
+    t =   322.01s     Wait for com.limevolt.coach.watchkitapp to idle
+    t =   324.03s Added attachment named '11-accueil-une-faite'
+    t =   324.03s Terminate com.limevolt.coach.watchkitapp:28889
+    t =   325.11s Open com.limevolt.coach.watchkitapp
+    t =   325.11s     Launch com.limevolt.coach.watchkitapp
+2026-11-19 19:17:04.756 xcodebuild[24269:78006] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-19 19:17:04.756 xcodebuild[24269:78006] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =   325.56s         Setting up automation session
+    t =   327.65s         Wait for com.limevolt.coach.watchkitapp to idle
+    t =   329.10s Wait for com.limevolt.coach.watchkitapp to become Running Foreground
+    t =   332.22s Added attachment named '10-accueil-vide'
+    t =   332.25s Tear Down
+Test Case '-[CoachWatchUITests.WatchCaptures testCaptures]' passed (333.266 seconds).
+Test Suite 'WatchCaptures' passed at 2026-11-19 19:17:12.910.
+	 Executed 1 test, with 0 failures (0 unexpected) in 333.266 (333.273) seconds
+Test Suite 'CoachWatchUITests.xctest' passed at 2026-11-19 19:17:12.912.
+	 Executed 1 test, with 0 failures (0 unexpected) in 333.266 (333.274) seconds
+Test Suite 'All tests' passed at 2026-11-19 19:17:12.912.
+	 Executed 1 test, with 0 failures (0 unexpected) in 333.266 (333.275) seconds
+2026-11-19 19:17:26.321176+0000 CoachWatchUITests-Runner[24671:91332] [Default] Xcode took 13.24 seconds to acknowledge that testing finished.
+2026-11-19 19:17:27.448 xcodebuild[24269:78006] [MT] IDETestOperationsObserverDebug: 453.565 elapsed -- Testing started completed.
+2026-11-19 19:17:27.448 xcodebuild[24269:78006] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-19 19:17:27.448 xcodebuild[24269:78006] [MT] IDETestOperationsObserverDebug: 453.565 sec, +453.565 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/coach-app/coach-app/results/watch-large.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started
